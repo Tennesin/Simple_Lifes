@@ -1,0 +1,20 @@
+=== Simple_Lifes CRASH LOG ===
+Время: 2026-08-13 02:20:42
+Путь к миру: C:\Users\Tennesin\Documents\Simple_Lifes\anotest.slw
+Существ на момент падения: 0
+Python: 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]
+Pygame: 2.6.1
+Размер окна: 1000x750
+Размер мира: 2500x2500
+
+--- ПОЛНЫЙ TRACEBACK ---
+Traceback (most recent call last):
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 322, in run
+    self.draw()
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 249, in draw
+    self.ui.draw(self.screen)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\ui.py", line 1023, in draw
+    self.minimap.draw(screen)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\ui.py", line 533, in draw
+    draw_fn(self, screen, game, to_minimap, (scale_x, scale_y), display)
+TypeError: draw_minimap_child_roads() takes 5 positional arguments but 6 were given

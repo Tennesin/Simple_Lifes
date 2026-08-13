@@ -1,0 +1,21 @@
+=== Simple_Lifes CRASH LOG ===
+Время: 2026-08-11 15:46:43
+Путь к миру: C:\Users\Tennesin\Documents\Simple_Lifes\sdfd.slw
+Существ на момент падения: 2
+Python: 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]
+Pygame: 2.6.1
+Размер окна: 1000x750
+Размер мира: 2500x2500
+
+--- ПОЛНЫЙ TRACEBACK ---
+Traceback (most recent call last):
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 316, in run
+    self.draw()
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 242, in draw
+    self.renderer.draw(self.screen)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\renderer.py", line 202, in draw
+    self.draw_vision_circle(screen, game.selected_creature)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\renderer.py", line 256, in draw_vision_circle
+    (int(pos[0]), int(pos[1])), int(VISION_RADIUS), 2)
+                                    ^^^^^^^^^^^^^
+NameError: name 'VISION_RADIUS' is not defined. Did you mean: 'STONE_RADIUS'?

@@ -1,0 +1,34 @@
+=== Simple_Lifes CRASH LOG ===
+Время: 2026-08-13 18:14:35
+Путь к миру: C:\Users\Tennesin\Documents\Simple_Lifes\crashtestworld.slw
+Существ на момент падения: 5
+Python: 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]
+Pygame: 2.6.1
+Размер окна: 1000x750
+Размер мира: 2500x2500
+
+--- ПОЛНЫЙ TRACEBACK ---
+Traceback (most recent call last):
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 310, in run
+    self.simulation.update(dt)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\simulation.py", line 58, in update
+    processor.process(ctx)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\creatures\races\circles\mechanics\tick.py", line 38, in process
+    ready_for_interact = self._process_living_creatures(ctx, race_creatures)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\creatures\races\circles\mechanics\tick.py", line 131, in _process_living_creatures
+    target = creature.decide(ctx)
+             ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\creatures\races\circles\creature.py", line 331, in decide
+    return self.brain.decide(ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\creatures\races\circles\ai\brain.py", line 344, in decide
+    goal = self._dispatch_life_stage(perception, ctx)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\creatures\races\circles\ai\brain.py", line 263, in _dispatch_life_stage
+    goal = self.child.decide(perception.visible_companions, perception.visible_roads, storage_fields,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\creatures\races\circles\ai\child_ai.py", line 456, in decide
+    self._consider_hunger_signal(visible_companions, other_creatures, storage_fields, biome_grid=biome_grid),
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: _ChildHungerMixin._consider_hunger_signal() got an unexpected keyword argument 'biome_grid'

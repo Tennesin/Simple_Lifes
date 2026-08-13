@@ -1,0 +1,21 @@
+=== Simple_Lifes CRASH LOG ===
+Время: 2026-08-06 15:06:46
+Путь к миру: C:\Users\Tennesin\Documents\Simple_Lifes\BUILD_TEST.slw
+Существ на момент падения: 6
+Python: 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]
+Pygame: 2.6.1
+Размер окна: 1000x750
+Размер мира: 2500x2500
+
+--- ПОЛНЫЙ TRACEBACK ---
+Traceback (most recent call last):
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 286, in run
+    self.draw()
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 217, in draw
+    self.ui.draw(self.screen)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\ui.py", line 1526, in draw
+    self._draw_collapse_handle(screen)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\ui.py", line 1550, in _draw_collapse_handle
+    handle_rect = self._compute_collapse_handle_rect(screen.get_width())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: UIManager._compute_collapse_handle_rect() takes 1 positional argument but 2 were given

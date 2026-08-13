@@ -1,0 +1,24 @@
+=== Simple_Lifes CRASH LOG ===
+Время: 2026-08-13 05:55:34
+Путь к миру: C:\Users\Tennesin\Documents\Simple_Lifes\anotest.slw
+Существ на момент падения: 0
+Python: 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]
+Pygame: 2.6.1
+Размер окна: 1000x750
+Размер мира: 2500x2500
+
+--- ПОЛНЫЙ TRACEBACK ---
+Traceback (most recent call last):
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\game.py", line 308, in run
+    self.input_handler.handle_events()
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\input_handler.py", line 938, in handle_events
+    self._handle_mouse_down(event)
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\input_handler.py", line 260, in _handle_mouse_down
+    if self._handle_minimap_click(event, mouse_x, mouse_y):
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\game\input_handler.py", line 277, in _handle_minimap_click
+    and game.ui.minimap_rect.collidepoint(mouse_x, mouse_y)):
+        ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Tennesin\PycharmProjects\Mini-games\Simple_Lifes\ui.py", line 987, in __getattr__
+    raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+AttributeError: 'UIManager' object has no attribute 'minimap_rect'
