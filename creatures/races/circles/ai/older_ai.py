@@ -69,7 +69,7 @@ class ElderWardCare(GoalComponent):
                     if result is not None:
                         return result
                 elif self._child_needs_help(ward, visible_companions, other_creatures):
-                    return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt)
+                    return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt, biome_grid=ctx.biome_grid)
             c.elder_ward_id = None
             c.carried_fruit = False
             c.carried_water = False
@@ -90,9 +90,9 @@ class ElderWardCare(GoalComponent):
         c.social.adjust_mutual_relationship(ward, RELATIONSHIP_HELP_BONUS_HELPER, RELATIONSHIP_HELP_BONUS_HELPED)
         c.communication.share_information(ward)
 
-        return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt)
+        return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt, biome_grid=ctx.biome_grid)
 
-    def _tend_to(self, ward, visible_fruits, visible_water, dt):
+    def _tend_to(self, ward, visible_fruits, visible_water, dt, biome_grid=None):
         c = self.c
         c.state = STATE_SEEKING
         c.energy = max(0.0, c.energy - ELDER_WARD_ENERGY_DRAIN_RATE * dt)
@@ -103,7 +103,7 @@ class ElderWardCare(GoalComponent):
                 c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_FETCH
                 return goal
         if ward.thirst < CHILD_FEED_THIRST_THRESHOLD:
-            goal = self.actions.go_fetch_water(visible_water)
+            goal = self.actions.go_fetch_water(visible_water, biome_grid=biome_grid)
             if goal:
                 c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_FETCH
                 return goal
