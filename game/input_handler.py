@@ -344,10 +344,6 @@ class _MouseDownMixin:
 
         return False
 
-	def _is_road_object(self, obj):
-    	game = self.game
-    	return any(obj in getattr(game.world, spec.road_collection) for spec in all_road_networks())
-
     def _handle_road_tool_click(self, event, mouse_x, mouse_y):
         game = self.game
         for spec in all_road_networks():
@@ -400,6 +396,10 @@ class _MouseDownMixin:
                 panel.handle_click(game, mouse_x, mouse_y)
                 return True
         return False
+
+    def _is_road_object(self, obj):
+        game = self.game
+        return any(obj in getattr(game.world, spec.road_collection) for spec in all_road_networks())
 
     def _handle_collapse_handle_click(self, event, mouse_x, mouse_y):
         game = self.game

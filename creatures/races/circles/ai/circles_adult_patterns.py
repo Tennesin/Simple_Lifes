@@ -762,8 +762,7 @@ class Storage(GoalComponent):
         fetch_fruit = (self.actions.go_fetch_fruit, ctx.visible_fruits, field.has_space_for_fruit)
         fetch_water = (
             lambda visible_objs: self.actions.go_fetch_water(visible_objs, biome_grid=ctx.biome_grid),
-            ctx.visible_water, field.has_space_for_water
-            )
+            ctx.visible_water, field.has_space_for_water)
         order = (fetch_fruit, fetch_water) if field.fruits <= field.water else (fetch_water, fetch_fruit)
 
         for fetch_fn, visible_objs, has_space_fn in order:

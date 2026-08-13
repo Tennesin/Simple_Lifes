@@ -243,8 +243,34 @@ class CreaturePanel:
 
     # ---------- Семья ----------
 
+    def _resolve_parent_name(self, parent_id):
+        game = self.game
+        if parent_id is None:
+            return None
+        found = next((c for c in game.world.creatures if c.id == parent_id), None)
+        if found is not None:
+            return found.name if found.name else found.id
+        for gy in game.world.graveyards:
+            entry = next((a for a in gy.archive if a["id"] == parent_id), None)
+            if entry is not None:
+                return entry["name"] if entry["name"] else entry["id"]
+        return INFO_INFO_UNKNOWN_PARENT
+
+    def _draw_parent_line(self, screen, creature, label_template, index, x, y):
+        if creature.parent_ids is None:
+            name = INFO_INFO_HEAVEN
+        else:
+            parent_id = creature.parent_ids[index] if index < len(creature.parent_ids) else None
+            name = INFO_INFO_UNKNOWN_PARENT if parent_id is None else self._resolve_parent_name(parent_id)
+        txt = self.font.render(label_template.format(name=name), True, TEXT_COLOR)
+        screen.blit(txt, (x, y))
+        return y + 24
+
     def _draw_family_info(self, screen, creature, x, y, max_width):
         game = self.game
+
+        y = self._draw_parent_line(screen, creature, INFO_INFO_MOTHER, 0, x, y)
+        y = self._draw_parent_line(screen, creature, INFO_INFO_FATHER, 1, x, y)
 
         partner = None
         if creature.partner_id:
@@ -256,24 +282,23 @@ class CreaturePanel:
         screen.blit(partner_txt, (x, y))
         y += 24
 
-        if creature.life_stage == LIFE_STAGE_CHILD:
-            parents = []
-            if creature.parent_ids:
-                for pid in creature.parent_ids:
-                    if pid is None:
-                        continue
-                    parent = next((c for c in game.world.creatures if c.id == pid and not c.is_dead), None)
-                    if parent is not None:
-                        parents.append(parent)
-            names = ", ".join(p.name if p.name else p.id for p in parents) if parents else INFO_INFO_PARENTS_NONE
-            y = self._draw_wrapped_text(screen, INFO_INFO_PARENTS.format(names=names),
-                                        x, y, max_width, TEXT_COLOR)
+        sons = [c for c in game.world.creatures
+                if c.parent_ids and creature.id in c.parent_ids and not c.is_dead and c.gender == GENDER_MALE]
+        daughters = [c for c in game.world.creatures
+                     if c.parent_ids and creature.id in c.parent_ids and not c.is_dead and c.gender == GENDER_FEMALE]
+
+        if not sons and not daughters:
+            children_txt = self.font.render(INFO_INFO_CHILDREN.format(names=INFO_INFO_CHILDREN_NONE), True, TEXT_COLOR)
+            screen.blit(children_txt, (x, y))
+            y += 24
         else:
-            children = [c for c in game.world.creatures
-                        if c.parent_ids and creature.id in c.parent_ids and not c.is_dead]
-            names = ", ".join(c.name if c.name else c.id for c in children) if children else INFO_INFO_CHILDREN_NONE
-            y = self._draw_wrapped_text(screen, INFO_INFO_CHILDREN.format(names=names),
-                                        x, y, max_width, TEXT_COLOR)
+            sons_names = ", ".join(c.name if c.name else c.id for c in sons) if sons else INFO_INFO_CHILDREN_NONE
+            daughters_names = ", ".join(
+                c.name if c.name else c.id for c in daughters) if daughters else INFO_INFO_CHILDREN_NONE
+            y = self._draw_wrapped_text(screen, INFO_INFO_SONS.format(names=sons_names), x, y, max_width, TEXT_COLOR)
+            y = self._draw_wrapped_text(screen, INFO_INFO_DAUGHTERS.format(names=daughters_names), x, y, max_width,
+                                        TEXT_COLOR)
+
         y += 10
         return y
 
