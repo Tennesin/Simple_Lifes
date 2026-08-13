@@ -89,7 +89,7 @@ class ResourceActions:
             return pos
         return None
 
-    def go_fetch_water(self, visible_water):
+    def go_fetch_water(self, visible_water, biome_grid=None):
         c = self.c
         target_water = min(visible_water, key=c.distance_to) if visible_water else None
 
@@ -111,6 +111,22 @@ class ResourceActions:
             c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
             c.target = pos
             return pos
+
+        # ---------- Река тоже годится как источник для переноски, просто у неё нет "объекта" ----------
+        if biome_grid is not None:
+            if biome_grid.get_at(c.x, c.y) == BIOME_RIVER:
+                c.carried_water = True
+                c.goal_text = INFO_CREATURE_GOAL_FEED_CARRY_WATER
+                c.target = (c.x, c.y)
+                return c.target
+            vision_radius = c.aging.effective_vision_radius()
+            river_point = biome_grid.find_nearest_of_type(c.x, c.y, BIOME_RIVER, vision_radius)
+            if river_point:
+                c.state = STATE_SEEKING
+                c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
+                c.target = river_point
+                return river_point
+
         return None
 
     def deliver_resource_to(self, target):
