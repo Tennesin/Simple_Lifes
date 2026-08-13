@@ -571,7 +571,7 @@ class Feeding(GoalComponent):
                     if goal:
                         return goal
                 if recipient.thirst < CHILD_FEED_THIRST_THRESHOLD:
-                    goal = self.actions.go_fetch_water(ctx.visible_water)
+                    goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid)
                     if goal:
                         return goal
             c.feed_target_id = None
@@ -595,7 +595,7 @@ class Feeding(GoalComponent):
             if goal:
                 return goal
         if needy.thirst < CHILD_FEED_THIRST_THRESHOLD:
-            goal = self.actions.go_fetch_water(ctx.visible_water)
+            goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid)
             if goal:
                 return goal
 
@@ -760,7 +760,10 @@ class Storage(GoalComponent):
         c.storage_supply_check_timer = random.uniform(*STORAGE_SUPPLY_CHECK_INTERVAL)
 
         fetch_fruit = (self.actions.go_fetch_fruit, ctx.visible_fruits, field.has_space_for_fruit)
-        fetch_water = (self.actions.go_fetch_water, ctx.visible_water, field.has_space_for_water)
+        fetch_water = (
+            lambda visible_objs: self.actions.go_fetch_water(visible_objs, biome_grid=ctx.biome_grid),
+            ctx.visible_water, field.has_space_for_water
+            )
         order = (fetch_fruit, fetch_water) if field.fruits <= field.water else (fetch_water, fetch_fruit)
 
         for fetch_fn, visible_objs, has_space_fn in order:
