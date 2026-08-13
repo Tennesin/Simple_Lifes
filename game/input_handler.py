@@ -344,6 +344,10 @@ class _MouseDownMixin:
 
         return False
 
+	def _is_road_object(self, obj):
+    	game = self.game
+    	return any(obj in getattr(game.world, spec.road_collection) for spec in all_road_networks())
+
     def _handle_road_tool_click(self, event, mouse_x, mouse_y):
         game = self.game
         for spec in all_road_networks():
@@ -547,7 +551,7 @@ class _MouseDownMixin:
                                mouse_y - game.player.last_click_pos[1]) < Player.DOUBLE_CLICK_DIST
             )
             if is_double_click:
-                if obj_here and not isinstance(obj_here, (Road, Wall, Fence)):
+                if obj_here and not isinstance(obj_here, (Wall, Fence)) and not self._is_road_object(obj_here):
                     if isinstance(obj_here, LivingEntity):
                         obj_here.on_grab_start(game.world)
                     game.player.grabbed_object = obj_here
