@@ -201,7 +201,6 @@ class Creature(LivingEntity):
         self.carry_capacity = random.randint(*CREATURE_CARRY_CAPACITY_RANGE)
         self.carried_resources = {"wood": 0, "stone": 0}
         self.gather_target_id = None
-        self.gather_target_pos = None
         self.gather_type = None  # "wood" | "stone"
         self.gather_progress = 0.0
         self.construction_target_id = None
@@ -302,7 +301,6 @@ class Creature(LivingEntity):
         self.social_request_point = None
         self.carried_resources = {"wood": 0, "stone": 0}
         self.gather_target_id = None
-        self.gather_target_pos = None
         self.gather_type = None
         self.gather_progress = 0.0
         self.construction_target_id = None

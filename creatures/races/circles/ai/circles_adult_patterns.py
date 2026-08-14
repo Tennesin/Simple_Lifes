@@ -36,6 +36,8 @@ class DecisionContext:
     biome_grid: object = None
     visible_trees: list = field(default_factory=list)
     visible_stones: list = field(default_factory=list)
+    all_trees: list = field(default_factory=list)
+    all_stones: list = field(default_factory=list)
     campfires: list = field(default_factory=list)
     construction_sites: list = field(default_factory=list)
     all_threats: list = field(default_factory=list)
@@ -915,33 +917,22 @@ class Construction(GoalComponent):
         c = self.c
         c.gather_type = res_type
         c.gather_target_id = source.id
-        c.gather_target_pos = (source.x, source.y)
         c.gather_progress = 0.0
         c.gather_needed_amount = needed_amount
 
     def _cancel_gathering(self):
         c = self.c
         c.gather_target_id = None
-        c.gather_target_pos = None
         c.gather_type = None
         c.gather_progress = 0.0
         c.gather_needed_amount = None
 
     def _continue_gathering(self, ctx):
         c = self.c
-        pool = ctx.visible_trees if c.gather_type == "wood" else ctx.visible_stones
+        pool = ctx.all_trees if c.gather_type == "wood" else ctx.all_stones
         source = next((o for o in pool if o.id == c.gather_target_id), None)
 
         if source is None:
-            if c.gather_target_pos is None:
-                self._cancel_gathering()
-                return None
-            if math.hypot(c.x - c.gather_target_pos[0], c.y - c.gather_target_pos[1]) > GATHER_APPROACH_DISTANCE:
-                c.state = STATE_SEEKING
-                c.goal_text = (INFO_CREATURE_GOAL_GATHER_WOOD if c.gather_type == "wood"
-                               else INFO_CREATURE_GOAL_GATHER_STONE)
-                c.target = c.gather_target_pos
-                return c.target
             self._cancel_gathering()
             return None
 
@@ -1513,9 +1504,9 @@ class ChildRoadVerification(GoalComponent):
 
     @staticmethod
     def _is_claimed_by_active_verifier(road, other_creatures):
-        if road.claimed_by is None:
+        if road.verifier_id is None:
             return False
-        claimant = next((o for o in other_creatures if o.id == road.claimed_by), None)
+        claimant = next((o for o in other_creatures if o.id == road.verifier_id), None)
         if claimant is None or claimant.is_dead:
             return False
         return claimant.child_road_verify_target_id == road.id
@@ -1526,7 +1517,7 @@ class ChildRoadVerification(GoalComponent):
             math.hypot(c.x - r.points[0][0], c.y - r.points[0][1]),
             math.hypot(c.x - r.points[-1][0], c.y - r.points[-1][1])
         ))
-        road.claimed_by = c.id
+        road.verifier_id = c.id
 
         c.child_road_verify_target_id = road.id
         c.child_road_verify_found_danger = False
@@ -1548,7 +1539,7 @@ class ChildRoadVerification(GoalComponent):
         c = self.c
         road = next((r for r in ctx.all_child_roads if r.id == c.child_road_verify_target_id), None)
         if road is None or road.rating != "pending" or not road.points:
-            self._cancel()
+            self._cancel(road)
             return None
 
         if any(math.hypot(c.x - s.x, c.y - s.y) < CHILD_ROAD_SAFETY_CHECK_RADIUS for s in ctx.visible_spikes):
@@ -1577,7 +1568,7 @@ class ChildRoadVerification(GoalComponent):
         c = self.c
         road.rating = "dangerous" if c.child_road_verify_found_danger else "safe"
         road.checked_by = c.id
-        road.claimed_by = None
+        road.verifier_id = None
         c.goal_text = (INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER if c.child_road_verify_found_danger
                        else INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE)
         c.child_road_verify_target_id = None
@@ -1586,14 +1577,15 @@ class ChildRoadVerification(GoalComponent):
         c.child_road_verify_entry_reached = False
         c.following_road_active = False
 
-    def _cancel(self):
+    def _cancel(self, road=None):
         c = self.c
+        if road is not None and road.verifier_id == c.id:
+            road.verifier_id = None
         c.child_road_verify_target_id = None
         c.child_road_verify_progress = 0
         c.child_road_verify_found_danger = False
         c.child_road_verify_entry_reached = False
         c.following_road_active = False
-
 
 # =========================================================================
 # Любопытство к неизвестным объектам - общая часть (роль/скидка на интерес),

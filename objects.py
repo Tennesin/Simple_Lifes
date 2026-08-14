@@ -241,7 +241,6 @@ class Tree(WorldObject):
         super().__init__(x, y, gen_id=True)
         self.radius = TREE_RADIUS
         self.wood = wood_amount if wood_amount is not None else random.randint(TREE_WOOD_MIN, TREE_WOOD_MAX)
-        self.claimed_by = None
 
     def has_wood(self):
         return self.wood > 0
@@ -259,14 +258,12 @@ class Tree(WorldObject):
 
     def to_dict(self):
         d = self._base_dict()
-        d.update({"wood": self.wood, "claimed_by": self.claimed_by})
         return d
 
     @staticmethod
     def from_dict(data):
         tree = Tree(data["x"], data["y"], wood_amount=data.get("wood"))
         tree._apply_base(data)
-        tree.claimed_by = data.get("claimed_by")
         return tree
 
 class Stone(WorldObject):

@@ -1,6 +1,6 @@
 import random
 
-from objects import Fruit
+from objects import Fruit, Tree, Stone, WaterPuddle
 from settings import *
 import settings
 from creatures.all_needed import navigation
@@ -81,7 +81,7 @@ class Simulation:
 
         self._fruit_grid.build(f for f in world.fruits if f.active)
         self._spike_grid.build(world.spikes)
-        self._water_grid.build(world.water_puddles)
+        self._water_grid.build(w for w in world.water_puddles if w.has_water())
         self._bush_grid.build(world.bushes)
         self._campfire_grid.build(world.campfires)
         self._creature_grid.build(c for c in world.creatures if not c.is_dead)
@@ -170,6 +170,10 @@ class Simulation:
                                                            Fruit) and not game.selected_object.active:
             game.selected_object = None
 
+        self._cleanup_exhausted_resource(world, "trees", Tree, lambda t: t.has_wood())
+        self._cleanup_exhausted_resource(world, "stones", Stone, lambda s: s.has_stone())
+        self._cleanup_exhausted_water(world)
+
         if (game.selected_object is not None
                 and hasattr(game.selected_object, "build_type")
                 and game.selected_object not in world.construction_sites):
@@ -178,6 +182,41 @@ class Simulation:
         if (game.player.grabbed_object is not None
                 and hasattr(game.player.grabbed_object, "build_type")
                 and game.player.grabbed_object not in world.construction_sites):
+            game.player.grabbed_object = None
+
+    def _cleanup_exhausted_resource(self, world, attr, cls, alive_check):
+        game = self.game
+        collection = getattr(world, attr)
+        alive = [obj for obj in collection if alive_check(obj)]
+        if len(alive) == len(collection):
+            return
+        removed = [obj for obj in collection if obj not in alive]
+        setattr(world, attr, alive)
+
+        if game.selected_object in removed:
+            game.selected_object = None
+        if game.player.grabbed_object in removed:
+            game.player.grabbed_object = None
+
+    def _cleanup_exhausted_water(self, world):
+        game = self.game
+        alive = [w for w in world.water_puddles if w.has_water()]
+        if len(alive) == len(world.water_puddles):
+            return
+        removed = [w for w in world.water_puddles if w not in alive]
+        world.water_puddles = alive
+
+        for water in removed:
+            if water.claimed_by is not None:
+                owner = next((c for c in world.creatures if c.id == water.claimed_by), None)
+                if owner is not None and hasattr(owner, "territory"):
+                    owner.territory.claims_count["water"] = max(
+                        0, owner.territory.claims_count.get("water", 0) - 1)
+            game.object_manager.unlink_road_endpoints("water", water.id)
+
+        if game.selected_object in removed:
+            game.selected_object = None
+        if game.player.grabbed_object in removed:
             game.player.grabbed_object = None
 
     # =====================================================================

@@ -5,7 +5,9 @@ import pygame
 import random
 
 from settings import *
-from game.race_registry import get_race, all_races, all_extra_world_save_fns, all_extra_world_load_fns
+from game.race_registry import (
+    get_race, all_races, all_race_names, all_extra_world_save_fns, all_extra_world_load_fns,
+)
 from info import *
 from player import Player
 from objects import (
@@ -18,6 +20,7 @@ from .world_context import WorldState
 from .widgets import TextInputBox, ScrollArea
 
 INVALID_NAME_CHARS = '<>:"/\\|?*'
+LEGACY_DEFAULT_RACE = "circle"
 
 def sanitize_world_name(name):
     if not name:
@@ -45,6 +48,17 @@ def is_valid_world(path):
     if not path.endswith(WORLD_EXTENSION):
         return False
     return os.path.isfile(os.path.join(path, WORLD_META_FILENAME))
+
+def _resolve_legacy_race_name():
+    race_names = all_race_names()
+    if LEGACY_DEFAULT_RACE in race_names:
+        return LEGACY_DEFAULT_RACE
+    if race_names:
+        return race_names[0]
+    raise RuntimeError(
+        "Не удалось определить расу для сохранения без поля 'race': "
+        "ни одна раса не зарегистрирована."
+    )
 
 # ---------- Состояние экрана "Создание мира" ----------
 
@@ -333,6 +347,7 @@ class WorldManager:
 
     def load_world_data(self):
         game = self.game
+        legacy_race_name = None
         creatures_dir = os.path.join(game.world_path, "creatures")
         if os.path.isdir(creatures_dir):
             for folder in os.listdir(creatures_dir):
@@ -342,7 +357,12 @@ class WorldManager:
                 if os.path.isdir(folder_path) and os.path.exists(state_file):
                     with open(state_file, "r", encoding="utf-8") as f:
                         state = json.load(f)
-                    descriptor = get_race(state.get("race", "circle"))
+                    race_name = state.get("race")
+                    if race_name is None:
+                        if legacy_race_name is None:
+                            legacy_race_name = _resolve_legacy_race_name()
+                        race_name = legacy_race_name
+                    descriptor = get_race(race_name)
                     creature = descriptor.loader_fn(state)
                     if os.path.exists(mem_file) and hasattr(creature, "memory"):
                         creature.memory.load(mem_file)

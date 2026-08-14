@@ -133,7 +133,7 @@ class _PerceptionMixin(_BrainMixinBase):
 
         visible_fruits = [f for f in candidate_fruits if f.active and _visible(f)]
         visible_spikes = [s for s in candidate_spikes if _visible(s)]
-        visible_water = [w for w in candidate_water if _visible(w)]
+        visible_water = [w for w in candidate_water if w.has_water() and _visible(w)]
         visible_bushes = [b for b in candidate_bushes if _visible(b)]
         visible_campfires = [cf for cf in candidate_campfires if _visible(cf)]
         if spatial_grids is not None:
@@ -288,6 +288,8 @@ class _DispatchMixin(_LifeStageDispatchBase):
                 biome_grid=biome_grid,
                 visible_trees=perception.visible_trees,
                 visible_stones=perception.visible_stones,
+                all_trees=ctx.trees,
+                all_stones=ctx.stones,
                 campfires=campfires,
                 construction_sites=construction_sites,
                 all_threats=all_threats,

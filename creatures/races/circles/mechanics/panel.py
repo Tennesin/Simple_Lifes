@@ -5,6 +5,7 @@ import time
 import pygame
 import math
 
+from objects import Bush, WaterPuddle
 from settings import *
 from info import *
 from game.widgets import Button, ScrollArea
@@ -1287,12 +1288,13 @@ class GenealogyTreeOverlay:
 def circle_object_panel_extra_lines(obj, creatures):
     lines = []
 
-    claimed_by = getattr(obj, "claimed_by", None)
-    if claimed_by:
-        claimant = next((c for c in creatures if c.id == claimed_by), None)
-        if claimant is not None:
-            name = claimant.name if claimant.name else claimant.id
-            lines.append((INFO_INFO_CLAIMED_BY.format(name=name), (255, 210, 60)))
+    if isinstance(obj, (Bush, WaterPuddle)):
+        claimed_by = getattr(obj, "claimed_by", None)
+        if claimed_by:
+            claimant = next((c for c in creatures if c.id == claimed_by), None)
+            if claimant is not None:
+                name = claimant.name if claimant.name else claimant.id
+                lines.append((INFO_INFO_CLAIMED_BY.format(name=name), (255, 210, 60)))
 
     if hasattr(obj, "fruits") and hasattr(obj, "water"):
         owner_ids = getattr(obj, "owner_ids", None)

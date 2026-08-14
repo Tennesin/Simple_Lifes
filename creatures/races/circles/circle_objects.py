@@ -254,7 +254,7 @@ class ChildRoad(PolylineRoad):
         super().__init__(points=points, road_id=road_id)
         self.rating = "pending"
         self.checked_by = None
-        self.claimed_by = None
+        self.verifier_id = None
 
     def get_type_name(self):
         return INFO_OBJECT_CHILD_ROAD
