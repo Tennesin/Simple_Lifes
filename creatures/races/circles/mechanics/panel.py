@@ -3,6 +3,7 @@
 
 import time
 import pygame
+import math
 
 from settings import *
 from info import *
@@ -24,6 +25,8 @@ class CreaturePanel:
         self.relationships_max_scroll = 0
         self._last_creature_id = None
         self.stat_bar_rects = {}
+
+        self.genealogy_btn_rect = None
 
         # ---------- Левое окно психики ----------
         self.show_psyche_section = False
@@ -192,6 +195,7 @@ class CreaturePanel:
             return
 
         y = self._draw_family_info(screen, creature, panel.x + 10, y, panel.width - 20)
+        y = self._draw_genealogy_button(screen, panel.x + 10, y, panel.width - 20)
         y = self._draw_psyche_toggle(screen, panel.x + 10, y, panel.width - 20)
 
         self._draw_stat_bar(screen, INFO_INFO_HP, creature.hp, HP_MAX, (220, 60, 60),
@@ -556,6 +560,16 @@ class CreaturePanel:
         self.psyche_header_rect = header_rect
         return header_rect.bottom + 10
 
+    def _draw_genealogy_button(self, screen, x, y, width):
+        rect = pygame.Rect(x, y, width, 26)
+        mouse_pos = pygame.mouse.get_pos()
+        color = MENU_HOVER if rect.collidepoint(mouse_pos) else BUTTON_COLOR
+        pygame.draw.rect(screen, color, rect, border_radius=4)
+        txt = self.font.render(INFO_BTN_GENEALOGY, True, TEXT_COLOR)
+        screen.blit(txt, txt.get_rect(center=rect.center))
+        self.genealogy_btn_rect = rect
+        return rect.bottom + 10
+
 # =========================================================================
 # Панель кладбища конкретно для расы 'Круг'
 # =========================================================================
@@ -572,6 +586,7 @@ class GraveyardPanel:
         self.list_rect = None
         self.details_buttons = {}
         self.details_close_rect = None
+        self.genealogy_buttons = {}
 
         # ---------- Состояние выбора, раньше жившее в Game ----------
         self.selected = None
@@ -642,6 +657,10 @@ class GraveyardPanel:
                 record = self.selected.get_fresh_record(record_id)
                 if record is not None:
                     self.details_record = record
+                return
+        for record_id, btn_rect in self.genealogy_buttons.items():
+            if btn_rect.collidepoint(mouse_x, mouse_y):
+                game.ui.genealogy_overlay.open(record_id)
                 return
 
     def handle_popup_click(self, game, mouse_x, mouse_y):
@@ -722,6 +741,7 @@ class GraveyardPanel:
             empty_txt = self.font.render(INFO_GRAVEYARD_ARCHIVE_EMPTY, True, (180, 180, 180))
             screen.blit(empty_txt, (list_rect.x, list_rect.y))
             self.details_buttons = {}
+            self.genealogy_buttons = {}
             return
 
         content_height = len(gy.archive) * self.ROW_HEIGHT
@@ -732,6 +752,7 @@ class GraveyardPanel:
         screen.set_clip(list_rect)
 
         self.details_buttons = {}
+        self.genealogy_buttons = {}
         mouse_pos = pygame.mouse.get_pos()
 
         for index, entry in enumerate(gy.archive):
@@ -741,17 +762,25 @@ class GraveyardPanel:
 
             fresh_record = gy.get_fresh_record(entry["id"])
             label = INFO_GRAVEYARD_ARCHIVE_ENTRY.format(name=entry["name"], id=entry["id"])
-            max_name_width = list_rect.width - (108 if fresh_record else 0)
+            max_name_width = list_rect.width - (134 if fresh_record else 0)
             name_txt = self.font.render(self._truncate(label, max_name_width), True, TEXT_COLOR)
             screen.blit(name_txt, (list_rect.x, row_y + 4))
 
             if fresh_record:
-                btn_rect = pygame.Rect(list_rect.right - 102, row_y + 2, 102, self.ROW_HEIGHT - 6)
-                btn_color = BUTTON_HOVER if btn_rect.collidepoint(mouse_pos) else BUTTON_COLOR
-                pygame.draw.rect(screen, btn_color, btn_rect, border_radius=4)
-                btn_txt = self.font.render(INFO_GRAVEYARD_DETAILS_BTN, True, TEXT_COLOR)
-                screen.blit(btn_txt, btn_txt.get_rect(center=btn_rect.center))
-                self.details_buttons[entry["id"]] = btn_rect
+                details_rect = pygame.Rect(list_rect.right - 128, row_y + 2, 62, self.ROW_HEIGHT - 6)
+                genealogy_rect = pygame.Rect(list_rect.right - 64, row_y + 2, 62, self.ROW_HEIGHT - 6)
+
+                details_color = BUTTON_HOVER if details_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+                pygame.draw.rect(screen, details_color, details_rect, border_radius=4)
+                details_txt = self.font.render(INFO_GRAVEYARD_DETAILS_BTN, True, TEXT_COLOR)
+                screen.blit(details_txt, details_txt.get_rect(center=details_rect.center))
+                self.details_buttons[entry["id"]] = details_rect
+
+                genealogy_color = BUTTON_HOVER if genealogy_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+                pygame.draw.rect(screen, genealogy_color, genealogy_rect, border_radius=4)
+                genealogy_txt = self.font.render(INFO_BTN_GENEALOGY, True, TEXT_COLOR)
+                screen.blit(genealogy_txt, genealogy_txt.get_rect(center=genealogy_rect.center))
+                self.genealogy_buttons[entry["id"]] = genealogy_rect
 
         screen.set_clip(prev_clip)
 
@@ -814,6 +843,343 @@ class GraveyardPanel:
         close_txt = self.font.render(INFO_GRAVEYARD_DETAILS_CLOSE, True, TEXT_COLOR)
         screen.blit(close_txt, close_txt.get_rect(center=self.details_close_rect.center))
 
+
+# =========================================================================
+# Древо Родословной - модальный оверлей
+# =========================================================================
+
+class GenealogyTreeOverlay:
+
+    def __init__(self, game, font):
+        self.game = game
+        self.font = font
+        self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
+        self.name_font = pygame.font.SysFont(FONT_NAME, 13)
+
+        self.selected = None  # чтобы не попадать в протокол боковой панели существа
+        self.active = False
+        self.root_id = None
+        self.pan_x = 0.0
+        self.pan_y = 0.0
+        self._dragging = False
+        self._drag_last = (0, 0)
+
+        self.panel_rect = pygame.Rect(0, 0, 0, 0)
+        self.close_btn_rect = pygame.Rect(0, 0, 0, 0)
+        self.viewport_rect = pygame.Rect(0, 0, 0, 0)
+        self._node_screen_rects = {}
+
+    # ---------- Протокол, который читают core-файлы обобщённо ----------
+
+    @property
+    def modal_active(self):
+        return self.active
+
+    def clear(self, game):
+        self.close()
+
+    # ---------- Открытие / закрытие ----------
+
+    def open(self, root_id):
+        self.active = True
+        self.root_id = root_id
+        self.pan_x = 0.0
+        self.pan_y = 0.0
+        self._dragging = False
+
+    def close(self):
+        self.active = False
+        self.root_id = None
+        self._dragging = False
+
+    def _registry(self):
+        manager = self.game.object_manager.spawn_managers.get("circle")
+        return manager.genealogy if manager is not None else None
+
+    # ---------- Ввод ----------
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.close()
+            return
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.close_btn_rect.collidepoint(event.pos):
+                self.close()
+                return
+            if self.viewport_rect.collidepoint(event.pos):
+                self._dragging = True
+                self._drag_last = event.pos
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self._dragging = False
+        elif event.type == pygame.MOUSEMOTION and self._dragging:
+            dx = event.pos[0] - self._drag_last[0]
+            dy = event.pos[1] - self._drag_last[1]
+            self.pan_x += dx
+            self.pan_y += dy
+            self._drag_last = event.pos
+
+    # ---------- Построение узлов: предки (бинарно, пост-order) ----------
+
+    def _build_ancestors(self, registry, root_id):
+        nodes = {}
+        edges = []
+        counter = [0]
+
+        def assign(cid, generation):
+            if cid is None or generation > GENEALOGY_MAX_DEPTH:
+                return None
+            rec = registry.get(cid)
+            if rec is None:
+                return None
+            parent_ids = rec["parent_ids"]
+            mother_x = father_x = None
+            if parent_ids and generation < GENEALOGY_MAX_DEPTH:
+                mother_id = parent_ids[0] if len(parent_ids) > 0 else None
+                father_id = parent_ids[1] if len(parent_ids) > 1 else None
+                mother_x = assign(mother_id, generation + 1)
+                father_x = assign(father_id, generation + 1)
+
+            if mother_x is not None and father_x is not None:
+                x = (mother_x + father_x) / 2
+            elif mother_x is not None:
+                x = mother_x
+            elif father_x is not None:
+                x = father_x
+            else:
+                x = float(counter[0])
+                counter[0] += 1
+
+            nodes[cid] = {"id": cid, "generation": -generation, "x": x, "is_root": generation == 0}
+            if mother_x is not None:
+                edges.append((parent_ids[0], cid))
+            if father_x is not None:
+                edges.append((parent_ids[1], cid))
+            return x
+
+        assign(root_id, 0)
+        nodes.pop(root_id, None)
+        return nodes, edges
+
+    # ---------- Построение узлов: потомки (n-арно, пост-order) ----------
+
+    def _build_descendants(self, registry, root_id):
+        nodes = {}
+        edges = []
+        counter = [0]
+
+        def assign(cid, generation):
+            rec = registry.get(cid)
+            if rec is None:
+                return None
+            children = registry.children_of(cid) if generation < GENEALOGY_MAX_DEPTH else []
+            if children:
+                child_xs = []
+                for child_id in children:
+                    cx = assign(child_id, generation + 1)
+                    if cx is not None:
+                        child_xs.append(cx)
+                        edges.append((cid, child_id))
+                x = sum(child_xs) / len(child_xs) if child_xs else float(counter[0])
+                if not child_xs:
+                    counter[0] += 1
+            else:
+                x = float(counter[0])
+                counter[0] += 1
+
+            if generation > 0:
+                nodes[cid] = {"id": cid, "generation": generation, "x": x, "is_root": False}
+            return x
+
+        assign(root_id, 0)
+        return nodes, edges
+
+    # ---------- Партнёр: только текущий/последний известный, без своей ветки ----------
+
+    def _display_partner_id(self, registry, creature_id):
+        live = next((c for c in self.game.world.creatures
+                     if c.id == creature_id and not c.is_dead), None)
+        if live is not None and live.partner_id is not None:
+            return live.partner_id
+        partners = registry.partners_of(creature_id)
+        return partners[-1] if partners else None
+
+    # ---------- Итоговая сборка + центрирование относительно корня ----------
+
+    def _build_layout(self):
+        registry = self._registry()
+        if registry is None or self.root_id is None or registry.get(self.root_id) is None:
+            return [], [], (0, 0, 0, 0)
+
+        ancestor_nodes, ancestor_edges = self._build_ancestors(registry, self.root_id)
+        descendant_nodes, descendant_edges = self._build_descendants(registry, self.root_id)
+
+        root_rec = registry.get(self.root_id)
+        parent_ids = root_rec["parent_ids"] or []
+        direct_parent_xs = [ancestor_nodes[pid]["x"] for pid in parent_ids
+                            if pid is not None and pid in ancestor_nodes]
+        if direct_parent_xs:
+            shift = -sum(direct_parent_xs) / len(direct_parent_xs)
+            for node in ancestor_nodes.values():
+                node["x"] += shift
+
+        direct_children_ids = registry.children_of(self.root_id)
+        direct_child_xs = [descendant_nodes[cid]["x"] for cid in direct_children_ids
+                           if cid in descendant_nodes]
+        if direct_child_xs:
+            shift = -sum(direct_child_xs) / len(direct_child_xs)
+            for node in descendant_nodes.values():
+                node["x"] += shift
+
+        all_nodes = {self.root_id: {"id": self.root_id, "generation": 0, "x": 0.0, "is_root": True}}
+        all_nodes.update(ancestor_nodes)
+        all_nodes.update(descendant_nodes)
+        all_edges = [(a, b, "blood") for a, b in ancestor_edges + descendant_edges]
+
+        for node in list(all_nodes.values()):
+            partner_id = self._display_partner_id(registry, node["id"])
+            if partner_id is None or partner_id in all_nodes or registry.get(partner_id) is None:
+                continue
+            key = partner_id + "::partner_of::" + node["id"]
+            all_nodes[key] = {
+                "id": partner_id, "generation": node["generation"],
+                "x": node["x"] + GENEALOGY_PARTNER_OFFSET / GENEALOGY_SLOT_WIDTH,
+                "is_root": False,
+            }
+            all_edges.append((node["id"], partner_id, "partner"))
+
+        nodes_list = list(all_nodes.values())
+        if not nodes_list:
+            bbox = (0, 0, 0, 0)
+        else:
+            xs = [n["x"] for n in nodes_list]
+            gens = [n["generation"] for n in nodes_list]
+            bbox = (min(xs), max(xs), min(gens), max(gens))
+        return nodes_list, all_edges, bbox
+
+    # ---------- Отрисовка ----------
+
+    def _screen_pos(self, node, center_x, center_y):
+        sx = center_x + node["x"] * GENEALOGY_SLOT_WIDTH + self.pan_x
+        sy = center_y + node["generation"] * GENEALOGY_ROW_HEIGHT + self.pan_y
+        return sx, sy
+
+    def draw(self, screen):
+        window_w, window_h = screen.get_width(), screen.get_height()
+        overlay = pygame.Surface((window_w, window_h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, SETTINGS_OVERLAY_ALPHA))
+        screen.blit(overlay, (0, 0))
+
+        width = min(GENEALOGY_PANEL_WIDTH, window_w - 40)
+        height = min(GENEALOGY_PANEL_HEIGHT, window_h - 40)
+        self.panel_rect = pygame.Rect((window_w - width) // 2, (window_h - height) // 2, width, height)
+        panel = self.panel_rect
+        pygame.draw.rect(screen, SETTINGS_PANEL_BG, panel)
+        pygame.draw.rect(screen, SETTINGS_PANEL_BORDER, panel, 2)
+
+        registry = self._registry()
+        root_rec = registry.get(self.root_id) if registry else None
+        root_name = (root_rec["name"] if root_rec and root_rec["name"] else self.root_id) if root_rec else "?"
+        title_txt = self.title_font.render(INFO_GENEALOGY_TITLE.format(name=root_name), True, WORLD_SCREEN_TEXT)
+        screen.blit(title_txt, (panel.x + 16, panel.y + 12))
+
+        viewport_top = panel.y + 14 + title_txt.get_height() + 10
+        self.viewport_rect = pygame.Rect(panel.x + 10, viewport_top, panel.width - 20,
+                                         panel.bottom - 56 - viewport_top)
+        pygame.draw.rect(screen, (20, 20, 20), self.viewport_rect)
+
+        nodes, edges, bbox = self._build_layout()
+
+        content_fits = True
+        if nodes:
+            min_x, max_x, min_gen, max_gen = bbox
+            content_w = (max_x - min_x) * GENEALOGY_SLOT_WIDTH + GENEALOGY_NODE_RADIUS * 4
+            content_h = (max_gen - min_gen) * GENEALOGY_ROW_HEIGHT + GENEALOGY_NODE_RADIUS * 4
+            content_fits = content_w <= self.viewport_rect.width and content_h <= self.viewport_rect.height
+        if content_fits:
+            self.pan_x = 0.0
+            self.pan_y = 0.0
+
+        prev_clip = screen.get_clip()
+        screen.set_clip(self.viewport_rect)
+
+        center_x, center_y = self.viewport_rect.centerx, self.viewport_rect.centery
+        by_id = {}
+        for node in nodes:
+            by_id.setdefault(node["id"], node)
+
+        for a_id, b_id, kind in edges:
+            node_a, node_b = by_id.get(a_id), by_id.get(b_id)
+            if node_a is None or node_b is None:
+                continue
+            pa = self._screen_pos(node_a, center_x, center_y)
+            pb = self._screen_pos(node_b, center_x, center_y)
+            color = GENEALOGY_PARTNER_LINE_COLOR if kind == "partner" else GENEALOGY_LINE_COLOR
+            pygame.draw.line(screen, color, pa, pb, 2)
+
+        self._node_screen_rects = {}
+        for node in nodes:
+            sx, sy = self._screen_pos(node, center_x, center_y)
+            self._draw_node(screen, registry, node, sx, sy)
+
+        screen.set_clip(prev_clip)
+        self._draw_offscreen_indicator(screen)
+
+        self.close_btn_rect = pygame.Rect(panel.right - 12 - 130, panel.bottom - 12 - 34, 130, 34)
+        mouse_pos = pygame.mouse.get_pos()
+        close_color = CLOSE_BUTTON_HOVER if self.close_btn_rect.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        pygame.draw.rect(screen, close_color, self.close_btn_rect, border_radius=4)
+        close_txt = self.font.render(INFO_GENEALOGY_CLOSE, True, TEXT_COLOR)
+        screen.blit(close_txt, close_txt.get_rect(center=self.close_btn_rect.center))
+
+    def _draw_node(self, screen, registry, node, sx, sy):
+        rec = registry.get(node["id"]) if registry else None
+        gender = rec["gender"] if rec else None
+        is_dead = rec["is_dead"] if rec else False
+        name = (rec["name"] if rec and rec["name"] else node["id"]) if rec else INFO_GENEALOGY_UNKNOWN
+
+        color = CREATURE_COLOR_FEMALE if gender == GENDER_FEMALE else CREATURE_COLOR_MALE
+        radius = GENEALOGY_NODE_RADIUS
+
+        if node.get("is_root"):
+            pygame.draw.circle(screen, GENEALOGY_ROOT_RING_COLOR, (int(sx), int(sy)), radius + 5, 3)
+
+        if is_dead:
+            cross_x = sx - radius - 10
+            half = 5
+            pygame.draw.line(screen, GENEALOGY_CROSS_COLOR,
+                             (cross_x - half, sy - half), (cross_x + half, sy + half), 2)
+            pygame.draw.line(screen, GENEALOGY_CROSS_COLOR,
+                             (cross_x - half, sy + half), (cross_x + half, sy - half), 2)
+
+        pygame.draw.circle(screen, color, (int(sx), int(sy)), radius)
+        pygame.draw.circle(screen, (20, 20, 20), (int(sx), int(sy)), radius, 2)
+
+        name_txt = self.name_font.render(name, True, WORLD_SCREEN_TEXT)
+        screen.blit(name_txt, name_txt.get_rect(center=(int(sx), int(sy) + radius + 12)))
+
+        self._node_screen_rects[node["id"]] = pygame.Rect(
+            int(sx - radius), int(sy - radius), radius * 2, radius * 2)
+
+    def _draw_offscreen_indicator(self, screen):
+        if self.root_id not in self._node_screen_rects:
+            return
+        root_rect = self._node_screen_rects[self.root_id]
+        vp = self.viewport_rect
+        if vp.colliderect(root_rect):
+            return
+        cx, cy = vp.centerx, vp.centery
+        rx, ry = root_rect.centerx, root_rect.centery
+        dx, dy = rx - cx, ry - cy
+        dist = math.hypot(dx, dy)
+        if dist == 0:
+            return
+        dx, dy = dx / dist, dy / dist
+        edge_x = max(vp.left + 16, min(vp.right - 16, cx + dx * (vp.width // 2 - 20)))
+        edge_y = max(vp.top + 16, min(vp.bottom - 16, cy + dy * (vp.height // 2 - 20)))
+        tip = (edge_x + dx * 12, edge_y + dy * 12)
+        left = (edge_x - dy * 8, edge_y + dx * 8)
+        right = (edge_x + dy * 8, edge_y - dx * 8)
+        pygame.draw.polygon(screen, GENEALOGY_ROOT_RING_COLOR, [tip, left, right])
 
 # =========================================================================
 # Расширение ObjectPanel (ядровое, core ui.py) строками для объектов

@@ -32,10 +32,11 @@ class CircleTickProcessor:
         self.game = game
 
     def process(self, ctx):
+        genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
         race_creatures = self._race_creatures()
 
-        corpses_to_remove = self._process_corpses(ctx.dt, race_creatures)
-        ready_for_interact = self._process_living_creatures(ctx, race_creatures)
+        corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
+        ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
 
         self._run_interactions(ctx.dt, ready_for_interact)
         self._cleanup_removed_corpses(corpses_to_remove)
@@ -52,7 +53,7 @@ class CircleTickProcessor:
     # Домен: обработка мёртвых существ (переноска трупа/захоронение/истечение таймера)
     # =====================================================================
 
-    def _process_corpses(self, dt, race_creatures):
+    def _process_corpses(self, dt, race_creatures, genealogy):
         game = self.game
         world = game.world
         corpses_to_remove = []
@@ -61,6 +62,7 @@ class CircleTickProcessor:
             if not creature.is_dead:
                 continue
 
+            genealogy.mark_dead(creature.id, creature)
             if creature.being_carried_by is not None:
                 # ---------- Носильщик ищется среди своей же расы: труп Круга
                 # физически переносит только другой Круг. ----------
@@ -92,7 +94,7 @@ class CircleTickProcessor:
     # Домен: обработка живых существ - нужды, взросление, роды, решение и движение
     # =====================================================================
 
-    def _process_living_creatures(self, ctx, race_creatures):
+    def _process_living_creatures(self, ctx, race_creatures, genealogy):
         game = self.game
         world = game.world
         ready_for_interact = []
@@ -100,6 +102,11 @@ class CircleTickProcessor:
         for creature in race_creatures:
             if creature.is_dead:
                 continue
+
+            genealogy.register_creature(creature)
+            genealogy.update_name(creature.id, creature.name)
+            if creature.partner_id is not None:
+                genealogy.register_pair(creature.id, creature.partner_id)
 
             creature.update_needs(ctx.dt, world.creatures, biome_grid=game.biome_manager.grid)
             if creature.is_dead:

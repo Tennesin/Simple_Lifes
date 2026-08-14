@@ -1009,6 +1009,12 @@ class UIManager:
                 panel.rebuild_layout(window_w, window_h)
         self.minimap.rebuild_layout(window_w, window_h)
 
+    def active_modal_panel(self):
+        for _spec, panel in self._secondary_panels.values():
+            if getattr(panel, "modal_active", False):
+                return panel
+        return None
+
     # ---------- Оркестрация отрисовки ----------
 
     def draw(self, screen):
@@ -1040,6 +1046,10 @@ class UIManager:
         for _spec, panel in self._secondary_panels.values():
             if getattr(panel, "popup_active", False):
                 panel.draw_popup(screen)
+
+        for _spec, panel in self._secondary_panels.values():
+            if getattr(panel, "modal_active", False):
+                panel.draw(screen)
 
     # ---------- Ручка сворачивания правой панели ----------
 

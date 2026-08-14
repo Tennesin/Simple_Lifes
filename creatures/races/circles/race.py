@@ -21,9 +21,12 @@ from .ci_settings import GRAVEYARD_DEFAULT_SIZE, CHILD_ROAD_COLOR_PENDING
 from .circle_objects import ChildRoad, StorageField, ConstructionSite, Graveyard
 
 from .mechanics.tick import CircleTickProcessor, tick_circle_world
-from .mechanics.creature_lifecycle import CircleSpawnManager, circle_spawn_dispatch
+from .mechanics.creature_lifecycle import (
+    CircleSpawnManager, circle_spawn_dispatch,
+    save_circle_genealogy, load_circle_genealogy,
+)
 from .mechanics.panel import (
-    CreaturePanel, GraveyardPanel, circle_object_panel_extra_lines,
+    CreaturePanel, GraveyardPanel, GenealogyTreeOverlay, circle_object_panel_extra_lines,
 )
 from .mechanics.creature_lifecycle import load_creature_from_state as load_circle_creature
 from .mechanics.render import (
@@ -92,6 +95,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
     object_panel_extra_fn=circle_object_panel_extra_lines,
     secondary_panel_specs=(
         SecondaryPanelSpec(attr_name="graveyard_panel", panel_cls=GraveyardPanel),
+        SecondaryPanelSpec(attr_name="genealogy_overlay", panel_cls=GenealogyTreeOverlay),
     ),
     landmark_specs=(
         LandmarkSpec(type_name="storage", attr="storage_fields"),
@@ -102,6 +106,8 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ExtraObjectCollectionSpec(attr="graveyards", on_delete=on_delete_graveyard),
         ExtraObjectCollectionSpec(attr="construction_sites", on_delete=on_delete_construction_site),
     ),
+    extra_world_save_fn=save_circle_genealogy,
+    extra_world_load_fn=load_circle_genealogy,
     biome_cascade_specs=(
         BiomeCascadeSpec(attr="graveyards", clear_on_flood=True, on_removed=on_delete_graveyard),
         BiomeCascadeSpec(attr="storage_fields", clear_on_flood=True, on_removed=on_delete_storage_field),

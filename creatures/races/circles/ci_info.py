@@ -28,6 +28,10 @@ INFO_GRAVEYARD_DETAILS_AGE = "Возраст на момент смерти: {ag
 INFO_GRAVEYARD_DETAILS_CAUSE = "Причина смерти: {cause}"
 INFO_GRAVEYARD_DETAILS_TIME_LEFT = "Подробности исчезнут через: {time}"
 INFO_GRAVEYARD_DETAILS_CLOSE = "Закрыть"
+INFO_BTN_GENEALOGY = "Геном"
+INFO_GENEALOGY_TITLE = "Древо Родословной: {name}"
+INFO_GENEALOGY_CLOSE = "Закрыть"
+INFO_GENEALOGY_UNKNOWN = "?"
 
 # --------------------- Тип существа ---------------------
 INFO_CREATURE_KIND = "Круг"

@@ -127,6 +127,9 @@ class RaceDescriptor:
 
     # ---------- Новое: тик "неживых" объектов расы (не существ) ----------
     world_tick_fn: Optional[Callable] = None  # (game, dt) -> None
+    # ---------- Дополнительное сохранение/загрузка мира, специфичное для расы ----------
+    extra_world_save_fn: Optional[Callable] = None  # (game) -> None
+    extra_world_load_fn: Optional[Callable] = None  # (game) -> None
 
     # ---------- Новое: генерализация ui.py ----------
     player_tools: Tuple[PlayerToolSpec, ...] = field(default_factory=tuple)
@@ -239,3 +242,9 @@ def all_biome_cascade_specs() -> Tuple[BiomeCascadeSpec, ...]:
     for descriptor in all_races():
         result.extend(descriptor.biome_cascade_specs)
     return tuple(result)
+
+def all_extra_world_save_fns() -> Tuple[Callable, ...]:
+    return tuple(d.extra_world_save_fn for d in all_races() if d.extra_world_save_fn is not None)
+
+def all_extra_world_load_fns() -> Tuple[Callable, ...]:
+    return tuple(d.extra_world_load_fn for d in all_races() if d.extra_world_load_fn is not None)

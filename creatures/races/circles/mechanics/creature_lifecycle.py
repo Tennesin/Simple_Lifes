@@ -9,6 +9,7 @@ from settings import *
 from ..ci_settings import *
 from ..creature import Creature
 from ..life_cycle import CreatureAging
+from ..genealogy import GenealogyRegistry
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -21,6 +22,7 @@ def circle_spawn_dispatch(object_manager, wx, wy, placement_mode):
 class CircleSpawnManager:
     def __init__(self, game):
         self.game = game
+        self.genealogy = GenealogyRegistry()
 
     def create_creature_at(self, wx, wy, gender):
         game = self.game
@@ -196,3 +198,21 @@ def load_creature_from_state(state):
     _load_creature_puberty(creature, state)
     _load_creature_psyche(creature, state)
     return creature
+
+# =========================================================================
+# Домен: постоянная память о родословной (реестр 'Геном') - живёт дольше
+# отдельных Creature, поэтому хранится и грузится отдельным файлом мира.
+# =========================================================================
+
+def save_circle_genealogy(game):
+    manager = game.object_manager.spawn_managers.get("circle")
+    if manager is not None and game.world_path:
+        manager.genealogy.save(game.world_path)
+
+
+def load_circle_genealogy(game):
+    manager = game.object_manager.spawn_managers.get("circle")
+    if manager is not None:
+        manager.genealogy = GenealogyRegistry()
+        if game.world_path:
+            manager.genealogy.load(game.world_path)

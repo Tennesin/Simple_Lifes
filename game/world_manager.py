@@ -5,7 +5,7 @@ import pygame
 import random
 
 from settings import *
-from game.race_registry import get_race, all_races
+from game.race_registry import get_race, all_races, all_extra_world_save_fns, all_extra_world_load_fns
 from info import *
 from player import Player
 from objects import (
@@ -309,6 +309,8 @@ class WorldManager:
         game.world_path = world_path
         game.world_seed = world_seed
         game.world.reset()
+        for fn in all_extra_world_load_fns():
+            fn(game)
         game.clear_secondary_selections()
         game.resize_for_world(world_width, world_height)
         game.placement_mode = None
@@ -383,10 +385,11 @@ class WorldManager:
             items = getattr(game.world, attr)
             with open(os.path.join(game.world_path, filename), "w", encoding="utf-8") as f:
                 json.dump([obj.to_dict() for obj in items], f, indent=2)
-
         if game.biome_manager.grid is not None:
             with open(os.path.join(game.world_path, "biome.json"), "w", encoding="utf-8") as f:
                 json.dump(game.biome_manager.to_dict(), f)
+        for fn in all_extra_world_save_fns():
+            fn(game)
 
     def save_world_manual(self):
         game = self.game

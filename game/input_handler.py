@@ -514,6 +514,9 @@ class _MouseDownMixin:
             elif panel.psyche_header_rect and panel.psyche_header_rect.collidepoint(mouse_x, mouse_y):
                 game.finish_name_editing()
                 panel.show_psyche_section = not panel.show_psyche_section
+            elif panel.genealogy_btn_rect and panel.genealogy_btn_rect.collidepoint(mouse_x, mouse_y):
+                game.finish_name_editing()
+                game.ui.genealogy_overlay.open(game.selected_creature.id)
             else:
                 game.finish_name_editing()
 
@@ -947,6 +950,8 @@ class InputHandler(_KeyboardMixin, _CrashScreenMixin, _BiomePaintingMixin, _Menu
                 self._handle_load_world_event(event)
             elif self.game.settings_screen is not None:
                 self._handle_settings_event(event)
+            elif self.game.ui.active_modal_panel() is not None:
+                self.game.ui.active_modal_panel().handle_event(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 self._handle_mouse_down(event)
             elif event.type == pygame.MOUSEBUTTONUP:
