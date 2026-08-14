@@ -3,7 +3,7 @@ import math
 import pygame
 
 from player import Player
-from objects import Road, Wall, Fence
+from objects import Wall, Fence
 from settings import *
 from game.race_registry import creature_placement_lookup, all_secondary_panel_specs, all_road_networks
 from creatures.all_needed.base_entity import LivingEntity
@@ -504,28 +504,11 @@ class _MouseDownMixin:
 
         elif (game.world_loaded and not game.right_panel_collapsed and game.selected_creature
               and ui.info_panel_rect.collidepoint(mouse_x, mouse_y)):
-            panel = ui.creature_panel
-            if ui.name_field_rect.collidepoint(mouse_x, mouse_y):
-                game.start_name_editing()
-            elif panel.relationships_header_rect and panel.relationships_header_rect.collidepoint(mouse_x, mouse_y):
-                game.finish_name_editing()
-                panel.show_relationships_section = not panel.show_relationships_section
-                panel.relationships_scroll_offset = 0
-            elif panel.psyche_header_rect and panel.psyche_header_rect.collidepoint(mouse_x, mouse_y):
-                game.finish_name_editing()
-                panel.show_psyche_section = not panel.show_psyche_section
-            elif panel.genealogy_btn_rect and panel.genealogy_btn_rect.collidepoint(mouse_x, mouse_y):
-                game.finish_name_editing()
-                game.ui.genealogy_overlay.open(game.selected_creature.id)
-            else:
-                game.finish_name_editing()
-
+            ui.creature_panel.handle_info_panel_click(game, mouse_x, mouse_y)
 
         elif (game.world_loaded and not game.right_panel_collapsed and game.selected_creature
-              and ui.creature_panel.show_psyche_section and ui.creature_panel.psyche_panel_rect
-              and ui.creature_panel.psyche_panel_rect.collidepoint(mouse_x, mouse_y)):
+              and ui.creature_panel.is_point_in_extra_panel(mouse_x, mouse_y)):
             self._handle_stat_bar_click(mouse_x, mouse_y)
-
 
         elif game.world_loaded and self._handle_secondary_popup_click(mouse_x, mouse_y):
             pass

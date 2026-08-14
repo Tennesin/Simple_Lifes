@@ -95,6 +95,31 @@ class CreaturePanel:
             self.relationships_scroll_offset = 0
             self.show_psyche_section = False
 
+    def handle_info_panel_click(self, game, mouse_x, mouse_y):
+        """Клик внутри info_panel_rect выбранного существа этой расы."""
+        if self.name_field_rect.collidepoint(mouse_x, mouse_y):
+            game.start_name_editing()
+            return True
+        if self.relationships_header_rect and self.relationships_header_rect.collidepoint(mouse_x, mouse_y):
+            game.finish_name_editing()
+            self.show_relationships_section = not self.show_relationships_section
+            self.relationships_scroll_offset = 0
+            return True
+        if self.psyche_header_rect and self.psyche_header_rect.collidepoint(mouse_x, mouse_y):
+            game.finish_name_editing()
+            self.show_psyche_section = not self.show_psyche_section
+            return True
+        if self.genealogy_btn_rect and self.genealogy_btn_rect.collidepoint(mouse_x, mouse_y):
+            game.finish_name_editing()
+            game.ui.genealogy_overlay.open(game.selected_creature.id)
+            return True
+        game.finish_name_editing()
+        return True
+
+    def is_point_in_extra_panel(self, mouse_x, mouse_y):
+        return bool(self.show_psyche_section and self.psyche_panel_rect
+                    and self.psyche_panel_rect.collidepoint(mouse_x, mouse_y))
+
     def _draw_stat_bar(self, screen, label, value, max_value, color, x, y, width, stat_key=None):
         label_txt = self.font.render(f"{label}: {value:.1f}/{max_value}", True, TEXT_COLOR)
         screen.blit(label_txt, (x, y))

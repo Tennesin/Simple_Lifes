@@ -2,7 +2,6 @@
 
 import json
 import os
-from ..genealogy import GenealogyRegistry
 
 class GenealogyRegistry:
 
