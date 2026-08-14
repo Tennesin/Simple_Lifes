@@ -5,6 +5,7 @@ import math
 from ..ci_settings import *
 from ..circle_objects import ConstructionSite
 from .circles_adult_patterns import Storage, Construction
+from ....all_needed.ai.utility import Consideration
 
 
 def same_household(creature, owner_id, other_creatures=None):
@@ -38,9 +39,7 @@ class PrivateStorage(Storage):
         return None
 
     def consider(self, ctx):
-        if self.instincts.nearest_known_campfire() is None:
-            return [None]
-        if self._owned_field(ctx) is None:
+        if self.instincts.nearest_known_campfire() is None or self._owned_field(ctx) is None:
             return [None]
         return [Consideration("storage", self.SCORE, lambda: self._pursue(ctx))]
 
@@ -56,14 +55,10 @@ class PrivateStorage(Storage):
 class PrivateConstruction(Construction):
     """Construction rules with explicit ownership for storage sites."""
 
-    def _storage_site_owner(self, site):
-        return getattr(site, "storage_owner_id", None)
-
     def _site_belongs_to(self, site, ctx):
         if site.build_type != "storage":
             return True
-        owner_id = self._storage_site_owner(site)
-        return same_household(self.c, owner_id, ctx.other_creatures)
+        return same_household(self.c, getattr(site, "storage_owner_id", None), ctx.other_creatures)
 
     def _determine_need(self, campfire_pos, ctx):
         c = self.c
@@ -114,9 +109,6 @@ class PrivateConstruction(Construction):
 
     def _find_orphaned_site(self, ctx):
         c = self.c
-        if not ctx.construction_sites:
-            return None
-
         storage_candidates = [s for s in ctx.construction_sites
                               if s.build_type == "storage"
                               and self._site_belongs_to(s, ctx)
@@ -124,11 +116,10 @@ class PrivateConstruction(Construction):
                                   < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR]
         if storage_candidates:
             return min(storage_candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
-
         return super()._find_orphaned_site(ctx)
 
 
-# Persist the storage-site owner in worlds saved after this fix.
+# Persist ownership for unfinished construction sites.
 _original_site_to_dict = ConstructionSite.to_dict
 _original_site_from_dict = ConstructionSite.from_dict
 
@@ -150,25 +141,3 @@ def _site_from_dict(data):
 
 ConstructionSite.to_dict = _site_to_dict
 ConstructionSite.from_dict = _site_from_dict
-
-
-# AdultAI is loaded before this module via ai/__init__.py.
-from .adult_ai import AdultAI
-from ....all_needed.ai.utility import Consideration
-
-_original_adult_init = AdultAI.__init__
-
-
-def _adult_init_with_private_storage(self, creature, instincts):
-    _original_adult_init(self, creature, instincts)
-    self.storage = PrivateStorage(creature, instincts, self.actions)
-    self.construction = PrivateConstruction(creature, instincts)
-    self.components = [
-        self.survival, self.corpse_handling, self.empathy, self.feeding,
-        self.social_response, self.territory, self.puberty, self.partner_bond,
-        self.storage, self.construction, self.roads,
-        self.child_road_verification, self.curiosity,
-    ]
-
-
-AdultAI.__init__ = _adult_init_with_private_storage
