@@ -93,11 +93,6 @@ class BiomeCascadeSpec:
     clear_on_desert: bool = False
     on_removed: Optional[Callable] = None  # (game, obj) -> None
 
-# ---------- Core-сеть дорог — не расовая, но по форме идентична расовым ----------
-    CORE_ROAD_NETWORK = RoadNetworkSpec(
-    obj_type="road", road_collection="roads", crossing_collection="road_crossings",
-    road_cls=Road, preview_color=(255, 255, 255))
-
 def all_road_networks() -> Tuple[RoadNetworkSpec, ...]:
     result = [CORE_ROAD_NETWORK]
     for descriptor in all_races():

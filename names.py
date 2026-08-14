@@ -1,6 +1,7 @@
 import random
 
 MALE_NAMES = [
+    # Оригинальный список
     "Liam", "Noah", "Oliver", "Elijah", "James", "William", "Benjamin", "Lucas",
     "Henry", "Alexander", "Daniel", "Matthew", "Jackson", "Sebastian", "Jack", "Owen",
     "Samuel", "Wyatt", "John", "David", "Leo", "Julian", "Hudson", "Ezra",
@@ -18,9 +19,24 @@ MALE_NAMES = [
     "Bastian", "Erik", "Anders", "Bjorn", "Magnus", "Sven", "Gunnar", "Oskar",
     "Finn", "Rowan", "Callum", "Declan", "Cormac", "Fintan", "Tadhg", "Cian",
     "Aidan", "Cyrus", "Darius", "Kian", "Arash", "Farid",
+    # Новые добавления
+    "Ethan", "Mason", "Logan", "Jacob", "Levi", "Wyatt", "Maverick", "Josiah",
+    "Lincoln", "Jaxon", "Asher", "Greyson", "Isaiah", "Ezekiel", "Colton", "Landon",
+    "Gavin", "Everett", "Jasper", "Silas", "Wesley", "Micah", "Sawyer", "Weston",
+    "Arthur", "Maximilian", "Tristan", "Dominic", "Vincent", "Harrison", "Zachary", "Nathaniel",
+    "Maxim", "Artem", "Danil", "Kirill", "Ilya", "Denis", "Georgy", "Timofey",
+    "Yury", "Gennady", "Stanislav", "Vadim", "Rayan", "Hamza", "Bilal", "Ibrahim",
+    "Mustafa", "Ali", "Sami", "Farhan", "Zayn", "Idris", "Kaelen", "Kofi",
+    "Tunde", "Zuberi", "Kenzo", "Sho", "Ryota", "Kazuki", "Kaito", "Shin",
+    "Yamato", "Isamu", "Joaquin", "Thiago", "Javier", "Rodrigo", "Carlos", "Esteban",
+    "Andres", "Felipe", "Gonzalo", "Ignacio", "Leonardo", "Stefano", "Pietro", "Riccardo",
+    "Filippo", "Giacomo", "Luigi", "Andrea", "Moritz", "Leon", "Niklas", "Jan", "Lennard",
+    "Henrik", "Soren", "Einar", "Stian", "Ronan", "Killian", "Cillian", "Oran", "Rory",
+    "Sora", "Arman", "Kaveh", "Ramin", "Sohrab", "Nima", "Emin", "Alparslan"
 ]
 
 FEMALE_NAMES = [
+    # Оригинальный список
     "Olivia", "Emma", "Ava", "Sophia", "Isabella", "Mia", "Charlotte", "Amelia",
     "Harper", "Evelyn", "Abigail", "Emily", "Elizabeth", "Sofia", "Avery", "Ella",
     "Scarlett", "Grace", "Chloe", "Victoria", "Riley", "Aria", "Lily", "Aurora",
@@ -36,6 +52,19 @@ FEMALE_NAMES = [
     "Karin", "Elsa", "Liv", "Saga", "Maja", "Siobhan", "Niamh", "Aoife",
     "Ciara", "Maeve", "Roisin", "Fiona", "Deirdre", "Bridget", "Selene", "Athena",
     "Daphne", "Iris", "Calliope", "Thalia",
+    # Новые добавления
+    "Mila", "Aria", "Ellie", "Samantha", "Maya", "Willow", "Kinsley", "Naomi",
+    "Aaliyah", "Elena", "Sarah", "Ariana", "Allison", "Madelyn", "Alice", "Hailey",
+    "Eva", "Clara", "Vivian", "Eliana", "Lyla", "Ruby", "Serenity", "Ivy",
+    "Piper", "Lydia", "Celia", "Genevieve", "Adeline", "Evangeline", "Rosalie", "Adelaide",
+    "Polina", "Daria", "Marina", "Kira", "Ekaterina", "Alisa", "Milana", "Diana",
+    "Yana", "Inna", "Mariam", "Lina", "Farida", "Salma", "Rania", "Habiba",
+    "Nour", "Safa", "Zahra", "Halia", "Imani", "Ayanna", "Keisha", "Esi",
+    "Koharu", "Nanami", "Akari", "Misaki", "Hinata", "Emi", "Asuka", "Kazumi",
+    "Sofia", "Ximena", "Martina", "Catalina", "Adriana", "Renata", "Paloma", "Guadalupe",
+    "Giada", "Giorgia", "Alice", "Livia", "Gemma", "Matilde", "Lina", "Marlene",
+    "Luise", "Johanna", "Annika", "Ebba", "Hedda", "Ronja", "Linnea", "Freja",
+    "Saoirse", "Orla", "Eimear", "Grainne", "Cassandra", "Hebe", "Clio", "Althea"
 ]
 
 DEFAULT_NAME_POOLS = {
