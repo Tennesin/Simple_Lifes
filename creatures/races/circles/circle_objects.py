@@ -15,13 +15,14 @@ from .ci_info import (
 from ...all_needed import geometry
 
 class StorageField:
-    def __init__(self, x, y, owner_campfire_pos=None):
+    def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None):
         self.x = x
         self.y = y
         self.radius = STORAGE_FIELD_RADIUS
         self.fruits = 0
         self.water = 0
         self.built_by = None
+        self.owner_ids = set(owner_ids) if owner_ids else set()
         self.campfire_pos = owner_campfire_pos
         self.created = time.time()
         self.id = str(uuid.uuid4())[:8]
@@ -34,6 +35,36 @@ class StorageField:
 
     def has_space_for_water(self):
         return self.water < STORAGE_FIELD_MAX_WATER
+
+    def is_public(self):
+        return not self.owner_ids
+
+    def grants_full_access(self, creature, other_creatures=None):
+        if self.is_public():
+            return True
+        if creature.id in self.owner_ids:
+            return True
+        for owner_id in self.owner_ids:
+            if creature.partner_id == owner_id:
+                return True
+            if (creature.life_stage == LIFE_STAGE_CHILD and creature.parent_ids
+                    and owner_id in creature.parent_ids):
+                return True
+        if creature.life_stage == LIFE_STAGE_CHILD and other_creatures is not None:
+            for owner_id in self.owner_ids:
+                owner = next((o for o in other_creatures if o.id == owner_id), None)
+                if owner is not None and not owner.is_dead and owner.life_stage == LIFE_STAGE_OLD:
+                    return True
+        return False
+
+    def punish_theft(self, thief, other_creatures):
+        """Кража воспринимается владельцами очень болезненно."""
+        if not other_creatures:
+            return
+        for owner_id in self.owner_ids:
+            owner = next((o for o in other_creatures if o.id == owner_id), None)
+            if owner is not None and not owner.is_dead:
+                owner.social.adjust_relationship(thief, STORAGE_THEFT_RELATIONSHIP_PENALTY)
 
     def is_owned_by_campfire(self, campfire_pos, tolerance=10):
         if self.campfire_pos is None:
@@ -52,6 +83,7 @@ class StorageField:
             "x": self.x, "y": self.y,
             "fruits": self.fruits, "water": self.water,
             "built_by": self.built_by,
+            "owner_ids": list(self.owner_ids),
             "campfire_pos": list(self.campfire_pos) if self.campfire_pos else None,
             "created": self.created,
             "id": self.id,
@@ -59,9 +91,15 @@ class StorageField:
 
     @staticmethod
     def from_dict(data):
+        owner_ids = data.get("owner_ids")
+        if owner_ids is None:
+            # ---------- Миграция старых сохранений: единственный известный строитель становится владельцем ----------
+            legacy_builder = data.get("built_by")
+            owner_ids = [legacy_builder] if legacy_builder else []
         field = StorageField(
             data["x"], data["y"],
-            owner_campfire_pos=tuple(data["campfire_pos"]) if data.get("campfire_pos") else None
+            owner_campfire_pos=tuple(data["campfire_pos"]) if data.get("campfire_pos") else None,
+            owner_ids=owner_ids,
         )
         field.fruits = data.get("fruits", 0)
         field.water = data.get("water", 0)
@@ -69,7 +107,6 @@ class StorageField:
         field.created = data.get("created", time.time())
         field.id = data.get("id", field.id)
         return field
-
 
 class Graveyard:
     def __init__(self, x, y, name=None, graveyard_id=None):
@@ -158,8 +195,9 @@ class ConstructionSite:
         self.deposited_stone = 0
         self.build_progress = 0.0
         self.is_building = False
-        self.builder_ids = set()          # кто сейчас физически строит (для кооперации/ускорения)
-        self.campfire_pos = campfire_pos  # для склада - привязка к "своему" костру
+        self.builder_ids = set()
+        self.contributor_ids = set()
+        self.campfire_pos = campfire_pos
         self.created = time.time()
 
     def get_type_name(self):

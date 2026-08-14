@@ -136,7 +136,7 @@ class CreatureFamily:
         self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
         self.birth_cooldown = 0.0
 
-    def update(self, dt, other_creatures, creatures_by_id=None):
+    def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None):
         c = self.c
         if c.is_dead or c.is_grabbed:
             return None
@@ -151,7 +151,7 @@ class CreatureFamily:
         if (c.partner_id is None and c.life_stage == LIFE_STAGE_ADULT
                 and self.pair_check_timer <= 0):
             self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
-            self._try_form_pair(other_creatures)
+            self._try_form_pair(other_creatures, storage_fields)
             if c.partner_id is not None and (partner is None or partner.id != c.partner_id):
                 partner = self._find_partner(other_creatures, c.partner_id, creatures_by_id)
 
@@ -216,7 +216,7 @@ class CreatureFamily:
 
     # ---------- Образование пары ----------
 
-    def _try_form_pair(self, other_creatures):
+    def _try_form_pair(self, other_creatures, storage_fields=None):
         c = self.c
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return
@@ -252,7 +252,7 @@ class CreatureFamily:
         if not candidates:
             return
 
-        partner = c.social.best_companion(candidates)
+        partner = min(candidates, key=lambda o: c.social.pairing_score(o, storage_fields))
         c.partner_id = partner.id
         partner.partner_id = c.id
         c.social.adjust_mutual_relationship(partner, FAMILY_PAIR_BOND_BONUS)

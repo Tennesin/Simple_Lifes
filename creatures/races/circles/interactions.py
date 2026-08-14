@@ -15,7 +15,7 @@ class CreatureInteractions:
                 storage_fields, dt, walls=None, biome_grid=None):
         self._eat_fruits(fruits, other_creatures)
         self._drink_water(water_puddles, dt, other_creatures, biome_grid=biome_grid, campfires=campfires)
-        self._feed_from_storage_field(storage_fields)
+        self._feed_from_storage_field(storage_fields, other_creatures)
         self._hit_spikes(spikes, other_creatures, walls, biome_grid=biome_grid)
         self._push_out_of_bushes(bushes, biome_grid=biome_grid)
         self._linger_near_bush(bushes, dt, campfires=campfires)
@@ -256,38 +256,49 @@ class CreatureInteractions:
             rate = OLD_SANITY_AURA_RATE_FAR + (OLD_SANITY_AURA_RATE_NEAR - OLD_SANITY_AURA_RATE_FAR) * best_ratio
             c.consciousness = min(c.consciousness + rate * dt, SANITY_MAX)
 
-    def _feed_from_storage_field(self, storage_fields):
+    def _feed_from_storage_field(self, storage_fields, other_creatures):
         c = self.c
         if not storage_fields:
             return
+
         hungry_enough = c.hunger < STORAGE_CONSUME_HUNGER_THRESHOLD
         thirsty_enough = c.thirst < STORAGE_CONSUME_THIRST_THRESHOLD
         needs_hp = c.hp < HP_MAX
-        if not hungry_enough and not thirsty_enough and not needs_hp:
-            return
+        emergency_hunger = c.hunger < STORAGE_EMERGENCY_HUNGER_THRESHOLD
+        emergency_thirst = c.thirst < STORAGE_EMERGENCY_THIRST_THRESHOLD
 
-        fruit_needed = hungry_enough or needs_hp
-        water_needed = thirsty_enough
+        fruit_needed = hungry_enough or needs_hp or emergency_hunger
+        water_needed = thirsty_enough or emergency_thirst
+        if not fruit_needed and not water_needed:
+            return
 
         for field in storage_fields:
             if not fruit_needed and not water_needed:
                 break
             if math.hypot(c.x - field.x, c.y - field.y) > STORAGE_FIELD_DEPOSIT_DISTANCE:
                 continue
-            if not self._is_family_storage(field):
+
+            has_family_access = field.grants_full_access(c, other_creatures)
+            # ---------- Чужаку склад доступен только на грани голодной/жаждущей смерти - и это кража ----------
+            is_theft_attempt = not has_family_access and (emergency_hunger or emergency_thirst)
+            if not has_family_access and not is_theft_attempt:
                 continue
 
-            if fruit_needed and field.fruits > 0:
+            took_something = False
+
+            if fruit_needed and field.fruits > 0 and (has_family_access or emergency_hunger):
                 field.fruits -= 1
                 c.hp = min(c.hp + FRUIT_HP_BONUS, HP_MAX)
-                if hungry_enough:
+                if hungry_enough or emergency_hunger:
                     c.hunger = min(c.hunger + FRUIT_HUNGER_BONUS, HUNGER_MAX)
                 fruit_needed = False
+                took_something = True
 
-            if water_needed and field.water > 0:
+            if water_needed and field.water > 0 and (has_family_access or emergency_thirst):
                 field.water -= 1
                 c.thirst = min(c.thirst + STORAGE_FIELD_WATER_HYDRATION, THIRST_MAX)
                 water_needed = False
+                took_something = True
 
-    def _is_family_storage(self, field):
-        return field.is_owned_by_campfire(self.c.known_campfire)
+            if took_something and is_theft_attempt:
+                field.punish_theft(c, other_creatures)

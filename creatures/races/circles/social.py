@@ -29,6 +29,24 @@ class CreatureSocial:
             return None
         return min(companions, key=self.companion_score)
 
+    def mate_attractiveness_bonus(self, candidate, storage_fields):
+        c = self.c
+        if c.gender != GENDER_FEMALE or candidate.gender != GENDER_MALE or not storage_fields:
+            return 0.0
+        is_provider = any(
+            candidate.id in field.owner_ids
+            and field.fruits >= STORAGE_ATTRACTIVENESS_MIN_FRUITS
+            and field.water >= STORAGE_ATTRACTIVENESS_MIN_WATER
+            for field in storage_fields
+        )
+        return MATE_STORAGE_ATTRACTIVENESS_BONUS if is_provider else 0.0
+
+    def pairing_score(self, other, storage_fields=None):
+        score = self.companion_score(other)
+        if storage_fields:
+            score -= self.mate_attractiveness_bonus(other, storage_fields)
+        return score
+
     def request_company(self, point):
         c = self.c
         c.social_request_timer = SOCIAL_REQUEST_HOLD_TIME

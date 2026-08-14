@@ -1,4 +1,5 @@
 import shutil
+import random
 
 from settings import *
 from ..ci_settings import *
@@ -35,6 +36,7 @@ class CircleTickProcessor:
         genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
         race_creatures = self._race_creatures()
 
+        self._reconcile_storage_ownership(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
 
@@ -48,6 +50,45 @@ class CircleTickProcessor:
     def _race_creatures(self):
         return [c for c in self.game.world.creatures
                 if getattr(c, "race_name", None) == self.race_name]
+
+    # =====================================================================
+    # Домен: наследование прав на семейный склад при смерти владельца
+    # =====================================================================
+
+    def _reconcile_storage_ownership(self, ctx):
+        world = self.game.world
+        if not world.storage_fields:
+            return
+        creatures_by_id = ctx.creatures_by_id or {c.id: c for c in world.creatures}
+
+        for field in world.storage_fields:
+            if not field.owner_ids:
+                continue
+            dead_owners = [oid for oid in field.owner_ids
+                          if creatures_by_id.get(oid) is None or creatures_by_id[oid].is_dead]
+            for owner_id in dead_owners:
+                self._transfer_storage_owner(field, owner_id, world)
+
+    def _transfer_storage_owner(self, field, owner_id, world):
+        field.owner_ids.discard(owner_id)
+        partner = next((c for c in world.creatures if not c.is_dead and c.partner_id == owner_id), None)
+
+        heir_id = None
+        if partner is not None:
+            heir_id = partner.id
+        else:
+            children = [c for c in world.creatures
+                       if not c.is_dead and c.parent_ids and owner_id in c.parent_ids]
+            daughters = [c for c in children if c.gender == GENDER_FEMALE]
+            sons = [c for c in children if c.gender == GENDER_MALE]
+            if daughters:
+                heir_id = random.choice(daughters).id
+            elif sons:
+                heir_id = random.choice(sons).id
+
+        # ---------- Наследника нет - склад необратимо становится общественным достоянием ----------
+        if heir_id is not None:
+            field.owner_ids.add(heir_id)
 
     # =====================================================================
     # Домен: обработка мёртвых существ (переноска трупа/захоронение/истечение таймера)
@@ -127,7 +168,7 @@ class CircleTickProcessor:
                     game.player.grabbed_creature = None
                 continue
 
-            birth_request = creature.family.update(ctx.dt, world.creatures, ctx.creatures_by_id)
+            birth_request = creature.family.update(ctx.dt, world.creatures, ctx.creatures_by_id, ctx.storage_fields)
             if birth_request is not None:
                 game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
 

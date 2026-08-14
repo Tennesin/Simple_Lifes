@@ -851,11 +851,17 @@ class Construction(GoalComponent):
             return [None]
 
         score = self.SCORE_COMMITTED if committed else self.SCORE_NEW
+        if c.puberty_active and not self._owns_any_storage(ctx.storage_fields):
+            score += CONSTRUCTION_PUBERTY_DRIVE_BONUS
 
         def execute():
             return self._pursue(ctx)
 
         return [Consideration("construction", score, execute)]
+
+    def _owns_any_storage(self, storage_fields):
+        c = self.c
+        return any(c.id in field.owner_ids for field in storage_fields)
 
     def _pursue(self, ctx):
         c = self.c
@@ -1098,6 +1104,9 @@ class Construction(GoalComponent):
         c.carried_resources["wood"] -= wood_to_deposit
         c.carried_resources["stone"] -= stone_to_deposit
 
+        if wood_to_deposit > 0 or stone_to_deposit > 0:
+            site.contributor_ids.add(c.id)
+
         if site.needed("wood") == 0:
             c.carried_resources["wood"] = 0
         if site.needed("stone") == 0:
@@ -1116,6 +1125,7 @@ class Construction(GoalComponent):
     def _perform_build_phase(self, site, ctx):
         c = self.c
         site.builder_ids.add(c.id)
+        site.contributor_ids.add(c.id)
         c.construction_phase = "build"
         c.state = STATE_SEEKING
 
@@ -1151,7 +1161,8 @@ class Construction(GoalComponent):
             new_object = Campfire(site.x, site.y)
             ctx.campfires.append(new_object)
         elif site.build_type == "storage":
-            new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos)
+            new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos,
+                                      owner_ids=set(site.contributor_ids))
             new_object.built_by = c.id
             ctx.storage_fields.append(new_object)
         elif site.build_type == "graveyard":

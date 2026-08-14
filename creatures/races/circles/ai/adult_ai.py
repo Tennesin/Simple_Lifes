@@ -161,7 +161,7 @@ class PubertyCourtship(GoalComponent):
             c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_RECHECK_INTERVAL)
             return None
 
-        target = c.social.best_companion(candidates)
+        target = min(candidates, key=lambda o: c.social.pairing_score(o, ctx.storage_fields))
         c.state = STATE_SEEKING
         c.goal_text = INFO_CREATURE_GOAL_PUBERTY_COURT
 
