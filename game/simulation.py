@@ -111,6 +111,7 @@ class Simulation:
             roads=world.roads,
             walls=world.walls, fences=world.fences, trees=world.trees, stones=world.stones,
             road_crossings=world.road_crossings,
+            wall_bounds=wall_bounds, fence_bounds=fence_bounds,
             race_collections=race_collections,
             creatures_by_id=creatures_by_id,
             nav_grid_no_fences=nav_grid_no_fences, nav_grid_with_fences=nav_grid_with_fences,

@@ -92,7 +92,9 @@ class _PerceptionMixin(_BrainMixinBase):
         c = self.c
         fruits, spikes, water_puddles = ctx.fruits, ctx.spikes, ctx.water_puddles
         bushes, campfires, other_creatures = ctx.bushes, ctx.campfires, ctx.creatures
-        roads, child_roads, graveyards = ctx.roads, ctx.child_roads, ctx.graveyards
+        roads = ctx.roads
+        child_roads = ctx.race_collections.get("child_roads", [])
+        graveyards = ctx.race_collections.get("graveyards", [])
         walls, fences, spatial_grids = ctx.walls, ctx.fences, ctx.spatial_grids
         trees, stones, dt = ctx.trees, ctx.stones, ctx.dt
 
@@ -111,11 +113,6 @@ class _PerceptionMixin(_BrainMixinBase):
                 f.points for f, bx, by, br in ctx.fence_bounds
                 if math.hypot(c.x - bx, c.y - by) < vision_radius + WALL_VISION_BLOCK_MARGIN + br
             ]
-
-        nearby_blocking_polylines = list(nearby_wall_polylines)
-        if not c.can_jump_fences():
-            nearby_blocking_polylines += [f.points for f in fences if f.points and any(
-                math.hypot(c.x - px, c.y - py) < vision_radius + WALL_VISION_BLOCK_MARGIN for px, py in f.points)]
 
         def _visible(obj):
             if c.distance_to(obj) >= vision_radius:

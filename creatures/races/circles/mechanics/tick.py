@@ -105,8 +105,6 @@ class CircleTickProcessor:
 
             genealogy.mark_dead(creature.id, creature)
             if creature.being_carried_by is not None:
-                # ---------- Носильщик ищется среди своей же расы: труп Круга
-                # физически переносит только другой Круг. ----------
                 carrier = next((cc for cc in race_creatures if cc.id == creature.being_carried_by), None)
                 valid_carry = (carrier is not None and not carrier.is_dead
                                and carrier.burial_target_id == creature.id)
@@ -168,7 +166,7 @@ class CircleTickProcessor:
                     game.player.grabbed_creature = None
                 continue
 
-            birth_request = creature.family.update(ctx.dt, world.creatures, ctx.creatures_by_id, ctx.storage_fields)
+            birth_request = creature.family.update(ctx.dt, world.creatures, ctx.creatures_by_id, world.storage_fields)
             if birth_request is not None:
                 game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
 

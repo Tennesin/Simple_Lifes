@@ -59,3 +59,9 @@ class WorldFrameContext:
     nav_grid_with_fences: object = None
     spatial_grids: Optional[dict] = None
     biome_grid: object = None
+
+    def __getattr__(self, name):
+        race_collections = object.__getattribute__(self, "race_collections")
+        if name in race_collections:
+            return race_collections[name]
+        raise AttributeError(name)
