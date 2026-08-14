@@ -998,7 +998,7 @@ class Construction(GoalComponent):
                 return "campfire"
 
         field = self.instincts.find_storage_field(ctx.storage_fields)
-        if field is None and c.family.has_family(ctx.other_creatures):
+        if field is None:
             if not any(s.build_type == "storage" for s in construction_sites):
                 return "storage"
 
