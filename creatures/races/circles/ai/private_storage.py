@@ -115,7 +115,10 @@ class PrivateConstruction(Construction):
                               and math.hypot(c.x - s.x, c.y - s.y)
                                   < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR]
         if storage_candidates:
-            return min(storage_candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
+            site = min(storage_candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
+            if getattr(site, "storage_owner_id", None) is None:
+                site.storage_owner_id = c.id
+            return site
         return super()._find_orphaned_site(ctx)
 
 
