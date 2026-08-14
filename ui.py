@@ -292,9 +292,29 @@ class TopBarPanel:
 
 class ObjectPanel:
 
+    MIN_WIDTH = 200
+    MAX_WIDTH = 420
+    LINE_HEIGHT = 22
+
     def __init__(self, game, font):
         self.game = game
         self.font = font
+
+    def _wrap_text(self, text, max_width):
+        words = text.split(' ')
+        lines = []
+        current = ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            if self.font.size(test)[0] <= max_width:
+                current = test
+            else:
+                if current:
+                    lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+        return lines if lines else [""]
 
     def _get_object_anchor_pos(self, obj):
         if hasattr(obj, "x"):
@@ -330,44 +350,70 @@ class ObjectPanel:
         resource_label = self._get_resource_label(obj)
         extra_lines = self._collect_extra_lines(obj)
 
+        type_name = obj.get_type_name()
+        created_str = time.strftime("%H:%M:%S %d.%m", time.localtime(obj.created))
+        created_label = INFO_INFO_CREATED.format(created=created_str)
+        hint_label = INFO_INFO_DELETE_HINT
+
+        # ---------- Ширина подгоняется под самый длинный текст, но с потолком под размер окна ----------
+        screen_w, screen_h = screen.get_width(), screen.get_height()
+        max_box_width = max(self.MIN_WIDTH, min(self.MAX_WIDTH, screen_w - 40))
+
+        natural_widths = [
+            self.font.size(type_name)[0],
+            self.font.size(created_label)[0],
+            self.font.size(hint_label)[0],
+        ]
+        if resource_label:
+            natural_widths.append(self.font.size(resource_label)[0])
+        for text, _color in extra_lines:
+            natural_widths.append(self.font.size(text)[0])
+
+        content_max = max(natural_widths) if natural_widths else 0
+        box_width = int(max(self.MIN_WIDTH, min(max_box_width, content_max + 20)))
+        text_max_width = box_width - 20
+
+        # ---------- То, что не влезло даже на максимальной ширине, переносим на несколько строк ----------
+        resource_sub_lines = self._wrap_text(resource_label, text_max_width) if resource_label else []
+        extra_sub_lines = []
+        for text, color in extra_lines:
+            for sub in self._wrap_text(text, text_max_width):
+                extra_sub_lines.append((sub, color))
+
+        body_line_count = len(resource_sub_lines) + len(extra_sub_lines)
+        box_height = 78 + self.LINE_HEIGHT * body_line_count
+
         anchor = game.selected_object_click_pos or self._get_object_anchor_pos(obj)
         screen_pos = game.camera.apply_pos(anchor)
-        box_width = 200
-        box_height = (
-                78
-                + (22 if resource_label else 0)
-                + 22 * len(extra_lines)
-        )
 
         box_x = screen_pos[0] + 20
         box_y = screen_pos[1] - 15
-        box_x = min(box_x, WINDOW_WIDTH - box_width - 5)
-        box_y = max(UI_HEIGHT + 5, min(box_y, WINDOW_HEIGHT - box_height - 5))
+        box_x = max(5, min(box_x, screen_w - box_width - 5))
+        box_y = max(UI_HEIGHT + 5, min(box_y, screen_h - box_height - 5))
 
         rect = pygame.Rect(int(box_x), int(box_y), box_width, box_height)
         pygame.draw.rect(screen, INFO_PANEL_COLOR, rect)
         pygame.draw.rect(screen, INFO_PANEL_BORDER, rect, 2)
 
-        type_txt = self.font.render(obj.get_type_name(), True, TEXT_COLOR)
+        type_txt = self.font.render(type_name, True, TEXT_COLOR)
         screen.blit(type_txt, (rect.x + 10, rect.y + 8))
 
-        created_str = time.strftime("%H:%M:%S %d.%m", time.localtime(obj.created))
-        created_txt = self.font.render(INFO_INFO_CREATED.format(created=created_str), True, TEXT_COLOR)
+        created_txt = self.font.render(created_label, True, TEXT_COLOR)
         screen.blit(created_txt, (rect.x + 10, rect.y + 34))
 
         next_y = rect.y + 56
 
-        if resource_label:
-            res_txt = self.font.render(resource_label, True, (200, 200, 200))
-            screen.blit(res_txt, (rect.x + 10, next_y))
-            next_y += 22
-
-        for text, color in extra_lines:
-            line_txt = self.font.render(text, True, color)
+        for line in resource_sub_lines:
+            line_txt = self.font.render(line, True, (200, 200, 200))
             screen.blit(line_txt, (rect.x + 10, next_y))
-            next_y += 22
+            next_y += self.LINE_HEIGHT
 
-        hint_txt = self.font.render(INFO_INFO_DELETE_HINT, True, (190, 190, 190))
+        for line, color in extra_sub_lines:
+            line_txt = self.font.render(line, True, color)
+            screen.blit(line_txt, (rect.x + 10, next_y))
+            next_y += self.LINE_HEIGHT
+
+        hint_txt = self.font.render(hint_label, True, (190, 190, 190))
         screen.blit(hint_txt, (rect.x + 10, next_y))
 
 # =====================================================================
