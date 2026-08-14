@@ -8,6 +8,7 @@ from .circles_adult_patterns import (
     EmpathyHelp, Feeding, SocialResponse, PartnerBond, Storage, Construction,
     ChildRoadVerification, Curiosity, CuriosityStrategy,
     )
+from .private_storage import PrivateStorage, PrivateConstruction
 from ....all_needed.ai.utility import Consideration, pick_best
 
 # =========================================================================
@@ -237,8 +238,8 @@ class AdultAI:
         self.territory = TerritoryDefense(creature)
         self.puberty = PubertyCourtship(creature)
         self.partner_bond = PartnerBond(creature)
-        self.storage = Storage(creature, instincts, self.actions)
-        self.construction = Construction(creature, instincts)
+        self.storage = PrivateStorage(creature, instincts, self.actions)
+        self.construction = PrivateConstruction(creature, instincts)
         self.child_road_verification = ChildRoadVerification(creature)
         self.curiosity = Curiosity(creature, AdultCuriosityStrategy(creature))
 
