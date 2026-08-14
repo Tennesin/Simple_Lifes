@@ -1,13 +1,10 @@
-"""События мира, связанные с объектами и существами расы 'Круг':
-- перехват/освобождение схваченного трупа (двойной клик игрока);
-- редактирование имени существа;
-- реакция на удаление объектов (склад/кладбище/стройплощадка);
-- расчистка территории под новую постройку."""
+"""Обработка ввода и мировых событий, связанных с существами расы 'Круг'."""
 
 import os
 import shutil
 import math
 
+from settings import DEFAULT_SCROLL_SPEED
 from game.object_manager import footprint_radius
 from ..ci_info import INFO_CREATURE_GOAL_NAMED
 from ..ci_settings import NAME_ASSIGN_RELATIONSHIP_BONUS, GRAVEYARD_BURIAL_DISTANCE
@@ -115,3 +112,62 @@ def cleanup_area_for_new_construction(game, obj, radius):
 
     game.object_manager.clear_core_objects_in_zone(_in_zone)
     _clear_construction_sites_in_zone(game, _in_zone)
+
+# =========================================================================
+# Домен: крючки мыши для панели существа расы 'Круг' - перетаскивание
+# ползунка скроллбара списка взаимоотношений (плюс колесо мыши).
+# =========================================================================
+
+def _is_circle_panel_active(game):
+    creature = game.selected_creature
+    return creature is not None and getattr(creature, "race_name", None) == "circle"
+
+def circle_handle_relationships_scrollbar_down(game, event, mouse_x, mouse_y):
+    if event.button != 1 or not game.world_loaded or game.right_panel_collapsed:
+        return False
+    if not _is_circle_panel_active(game):
+        return False
+
+    panel = game.ui.creature_panel
+    rect = panel.relationships_scrollbar_rect
+    if rect is None or not rect.collidepoint(mouse_x, mouse_y):
+        return False
+
+    panel._relationships_scrollbar_dragging = True
+    panel.set_relationships_scroll_from_mouse(mouse_y)
+    return True
+
+def circle_handle_relationships_scrollbar_up(game, event, mouse_x, mouse_y):
+    if event.button != 1 or not _is_circle_panel_active(game):
+        return False
+
+    panel = game.ui.creature_panel
+    if panel._relationships_scrollbar_dragging:
+        panel._relationships_scrollbar_dragging = False
+        return True
+    return False
+
+def circle_handle_relationships_scrollbar_motion(game, event, mouse_x, mouse_y):
+    if not _is_circle_panel_active(game):
+        return False
+
+    panel = game.ui.creature_panel
+    if not panel._relationships_scrollbar_dragging:
+        return False
+
+    panel.set_relationships_scroll_from_mouse(mouse_y)
+    return True
+
+def circle_handle_relationships_wheel(game, event, mouse_x, mouse_y):
+    if not game.world_loaded or not _is_circle_panel_active(game):
+        return False
+
+    panel = game.ui.creature_panel
+    if not (panel.show_relationships_section and panel.relationships_list_rect is not None
+            and panel.relationships_list_rect.collidepoint(mouse_x, mouse_y)):
+        return False
+
+    panel.relationships_scroll_offset -= event.y * DEFAULT_SCROLL_SPEED
+    panel.relationships_scroll_offset = max(
+        0, min(panel.relationships_scroll_offset, panel.relationships_max_scroll))
+    return True

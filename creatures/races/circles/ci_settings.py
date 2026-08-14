@@ -1,5 +1,11 @@
 """Настройки, специфичные для расы 'Круг'."""
 from settings import WATER_PUDDLE_CHARGE_VALUE
+from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
+
+RACE_DIET = DIET_HERBIVORE
+RACE_FOOD_CATEGORY_MAP = {
+    "fruit": FOOD_CATEGORY_PLANT,
+}
 
 # ---------- Базовые параметры существ ----------
 HP_MAX = 100

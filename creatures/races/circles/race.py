@@ -7,8 +7,10 @@ from game.race_registry import (
     MinimapLayer, SecondaryPanelSpec, LandmarkSpec,
     ExtraObjectCollectionSpec, BiomeCascadeSpec,
 )
-from .mechanics.object_events import (
+from .mechanics.input_events import (
     on_delete_storage_field, on_delete_graveyard, on_delete_construction_site,
+    circle_handle_relationships_scrollbar_down, circle_handle_relationships_scrollbar_up,
+    circle_handle_relationships_scrollbar_motion, circle_handle_relationships_wheel,
 )
 
 from .creature import Creature
@@ -112,4 +114,8 @@ RACE_DESCRIPTOR = RaceDescriptor(
         BiomeCascadeSpec(attr="graveyards", clear_on_flood=True, on_removed=on_delete_graveyard),
         BiomeCascadeSpec(attr="storage_fields", clear_on_flood=True, on_removed=on_delete_storage_field),
     ),
+    mouse_down_hooks=(circle_handle_relationships_scrollbar_down,),
+    mouse_up_hooks=(circle_handle_relationships_scrollbar_up,),
+    mouse_motion_hooks=(circle_handle_relationships_scrollbar_motion,),
+    mouse_wheel_hooks=(circle_handle_relationships_wheel,),
 )

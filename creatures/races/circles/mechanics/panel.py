@@ -10,6 +10,7 @@ from info import *
 from game.widgets import Button, ScrollArea
 from ..ci_settings import *
 from ..ci_info import *
+from ....all_needed.diet import DIET_DISPLAY_MAP
 
 class CreaturePanel:
 
@@ -23,7 +24,11 @@ class CreaturePanel:
         self.relationships_header_rect = None
         self.relationships_list_rect = None
         self.relationships_max_scroll = 0
-        self._last_creature_id = None
+        # ---------- Перетаскивание ползунка мышью ----------
+        self.relationships_scrollbar_rect = None
+        self._relationships_scrollbar_dragging = False
+        self._relationships_track_top = 0
+        self._relationships_track_height = 0
         self.stat_bar_rects = {}
 
         self.genealogy_btn_rect = None
@@ -94,6 +99,7 @@ class CreaturePanel:
             self.show_relationships_section = False
             self.relationships_scroll_offset = 0
             self.show_psyche_section = False
+            self._relationships_scrollbar_dragging = False
 
     def handle_info_panel_click(self, game, mouse_x, mouse_y):
         """Клик внутри info_panel_rect выбранного существа этой расы."""
@@ -144,6 +150,7 @@ class CreaturePanel:
         creature = game.selected_creature
         if not creature:
             self.psyche_panel_rect = None
+            self.relationships_scrollbar_rect = None
             return
         self._check_creature_changed(creature)
         panel = self.info_panel_rect
@@ -201,6 +208,11 @@ class CreaturePanel:
             row2_bottom = max(row2_bottom, temp_end_y)
 
         y = row2_bottom + 2
+
+        diet_label = DIET_DISPLAY_MAP.get(creature.diet, creature.diet)
+        diet_txt = self.font.render(INFO_INFO_DIET.format(diet=diet_label), True, (150, 210, 130))
+        screen.blit(diet_txt, (panel.x + 10, y))
+        y += 24
 
         if creature.is_dead:
             status_txt = self.font.render(INFO_INFO_STATUS_DEAD, True, (210, 90, 90))
@@ -411,6 +423,7 @@ class CreaturePanel:
         if not self.show_relationships_section:
             self.relationships_list_rect = None
             self.relationships_max_scroll = 0
+            self.relationships_scrollbar_rect = None  # NEW
             return y
 
         SCROLLBAR_RESERVE = 10
@@ -439,6 +452,7 @@ class CreaturePanel:
             screen.blit(empty_txt, (x, y))
             self.relationships_list_rect = None
             self.relationships_max_scroll = 0
+            self.relationships_scrollbar_rect = None  # NEW
             return y + 24
 
         male_header = self.font.render(INFO_RELATIONSHIPS_MALES, True, (170, 190, 230))
@@ -485,7 +499,25 @@ class CreaturePanel:
             thumb_y = y + int((available_height - thumb_h) * (scroll / max_scroll))
             pygame.draw.rect(screen, (150, 150, 150), (track_rect.x, thumb_y, 4, thumb_h))
 
+            self.relationships_scrollbar_rect = track_rect.inflate(10, 0)
+            self._relationships_track_top = y
+            self._relationships_track_height = available_height
+        else:
+            self.relationships_scrollbar_rect = None  # NEW
+
         return y + available_height
+
+    def set_relationships_scroll_from_mouse(self, mouse_y):
+        if self.relationships_max_scroll <= 0:
+            return
+        track_top = self._relationships_track_top
+        track_height = self._relationships_track_height
+        content_height = self.relationships_max_scroll + track_height
+        thumb_h = max(20, int(track_height * track_height / content_height))
+        usable = max(1, track_height - thumb_h)
+        ratio = (mouse_y - track_top - thumb_h / 2) / usable
+        ratio = max(0.0, min(1.0, ratio))
+        self.relationships_scroll_offset = int(round(ratio * self.relationships_max_scroll))
 
     def _draw_psyche_panel(self, screen, creature):
         panel = self.info_panel_rect

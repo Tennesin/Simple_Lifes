@@ -141,6 +141,12 @@ class RaceDescriptor:
     extra_object_collections: Tuple[ExtraObjectCollectionSpec, ...] = field(default_factory=tuple)
     biome_cascade_specs: Tuple[BiomeCascadeSpec, ...] = field(default_factory=tuple)
 
+    # ---------- Обобщённые крючки мыши. ----------
+    mouse_down_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_up_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_motion_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_wheel_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
+
 _RACES_CACHE: Optional[dict] = None
 
 def _discover_races() -> dict:
@@ -241,6 +247,30 @@ def all_biome_cascade_specs() -> Tuple[BiomeCascadeSpec, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.biome_cascade_specs)
+    return tuple(result)
+
+def all_mouse_down_hooks() -> Tuple[Callable, ...]:
+    result = []
+    for descriptor in all_races():
+        result.extend(descriptor.mouse_down_hooks)
+    return tuple(result)
+
+def all_mouse_up_hooks() -> Tuple[Callable, ...]:
+    result = []
+    for descriptor in all_races():
+        result.extend(descriptor.mouse_up_hooks)
+    return tuple(result)
+
+def all_mouse_motion_hooks() -> Tuple[Callable, ...]:
+    result = []
+    for descriptor in all_races():
+        result.extend(descriptor.mouse_motion_hooks)
+    return tuple(result)
+
+def all_mouse_wheel_hooks() -> Tuple[Callable, ...]:
+    result = []
+    for descriptor in all_races():
+        result.extend(descriptor.mouse_wheel_hooks)
     return tuple(result)
 
 def all_extra_world_save_fns() -> Tuple[Callable, ...]:

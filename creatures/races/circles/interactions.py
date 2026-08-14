@@ -30,6 +30,8 @@ class CreatureInteractions:
 
     def _eat_fruits(self, fruits, other_creatures):
         c = self.c
+        if not c.eats_food_type("fruit"):
+            return
         if self._child_must_wait_for_parent(other_creatures):
             return
         if c.hunger >= HUNGER_SATISFY_THRESHOLD and c.hp >= HP_MAX:

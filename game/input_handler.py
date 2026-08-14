@@ -5,8 +5,17 @@ import pygame
 from player import Player
 from objects import Wall, Fence
 from settings import *
-from game.race_registry import creature_placement_lookup, all_secondary_panel_specs, all_road_networks
+from game.race_registry import (
+    creature_placement_lookup, all_secondary_panel_specs, all_road_networks,
+    all_mouse_down_hooks, all_mouse_up_hooks, all_mouse_motion_hooks, all_mouse_wheel_hooks,
+)
 from creatures.all_needed.base_entity import LivingEntity
+
+def _dispatch_hooks(hooks, game, event, mouse_x, mouse_y):
+    for hook in hooks:
+        if hook(game, event, mouse_x, mouse_y):
+            return True
+    return False
 
 BIOME_TOOL_MAP = {
     Player.TOOL_BIOME_PLAINS: BIOME_PLAINS,
@@ -260,6 +269,8 @@ class _MouseDownMixin:
         game = self.game
         mouse_x, mouse_y = event.pos
 
+        if _dispatch_hooks(all_mouse_down_hooks(), game, event, mouse_x, mouse_y):
+            return
         if self._handle_collapse_handle_click(event, mouse_x, mouse_y):
             return
         if self._handle_minimap_click(event, mouse_x, mouse_y):
@@ -635,10 +646,13 @@ class _MouseUpMixin:
 
     def _handle_mouse_up(self, event):
         game = self.game
+        mouse_x, mouse_y = event.pos
+
         if event.button == 3:
             game.dragging = False
         if event.button == 1:
             self.biome_paint.reset()
+            _dispatch_hooks(all_mouse_up_hooks(), game, event, mouse_x, mouse_y)
 
         if event.button == 1:
             for spec in all_road_networks():
@@ -662,7 +676,6 @@ class _MouseUpMixin:
             game.player.drawing_landscape = None
             game.player.landscape_type = None
 
-
 # =========================================================================
 # Домен: движение мыши
 # =========================================================================
@@ -672,6 +685,9 @@ class _MouseMotionMixin:
     def _handle_mouse_motion(self, event):
         game = self.game
         mouse_x, mouse_y = event.pos
+
+        if _dispatch_hooks(all_mouse_motion_hooks(), game, event, mouse_x, mouse_y):
+            return
 
         if game.player.tool in BIOME_TOOL_MAP:
             mods = pygame.key.get_mods()
@@ -857,11 +873,7 @@ class _ScrollMixin:
         if game.right_panel_collapsed:
             return
 
-        if (game.world_loaded and game.selected_creature
-                and ui.show_relationships_section and ui.relationships_list_rect is not None
-                and ui.relationships_list_rect.collidepoint(mouse_x, mouse_y)):
-            ui.relationships_scroll_offset -= event.y * DEFAULT_SCROLL_SPEED
-            ui.relationships_scroll_offset = max(0, min(ui.relationships_scroll_offset, ui.relationships_max_scroll))
+        if _dispatch_hooks(all_mouse_wheel_hooks(), game, event, mouse_x, mouse_y):
             return
 
         if not game.world_loaded:

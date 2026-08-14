@@ -16,7 +16,7 @@ from .interactions import CreatureInteractions
 from .player_reactions import PlayerReactionHandler
 from .psyche import CreaturePsyche
 from .ai import CreatureBrain
-from .mechanics.object_events import (
+from .mechanics.input_events import (
     start_corpse_grab as _start_corpse_grab,
     handle_corpse_release as _handle_corpse_release,
     apply_name_edit as _apply_name_edit,
@@ -26,6 +26,8 @@ from ...all_needed.base_entity import LivingEntity
 
 class Creature(LivingEntity):
     race_name = "circle"
+    diet = RACE_DIET
+    food_category_map = RACE_FOOD_CATEGORY_MAP
 
     def __init__(self, creature_id, name=None, temperament=None, gender=None):
         self.id = creature_id

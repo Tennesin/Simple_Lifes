@@ -120,3 +120,9 @@ INFO_BTN_LW_LOAD = "Загрузить"
 INFO_BTN_LW_DELETE = "Удалить"
 INFO_LW_CONFIRM_DELETE = "Точно? Ещё раз для удаления"
 INFO_LW_SELECT_HINT = "Выберите мир слева"
+
+# --------------------- Диета (общее понятие, расы лишь выбирают значение) ---------------------
+INFO_INFO_DIET = "Диета: {diet}"
+INFO_DIET_HERBIVORE = "Травоядное"
+INFO_DIET_CARNIVORE = "Плотоядное"
+INFO_DIET_OMNIVORE = "Всеядное"

@@ -297,6 +297,8 @@ class _ResourceMemoryMixin:
 
     def nearest_food_target(self, visible_fruits):
         c = self.c
+        if not c.eats_food_type("fruit"):
+            return None
         target = self._nearest_known_target(visible_fruits, c.memory.get_food_memories(), "food_memory_target")
         if target is not None:
             return target

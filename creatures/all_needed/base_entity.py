@@ -1,6 +1,7 @@
 import math
 import settings
 from . import geometry
+from .diet import diet_allows_category
 
 class BaseEntity:
     """Общий базовый класс для любой позиционируемой игровой сущности."""
@@ -10,10 +11,19 @@ class BaseEntity:
     def flee_point(self, from_pos, distance):
         return geometry.flee_point(self.x, self.y, from_pos, distance)
 
-
 class LivingEntity(BaseEntity):
     """Общий контракт живого существа"""
     race_name: str = None
+
+    diet: str = None
+    food_category_map: dict = {}
+
+    def eats_food_type(self, food_type) -> bool:
+        """Способна ли раса в принципе употреблять данный тип пищи (по её диете)."""
+        category = self.food_category_map.get(food_type)
+        if category is None:
+            return False
+        return diet_allows_category(self.diet, category)
 
     def get_race_name(self) -> str:
         if self.race_name is None:

@@ -66,6 +66,8 @@ class ResourceActions:
 
     def go_fetch_fruit(self, visible_fruits):
         c = self.c
+        if not c.eats_food_type("fruit"):
+            return None
         target_fruit = min(visible_fruits, key=c.distance_to) if visible_fruits else None
 
         if target_fruit is not None:
@@ -1623,7 +1625,7 @@ class Curiosity(GoalComponent):
     def _collect_unknown_harmless(self, ctx):
         c = self.c
         unknown_harmless = []
-        if not c.knowledge["fruit"] and ctx.visible_fruits:
+        if c.eats_food_type("fruit") and not c.knowledge["fruit"] and ctx.visible_fruits:
             unknown_harmless.append(("fruit", min(ctx.visible_fruits, key=c.distance_to)))
         if not c.knowledge["water"] and ctx.visible_water:
             unknown_harmless.append(("water", min(ctx.visible_water, key=c.distance_to)))

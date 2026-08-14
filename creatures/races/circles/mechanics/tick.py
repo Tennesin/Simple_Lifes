@@ -2,7 +2,7 @@ import shutil
 
 from settings import *
 from ..ci_settings import *
-from .object_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
+from .input_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
 
 def tick_circle_world(game, dt):
     for gy in game.world.graveyards:
