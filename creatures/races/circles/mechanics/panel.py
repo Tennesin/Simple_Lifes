@@ -213,7 +213,9 @@ class CreaturePanel:
         diet_label = DIET_DISPLAY_MAP.get(creature.diet, creature.diet)
         diet_txt = self.font.render(INFO_INFO_DIET.format(diet=diet_label), True, (150, 210, 130))
         screen.blit(diet_txt, (panel.x + 10, y))
-        y += 24
+        if not creature.is_dead:
+            self._draw_genealogy_button(screen, y - 3)
+        y += 28
 
         if creature.is_dead:
             status_txt = self.font.render(INFO_INFO_STATUS_DEAD, True, (210, 90, 90))
@@ -233,7 +235,6 @@ class CreaturePanel:
             return
 
         y = self._draw_family_info(screen, creature, panel.x + 10, y, panel.width - 20)
-        y = self._draw_genealogy_button(screen, panel.x + 10, y, panel.width - 20)
         y = self._draw_psyche_toggle(screen, panel.x + 10, y, panel.width - 20)
 
         self._draw_stat_bar(screen, INFO_INFO_HP, creature.hp, HP_MAX, (220, 60, 60),
@@ -621,15 +622,16 @@ class CreaturePanel:
         self.psyche_header_rect = header_rect
         return header_rect.bottom + 10
 
-    def _draw_genealogy_button(self, screen, x, y, width):
-        rect = pygame.Rect(x, y, width, 26)
+    def _draw_genealogy_button(self, screen, y):
+        panel = self.info_panel_rect
+        btn_width, btn_height = 85, BUTTON_HEIGHT - 4
+        rect = pygame.Rect(panel.right - 10 - btn_width, y, btn_width, btn_height)
         mouse_pos = pygame.mouse.get_pos()
         color = MENU_HOVER if rect.collidepoint(mouse_pos) else BUTTON_COLOR
         pygame.draw.rect(screen, color, rect, border_radius=4)
         txt = self.font.render(INFO_BTN_GENEALOGY, True, TEXT_COLOR)
         screen.blit(txt, txt.get_rect(center=rect.center))
         self.genealogy_btn_rect = rect
-        return rect.bottom + 10
 
 # =========================================================================
 # Панель кладбища конкретно для расы 'Круг'
@@ -1108,6 +1110,7 @@ class GenealogyTreeOverlay:
             }
             all_edges.append((node["id"], partner_id, "partner"))
 
+        self._resolve_overlaps(all_nodes)
         nodes_list = list(all_nodes.values())
         if not nodes_list:
             bbox = (0, 0, 0, 0)
@@ -1116,6 +1119,20 @@ class GenealogyTreeOverlay:
             gens = [n["generation"] for n in nodes_list]
             bbox = (min(xs), max(xs), min(gens), max(gens))
         return nodes_list, all_edges, bbox
+
+    def _any_node_offscreen(self, nodes):
+        if not nodes:
+            return False
+        center_x, center_y = self.viewport_rect.centerx, self.viewport_rect.centery
+        for node in nodes:
+            sx = center_x + node["x"] * GENEALOGY_SLOT_WIDTH
+            sy = center_y + node["generation"] * GENEALOGY_ROW_HEIGHT
+            node_rect = pygame.Rect(
+                int(sx - GENEALOGY_NODE_RADIUS), int(sy - GENEALOGY_NODE_RADIUS),
+                GENEALOGY_NODE_RADIUS * 2, GENEALOGY_NODE_RADIUS * 2)
+            if not self.viewport_rect.contains(node_rect):
+                return True
+        return False
 
     # ---------- Отрисовка ----------
 
@@ -1148,15 +1165,10 @@ class GenealogyTreeOverlay:
                                          panel.bottom - 56 - viewport_top)
         pygame.draw.rect(screen, (20, 20, 20), self.viewport_rect)
 
-        nodes, edges, bbox = self._build_layout()
+        nodes, edges, _bbox = self._build_layout()
 
-        content_fits = True
-        if nodes:
-            min_x, max_x, min_gen, max_gen = bbox
-            content_w = (max_x - min_x) * GENEALOGY_SLOT_WIDTH + GENEALOGY_NODE_RADIUS * 4
-            content_h = (max_gen - min_gen) * GENEALOGY_ROW_HEIGHT + GENEALOGY_NODE_RADIUS * 4
-            content_fits = content_w <= self.viewport_rect.width and content_h <= self.viewport_rect.height
-        if content_fits:
+        needs_drag_support = self._any_node_offscreen(nodes)
+        if not needs_drag_support:
             self.pan_x = 0.0
             self.pan_y = 0.0
 
@@ -1241,6 +1253,32 @@ class GenealogyTreeOverlay:
         left = (edge_x - dy * 8, edge_y + dx * 8)
         right = (edge_x + dy * 8, edge_y - dx * 8)
         pygame.draw.polygon(screen, GENEALOGY_ROOT_RING_COLOR, [tip, left, right])
+
+    # ---------- Разрешение перекрытий: раздвигаем круги одного поколения, если они соприкасаются ----------
+
+    def _resolve_overlaps(self, nodes_dict):
+        min_gap = (GENEALOGY_NODE_RADIUS * 2 + 6) / GENEALOGY_SLOT_WIDTH
+
+        by_generation = {}
+        for node in nodes_dict.values():
+            by_generation.setdefault(node["generation"], []).append(node)
+
+        for group in by_generation.values():
+            if len(group) < 2:
+                continue
+            group.sort(key=lambda n: n["x"])
+            for _ in range(len(group)):
+                changed = False
+                for i in range(1, len(group)):
+                    prev_node, cur_node = group[i - 1], group[i]
+                    overlap = min_gap - (cur_node["x"] - prev_node["x"])
+                    if overlap > 0:
+                        shift = overlap / 2
+                        prev_node["x"] -= shift
+                        cur_node["x"] += shift
+                        changed = True
+                if not changed:
+                    break
 
 # =========================================================================
 # Расширение ObjectPanel (ядровое, core ui.py) строками для объектов
