@@ -19,10 +19,11 @@ def same_household(creature, owner_id, other_creatures=None):
             return True
     return False
 
-
 def field_belongs_to(creature, field, other_creatures=None):
-    return same_household(creature, getattr(field, "built_by", None), other_creatures)
-
+    owner_ids = getattr(field, "owner_ids", None)
+    if not owner_ids:
+        return True
+    return any(same_household(creature, owner_id, other_creatures) for owner_id in owner_ids)
 
 class PrivateStorage(Storage):
     """Storage behaviour that never treats another household's field as public."""

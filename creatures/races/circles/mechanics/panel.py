@@ -1295,6 +1295,15 @@ def circle_object_panel_extra_lines(obj, creatures):
             lines.append((INFO_INFO_CLAIMED_BY.format(name=name), (255, 210, 60)))
 
     if hasattr(obj, "fruits") and hasattr(obj, "water"):
+        owner_ids = getattr(obj, "owner_ids", None)
+        if owner_ids:
+            owner_names = []
+            for owner_id in owner_ids:
+                owner = next((c for c in creatures if c.id == owner_id), None)
+                owner_names.append(owner.name if owner and owner.name else owner_id)
+            lines.append((INFO_INFO_STORAGE_OWNER.format(name=", ".join(owner_names)), (255, 210, 60)))
+        else:
+            lines.append((INFO_INFO_STORAGE_OWNER_PUBLIC, (190, 190, 190)))
         lines.append((INFO_INFO_STORAGE_FRUITS.format(count=obj.fruits), (255, 190, 40)))
         lines.append((INFO_INFO_STORAGE_WATER.format(count=obj.water), (100, 170, 230)))
 
