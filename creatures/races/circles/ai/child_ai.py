@@ -145,6 +145,9 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         deficit = max(hunger_deficit, thirst_deficit)
         score = SCORE_CHILD_HUNGER_BASE + deficit * SCORE_CHILD_HUNGER_MAX_BONUS
 
+        if c.urgent_child_timer > 0:
+            score = max(score, SCORE_CHILD_FREE_TIME + 5.0)
+
         def execute():
             return self._handle_child_hunger_signal(visible_companions, other_creatures, storage_fields,
                                                     biome_grid=biome_grid)
@@ -168,6 +171,13 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
         if not c.family.has_living_parent(other_creatures):
             return None
+
+        parent = self._find_visible_parent(c.parent_ids, visible_companions)
+        if c.urgent_child_timer > 0 and parent is not None:
+            c.state = STATE_SEEKING
+            c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+            c.target = (c.x, c.y)
+            return c.target
 
         campfire_pos = self.instincts.nearest_known_campfire()
 
@@ -210,6 +220,11 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
     def _consider_free_time(self, visible_companions, visible_roads, dt):
         c = self.c
         active_game = c.play_target_id is not None and c.play_role is not None
+
+        if c.urgent_child_timer > 0:
+            if active_game:
+                self._end_child_tag_game()
+            return None
 
         if active_game:
             def execute():
@@ -311,6 +326,11 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
         c = self.c
 
         self._tick_child_road_disinterest(dt)
+
+        if c.urgent_child_timer > 0:
+            if c.following_child_road is not None:
+                self._end_child_road_play()
+            return None
 
         if c.following_child_road is not None:
             def execute():

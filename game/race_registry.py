@@ -119,6 +119,7 @@ class RaceDescriptor:
     placeable_objects: Tuple[PlaceableObjectSpec, ...] = field(default_factory=tuple)
     render_layers: Tuple[RenderLayer, ...] = field(default_factory=tuple)
     road_networks: Tuple[RoadNetworkSpec, ...] = field(default_factory=tuple)
+    is_legacy_default: bool = False
 
     # ---------- Новое: тик "неживых" объектов расы (не существ) ----------
     world_tick_fn: Optional[Callable] = None  # (game, dt) -> None

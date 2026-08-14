@@ -40,7 +40,7 @@ class CircleTickProcessor:
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
 
-        self._run_interactions(ctx.dt, ready_for_interact)
+        self._run_interactions(ctx, ready_for_interact)
         self._cleanup_removed_corpses(corpses_to_remove)
 
     # =====================================================================
@@ -196,14 +196,31 @@ class CircleTickProcessor:
     # Домен: взаимодействия существ с миром (еда/вода/шипы/костёр/разговоры и т.д.)
     # =====================================================================
 
-    def _run_interactions(self, dt, ready_for_interact):
+    def _run_interactions(self, ctx, ready_for_interact):
         world = self.game.world
+        grids = ctx.spatial_grids
+        dt = ctx.dt
         ready_for_interact.sort(key=_storage_priority)
+
         for creature in ready_for_interact:
-            creature.interactions.process(world.fruits, world.spikes, world.water_puddles,
-                                          world.bushes, world.campfires, world.creatures,
-                                          world.storage_fields, dt, walls=world.walls,
-                                          biome_grid=self.game.biome_manager.grid)
+            if grids is not None:
+                nearby_fruits = grids["fruits"].query_nearby(creature.x, creature.y, EAT_DISTANCE + 10)
+                nearby_spikes = grids["spikes"].query_nearby(creature.x, creature.y, EAT_DISTANCE + 10)
+                nearby_water = grids["water"].query_nearby(creature.x, creature.y, EAT_DISTANCE + 40)
+                nearby_bushes = grids["bushes"].query_nearby(creature.x, creature.y,
+                                                             TERRITORY_BUSH_CLAIM_RADIUS + 20)
+                nearby_campfires = grids["campfires"].query_nearby(creature.x, creature.y, CAMPFIRE_RADIUS)
+                nearby_creatures = grids["creatures"].query_nearby(
+                    creature.x, creature.y, max(TALK_DISTANCE, JEALOUSY_CHECK_DISTANCE))
+            else:
+                nearby_fruits, nearby_spikes = world.fruits, world.spikes
+                nearby_water, nearby_bushes = world.water_puddles, world.bushes
+                nearby_campfires, nearby_creatures = world.campfires, world.creatures
+
+            creature.interact(nearby_fruits, nearby_spikes, nearby_water,
+                              nearby_bushes, nearby_campfires, nearby_creatures,
+                              world.storage_fields, dt, walls=world.walls,
+                              biome_grid=self.game.biome_manager.grid)
 
     # =====================================================================
     # Домен: окончательное удаление истёкших трупов из мира

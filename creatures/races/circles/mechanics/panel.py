@@ -933,6 +933,9 @@ class GenealogyTreeOverlay:
         self.viewport_rect = pygame.Rect(0, 0, 0, 0)
         self._node_screen_rects = {}
 
+        self._layout_cache_key = None
+        self._layout_cache = ([], [], (0, 0, 0, 0))
+
     # ---------- Протокол, который читают core-файлы обобщённо ----------
 
     @property
@@ -1072,7 +1075,12 @@ class GenealogyTreeOverlay:
     def _build_layout(self):
         registry = self._registry()
         if registry is None or self.root_id is None or registry.get(self.root_id) is None:
+            self._layout_cache_key = None
             return [], [], (0, 0, 0, 0)
+
+        cache_key = (self.root_id, len(registry.records))
+        if cache_key == self._layout_cache_key:
+            return self._layout_cache
 
         ancestor_nodes, ancestor_edges = self._build_ancestors(registry, self.root_id)
         descendant_nodes, descendant_edges = self._build_descendants(registry, self.root_id)
@@ -1119,7 +1127,10 @@ class GenealogyTreeOverlay:
             xs = [n["x"] for n in nodes_list]
             gens = [n["generation"] for n in nodes_list]
             bbox = (min(xs), max(xs), min(gens), max(gens))
-        return nodes_list, all_edges, bbox
+
+        self._layout_cache_key = cache_key
+        self._layout_cache = (nodes_list, all_edges, bbox)
+        return self._layout_cache
 
     def _any_node_offscreen(self, nodes):
         if not nodes:

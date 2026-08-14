@@ -36,6 +36,8 @@ class CreatureAging:
         c = self.c
         if new_stage == LIFE_STAGE_OLD:
             self._apply_old_modifiers()
+            if c.puberty_active:
+                self._end_puberty()
         elif old_stage == LIFE_STAGE_CHILD and new_stage == LIFE_STAGE_ADULT:
             c.child_distress_timer = 0.0
             c.play_target_id = None

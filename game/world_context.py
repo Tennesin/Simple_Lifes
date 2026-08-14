@@ -13,7 +13,6 @@ def _collect_race_collections():
                 names.append(name)
     return tuple(names)
 
-
 class WorldState:
 
     CORE_COLLECTIONS = (
@@ -36,7 +35,6 @@ class WorldState:
 
 @dataclass
 class WorldFrameContext:
-
     dt: float = 0.0
 
     fruits: list = field(default_factory=list)
@@ -46,15 +44,15 @@ class WorldFrameContext:
     campfires: list = field(default_factory=list)
     creatures: list = field(default_factory=list)
     roads: list = field(default_factory=list)
-    storage_fields: list = field(default_factory=list)
-    graveyards: list = field(default_factory=list)
-    child_roads: list = field(default_factory=list)
-    construction_sites: list = field(default_factory=list)
     walls: list = field(default_factory=list)
     fences: list = field(default_factory=list)
     trees: list = field(default_factory=list)
     stones: list = field(default_factory=list)
     road_crossings: list = field(default_factory=list)
+    wall_bounds: list = field(default_factory=list)
+    fence_bounds: list = field(default_factory=list)
+
+    race_collections: dict = field(default_factory=dict)
 
     creatures_by_id: Optional[dict] = None
     nav_grid_no_fences: object = None

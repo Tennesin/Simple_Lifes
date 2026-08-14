@@ -39,6 +39,7 @@ from .mechanics.render import (
 RACE_DESCRIPTOR = RaceDescriptor(
     race_name="circle",
     creature_cls=Creature,
+    is_legacy_default=True,
     tick_processor_cls=CircleTickProcessor,
     loader_fn=load_circle_creature,
     panel_cls=CreaturePanel,

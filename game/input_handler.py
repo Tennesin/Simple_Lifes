@@ -37,11 +37,11 @@ def handle_pet_hit_grab_click(game, ui, mouse_x, mouse_y):
         creature_hit = game.object_manager.find_creature_at(wx, wy)
         if creature_hit and not creature_hit.is_dead:
             if game.player.tool == Player.TOOL_PET:
-                creature_hit.player_reactions.pet()
+                creature_hit.receive_pet()
             elif game.player.tool == Player.TOOL_HIT:
-                creature_hit.player_reactions.hit()
+                creature_hit.receive_hit()
             elif game.player.tool == Player.TOOL_GRAB:
-                creature_hit.player_reactions.start_grab()
+                creature_hit.grab_by_player()
                 game.player.grabbed_creature = creature_hit
     return True
 
@@ -87,7 +87,7 @@ class _KeyboardMixin:
     def _handle_escape(self):
         game = self.game
         if game.player.grabbed_creature is not None:
-            game.player.grabbed_creature.player_reactions.finish_grab()
+            game.player.grabbed_creature.release_by_player()
             game.player.grabbed_creature = None
         elif game.player.grabbed_object is not None:
             obj = game.player.grabbed_object
@@ -305,7 +305,7 @@ class _MouseDownMixin:
         game = self.game
 
         if event.button == 1 and game.player.grabbed_creature is not None:
-            game.player.grabbed_creature.player_reactions.finish_grab()
+            game.player.grabbed_creature.release_by_player()
             game.player.grabbed_creature = None
             if game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
                 game.player.reset_tool()

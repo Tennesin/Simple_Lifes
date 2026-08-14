@@ -20,6 +20,9 @@ class Memory:
         self._prune_timer = 0.0
         self._prune_interval = 45.0
 
+        self._position_cache = {}
+        self._version = 0
+
     def maybe_prune(self, dt):
         self._prune_timer += dt
         if self._prune_timer < self._prune_interval:
@@ -28,7 +31,6 @@ class Memory:
 
         now = time.time()
         self.memories = [m for m in self.memories if now - m["timestamp"] < self.decay_time]
-        # ---------- Индекс по типу пересобираем синхронно с основным списком ----------
         self._memories_by_type = {}
         for m in self.memories:
             self._memories_by_type.setdefault(m["type"], []).append(m)
@@ -37,6 +39,7 @@ class Memory:
             m for m in self.intuitive_memories
             if now - m["timestamp"] < self.intuitive_decay_time
         ]
+        self._version += 1   # НОВОЕ
 
     # ---------- Точная память ----------
 
@@ -47,6 +50,7 @@ class Memory:
                 if abs(importance) > abs(mem["importance"]):
                     mem["importance"] = importance
                 mem["timestamp"] = time.time()
+                self._version += 1
                 return
         entry = {
             "type": mem_type,
@@ -57,9 +61,16 @@ class Memory:
         }
         self.memories.append(entry)
         bucket.append(entry)
+        self._version += 1
 
     def _get_positions(self, mem_type, allow_negative=False):
         now = time.time()
+        cached = self._position_cache.get(mem_type)
+        if cached is not None:
+            version, cache_time, positions = cached
+            if version == self._version and now - cache_time < 0.5:
+                return positions
+
         result = []
         for mem in self._memories_by_type.get(mem_type, []):
             age = now - mem["timestamp"]
@@ -67,6 +78,8 @@ class Memory:
             effective_imp = mem["importance"] * decay_factor
             if abs(effective_imp) > 0.1:
                 result.append((mem["x"], mem["y"]))
+
+        self._position_cache[mem_type] = (self._version, now, result)
         return result
 
     def get_food_memories(self):
@@ -84,6 +97,7 @@ class Memory:
         self.memories = [m for m in self.memories if _keep(m)]
         if mem_type in self._memories_by_type:
             self._memories_by_type[mem_type] = [m for m in self._memories_by_type[mem_type] if _keep(m)]
+        self._version += 1
 
     def get_campfire_memories(self):
         return self._get_positions("campfire")

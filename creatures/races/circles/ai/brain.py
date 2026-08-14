@@ -100,8 +100,17 @@ class _PerceptionMixin(_BrainMixinBase):
                              else DEFAULT_RISK_REACTION_DISTANCE)
         vision_radius = c.aging.effective_vision_radius()
 
-        nearby_wall_polylines = [w.points for w in walls if w.points and any(
-            math.hypot(c.x - px, c.y - py) < vision_radius + WALL_VISION_BLOCK_MARGIN for px, py in w.points)]
+        nearby_wall_polylines = [
+            w.points for w, bx, by, br in ctx.wall_bounds
+            if math.hypot(c.x - bx, c.y - by) < vision_radius + WALL_VISION_BLOCK_MARGIN + br
+        ]
+
+        nearby_blocking_polylines = list(nearby_wall_polylines)
+        if not c.can_jump_fences():
+            nearby_blocking_polylines += [
+                f.points for f, bx, by, br in ctx.fence_bounds
+                if math.hypot(c.x - bx, c.y - by) < vision_radius + WALL_VISION_BLOCK_MARGIN + br
+            ]
 
         nearby_blocking_polylines = list(nearby_wall_polylines)
         if not c.can_jump_fences():
@@ -253,11 +262,16 @@ class _DispatchMixin(_LifeStageDispatchBase):
     def _dispatch_life_stage(self, perception, ctx: "WorldFrameContext"):
         c = self.c
         other_creatures = ctx.creatures
-        roads, storage_fields, graveyards = ctx.roads, ctx.storage_fields, ctx.graveyards
+        roads = ctx.roads
+        storage_fields = ctx.race_collections.get("storage_fields", [])
+        graveyards = ctx.race_collections.get("graveyards", [])
+        child_roads = ctx.race_collections.get("child_roads", [])
+        construction_sites = ctx.race_collections.get("construction_sites", [])
+
         dt = ctx.dt
         creatures_by_id, road_crossings = ctx.creatures_by_id, ctx.road_crossings
-        child_roads, biome_grid = ctx.child_roads, ctx.biome_grid
-        construction_sites, campfires = ctx.construction_sites, ctx.campfires
+        biome_grid = ctx.biome_grid
+        campfires = ctx.campfires
 
         if c.life_stage == LIFE_STAGE_CHILD:
             goal = self.child.decide(perception.visible_companions, perception.visible_roads, storage_fields,
@@ -305,7 +319,6 @@ class _DispatchMixin(_LifeStageDispatchBase):
 
         c.target = goal
         return goal
-
 
 # =========================================================================
 # Итоговый класс: композиция доменов + единственная точка входа decide()

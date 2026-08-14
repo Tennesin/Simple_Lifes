@@ -20,7 +20,6 @@ from .world_context import WorldState
 from .widgets import TextInputBox, ScrollArea
 
 INVALID_NAME_CHARS = '<>:"/\\|?*'
-LEGACY_DEFAULT_RACE = "circle"
 
 def sanitize_world_name(name):
     if not name:
@@ -50,9 +49,10 @@ def is_valid_world(path):
     return os.path.isfile(os.path.join(path, WORLD_META_FILENAME))
 
 def _resolve_legacy_race_name():
+    for descriptor in all_races():
+        if descriptor.is_legacy_default:
+            return descriptor.race_name
     race_names = all_race_names()
-    if LEGACY_DEFAULT_RACE in race_names:
-        return LEGACY_DEFAULT_RACE
     if race_names:
         return race_names[0]
     raise RuntimeError(
@@ -448,7 +448,7 @@ class WorldManager:
         game.restore_default_window()
 
 _registry_attrs = {attr for _, attr, _ in WorldManager._WORLD_OBJECT_REGISTRY}
-_expected_attrs = set(WorldState.COLLECTION_NAMES) - {"creatures"}  # существа сохраняются отдельно, по папкам creatures/<id>/
+_expected_attrs = set(WorldState.COLLECTION_NAMES) - {"creatures"}
 assert _registry_attrs == _expected_attrs, (
     f"WorldManager._WORLD_OBJECT_REGISTRY разошёлся с WorldState.COLLECTION_NAMES: "
     f"в реестре лишние {_registry_attrs - _expected_attrs}, "

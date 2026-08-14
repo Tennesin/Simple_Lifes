@@ -5,7 +5,6 @@ WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT = WINDOW_WIDTH, WINDOW_HEIGHT
 WORLD_WIDTH, WORLD_HEIGHT = 2500, 2500
 FPS = 60
 UI_HEIGHT = 40
-TILE_SIZE = 50
 PLACEMENT_CHECK_MIN_MOVE = 6
 DEFAULT_SCROLL_SPEED = 25
 DEFAULT_VISION_RADIUS = 900
@@ -188,7 +187,7 @@ WALL_VISION_BLOCK_MARGIN = 60  # запас: стена чуть за радиу
 NAV_GRID_CELL_SIZE = 30          # размер одной клетки карты навигации, px
 NAV_OBSTACLE_INFLATE = 18        # на сколько "раздувается" стена/забор при разметке клеток
                                   # (примерно радиус существа + запас, чтобы не тереться о стену)
-NAV_PATH_RECALC_INTERVAL = 1.5   # раз в сколько секунд допускается плановый пересчёт маршрута
+NAV_PATH_RECALC_INTERVAL = (1.2, 1.8)   # раз в сколько секунд допускается плановый пересчёт маршрута
 NAV_GOAL_CHANGE_THRESHOLD = 45   # если цель сдвинулась дальше этого - маршрут пересчитывается немедленно
 NAV_WAYPOINT_REACHED_DISTANCE = 18   # с какого расстояния путевая точка считается "достигнутой"
 NAV_MAX_ASTAR_NODES = 6000       # предохранитель от зависаний на очень больших/запутанных картах

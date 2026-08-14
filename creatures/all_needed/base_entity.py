@@ -67,6 +67,18 @@ class LivingEntity(BaseEntity):
     def on_grab_release(self, game):
         return False
 
+    def receive_pet(self):
+        raise NotImplementedError
+
+    def receive_hit(self):
+        raise NotImplementedError
+
+    def grab_by_player(self):
+        raise NotImplementedError
+
+    def release_by_player(self):
+        raise NotImplementedError
+
     def draw(self, screen, screen_pos, show_status_rings=True):
         raise NotImplementedError
 

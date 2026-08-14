@@ -1,5 +1,6 @@
 import heapq
 import math
+import random
 import settings
 from settings import *
 from . import geometry
@@ -303,23 +304,6 @@ class NavGrid:
                 if biome_grid.get_at(wx, wy) == biome_type:
                     self.blocked[self._index(cx, cy)] = 1
 
-def _landscape_signature(walls, fences, spikes, include_fences):
-    total = 0.0
-    count = 0
-    for w in walls:
-        for x, y in w.points:
-            total += x + y
-            count += 1
-    if include_fences:
-        for f in fences:
-            for x, y in f.points:
-                total += x + y
-                count += 1
-    for s in spikes:
-        total += s.x + s.y
-        count += 1
-    return (count, round(total, 1))
-
 class SpatialGrid:
 
     def __init__(self, cell_size=200):
@@ -391,7 +375,7 @@ class BasePathfinder:
         if needs_recalc:
             path = nav_grid.find_path((c.x, c.y), goal, max_nodes=NAV_MAX_ASTAR_NODES)
             c.nav_goal = goal
-            c.nav_recalc_timer = NAV_PATH_RECALC_INTERVAL
+            c.nav_recalc_timer = random.uniform(*NAV_PATH_RECALC_INTERVAL)
             if path:
                 c.nav_path = path
             else:

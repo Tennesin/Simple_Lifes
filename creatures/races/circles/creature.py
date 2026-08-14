@@ -258,6 +258,18 @@ class Creature(LivingEntity):
     def on_grab_release(self, game):
         return _handle_corpse_release(self, game)
 
+    def receive_pet(self):
+        self.player_reactions.pet()
+
+    def receive_hit(self):
+        self.player_reactions.hit()
+
+    def grab_by_player(self):
+        self.player_reactions.start_grab()
+
+    def release_by_player(self):
+        self.player_reactions.finish_grab()
+
     # ---------- Жизненный цикл ----------
 
     def die(self, cause="неизвестно"):

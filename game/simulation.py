@@ -1,11 +1,11 @@
 import random
 
-from objects import Fruit, Tree, Stone, WaterPuddle
+from objects import Fruit, Tree, Stone
 from settings import *
 import settings
 from creatures.all_needed import navigation
 from creatures.all_needed.navigation import SpatialGrid
-from game.world_context import WorldFrameContext
+from game.world_context import WorldState, WorldFrameContext
 from game.race_registry import all_races
 
 class Simulation:
@@ -97,14 +97,21 @@ class Simulation:
             "trees": self._tree_grid, "stones": self._stone_grid,
         }
 
+        race_collections = {
+            name: getattr(world, name, []) for name in WorldState.RACE_COLLECTIONS
+        }
+
+        wall_bounds = [(w, *w.get_bounding_circle()) for w in world.walls if w.points]
+        fence_bounds = [(f, *f.get_bounding_circle()) for f in world.fences if f.points]
+
         return WorldFrameContext(
             dt=dt,
             fruits=world.fruits, spikes=world.spikes, water_puddles=world.water_puddles,
             bushes=world.bushes, campfires=world.campfires, creatures=world.creatures,
-            roads=world.roads, storage_fields=world.storage_fields, graveyards=world.graveyards,
-            child_roads=world.child_roads, construction_sites=world.construction_sites,
+            roads=world.roads,
             walls=world.walls, fences=world.fences, trees=world.trees, stones=world.stones,
             road_crossings=world.road_crossings,
+            race_collections=race_collections,
             creatures_by_id=creatures_by_id,
             nav_grid_no_fences=nav_grid_no_fences, nav_grid_with_fences=nav_grid_with_fences,
             spatial_grids=spatial_grids, biome_grid=game.biome_manager.grid,

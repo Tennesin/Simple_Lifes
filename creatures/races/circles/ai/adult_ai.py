@@ -27,20 +27,22 @@ class TerritoryDefense(GoalComponent):
         if c.gender != TERRITORY_ENABLED_GENDER:
             return [None]
 
+        cached_intrusion = None
         if c.territory_pursuit_target_id is not None:
             score = self.SCORE_COMMITTED
         else:
-            intrusion = c.territory.find_intrusion(ctx.visible_bushes, ctx.visible_water, ctx.visible_companions)
-            if intrusion is None:
+            cached_intrusion = c.territory.find_intrusion(
+                ctx.visible_bushes, ctx.visible_water, ctx.visible_companions)
+            if cached_intrusion is None:
                 return [None]
             score = self.SCORE_NEW
 
         def execute():
-            return self._pursue(ctx)
+            return self._pursue(ctx, cached_intrusion)
 
         return [Consideration("territory", score, execute)]
 
-    def _pursue(self, ctx):
+    def _pursue(self, ctx, cached_intrusion=None):
         c = self.c
         visible_bushes, visible_water, visible_companions, dt = (
             ctx.visible_bushes, ctx.visible_water, ctx.visible_companions, ctx.dt)
@@ -77,7 +79,11 @@ class TerritoryDefense(GoalComponent):
             c.territory_pursuit_obj = None
             c.territory_pursuit_last_pos = None
 
-        intrusion = c.territory.find_intrusion(visible_bushes, visible_water, visible_companions)
+        # ---------- НОВОЕ: используем то, что уже посчитано в consider(),
+        # и пересчитываем find_intrusion только если сюда попали без кэша
+        # (например, из ветки "committed", где до этого intrusion не искали) ----------
+        intrusion = cached_intrusion if cached_intrusion is not None else c.territory.find_intrusion(
+            visible_bushes, visible_water, visible_companions)
         if intrusion is None:
             return None
         intruder, obj = intrusion
@@ -98,7 +104,6 @@ class TerritoryDefense(GoalComponent):
         else:
             c.target = (c.x, c.y)
         return c.target
-
 
 # =========================================================================
 # Гормональный бум - активное ухаживание за партнёром - только у AdultAI
