@@ -423,8 +423,11 @@ class CreaturePanel:
             other = next((o for o in game.world.creatures if o.id == other_id), None)
             if other is None or other is creature:
                 continue
-            is_close = (other.id == creature.partner_id or
-                        (other.parent_ids and creature.id in other.parent_ids))
+            is_close = (
+                    other.id == creature.partner_id or
+                    (other.parent_ids and creature.id in other.parent_ids) or
+                    (creature.parent_ids and other.id in creature.parent_ids)
+            )
             entry = (other, value, is_close)
             (females if other.gender == GENDER_FEMALE else males).append(entry)
 
