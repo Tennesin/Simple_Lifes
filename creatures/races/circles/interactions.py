@@ -62,10 +62,14 @@ class CreatureInteractions:
         if c.thirst >= THIRST_SATISFY_THRESHOLD:
             return
         for water in water_puddles:
+            if not water.has_water():
+                continue
             if c.distance_to(water) < EAT_DISTANCE + water.radius:
                 self._register_resource_rivals(water, other_creatures, need_attr="thirst")
                 deficit_ratio = max(WATER_DRINK_DEFICIT_FLOOR, (THIRST_MAX - c.thirst) / THIRST_MAX)
-                c.thirst = min(c.thirst + WATER_DRINK_RATE * deficit_ratio * dt, THIRST_MAX)
+                wanted = min(WATER_DRINK_RATE * deficit_ratio * dt, THIRST_MAX - c.thirst)
+                actual_gain = water.consume(wanted)
+                c.thirst = min(c.thirst + actual_gain, THIRST_MAX)
                 c.memory.add_memory("water", water.x, water.y, importance=1.5)
                 c.knowledge["water"] = True
                 c.territory.register_use(water, "water", dt, campfires=campfires)

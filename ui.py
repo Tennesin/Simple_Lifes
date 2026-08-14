@@ -306,11 +306,13 @@ class ObjectPanel:
         return (0, 0)
 
     def _get_resource_label(self, obj):
-        """Только core-объекты: Tree (wood) и Stone (stone)."""
+        """Core-объекты: Tree (wood), Stone (stone), WaterPuddle (charges)."""
         if hasattr(obj, "wood"):
             return INFO_INFO_TREE_WOOD.format(count=int(obj.wood))
         if hasattr(obj, "stone") and not hasattr(obj, "fruits") and not hasattr(obj, "build_type"):
             return INFO_INFO_STONE_AMOUNT.format(count=int(obj.stone))
+        if hasattr(obj, "charges") and hasattr(obj, "max_charges"):
+            return INFO_INFO_WATER_CHARGES.format(count=int(obj.charges))
         return None
 
     def _collect_extra_lines(self, obj):

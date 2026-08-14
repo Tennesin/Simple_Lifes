@@ -304,8 +304,8 @@ class _ResourceMemoryMixin:
 
     def nearest_water_target(self, visible_water, biome_grid=None):
         c = self.c
+        visible_water = [w for w in visible_water if w.has_water()]
         extra = []
-        # ---------- Река утоляет жажду - врождённое знание, не требует "открытия" через любопытство ----------
         if biome_grid is not None:
             vision_radius = c.aging.effective_vision_radius()
             river_point = biome_grid.find_nearest_of_type(c.x, c.y, BIOME_RIVER, vision_radius)
@@ -317,8 +317,6 @@ class _ResourceMemoryMixin:
             return target
         return c.memory.get_water_intuitive_target(*c.comfort_point)
 
-    # ---------- Общий алгоритм: цель из памяти оказалась рядом, а реального
-    # объекта там нет - забываем воспоминание ----------
     def _check_stale_memory_target(self, mem_type, target_attr, visible_objs, presence_check):
         c = self.c
         target = getattr(c, target_attr)
@@ -340,7 +338,7 @@ class _ResourceMemoryMixin:
     def check_stale_water_memory(self, visible_water):
         self._check_stale_memory_target(
             "water", "water_memory_target", visible_water,
-            lambda w, tx, ty: math.hypot(w.x - tx, w.y - ty) < EAT_DISTANCE + 10)
+            lambda w, tx, ty: w.has_water() and math.hypot(w.x - tx, w.y - ty) < EAT_DISTANCE + 10)
 
     def nearest_danger_position(self, known_threats):
         c = self.c

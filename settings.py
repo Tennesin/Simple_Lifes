@@ -115,6 +115,11 @@ STONE_MAX_TOTAL = 200
 FRUIT_COLOR = (255, 190, 40)
 FRUIT_COLOR_BORDER = (230, 120, 15)
 
+# ---------- Водоём (лужа/озеро) ----------
+WATER_PUDDLE_CHARGE_MIN = 10
+WATER_PUDDLE_CHARGE_MAX = 30
+WATER_PUDDLE_CHARGE_VALUE = 10.0   # сколько единиц жажды даёт 1 заряд водоёма
+
 # Миры
 BASE_WORLDS_DIR = os.path.join(os.path.expanduser("~"), "Documents", "Simple_Lifes")
 WORLD_EXTENSION = ".slw"           # Simple Lifes World — расширение папки мира

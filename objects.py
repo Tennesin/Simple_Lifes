@@ -145,27 +145,58 @@ class Spike(WorldObject):
 class WaterPuddle(WorldObject):
     type_name = INFO_OBJECT_WATER
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, max_charges=None):
         super().__init__(x, y, gen_id=True)
         self.radius = 14
         self.claimed_by = None
+        self.max_charges = (max_charges if max_charges is not None
+                            else random.randint(WATER_PUDDLE_CHARGE_MIN, WATER_PUDDLE_CHARGE_MAX))
+        self.charges = float(self.max_charges)
+
+    def has_water(self):
+        return self.charges > 0.0
+
+    def consume(self, amount):
+        if amount <= 0 or self.charges <= 0:
+            return 0.0
+        available = self.charges * WATER_PUDDLE_CHARGE_VALUE
+        actual = min(amount, available)
+        self.charges = max(0.0, self.charges - actual / WATER_PUDDLE_CHARGE_VALUE)
+        return actual
+
+    def take_charge(self):
+        if self.charges < 1.0:
+            return False
+        self.charges -= 1.0
+        return True
+
+    @staticmethod
+    def _lerp_color(c_empty, c_full, t):
+        t = max(0.0, min(1.0, t))
+        return tuple(int(c_empty[i] + (c_full[i] - c_empty[i]) * t) for i in range(3))
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         rect = (sx - self.radius, sy - self.radius // 2, self.radius * 2, self.radius)
-        pygame.draw.ellipse(screen, (60, 140, 220), rect)
-        pygame.draw.ellipse(screen, (30, 90, 170), rect, 2)
+        fraction = (self.charges / self.max_charges) if self.max_charges else 0.0
+        fill_color = self._lerp_color((90, 75, 45), (60, 140, 220), fraction)
+        border_color = self._lerp_color((60, 50, 30), (30, 90, 170), fraction)
+        pygame.draw.ellipse(screen, fill_color, rect)
+        pygame.draw.ellipse(screen, border_color, rect, 2)
 
     def to_dict(self):
         d = self._base_dict()
         d["claimed_by"] = self.claimed_by
+        d["charges"] = self.charges
+        d["max_charges"] = self.max_charges
         return d
 
     @staticmethod
     def from_dict(data):
-        water = WaterPuddle(data["x"], data["y"])
+        water = WaterPuddle(data["x"], data["y"], max_charges=data.get("max_charges"))
         water._apply_base(data)
         water.claimed_by = data.get("claimed_by")
+        water.charges = data.get("charges", water.max_charges)
         return water
 
 class Bush(WorldObject):

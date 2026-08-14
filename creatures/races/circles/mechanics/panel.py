@@ -795,7 +795,7 @@ class GraveyardPanel:
             screen.blit(name_txt, (list_rect.x, row_y + 4))
 
             if fresh_record:
-                details_rect = pygame.Rect(list_rect.right - 128, row_y + 2, 62, self.ROW_HEIGHT - 6)
+                details_rect = pygame.Rect(list_rect.right - 178, row_y + 2, 112, self.ROW_HEIGHT - 6)
                 genealogy_rect = pygame.Rect(list_rect.right - 64, row_y + 2, 62, self.ROW_HEIGHT - 6)
 
                 details_color = BUTTON_HOVER if details_rect.collidepoint(mouse_pos) else BUTTON_COLOR

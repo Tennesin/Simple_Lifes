@@ -86,6 +86,7 @@ INFO_ERROR_INVALID_WORLD = "Выбранная папка не является 
 INFO_INFO_CREATED = "Создан: {created}"
 INFO_INFO_TREE_WOOD = "Древесины: {count}"
 INFO_INFO_STONE_AMOUNT = "Камня: {count}"
+INFO_INFO_WATER_CHARGES = "Заряды воды: {count}"
 INFO_INFO_DELETE_HINT = "Ctrl+ЛКМ / Del — удалить"
 
 # --------------------- Экраны создания/загрузки мира ---------------------

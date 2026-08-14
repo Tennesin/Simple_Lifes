@@ -91,18 +91,22 @@ class ResourceActions:
 
     def go_fetch_water(self, visible_water, biome_grid=None):
         c = self.c
-        target_water = min(visible_water, key=c.distance_to) if visible_water else None
+        available_water = [w for w in visible_water if w.has_water()]
+        target_water = min(available_water, key=c.distance_to) if available_water else None
 
         if target_water is not None:
             if c.distance_to(target_water) < EAT_DISTANCE + target_water.radius:
-                c.carried_water = True
-                c.goal_text = INFO_CREATURE_GOAL_FEED_CARRY_WATER
-                c.target = (c.x, c.y)
+                if target_water.take_charge():
+                    c.carried_water = True
+                    c.goal_text = INFO_CREATURE_GOAL_FEED_CARRY_WATER
+                    c.target = (c.x, c.y)
+                    return c.target
+                # заряд иссяк прямо в момент подхода - падаем в общий поиск ниже
+            else:
+                c.state = STATE_SEEKING
+                c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
+                c.target = (target_water.x, target_water.y)
                 return c.target
-            c.state = STATE_SEEKING
-            c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
-            c.target = (target_water.x, target_water.y)
-            return c.target
 
         memory_positions = c.memory.get_water_memories()
         if memory_positions:
@@ -112,7 +116,6 @@ class ResourceActions:
             c.target = pos
             return pos
 
-        # ---------- Река тоже годится как источник для переноски, просто у неё нет "объекта" ----------
         if biome_grid is not None:
             if biome_grid.get_at(c.x, c.y) == BIOME_RIVER:
                 c.carried_water = True
