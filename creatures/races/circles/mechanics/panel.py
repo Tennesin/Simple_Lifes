@@ -31,6 +31,7 @@ class CreaturePanel:
         self._relationships_track_height = 0
         self.stat_bar_rects = {}
 
+        self._last_creature_id = None
         self.genealogy_btn_rect = None
 
         # ---------- Левое окно психики ----------
