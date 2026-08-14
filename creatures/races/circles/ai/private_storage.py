@@ -42,7 +42,7 @@ class PrivateStorage(Storage):
             return [None]
         if self._owned_field(ctx) is None:
             return [None]
-        return super().consider(ctx)
+        return [Consideration("storage", self.SCORE, lambda: self._pursue(ctx))]
 
     def _pursue(self, ctx):
         c = self.c
@@ -74,9 +74,6 @@ class PrivateConstruction(Construction):
                 return "campfire"
             return None
 
-        # A storage is a household asset.  Do not require a pre-existing
-        # family: the male who has a campfire but no storage is allowed to
-        # establish his own one.
         owned_field = next((f for f in ctx.storage_fields
                             if f.is_owned_by_campfire(campfire_pos)
                             and field_belongs_to(c, f, ctx.other_creatures)), None)
@@ -120,7 +117,6 @@ class PrivateConstruction(Construction):
         if not ctx.construction_sites:
             return None
 
-        # Only adopt an unclaimed storage site; never steal a private one.
         storage_candidates = [s for s in ctx.construction_sites
                               if s.build_type == "storage"
                               and self._site_belongs_to(s, ctx)
@@ -154,3 +150,25 @@ def _site_from_dict(data):
 
 ConstructionSite.to_dict = _site_to_dict
 ConstructionSite.from_dict = _site_from_dict
+
+
+# AdultAI is loaded before this module via ai/__init__.py.
+from .adult_ai import AdultAI
+from ....all_needed.ai.utility import Consideration
+
+_original_adult_init = AdultAI.__init__
+
+
+def _adult_init_with_private_storage(self, creature, instincts):
+    _original_adult_init(self, creature, instincts)
+    self.storage = PrivateStorage(creature, instincts, self.actions)
+    self.construction = PrivateConstruction(creature, instincts)
+    self.components = [
+        self.survival, self.corpse_handling, self.empathy, self.feeding,
+        self.social_response, self.territory, self.puberty, self.partner_bond,
+        self.storage, self.construction, self.roads,
+        self.child_road_verification, self.curiosity,
+    ]
+
+
+AdultAI.__init__ = _adult_init_with_private_storage
