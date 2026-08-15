@@ -56,6 +56,9 @@ class PlayerReactionHandler:
         c.following_road = None
         c.following_road_active = False
         c.road_entry_reached = False
+        c.following_child_road = None
+        c.child_road_progress = 0
+        c.child_road_entry_reached = False
         c.player_relationship = geometry.clamp(c.player_relationship + PLAYER_HIT_RELATIONSHIP, -100.0, 100.0)
         c.psyche.on_hit()
         self.add_memory("hit", relationship_after=c.player_relationship)

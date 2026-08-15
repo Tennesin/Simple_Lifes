@@ -638,10 +638,14 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
     )
 
     def find_creature_at(self, wx, wy):
+        best = None
+        best_dist = 14
         for creature in self.game.world.creatures:
-            if math.hypot(wx - creature.x, wy - creature.y) <= 14:
-                return creature
-        return None
+            dist = math.hypot(wx - creature.x, wy - creature.y)
+            if dist <= best_dist:
+                best = creature
+                best_dist = dist
+        return best
 
     def find_object_at(self, wx, wy):
         game = self.game

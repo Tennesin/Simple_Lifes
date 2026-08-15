@@ -50,21 +50,22 @@ class StorageField:
             if (creature.life_stage == LIFE_STAGE_CHILD and creature.parent_ids
                     and owner_id in creature.parent_ids):
                 return True
-        if creature.life_stage == LIFE_STAGE_CHILD and other_creatures is not None:
-            for owner_id in self.owner_ids:
-                owner = next((o for o in other_creatures if o.id == owner_id), None)
-                if owner is not None and not owner.is_dead and owner.life_stage == LIFE_STAGE_OLD:
-                    return True
         return False
 
     def punish_theft(self, thief, other_creatures):
-        """Кража воспринимается владельцами очень болезненно."""
+        """Кража воспринимается владельцами очень болезненно. Исключение -
+        старики: если вор - ребёнок, старик-владелец на него не обижается
+        (остальные совладельцы, если среди них есть не-старики, всё равно реагируют)."""
         if not other_creatures:
             return
+        thief_is_child = getattr(thief, "life_stage", None) == LIFE_STAGE_CHILD
         for owner_id in self.owner_ids:
             owner = next((o for o in other_creatures if o.id == owner_id), None)
-            if owner is not None and not owner.is_dead:
-                owner.social.adjust_relationship(thief, STORAGE_THEFT_RELATIONSHIP_PENALTY)
+            if owner is None or owner.is_dead:
+                continue
+            if thief_is_child and owner.life_stage == LIFE_STAGE_OLD:
+                continue
+            owner.social.adjust_relationship(thief, STORAGE_THEFT_RELATIONSHIP_PENALTY)
 
     def is_owned_by_campfire(self, campfire_pos, tolerance=10):
         if self.campfire_pos is None:

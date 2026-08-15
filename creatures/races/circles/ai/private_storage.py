@@ -12,10 +12,12 @@ def same_household(creature, owner_id, other_creatures=None):
         return True
     if creature.partner_id == owner_id:
         return True
-    if creature.parent_ids and owner_id in creature.parent_ids:
+    if (creature.life_stage == LIFE_STAGE_CHILD and creature.parent_ids
+            and owner_id in creature.parent_ids):
         return True
     for other in other_creatures or ():
-        if other.id == owner_id and other.parent_ids and creature.id in other.parent_ids:
+        if (other.id == owner_id and other.life_stage == LIFE_STAGE_CHILD
+                and other.parent_ids and creature.id in other.parent_ids):
             return True
     return False
 

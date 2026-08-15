@@ -240,6 +240,7 @@ class _NavigationInstinctMixin:
         if moved < STUCK_DISTANCE_THRESHOLD and goal_dist > STUCK_DISTANCE_THRESHOLD:
             c.stuck_level += 1
             c.pathfinder.reset_navigation()
+            c.following_road_active = False
 
             if c.stuck_level >= STUCK_ESCALATION_THRESHOLD:
                 angle = random.uniform(0, 2 * math.pi)
