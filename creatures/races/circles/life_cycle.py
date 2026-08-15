@@ -232,6 +232,8 @@ class CreatureFamily:
         for other in other_creatures:
             if other is c or other.is_dead or other.is_grabbed:
                 continue
+            if self._is_blood_relative(other):
+                continue
             if other.gender == c.gender or other.life_stage != LIFE_STAGE_ADULT:
                 continue
             if other.partner_id is not None:
@@ -260,6 +262,14 @@ class CreatureFamily:
         c.social.adjust_mutual_relationship(partner, FAMILY_PAIR_BOND_BONUS)
         c.psyche.on_pair_formed()
         partner.psyche.on_pair_formed()
+
+    def _is_blood_relative(self, other):
+        c = self.c
+        if c.parent_ids and other.id in c.parent_ids:
+            return True
+        if other.parent_ids and c.id in other.parent_ids:
+            return True
+        return _shares_parent(c.parent_ids, other.parent_ids)
 
     # ---------- Течение беременности ----------
 

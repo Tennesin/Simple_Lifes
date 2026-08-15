@@ -425,23 +425,8 @@ class BasePathfinder:
 
     def _resolve_wall_collision(self, x, y, wall_polylines):
         c = self.c
-        clearance = getattr(c, "radius", 10) + WALL_THICKNESS / 2
-
-        for points in wall_polylines:
-            for i in range(len(points) - 1):
-                ax, ay = points[i]
-                bx, by = points[i + 1]
-                cx, cy = geometry.closest_point_on_segment(x, y, ax, ay, bx, by)
-                ddx, ddy = x - cx, y - cy
-                d = math.hypot(ddx, ddy)
-                if d < clearance:
-                    if d < 1e-6:
-                        ddx, ddy = 0.0, -1.0
-                        d = 1.0
-                    push = clearance - d
-                    x += (ddx / d) * push
-                    y += (ddy / d) * push
-        return x, y
+        radius = getattr(c, "radius", 10)
+        return geometry.resolve_circle_vs_polylines(x, y, radius, wall_polylines, WALL_THICKNESS)
 
     # ---------- Точка расширения для конкретной расы ----------
 

@@ -37,6 +37,30 @@ def closest_point_on_segment(px, py, ax, ay, bx, by):
     t = max(0.0, min(1.0, (apx * abx + apy * aby) / ab_len_sq))
     return (ax + t * abx, ay + t * aby)
 
+def resolve_circle_vs_polylines(x, y, radius, polylines, thickness, iterations=2):
+    clearance = radius + thickness / 2
+    for _ in range(iterations):
+        closest = None
+        closest_dist = clearance
+        for points in polylines:
+            for i in range(len(points) - 1):
+                ax, ay = points[i]
+                bx, by = points[i + 1]
+                cx, cy = closest_point_on_segment(x, y, ax, ay, bx, by)
+                d = math.hypot(x - cx, y - cy)
+                if d < closest_dist:
+                    closest_dist = d
+                    closest = (x - cx, y - cy, d)
+        if closest is None:
+            break
+        ddx, ddy, d = closest
+        if d < 1e-6:
+            ddx, ddy, d = 0.0, -1.0, 1.0
+        push = clearance - d
+        x += (ddx / d) * push
+        y += (ddy / d) * push
+    return x, y
+
 def clamp(value, lo, hi):
     return max(lo, min(hi, value))
 
@@ -48,12 +72,10 @@ class ObstaclePoint:
         self.y = y
         self.radius = radius
 
-
 def segments_intersect(p1, p2, p3, p4):
     def ccw(a, b, c):
         return (c[1] - a[1]) * (b[0] - a[0]) > (b[1] - a[1]) * (c[0] - a[0])
     return ccw(p1, p3, p4) != ccw(p2, p3, p4) and ccw(p1, p2, p3) != ccw(p1, p2, p4)
-
 
 def segment_blocked_by_polylines(x1, y1, x2, y2, polylines):
     p1, p2 = (x1, y1), (x2, y2)
