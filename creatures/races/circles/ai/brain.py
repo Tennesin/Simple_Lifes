@@ -208,20 +208,32 @@ class _ReflexMixin(_BrainMixinBase):
         c.target = (c.x, c.y)
         return True
 
+    def _flee_from_corpse(self, nearby_corpse_threats, visible_companions):
+        c = self.c
+        nearest_corpse = min(nearby_corpse_threats, key=c.distance_to)
+        self.instincts.notify_elders_of_corpse(nearest_corpse, visible_companions)
+        self._interrupt_child_road_play()          # НОВОЕ
+        return self.instincts.flee_to_campfire((nearest_corpse.x, nearest_corpse.y))
+
     def _flee_from_fear(self):
         c = self.c
         c.state = STATE_PANIC
         c.panic_active = True
         c.goal_text = INFO_CREATURE_GOAL_PANIC_FLEE
+        self._interrupt_child_road_play()
         goal = c.flee_point(c.fear_source, 130)
         c.target = goal
         return goal
 
-    def _flee_from_corpse(self, nearby_corpse_threats, visible_companions):
+    def _interrupt_child_road_play(self):
         c = self.c
-        nearest_corpse = min(nearby_corpse_threats, key=c.distance_to)
-        self.instincts.notify_elders_of_corpse(nearest_corpse, visible_companions)
-        return self.instincts.flee_to_campfire((nearest_corpse.x, nearest_corpse.y))
+        if c.following_child_road is None:
+            return
+        c.following_child_road = None
+        c.child_road_progress = 0
+        c.child_road_entry_reached = False
+        c.following_road_active = False
+        c.child_road_play_cooldown = max(c.child_road_play_cooldown, 1.0)
 
 
 # =========================================================================

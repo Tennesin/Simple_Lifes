@@ -57,8 +57,16 @@ def segments_intersect(p1, p2, p3, p4):
 
 def segment_blocked_by_polylines(x1, y1, x2, y2, polylines):
     p1, p2 = (x1, y1), (x2, y2)
+    min_x, max_x = (x1, x2) if x1 <= x2 else (x2, x1)
+    min_y, max_y = (y1, y2) if y1 <= y2 else (y2, y1)
     for points in polylines:
         for i in range(len(points) - 1):
-            if segments_intersect(p1, p2, points[i], points[i + 1]):
+            ax, ay = points[i]
+            bx, by = points[i + 1]
+            if max(ax, bx) < min_x or min(ax, bx) > max_x:
+                continue
+            if max(ay, by) < min_y or min(ay, by) > max_y:
+                continue
+            if segments_intersect(p1, p2, (ax, ay), (bx, by)):
                 return True
     return False

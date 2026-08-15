@@ -1,4 +1,4 @@
-from settings import BIOME_BRUSH_DEFAULT_RADIUS
+from settings import BIOME_BRUSH_DEFAULT_RADIUS, LANDSCAPE_MIN_POINT_DIST
 from game.race_registry import all_road_networks
 
 class Player:
@@ -30,6 +30,7 @@ class Player:
         for spec in all_road_networks():
             setattr(self, f"drawing_{spec.obj_type}", None)
         self.road_min_point_dist = 18
+        self.landscape_min_point_dist = LANDSCAPE_MIN_POINT_DIST
 
         self.drawing_landscape = None
         self.landscape_type = None

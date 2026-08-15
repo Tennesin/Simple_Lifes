@@ -755,7 +755,8 @@ class _MouseMotionMixin:
                 wy = max(0, min(wy, game.camera.world_h))
                 obj = game.player.drawing_landscape
                 last_x, last_y = obj.points[-1]
-                if math.hypot(wx - last_x, wy - last_y) >= game.player.road_min_point_dist:
+                if math.hypot(wx - last_x,
+                              wy - last_y) >= game.player.landscape_min_point_dist:  # было road_min_point_dist
                     obj.add_point(wx, wy)
 
         if game.placement_mode:
