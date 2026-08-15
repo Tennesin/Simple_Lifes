@@ -178,13 +178,13 @@ MINIMAP_VIEWPORT_COLOR = (60, 140, 255)
 WALL_COLOR = (70, 70, 75)
 WALL_THICKNESS = 7
 WALL_VISION_BLOCK_MARGIN = 60  # запас: стена чуть за радиусом видимости всё ещё может перекрывать обзор
-WALL_WELD_TOLERANCE = 20
+WALL_WELD_TOLERANCE = 14
 FENCE_COLOR = (196, 154, 108)
 FENCE_THICKNESS = 3
 FENCE_TICK_COLOR = (60, 45, 30)
 FENCE_TICK_INTERVAL = 16      # шаг между чёрточками "/" на заборе
 FENCE_TICK_LENGTH = 8
-LANDSCAPE_MIN_POINT_DIST = 30
+LANDSCAPE_MIN_POINT_DIST = 20
 
 # ---------- Глобальный pathfinding (A* по клеточной карте) ----------
 NAV_GRID_CELL_SIZE = 30          # размер одной клетки карты навигации, px
