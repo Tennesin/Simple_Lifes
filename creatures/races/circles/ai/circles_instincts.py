@@ -236,8 +236,12 @@ class _NavigationInstinctMixin:
         moved = math.hypot(c.x - c.position_at_last_check[0], c.y - c.position_at_last_check[1])
         c.position_at_last_check = (c.x, c.y)
 
+        nav_index = getattr(c, "nav_path_index", 0)
+        path_advanced = nav_index > c.stuck_last_nav_index
+        c.stuck_last_nav_index = nav_index
+
         goal_dist = math.hypot(c.x - goal[0], c.y - goal[1])
-        if moved < STUCK_DISTANCE_THRESHOLD and goal_dist > STUCK_DISTANCE_THRESHOLD:
+        if not path_advanced and moved < STUCK_DISTANCE_THRESHOLD and goal_dist > STUCK_DISTANCE_THRESHOLD:
             c.stuck_level += 1
             c.pathfinder.reset_navigation()
             c.following_road_active = False

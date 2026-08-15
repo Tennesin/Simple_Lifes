@@ -238,7 +238,7 @@ class SurvivalNeeds(GoalComponent):
             if danger_pos:
                 c.state = STATE_PANIC
                 c.panic_active = True
-                c.goal_text = INFO_CREATURE_GOAL_URGENT_SAFETY
+                c.goal_text = INFO_CREATURE_GOAL_SEEK_SAFETY
                 return c.flee_point(danger_pos, 80)
             return None
 
@@ -1152,8 +1152,15 @@ class Construction(GoalComponent):
             new_object = Campfire(site.x, site.y)
             ctx.campfires.append(new_object)
         elif site.build_type == "storage":
-            new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos,
-                                      owner_ids=set(site.contributor_ids))
+            new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos)
+            primary_owner_id = getattr(site, "storage_owner_id", None) or c.id
+            new_object.add_owner(primary_owner_id)
+
+            primary_owner = next((o for o in ctx.other_creatures if o.id == primary_owner_id), None)
+            partner_id = primary_owner.partner_id if primary_owner is not None else None
+            if partner_id is not None and partner_id in site.contributor_ids:
+                new_object.add_owner(partner_id)
+
             new_object.built_by = c.id
             ctx.storage_fields.append(new_object)
         elif site.build_type == "graveyard":

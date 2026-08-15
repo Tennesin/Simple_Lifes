@@ -26,6 +26,7 @@ class StorageField:
         self.campfire_pos = owner_campfire_pos
         self.created = time.time()
         self.id = str(uuid.uuid4())[:8]
+        self.owner_ids = set(list(owner_ids)[:STORAGE_FIELD_MAX_OWNERS]) if owner_ids else set()
 
     def get_type_name(self):
         return INFO_OBJECT_STORAGE_FIELD
@@ -38,6 +39,13 @@ class StorageField:
 
     def is_public(self):
         return not self.owner_ids
+
+    def add_owner(self, owner_id):
+        if owner_id is None or owner_id in self.owner_ids:
+            return
+        if len(self.owner_ids) >= STORAGE_FIELD_MAX_OWNERS:
+            return
+        self.owner_ids.add(owner_id)
 
     def grants_full_access(self, creature, other_creatures=None):
         if self.is_public():

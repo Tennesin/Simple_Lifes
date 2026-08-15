@@ -77,6 +77,7 @@ class Creature(LivingEntity):
         self.stuck_check_timer = STUCK_CHECK_INTERVAL
         self.position_at_last_check = (self.x, self.y)
         self.stuck_level = 0
+        self.stuck_last_nav_index = 0
 
         self.seeking_food = False
         self.seeking_water = False

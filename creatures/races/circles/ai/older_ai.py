@@ -6,9 +6,10 @@ from ..ci_settings import *
 from ..ci_info import *
 from .circles_adult_patterns import (
     GoalComponent, ResourceActions, Roads, SurvivalNeeds, CorpseHandling,
-    Feeding, SocialResponse, PartnerBond, Storage, Curiosity, CuriosityStrategy,
+    Feeding, SocialResponse, PartnerBond, Curiosity, CuriosityStrategy,
     lookup_creature,
 )
+from .private_storage import PrivateStorage
 from ....all_needed.ai.utility import Consideration, pick_best
 
 # =========================================================================
@@ -40,18 +41,7 @@ class ElderWardCare(GoalComponent):
         return [Consideration("extra_care", score, execute)]
 
     def _child_needs_help(self, child, visible_companions, other_creatures):
-        if not child.family.has_living_parent(other_creatures):
-            return True
-        parent_visible = False
-        if child.parent_ids:
-            for pid in child.parent_ids:
-                if pid is not None and any(o.id == pid for o in visible_companions):
-                    parent_visible = True
-                    break
-        if parent_visible:
-            return False
-        return (child.hunger < CHILD_FEED_HUNGER_THRESHOLD or
-                child.thirst < CHILD_FEED_THIRST_THRESHOLD)
+        return not child.family.has_living_parent(other_creatures)
 
     def _help_any_needy_child(self, ctx):
         c = self.c
@@ -172,7 +162,7 @@ class OlderAI:
         self.feeding = Feeding(creature, self.actions)
         self.social_response = SocialResponse(creature)
         self.partner_bond = PartnerBond(creature)
-        self.storage = Storage(creature, instincts, self.actions)
+        self.storage = PrivateStorage(creature, instincts, self.actions)
         self.curiosity = Curiosity(creature, ElderCuriosityStrategy(creature))
 
         # ---------- территории, пубертата и проверки детских дорог у стариков нет -
