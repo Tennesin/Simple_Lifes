@@ -128,13 +128,20 @@ class NavGrid:
         if not self.is_blocked(cx, cy):
             return (cx, cy)
         for radius in range(1, max_radius + 1):
+            best = None
+            best_dist_sq = None
             for dx in range(-radius, radius + 1):
                 for dy in range(-radius, radius + 1):
                     if max(abs(dx), abs(dy)) != radius:
                         continue
                     ncx, ncy = cx + dx, cy + dy
-                    if self.in_bounds(ncx, ncy) and not self.is_blocked(ncx, ncy):
-                        return (ncx, ncy)
+                    if not self.in_bounds(ncx, ncy) or self.is_blocked(ncx, ncy):
+                        continue
+                    dist_sq = dx * dx + dy * dy
+                    if best is None or dist_sq < best_dist_sq:
+                        best, best_dist_sq = (ncx, ncy), dist_sq
+            if best is not None:
+                return best
         return None
 
     # ---------- A* ----------

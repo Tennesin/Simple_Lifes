@@ -10,6 +10,7 @@ import random
 
 from ..ci_settings import *
 from ..ci_info import *
+from .private_storage import field_belongs_to
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration, pick_best, scale
 
@@ -159,7 +160,7 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         if not (c.hunger < CHILD_FEED_HUNGER_THRESHOLD or c.thirst < CHILD_FEED_THIRST_THRESHOLD):
             return None
 
-        field = self.instincts.find_storage_field(storage_fields)
+        field = self._find_family_storage_field(storage_fields, other_creatures)
         if field is not None:
             wants_fruit = c.hunger < CHILD_FEED_HUNGER_THRESHOLD and field.fruits > 0
             wants_water = c.thirst < CHILD_FEED_THIRST_THRESHOLD and field.water > 0
@@ -188,6 +189,13 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         else:
             c.target = self.instincts.pursue_search_target(biome_grid=biome_grid)
         return c.target
+
+    def _find_family_storage_field(self, storage_fields, other_creatures):
+        c = self.c
+        candidates = [f for f in storage_fields if field_belongs_to(c, f, other_creatures)]
+        if not candidates:
+            return None
+        return min(candidates, key=c.distance_to)
 
 # =========================================================================
 # Домен: спонтанное исследование окрестностей
