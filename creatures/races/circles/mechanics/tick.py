@@ -137,6 +137,7 @@ class CircleTickProcessor:
         game = self.game
         world = game.world
         ready_for_interact = []
+        wall_polylines = [w.points for w in world.walls if w.points]
 
         for creature in race_creatures:
             if creature.is_dead:
@@ -185,7 +186,9 @@ class CircleTickProcessor:
                     elif build_type in ("campfire", "storage"):
                         cleanup_area_for_new_construction(game, new_object, new_object.radius + 10)
 
-            creature.pathfinder.move_towards(target, ctx.dt, biome_grid=game.biome_manager.grid)
+            creature.pathfinder.move_towards(
+                target, ctx.dt, biome_grid=game.biome_manager.grid,
+                wall_polylines=wall_polylines)
             ready_for_interact.append(creature)
 
         return ready_for_interact

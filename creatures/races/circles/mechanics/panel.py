@@ -11,6 +11,7 @@ from info import *
 from game.widgets import Button, ScrollArea
 from ..ci_settings import *
 from ..ci_info import *
+from ....all_needed import geometry
 from ....all_needed.diet import DIET_DISPLAY_MAP
 
 class CreaturePanel:
@@ -1119,7 +1120,10 @@ class GenealogyTreeOverlay:
             }
             all_edges.append((node["id"], partner_id, "partner"))
 
-        self._resolve_overlaps(all_nodes)
+        self._resolve_overlaps(all_nodes, registry)
+        self._resolve_cross_line_overlaps(list(all_nodes.values()), all_edges, registry)
+        self._resolve_overlaps(all_nodes, registry)
+
         nodes_list = list(all_nodes.values())
         if not nodes_list:
             bbox = (0, 0, 0, 0)
@@ -1229,12 +1233,15 @@ class GenealogyTreeOverlay:
             pygame.draw.circle(screen, GENEALOGY_ROOT_RING_COLOR, (int(sx), int(sy)), radius + 5, 3)
 
         if is_dead:
-            cross_x = sx - radius - 10
-            half = 5
+            cross_x = sx - radius - 12
+            cross_top = sy - 9
+            cross_bottom = sy + 9
+            crossbar_y = sy - 3
+            crossbar_half = 5
             pygame.draw.line(screen, GENEALOGY_CROSS_COLOR,
-                             (cross_x - half, sy - half), (cross_x + half, sy + half), 2)
+                             (cross_x, cross_top), (cross_x, cross_bottom), 2)
             pygame.draw.line(screen, GENEALOGY_CROSS_COLOR,
-                             (cross_x - half, sy + half), (cross_x + half, sy - half), 2)
+                             (cross_x - crossbar_half, crossbar_y), (cross_x + crossbar_half, crossbar_y), 2)
 
         pygame.draw.circle(screen, color, (int(sx), int(sy)), radius)
         pygame.draw.circle(screen, (20, 20, 20), (int(sx), int(sy)), radius, 2)
@@ -1268,21 +1275,26 @@ class GenealogyTreeOverlay:
 
     # ---------- Разрешение перекрытий: раздвигаем круги одного поколения, если они соприкасаются ----------
 
-    def _resolve_overlaps(self, nodes_dict):
-        min_gap = (GENEALOGY_NODE_RADIUS * 2 + 6) / GENEALOGY_SLOT_WIDTH
+    def _resolve_overlaps(self, nodes_dict, registry):
+        nodes = list(nodes_dict.values())
+        extents = {id(node): self._node_extents(registry, node) for node in nodes}
 
         by_generation = {}
-        for node in nodes_dict.values():
+        for node in nodes:
             by_generation.setdefault(node["generation"], []).append(node)
 
         for group in by_generation.values():
             if len(group) < 2:
                 continue
             group.sort(key=lambda n: n["x"])
-            for _ in range(len(group)):
+            for _ in range(len(group) * 2 + 2):
                 changed = False
                 for i in range(1, len(group)):
                     prev_node, cur_node = group[i - 1], group[i]
+                    prev_left, prev_right = extents[id(prev_node)]
+                    cur_left, cur_right = extents[id(cur_node)]
+                    min_gap_px = prev_right + cur_left + GENEALOGY_MIN_NODE_GAP
+                    min_gap = min_gap_px / GENEALOGY_SLOT_WIDTH
                     overlap = min_gap - (cur_node["x"] - prev_node["x"])
                     if overlap > 0:
                         shift = overlap / 2
@@ -1291,6 +1303,56 @@ class GenealogyTreeOverlay:
                         changed = True
                 if not changed:
                     break
+
+    def _local_pos(self, node):
+        return node["x"] * GENEALOGY_SLOT_WIDTH, node["generation"] * GENEALOGY_ROW_HEIGHT
+
+    def _node_extents(self, registry, node):
+        rec = registry.get(node["id"]) if registry else None
+        name = (rec["name"] if rec and rec["name"] else node["id"]) if rec else INFO_GENEALOGY_UNKNOWN
+        is_dead = bool(rec and rec.get("is_dead"))
+
+        name_half_width = self.name_font.size(name)[0] / 2.0
+        base = max(GENEALOGY_NODE_RADIUS, name_half_width) + 4
+
+        left_extent = base
+        if is_dead:
+            left_extent = max(left_extent, GENEALOGY_NODE_RADIUS + GENEALOGY_CROSS_RESERVED_WIDTH)
+        right_extent = base
+        return left_extent, right_extent
+
+    def _resolve_cross_line_overlaps(self, nodes_list, edges, registry, iterations=4):
+        by_id = {}
+        for node in nodes_list:
+            by_id.setdefault(node["id"], node)
+
+        dead_nodes = []
+        for node in nodes_list:
+            rec = registry.get(node["id"]) if registry else None
+            if rec and rec.get("is_dead"):
+                dead_nodes.append(node)
+        if not dead_nodes:
+            return
+
+        for _ in range(iterations):
+            changed = False
+            for node in dead_nodes:
+                nx, ny = self._local_pos(node)
+                cross_x = nx - GENEALOGY_NODE_RADIUS - 12
+                cross_y = ny
+
+                for a_id, b_id, _kind in edges:
+                    node_a, node_b = by_id.get(a_id), by_id.get(b_id)
+                    if node_a is None or node_b is None or node_a is node or node_b is node:
+                        continue
+                    ax, ay = self._local_pos(node_a)
+                    bx, by_ = self._local_pos(node_b)
+                    dist = geometry.point_segment_distance(cross_x, cross_y, ax, ay, bx, by_)
+                    if dist < GENEALOGY_CROSS_LINE_CLEARANCE:
+                        node["x"] += (GENEALOGY_CROSS_LINE_CLEARANCE - dist) / GENEALOGY_SLOT_WIDTH * 0.6
+                        changed = True
+            if not changed:
+                break
 
 # =========================================================================
 # Расширение ObjectPanel (ядровое, core ui.py) строками для объектов

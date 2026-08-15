@@ -70,3 +70,61 @@ def segment_blocked_by_polylines(x1, y1, x2, y2, polylines):
             if segments_intersect(p1, p2, (ax, ay), (bx, by)):
                 return True
     return False
+
+def ray_segment_intersection(ox, oy, dx, dy, ax, ay, bx, by):
+    v1x, v1y = ox - ax, oy - ay
+    v2x, v2y = bx - ax, by - ay
+    v3x, v3y = -dy, dx
+    dot = v2x * v3x + v2y * v3y
+    if abs(dot) < 1e-9:
+        return None
+    t1 = (v2x * v1y - v2y * v1x) / dot
+    t2 = (v1x * v3x + v1y * v3y) / dot
+    if t1 >= 0 and 0 <= t2 <= 1:
+        return t1
+    return None
+
+
+def visibility_polygon(cx, cy, radius, blocking_polylines, num_rays=180, corner_epsilon=0.0006):
+    segments = []
+    for points in blocking_polylines:
+        for i in range(len(points) - 1):
+            ax, ay = points[i]
+            bx, by = points[i + 1]
+            if max(ax, bx) + radius < cx or min(ax, bx) - radius > cx:
+                continue
+            if max(ay, by) + radius < cy or min(ay, by) - radius > cy:
+                continue
+            segments.append((ax, ay, bx, by))
+
+    if not segments:
+        return [
+            (cx + math.cos(2 * math.pi * i / num_rays) * radius,
+             cy + math.sin(2 * math.pi * i / num_rays) * radius)
+            for i in range(num_rays)
+        ]
+
+    angles = {2 * math.pi * i / num_rays for i in range(num_rays)}
+
+    for ax, ay, bx, by in segments:
+        for px, py in ((ax, ay), (bx, by)):
+            dx, dy = px - cx, py - cy
+            dist = math.hypot(dx, dy)
+            if dist < 1e-6 or dist > radius * 1.4:
+                continue
+            base_angle = math.atan2(dy, dx)
+            angles.add(base_angle - corner_epsilon)
+            angles.add(base_angle)
+            angles.add(base_angle + corner_epsilon)
+
+    points = []
+    for angle in sorted(angles):
+        dx, dy = math.cos(angle), math.sin(angle)
+        closest = radius
+        for ax, ay, bx, by in segments:
+            t = ray_segment_intersection(cx, cy, dx, dy, ax, ay, bx, by)
+            if t is not None and t < closest:
+                closest = t
+        points.append((cx + dx * closest, cy + dy * closest))
+
+    return points

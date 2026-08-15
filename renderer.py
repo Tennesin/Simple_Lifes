@@ -4,12 +4,10 @@ from settings import *
 from info import *
 import settings
 from game.race_registry import all_races
+from creatures.all_needed import geometry
 
 # =========================================================================
 # Ядро конвейера отрисовки мира: (ключ_слоя, функция_отрисовки).
-# Функция получает (renderer, screen, game, camera, in_view). Слои конкретных
-# рас (RaceDescriptor.render_layers) встраиваются в этот список динамически
-# по ключу insert_after - см. WorldRenderer._build_render_pipeline.
 # =========================================================================
 
 def _draw_roads(renderer, screen, game, camera, in_view):
@@ -18,13 +16,11 @@ def _draw_roads(renderer, screen, game, camera, in_view):
     if game.player.drawing_road is not None:
         game.player.drawing_road.draw(screen, camera)
 
-
 def _draw_road_crossings(renderer, screen, game, camera, in_view):
     for crossing in game.world.road_crossings:
         if in_view(crossing.x, crossing.y):
             pos = camera.apply_pos((crossing.x, crossing.y))
             crossing.draw(screen, pos)
-
 
 def _draw_landscape(renderer, screen, game, camera, in_view):
     for wall in game.world.walls:
@@ -38,13 +34,11 @@ def _draw_landscape(renderer, screen, game, camera, in_view):
             cursor_world = camera.world_from_screen(mouse_x, mouse_y)
         game.player.drawing_landscape.draw(screen, camera, extra_point=cursor_world)
 
-
 def _draw_water(renderer, screen, game, camera, in_view):
     for water in game.world.water_puddles:
         if in_view(water.x, water.y):
             pos = camera.apply_pos((water.x, water.y))
             water.draw(screen, pos)
-
 
 def _draw_bushes(renderer, screen, game, camera, in_view):
     for bush in game.world.bushes:
@@ -52,13 +46,11 @@ def _draw_bushes(renderer, screen, game, camera, in_view):
             pos = camera.apply_pos((bush.x, bush.y))
             bush.draw(screen, pos)
 
-
 def _draw_trees(renderer, screen, game, camera, in_view):
     for tree in game.world.trees:
         if in_view(tree.x, tree.y):
             pos = camera.apply_pos((tree.x, tree.y))
             tree.draw(screen, pos)
-
 
 def _draw_stones(renderer, screen, game, camera, in_view):
     for stone in game.world.stones:
@@ -66,13 +58,11 @@ def _draw_stones(renderer, screen, game, camera, in_view):
             pos = camera.apply_pos((stone.x, stone.y))
             stone.draw(screen, pos)
 
-
 def _draw_campfires(renderer, screen, game, camera, in_view):
     for fire in game.world.campfires:
         if in_view(fire.x, fire.y):
             pos = camera.apply_pos((fire.x, fire.y))
             fire.draw(screen, pos)
-
 
 def _draw_fruits(renderer, screen, game, camera, in_view):
     for fruit in game.world.fruits:
@@ -80,13 +70,11 @@ def _draw_fruits(renderer, screen, game, camera, in_view):
             pos = camera.apply_pos((fruit.x, fruit.y))
             fruit.draw(screen, pos)
 
-
 def _draw_spikes(renderer, screen, game, camera, in_view):
     for spike in game.world.spikes:
         if in_view(spike.x, spike.y):
             pos = camera.apply_pos((spike.x, spike.y))
             spike.draw(screen, pos)
-
 
 def _draw_creatures(renderer, screen, game, camera, in_view):
     show_status_rings = game.display_settings["show_status_rings"]
@@ -98,7 +86,6 @@ def _draw_creatures(renderer, screen, game, camera, in_view):
             creature_name = getattr(creature, "name", None)
             if show_creature_names and creature_name and not creature.is_dead:
                 renderer.draw_creature_name(screen, creature_name, pos)
-
 
 CORE_RENDER_LAYERS = (
     ("roads", _draw_roads),
@@ -305,10 +292,40 @@ class WorldRenderer:
                 screen.blit(tile, rect)
 
     def draw_vision_circle(self, screen, creature):
-        pos = self.game.camera.apply_pos((creature.x, creature.y))
+        game = self.game
+        pos = game.camera.apply_pos((creature.x, creature.y))
         vision_radius = creature.effective_vision_radius()
-        pygame.draw.circle(screen, VISION_CIRCLE_COLOR,
-                           (int(pos[0]), int(pos[1])), int(vision_radius), 2)
+
+        blocking_polylines = [w.points for w in game.world.walls if w.points]
+        if not creature.can_jump_fences():
+            blocking_polylines += [f.points for f in game.world.fences if f.points]
+
+        polygon_world = geometry.visibility_polygon(creature.x, creature.y, vision_radius, blocking_polylines)
+        polygon_screen = [game.camera.apply_pos(p) for p in polygon_world]
+
+        self._draw_vision_shadow(screen, pos, vision_radius, polygon_screen)
+
+        if len(polygon_screen) >= 2:
+            pygame.draw.lines(screen, VISION_CIRCLE_COLOR, True, polygon_screen, 2)
+
+    def _draw_vision_shadow(self, screen, pos, radius, polygon_screen):
+        diameter = int(radius * 2) + 4
+        if diameter <= 0:
+            return
+        origin_x = pos[0] - radius - 2
+        origin_y = pos[1] - radius - 2
+
+        shade = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+        pygame.draw.circle(shade, (0, 0, 0, VISION_SHADOW_ALPHA),
+                           (diameter // 2, diameter // 2), int(radius))
+
+        if len(polygon_screen) >= 3:
+            mask = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+            local_poly = [(px - origin_x, py - origin_y) for px, py in polygon_screen]
+            pygame.draw.polygon(mask, (255, 255, 255, 255), local_poly)
+            shade.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
+
+        screen.blit(shade, (origin_x, origin_y))
 
     def draw_empty_state(self, screen):
         txt = self.font.render(INFO_EMPTY_STATE_HINT, True, TEXT_COLOR)

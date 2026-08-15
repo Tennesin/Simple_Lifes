@@ -401,7 +401,7 @@ class BasePathfinder:
 
     # ---------- Движение ----------
 
-    def move_towards(self, target, dt, biome_grid=None):
+    def move_towards(self, target, dt, biome_grid=None, wall_polylines=None):
         c = self.c
         if target is None:
             return
@@ -413,10 +413,35 @@ class BasePathfinder:
             return
         speed = self.compute_speed(dt, biome_grid=biome_grid) * c.speed_factor
         step = min(speed * dt, dist)
-        c.x += (dx / dist) * step
-        c.y += (dy / dist) * step
-        c.x = max(15, min(c.x, settings.WORLD_WIDTH - 15))
-        c.y = max(15, min(c.y, settings.WORLD_HEIGHT - 15))
+        new_x = c.x + (dx / dist) * step
+        new_y = c.y + (dy / dist) * step
+        new_x = max(15, min(new_x, settings.WORLD_WIDTH - 15))
+        new_y = max(15, min(new_y, settings.WORLD_HEIGHT - 15))
+
+        if wall_polylines:
+            new_x, new_y = self._resolve_wall_collision(new_x, new_y, wall_polylines)
+
+        c.x, c.y = new_x, new_y
+
+    def _resolve_wall_collision(self, x, y, wall_polylines):
+        c = self.c
+        clearance = getattr(c, "radius", 10) + WALL_THICKNESS / 2
+
+        for points in wall_polylines:
+            for i in range(len(points) - 1):
+                ax, ay = points[i]
+                bx, by = points[i + 1]
+                cx, cy = geometry.closest_point_on_segment(x, y, ax, ay, bx, by)
+                ddx, ddy = x - cx, y - cy
+                d = math.hypot(ddx, ddy)
+                if d < clearance:
+                    if d < 1e-6:
+                        ddx, ddy = 0.0, -1.0
+                        d = 1.0
+                    push = clearance - d
+                    x += (ddx / d) * push
+                    y += (ddy / d) * push
+        return x, y
 
     # ---------- Точка расширения для конкретной расы ----------
 
