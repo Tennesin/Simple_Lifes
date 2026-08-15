@@ -893,12 +893,14 @@ class Construction(GoalComponent):
             return None
         c.construction_check_timer = random.uniform(*CONSTRUCTION_CHECK_INTERVAL)
 
-        campfire_pos = self.instincts.nearest_known_campfire()
+        campfire_pos = c.known_campfire
         build_type = self._determine_need(campfire_pos, ctx)
         if build_type is None:
             return None
 
         site = self._find_or_create_site(build_type, campfire_pos, ctx)
+        if site is None:
+            return None
         c.construction_target_id = site.id
         c.construction_phase = "deposit"
         return self._work_on(site, ctx)
@@ -985,8 +987,14 @@ class Construction(GoalComponent):
         construction_sites = ctx.construction_sites
 
         if campfire_pos is None:
-            if not any(s.build_type == "campfire" for s in construction_sites):
+            nearby_campfire_site = any(
+                s.build_type == "campfire"
+                and math.hypot(c.x - s.x, c.y - s.y) < NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
+                for s in construction_sites
+            )
+            if not nearby_campfire_site:
                 return "campfire"
+            return None
 
         field = self.instincts.find_storage_field(ctx.storage_fields)
         if field is None:
@@ -1046,13 +1054,11 @@ class Construction(GoalComponent):
 
     def _pick_point(self, build_type, campfire_pos, biome_grid, ctx, attempts=20):
         c = self.c
-        anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
         if build_type == "campfire":
-            dist_range = CAMPFIRE_BUILD_OFFSET_RANGE
-        elif build_type == "graveyard":
-            dist_range = GRAVEYARD_BUILD_OFFSET_RANGE
-        else:
-            dist_range = STORAGE_BUILD_OFFSET_RANGE
+            return self._pick_new_campfire_point(ctx, attempts=max(attempts, 30))
+
+        anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
+        dist_range = GRAVEYARD_BUILD_OFFSET_RANGE if build_type == "graveyard" else STORAGE_BUILD_OFFSET_RANGE
 
         fallback = None
         for _ in range(attempts):
@@ -1062,6 +1068,32 @@ class Construction(GoalComponent):
             if self._point_clear(point, build_type, biome_grid, ctx):
                 return point
             fallback = point
+        return fallback
+
+    def _pick_new_campfire_point(self, ctx, attempts=30):
+        c = self.c
+        existing_fires = list(ctx.campfires)
+        pending_sites = [s for s in ctx.construction_sites if s.build_type == "campfire"]
+
+        fallback = None
+        for _ in range(attempts):
+            angle = random.uniform(0, 2 * math.pi)
+            dist = random.uniform(*NEW_CAMPFIRE_DISTANCE_RANGE)
+            point = geometry.clamped_point(c.x, c.y, angle, dist)
+
+            far_enough = (
+                all(math.hypot(point[0] - f.x, point[1] - f.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
+                    for f in existing_fires)
+                and all(math.hypot(point[0] - s.x, point[1] - s.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
+                        for s in pending_sites)
+            )
+            if not far_enough:
+                continue
+
+            if self._point_clear(point, "campfire", ctx.biome_grid, ctx):
+                return point
+            fallback = point
+
         return fallback
 
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
@@ -1074,6 +1106,8 @@ class Construction(GoalComponent):
             return existing
 
         point = self._pick_point(build_type, campfire_pos, ctx.biome_grid, ctx)
+        if point is None:
+            return None
         site = ConstructionSite(point[0], point[1], build_type, campfire_pos=campfire_pos)
         construction_sites.append(site)
         return site

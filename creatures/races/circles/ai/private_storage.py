@@ -67,7 +67,12 @@ class PrivateConstruction(Construction):
         sites = ctx.construction_sites
 
         if campfire_pos is None:
-            if not any(s.build_type == "campfire" for s in sites):
+            nearby_campfire_site = any(
+                s.build_type == "campfire"
+                and math.hypot(c.x - s.x, c.y - s.y) < NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
+                for s in sites
+            )
+            if not nearby_campfire_site:
                 return "campfire"
             return None
 

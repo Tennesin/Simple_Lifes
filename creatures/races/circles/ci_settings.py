@@ -337,6 +337,11 @@ STORAGE_ATTRACTIVENESS_MIN_WATER = 4
 MATE_STORAGE_ATTRACTIVENESS_BONUS = 60.0
 CONSTRUCTION_PUBERTY_DRIVE_BONUS = 12.0
 
+# ---------- Вместимость костра / основание нового поселения ----------
+CAMPFIRE_MAX_OCCUPANTS = 12
+NEW_CAMPFIRE_DISTANCE_RANGE = (900.0, 1200.0)   # желаемая дистанция нового костра от всех существующих
+NEW_CAMPFIRE_JOIN_SEARCH_RADIUS = 900.0         # если рядом уже кто-то строит костёр - не начинаем свой
+
 # ---------- Труп / кладбище (поведение, не сам объект) ----------
 GRAVEYARD_ALERT_HOLD_TIME = 25.0
 CORPSE_APPROACH_DISTANCE = 22

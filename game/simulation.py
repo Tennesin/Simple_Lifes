@@ -79,6 +79,17 @@ class Simulation:
             NAV_OBSTACLE_INFLATE, SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
 
+        nav_grid_no_fences_fallback = self._nav_cache.get_fallback(
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            world.walls, world.fences, world.spikes, False,
+            SPIKE_NAV_BLOCK_RADIUS,
+            biome_grid=game.biome_manager.grid, version=world.landscape_version)
+        nav_grid_with_fences_fallback = self._nav_cache.get_fallback(
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            world.walls, world.fences, world.spikes, True,
+            SPIKE_NAV_BLOCK_RADIUS,
+            biome_grid=game.biome_manager.grid, version=world.landscape_version)
+
         self._fruit_grid.build(f for f in world.fruits if f.active)
         self._spike_grid.build(world.spikes)
         self._water_grid.build(w for w in world.water_puddles if w.has_water())
@@ -115,6 +126,8 @@ class Simulation:
             race_collections=race_collections,
             creatures_by_id=creatures_by_id,
             nav_grid_no_fences=nav_grid_no_fences, nav_grid_with_fences=nav_grid_with_fences,
+            nav_grid_no_fences_fallback=nav_grid_no_fences_fallback,
+            nav_grid_with_fences_fallback=nav_grid_with_fences_fallback,
             spatial_grids=spatial_grids, biome_grid=game.biome_manager.grid,
         )
 

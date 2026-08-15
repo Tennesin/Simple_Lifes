@@ -166,7 +166,9 @@ class _PerceptionMixin(_BrainMixinBase):
 
         visible_graveyards = [g for g in graveyards if g.distance_to_point(c.x, c.y) < vision_radius]
 
-        self.instincts.register_landmarks(visible_water, visible_bushes, visible_campfires, dt, visible_graveyards)
+        self.instincts.register_landmarks(
+            visible_water, visible_bushes, visible_campfires, dt, visible_graveyards,
+            campfire_occupancy=getattr(ctx, "campfire_occupancy", None))
 
         return _Perception(
             reaction_distance=reaction_distance,
@@ -374,7 +376,10 @@ class CreatureBrain(_TimerTickMixin, _PerceptionMixin, _ReflexMixin, _DispatchMi
         goal = c.target
 
         nav_grid = ctx.nav_grid_no_fences if c.can_jump_fences() else ctx.nav_grid_with_fences
+        fallback_nav_grid = (ctx.nav_grid_no_fences_fallback if c.can_jump_fences()
+                             else ctx.nav_grid_with_fences_fallback)
 
         return c.pathfinder.resolve_path(goal, ctx.dt, nav_grid=nav_grid,
                                          wall_polylines=perception.nearby_blocking_polylines,
-                                         biome_grid=ctx.biome_grid)
+                                         biome_grid=ctx.biome_grid,
+                                         fallback_nav_grid=fallback_nav_grid)

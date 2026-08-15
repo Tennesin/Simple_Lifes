@@ -198,7 +198,8 @@ class _LandmarkLookupMixin:
                 return field
         return None
 
-    def register_landmarks(self, visible_water, visible_bushes, visible_campfires, dt, visible_graveyards=None):
+    def register_landmarks(self, visible_water, visible_bushes, visible_campfires, dt,
+                            visible_graveyards=None, campfire_occupancy=None):
         c = self.c
         if c.landmark_register_timer > 0:
             c.landmark_register_timer -= dt
@@ -213,8 +214,10 @@ class _LandmarkLookupMixin:
             c.memory.add_intuitive_memory("campfire", *c.comfort_point, fire.x, fire.y, importance=1.5)
             c.memory.add_memory("campfire", fire.x, fire.y, importance=2.0)
             if c.known_campfire is None:
-                c.known_campfire = (fire.x, fire.y)
-                c.comfort_point = c.known_campfire
+                occupancy = campfire_occupancy.get(fire.id, 0) if campfire_occupancy else 0
+                if occupancy < CAMPFIRE_MAX_OCCUPANTS:
+                    c.known_campfire = (fire.x, fire.y)
+                    c.comfort_point = c.known_campfire
         for gy in (visible_graveyards or []):
             c.memory.add_intuitive_memory("graveyard", *c.comfort_point, gy.x, gy.y, importance=1.2)
             c.memory.add_memory("graveyard", gy.x, gy.y, importance=1.5)

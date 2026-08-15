@@ -1,5 +1,6 @@
 import shutil
 import random
+import math
 
 from settings import *
 from ..ci_settings import *
@@ -14,7 +15,6 @@ def tick_circle_world(game, dt):
     if (panel.details_record is not None
             and panel.details_record.get("time_since_burial", 0.0) > GRAVEYARD_DATA_RETENTION):
         panel.details_record = None
-
 
 def _storage_priority(creature):
     if creature.life_stage == LIFE_STAGE_CHILD:
@@ -37,6 +37,8 @@ class CircleTickProcessor:
         genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
         race_creatures = self._race_creatures()
 
+        ctx.campfire_occupancy = self._compute_campfire_occupancy(ctx.campfires, race_creatures)  # НОВОЕ
+
         self._reconcile_storage_ownership(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
@@ -52,6 +54,22 @@ class CircleTickProcessor:
     def _race_creatures(self):
         return [c for c in self.game.world.creatures
                 if getattr(c, "race_name", None) == self.race_name]
+
+    # =====================================================================
+    # Домен: занятость костров - сколько существ считают его "домом"
+    # =====================================================================
+
+    def _compute_campfire_occupancy(self, campfires, race_creatures):
+        occupancy = {fire.id: 0 for fire in campfires}
+        for creature in race_creatures:
+            if creature.is_dead or creature.known_campfire is None:
+                continue
+            kx, ky = creature.known_campfire
+            for fire in campfires:
+                if math.hypot(kx - fire.x, ky - fire.y) < 5:
+                    occupancy[fire.id] = occupancy.get(fire.id, 0) + 1
+                    break
+        return occupancy
 
     # =====================================================================
     # Домен: наследование прав на семейный склад при смерти владельца

@@ -56,6 +56,8 @@ class WorldFrameContext:
     creatures_by_id: Optional[dict] = None
     nav_grid_no_fences: object = None
     nav_grid_with_fences: object = None
+    nav_grid_no_fences_fallback: object = None
+    nav_grid_with_fences_fallback: object = None
     spatial_grids: Optional[dict] = None
     biome_grid: object = None
 

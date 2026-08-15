@@ -20,6 +20,7 @@ class NavGridCache:
 
     def __init__(self):
         self._cache = {}
+        self._fallback_cache = {}
 
     @staticmethod
     def _landscape_signature(walls, fences, spikes, include_fences):
@@ -39,9 +40,25 @@ class NavGridCache:
             count += 1
         return (count, round(total, 1))
 
+    @staticmethod
+    def _build_grid(world_w, world_h, cell_size, walls, fences, spikes,
+                     include_fences, inflate, spike_block_radius, biome_grid, soft_margin):
+        grid = NavGrid(world_w, world_h, cell_size)
+        for w in walls:
+            grid.mark_polyline(w.points, inflate, soft_margin=soft_margin)
+        if include_fences:
+            for f in fences:
+                grid.mark_polyline(f.points, inflate, soft_margin=soft_margin)
+        for s in spikes:
+            grid.mark_circle(s.x, s.y, spike_block_radius)
+        if biome_grid is not None:
+            grid.mark_biome(biome_grid, BIOME_SEA)
+        return grid
+
     def get(self, world_w, world_h, cell_size, walls, fences, spikes,
-            include_fences, inflate, spike_block_radius, biome_grid=None, version=None):
-        key = (world_w, world_h, cell_size, include_fences, inflate, spike_block_radius)
+            include_fences, inflate, spike_block_radius, biome_grid=None, version=None,
+            soft_margin=NAV_WALL_SOFT_MARGIN):
+        key = (world_w, world_h, cell_size, include_fences, inflate, spike_block_radius, soft_margin)
 
         if version is None:
             version = self._landscape_signature(walls, fences, spikes, include_fences)
@@ -50,22 +67,31 @@ class NavGridCache:
         if cached is not None and cached[0] == version:
             return cached[1]
 
-        grid = NavGrid(world_w, world_h, cell_size)
-        for w in walls:
-            grid.mark_polyline(w.points, inflate)
-        if include_fences:
-            for f in fences:
-                grid.mark_polyline(f.points, inflate)
-        for s in spikes:
-            grid.mark_circle(s.x, s.y, spike_block_radius)
-        if biome_grid is not None:
-            grid.mark_biome(biome_grid, BIOME_SEA)
-
+        grid = self._build_grid(world_w, world_h, cell_size, walls, fences, spikes,
+                                include_fences, inflate, spike_block_radius, biome_grid, soft_margin)
         self._cache[key] = (version, grid)
+        return grid
+
+    def get_fallback(self, world_w, world_h, cell_size, walls, fences, spikes,
+                      include_fences, spike_block_radius, biome_grid=None, version=None):
+        key = (world_w, world_h, cell_size, include_fences, spike_block_radius, "fallback")
+
+        if version is None:
+            version = self._landscape_signature(walls, fences, spikes, include_fences)
+
+        cached = self._fallback_cache.get(key)
+        if cached is not None and cached[0] == version:
+            return cached[1]
+
+        grid = self._build_grid(world_w, world_h, cell_size, walls, fences, spikes,
+                                include_fences, NAV_OBSTACLE_INFLATE_FALLBACK, spike_block_radius,
+                                biome_grid, soft_margin=0)
+        self._fallback_cache[key] = (version, grid)
         return grid
 
     def invalidate(self):
         self._cache.clear()
+        self._fallback_cache.clear()
 
 class NavGrid:
 
@@ -74,6 +100,7 @@ class NavGrid:
         self.cols = max(1, int(math.ceil(world_w / cell_size)))
         self.rows = max(1, int(math.ceil(world_h / cell_size)))
         self.blocked = bytearray(self.cols * self.rows)
+        self.near_obstacle = bytearray(self.cols * self.rows)
 
     # ---------- Координаты ----------
 
@@ -99,19 +126,20 @@ class NavGrid:
 
     # ---------- Построение карты ----------
 
-    def mark_polyline(self, points, inflate):
+    def mark_polyline(self, points, inflate, soft_margin=0):
         if len(points) < 2:
             if points:
-                self._mark_segment(points[0], points[0], inflate)
+                self._mark_segment(points[0], points[0], inflate, soft_margin)
             return
         for i in range(len(points) - 1):
-            self._mark_segment(points[i], points[i + 1], inflate)
+            self._mark_segment(points[i], points[i + 1], inflate, soft_margin)
 
-    def _mark_segment(self, p1, p2, inflate):
-        min_x = min(p1[0], p2[0]) - inflate
-        max_x = max(p1[0], p2[0]) + inflate
-        min_y = min(p1[1], p2[1]) - inflate
-        max_y = max(p1[1], p2[1]) + inflate
+    def _mark_segment(self, p1, p2, inflate, soft_margin=0):
+        total_margin = inflate + soft_margin
+        min_x = min(p1[0], p2[0]) - total_margin
+        max_x = max(p1[0], p2[0]) + total_margin
+        min_y = min(p1[1], p2[1]) - total_margin
+        max_y = max(p1[1], p2[1]) + total_margin
 
         c_min_x, c_min_y = self.world_to_cell(min_x, min_y)
         c_max_x, c_max_y = self.world_to_cell(max_x, max_y)
@@ -119,8 +147,11 @@ class NavGrid:
         for cy in range(c_min_y, c_max_y + 1):
             for cx in range(c_min_x, c_max_x + 1):
                 center_x, center_y = self.cell_center(cx, cy)
-                if _point_segment_distance(center_x, center_y, p1[0], p1[1], p2[0], p2[1]) <= inflate:
+                dist = _point_segment_distance(center_x, center_y, p1[0], p1[1], p2[0], p2[1])
+                if dist <= inflate:
                     self.blocked[self._index(cx, cy)] = 1
+                elif soft_margin > 0 and dist <= total_margin:
+                    self.near_obstacle[self._index(cx, cy)] = 1
 
     # ---------- Если старт/цель попали в заблокированную клетку ----------
 
@@ -199,7 +230,12 @@ class NavGrid:
                 neighbor = (nx, ny)
                 if neighbor in closed:
                     continue
-                tentative_g = g_score[current] + cost
+
+                step_cost = cost
+                if self.near_obstacle[self._index(nx, ny)]:
+                    step_cost *= NAV_WALL_CLEARANCE_PENALTY  # НОВОЕ: путь предпочитает держаться подальше от стен
+
+                tentative_g = g_score[current] + step_cost
                 if tentative_g < g_score.get(neighbor, float('inf')):
                     g_score[neighbor] = tentative_g
                     came_from[neighbor] = current
@@ -227,7 +263,7 @@ class NavGrid:
         smoothed = self._smooth_path(raw_points)
         return smoothed[1:] if smoothed and smoothed[0] == start_world else smoothed
 
-    # ---------- Сглаживание маршрута (string pulling) ----------
+    # ---------- Сглаживание маршрута ----------
 
     def _line_of_sight(self, p1, p2):
         x0, y0 = self.world_to_cell(*p1)
@@ -236,36 +272,28 @@ class NavGrid:
         if self.is_blocked(x0, y0) or self.is_blocked(x1, y1):
             return False
 
-        dx = x1 - x0
-        dy = y1 - y0
-        step_x = 1 if dx > 0 else -1
-        step_y = 1 if dy > 0 else -1
-        dx = abs(dx)
-        dy = abs(dy)
+        dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+        if dist < 1e-6:
+            return True
 
-        x, y = x0, y0
-        err = dx - dy
+        step = self.cell_size / 4.0
+        steps = max(1, int(dist / step))
+        dx = (p2[0] - p1[0]) / steps
+        dy = (p2[1] - p1[1]) / steps
 
-        while (x, y) != (x1, y1):
-            e2 = 2 * err
-            move_x = e2 > -dy
-            move_y = e2 < dx
-
-            if move_x and move_y:
-                if self.is_blocked(x + step_x, y) and self.is_blocked(x, y + step_y):
-                    return False
-                x += step_x
-                y += step_y
-                err += dx - dy
-            elif move_x:
-                x += step_x
-                err -= dy
-            else:
-                y += step_y
-                err += dx
-
-            if self.is_blocked(x, y):
+        prev_cell = (x0, y0)
+        for i in range(1, steps + 1):
+            px = p1[0] + dx * i
+            py = p1[1] + dy * i
+            cx, cy = self.world_to_cell(px, py)
+            if self.is_blocked(cx, cy):
                 return False
+            if (cx, cy) != prev_cell:
+                pcx, pcy = prev_cell
+                if pcx != cx and pcy != cy:
+                    if self.is_blocked(cx, pcy) and self.is_blocked(pcx, cy):
+                        return False
+                prev_cell = (cx, cy)
 
         return True
 
@@ -287,9 +315,10 @@ class NavGrid:
 
     # ---------- Разметка круглых препятствий (шипы) ----------
 
-    def mark_circle(self, x, y, radius):
-        min_x, max_x = x - radius, x + radius
-        min_y, max_y = y - radius, y + radius
+    def mark_circle(self, x, y, radius, soft_margin=0):
+        total_radius = radius + soft_margin
+        min_x, max_x = x - total_radius, x + total_radius
+        min_y, max_y = y - total_radius, y + total_radius
 
         c_min_x, c_min_y = self.world_to_cell(min_x, min_y)
         c_max_x, c_max_y = self.world_to_cell(max_x, max_y)
@@ -297,8 +326,11 @@ class NavGrid:
         for cy in range(c_min_y, c_max_y + 1):
             for cx in range(c_min_x, c_max_x + 1):
                 center_x, center_y = self.cell_center(cx, cy)
-                if math.hypot(center_x - x, center_y - y) <= radius:
+                dist = math.hypot(center_x - x, center_y - y)
+                if dist <= radius:
                     self.blocked[self._index(cx, cy)] = 1
+                elif soft_margin > 0 and dist <= total_radius:
+                    self.near_obstacle[self._index(cx, cy)] = 1
 
     # ---------- Разметка непроходимых клеток по биому (например, море) ----------
 
@@ -345,7 +377,8 @@ class BasePathfinder:
     def __init__(self, entity):
         self.c = entity
 
-    def resolve_path(self, goal, dt, nav_grid=None, wall_polylines=None, biome_grid=None):
+    def resolve_path(self, goal, dt, nav_grid=None, wall_polylines=None, biome_grid=None,
+                      fallback_nav_grid=None):
         c = self.c
         if goal is None:
             self.reset_navigation()
@@ -360,13 +393,13 @@ class BasePathfinder:
                          or biome_grid.get_at(c.x, c.y) == BIOME_SEA)
             )
             if blocked_by_wall or blocked_by_sea:
-                return self._update_navigation(goal, nav_grid, dt)
+                return self._update_navigation(goal, nav_grid, dt, fallback_nav_grid=fallback_nav_grid)
             self.reset_navigation()
             return goal
 
-        return self._update_navigation(goal, nav_grid, dt)
+        return self._update_navigation(goal, nav_grid, dt, fallback_nav_grid=fallback_nav_grid)
 
-    def _update_navigation(self, goal, nav_grid, dt):
+    def _update_navigation(self, goal, nav_grid, dt, fallback_nav_grid=None):
         c = self.c
 
         if c.nav_recalc_timer > 0:
@@ -381,6 +414,8 @@ class BasePathfinder:
 
         if needs_recalc:
             path = nav_grid.find_path((c.x, c.y), goal, max_nodes=NAV_MAX_ASTAR_NODES)
+            if not path and fallback_nav_grid is not None:
+                path = fallback_nav_grid.find_path((c.x, c.y), goal, max_nodes=NAV_MAX_ASTAR_NODES)
             c.nav_goal = goal
             c.nav_recalc_timer = random.uniform(*NAV_PATH_RECALC_INTERVAL)
             if path:

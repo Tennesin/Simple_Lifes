@@ -187,13 +187,17 @@ FENCE_TICK_LENGTH = 8
 LANDSCAPE_MIN_POINT_DIST = 20
 
 # ---------- Глобальный pathfinding (A* по клеточной карте) ----------
-NAV_GRID_CELL_SIZE = 30          # размер одной клетки карты навигации, px
-NAV_OBSTACLE_INFLATE = 16        # на сколько "раздувается" стена/забор при разметке клеток
-                                  # (примерно радиус существа + запас, чтобы не тереться о стену)
-NAV_PATH_RECALC_INTERVAL = (1.2, 1.8)   # раз в сколько секунд допускается плановый пересчёт маршрута
-NAV_GOAL_CHANGE_THRESHOLD = 45   # если цель сдвинулась дальше этого - маршрут пересчитывается немедленно
-NAV_WAYPOINT_REACHED_DISTANCE = 18   # с какого расстояния путевая точка считается "достигнутой"
-NAV_MAX_ASTAR_NODES = 6000       # предохранитель от зависаний на очень больших/запутанных картах
+NAV_GRID_CELL_SIZE = 30
+NAV_OBSTACLE_INFLATE = 14        # было 16 — ближе к реальному физическому зазору существа,
+                                  # чтобы A* не запечатывал узкие, но физически проходимые проёмы
+NAV_WALL_SOFT_MARGIN = 14        # доп. "мягкая" зона за пределами NAV_OBSTACLE_INFLATE:
+                                  # не блокирует клетку, но делает её дороже для A*
+NAV_WALL_CLEARANCE_PENALTY = 1.6 # во сколько раз дороже шаг в "мягкой" зоне у стены
+NAV_OBSTACLE_INFLATE_FALLBACK = 6   # запасной, минимальный отступ
+NAV_PATH_RECALC_INTERVAL = (1.2, 1.8)
+NAV_GOAL_CHANGE_THRESHOLD = 45
+NAV_WAYPOINT_REACHED_DISTANCE = 18
+NAV_MAX_ASTAR_NODES = 6000
 
 # ---------- Биомы ----------
 BIOME_CELL_SIZE = 75
