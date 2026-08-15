@@ -125,7 +125,8 @@ def visibility_polygon(cx, cy, radius, blocking_polylines, num_rays=180, corner_
             for i in range(num_rays)
         ]
 
-    angles = {2 * math.pi * i / num_rays for i in range(num_rays)}
+    TWO_PI = 2 * math.pi
+    angles = {(2 * math.pi * i / num_rays) % TWO_PI for i in range(num_rays)}
 
     for ax, ay, bx, by in segments:
         for px, py in ((ax, ay), (bx, by)):
@@ -133,10 +134,10 @@ def visibility_polygon(cx, cy, radius, blocking_polylines, num_rays=180, corner_
             dist = math.hypot(dx, dy)
             if dist < 1e-6 or dist > radius * 1.4:
                 continue
-            base_angle = math.atan2(dy, dx)
-            angles.add(base_angle - corner_epsilon)
+            base_angle = math.atan2(dy, dx) % TWO_PI
+            angles.add((base_angle - corner_epsilon) % TWO_PI)
             angles.add(base_angle)
-            angles.add(base_angle + corner_epsilon)
+            angles.add((base_angle + corner_epsilon) % TWO_PI)
 
     points = []
     for angle in sorted(angles):
