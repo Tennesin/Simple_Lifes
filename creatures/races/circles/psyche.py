@@ -96,6 +96,12 @@ class CreaturePsyche:
         self._adjust("calmness", PSYCHE_PARTNER_LOSS_PENALTY * 0.6)
         self._adjust("attachment", PSYCHE_PARTNER_LOSS_PENALTY * 0.5)
 
+    def on_grief(self, intensity):
+        self._adjust("joy", intensity)
+        self._adjust("satisfaction", intensity * 0.7)
+        self._adjust("calmness", intensity * GRIEF_CALM_LOSS_FACTOR)
+        self._adjust("attachment", intensity * GRIEF_ATTACHMENT_LOSS_FACTOR)
+
     def on_birth(self):
         self._adjust("joy", PSYCHE_BIRTH_BONUS)
         self._adjust("satisfaction", PSYCHE_BIRTH_BONUS)

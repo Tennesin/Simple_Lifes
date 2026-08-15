@@ -22,7 +22,6 @@ class WorldState:
     )
 
     RACE_COLLECTIONS = _collect_race_collections()
-
     COLLECTION_NAMES = CORE_COLLECTIONS + RACE_COLLECTIONS
 
     def __init__(self):

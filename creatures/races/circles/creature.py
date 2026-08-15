@@ -52,6 +52,7 @@ class Creature(LivingEntity):
         self.is_dead = False
         self.death_timer = 0.0
         self.death_cause = None
+        self._pending_grief = False
         self.radius = 10
 
         self.temperament = temperament if temperament in TEMPERAMENT_LIST else random.choice(TEMPERAMENT_LIST)
@@ -274,6 +275,7 @@ class Creature(LivingEntity):
 
     def die(self, cause="неизвестно"):
         self.is_dead = True
+        self._pending_grief = True
         self.hp = 0
         self.death_timer = CORPSE_LIFETIME
         self.death_cause = cause

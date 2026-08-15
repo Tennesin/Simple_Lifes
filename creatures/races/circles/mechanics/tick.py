@@ -3,6 +3,7 @@ import random
 
 from settings import *
 from ..ci_settings import *
+from ..life_cycle import apply_grief_for_death
 from .input_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
 
 def tick_circle_world(game, dt):
@@ -39,6 +40,7 @@ class CircleTickProcessor:
         self._reconcile_storage_ownership(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
+        self._process_grief(race_creatures)
 
         self._run_interactions(ctx, ready_for_interact)
         self._cleanup_removed_corpses(corpses_to_remove)
@@ -137,7 +139,7 @@ class CircleTickProcessor:
         game = self.game
         world = game.world
         ready_for_interact = []
-        wall_polylines = [w.points for w in world.walls if w.points]
+        wall_polylines, _fence_polylines = game.welded_landscape_polylines()
 
         for creature in race_creatures:
             if creature.is_dead:
@@ -192,6 +194,17 @@ class CircleTickProcessor:
             ready_for_interact.append(creature)
 
         return ready_for_interact
+
+    # =====================================================================
+    # Домен: скорбь - разовая рассылка удара по психике сородичам умершего
+    # =====================================================================
+
+    def _process_grief(self, race_creatures):
+        world = self.game.world
+        for creature in race_creatures:
+            if creature.is_dead and creature._pending_grief:
+                creature._pending_grief = False
+                apply_grief_for_death(creature, world.creatures)
 
     # =====================================================================
     # Домен: взаимодействия существ с миром (еда/вода/шипы/костёр/разговоры и т.д.)

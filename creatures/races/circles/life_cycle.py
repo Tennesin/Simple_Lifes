@@ -409,3 +409,64 @@ class CreatureTerritory:
         intruder.road_entry_reached = False
         intruder.psyche.on_territory_intruded()
         c.psyche.on_territory_defended()
+
+# =========================================================================
+# Домен: скорбь по умершим сородичам - разовое событие в момент смерти
+# =========================================================================
+
+def _shares_parent(ids_a, ids_b):
+    if not ids_a or not ids_b:
+        return False
+    set_a = {pid for pid in ids_a if pid is not None}
+    set_b = {pid for pid in ids_b if pid is not None}
+    return bool(set_a & set_b)
+
+def _grief_death_shock_multiplier(cause, deceased_age):
+    if cause == "старость":
+        return GRIEF_NATURAL_OLD_AGE_MULTIPLIER
+    youth_ratio = 1.0 - max(0.0, min(1.0, deceased_age / AGE_NATURAL_DEATH_START))
+    return GRIEF_UNNATURAL_DEATH_MULTIPLIER + youth_ratio * GRIEF_YOUTH_SHOCK_BONUS
+
+def _grief_mourner_age_multiplier(life_stage):
+    if life_stage == LIFE_STAGE_CHILD:
+        return GRIEF_CHILD_MOURNER_MULTIPLIER
+    if life_stage == LIFE_STAGE_OLD:
+        return GRIEF_OLD_MOURNER_MULTIPLIER
+    return 1.0
+
+def _grief_kinship_penalty(deceased, mourner):
+    if mourner.partner_id == deceased.id:
+        return 0.0
+
+    if mourner.parent_ids and deceased.id in mourner.parent_ids:
+        return GRIEF_BASE_PENALTY["parent_child"]
+    if deceased.parent_ids and mourner.id in deceased.parent_ids:
+        return GRIEF_BASE_PENALTY["parent_child"]
+    if _shares_parent(mourner.parent_ids, deceased.parent_ids):
+        return GRIEF_BASE_PENALTY["sibling"]
+
+    relationship = mourner.relationships.get(deceased.id, 0.0)
+    is_ward_bond = getattr(mourner, "elder_ward_id", None) == deceased.id
+    if is_ward_bond or relationship >= CLOSE_FRIEND_SANITY_RELATIONSHIP:
+        return GRIEF_BASE_PENALTY["close_bond"]
+    if relationship >= GRIEF_ACQUAINTANCE_MIN_RELATIONSHIP:
+        return GRIEF_BASE_PENALTY["acquaintance"]
+
+    if GRIEF_WITNESS_VISION_ONLY:
+        vision_radius = mourner.aging.effective_vision_radius()
+        if math.hypot(mourner.x - deceased.x, mourner.y - deceased.y) < vision_radius:
+            return GRIEF_BASE_PENALTY["witness_stranger"]
+
+    return 0.0
+
+def apply_grief_for_death(deceased, living_creatures):
+    shock = _grief_death_shock_multiplier(deceased.death_cause, deceased.age)
+
+    for mourner in living_creatures:
+        if mourner is deceased or mourner.is_dead:
+            continue
+        base_penalty = _grief_kinship_penalty(deceased, mourner)
+        if base_penalty == 0.0:
+            continue
+        age_mult = _grief_mourner_age_multiplier(mourner.life_stage)
+        mourner.psyche.on_grief(base_penalty * shock * age_mult)

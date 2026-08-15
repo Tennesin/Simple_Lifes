@@ -84,7 +84,6 @@ def ray_segment_intersection(ox, oy, dx, dy, ax, ay, bx, by):
         return t1
     return None
 
-
 def visibility_polygon(cx, cy, radius, blocking_polylines, num_rays=180, corner_epsilon=0.0006):
     segments = []
     for points in blocking_polylines:
@@ -128,3 +127,30 @@ def visibility_polygon(cx, cy, radius, blocking_polylines, num_rays=180, corner_
         points.append((cx + dx * closest, cy + dy * closest))
 
     return points
+
+def weld_polyline_endpoints(polylines, tolerance=18):
+    welded = [list(points) for points in polylines]
+
+    for i, points in enumerate(welded):
+        if not points:
+            continue
+        end_indices = (0,) if len(points) < 2 else (0, -1)
+        for end_index in end_indices:
+            px, py = points[end_index]
+            best_point = None
+            best_dist = tolerance
+            for j, other in enumerate(welded):
+                if j == i or len(other) < 2:
+                    continue
+                for k in range(len(other) - 1):
+                    ax, ay = other[k]
+                    bx, by = other[k + 1]
+                    cx, cy = closest_point_on_segment(px, py, ax, ay, bx, by)
+                    d = math.hypot(px - cx, py - cy)
+                    if d < best_dist:
+                        best_dist = d
+                        best_point = (cx, cy)
+            if best_point is not None:
+                points[end_index] = best_point
+
+    return welded

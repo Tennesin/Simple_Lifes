@@ -9,6 +9,7 @@ from ui import UIManager
 from player import Player
 from settings import *
 import settings
+from creatures.all_needed import geometry
 
 from biome import BiomeManager
 from .world_manager import WorldManager
@@ -48,6 +49,7 @@ class Game:
         self.world_path = None
         self.world = WorldState()
         self.biome_manager = BiomeManager(self)
+        self._wall_geometry_cache = (None, [], [])
         self.world_seed = None
         self.paused = False
 
@@ -163,6 +165,21 @@ class Game:
     def activate_player_tool(self, tool):
         self.object_manager.stop_placement()
         self.player.tool = tool
+
+    def welded_landscape_polylines(self):
+        version = self.world.landscape_version
+        cached_version, cached_walls, cached_fences = self._wall_geometry_cache
+        if cached_version == version:
+            return cached_walls, cached_fences
+
+        wall_points = [w.points for w in self.world.walls if w.points]
+        fence_points = [f.points for f in self.world.fences if f.points]
+
+        welded_walls = geometry.weld_polyline_endpoints(wall_points, tolerance=WALL_WELD_TOLERANCE)
+        welded_fences = geometry.weld_polyline_endpoints(fence_points, tolerance=WALL_WELD_TOLERANCE)
+
+        self._wall_geometry_cache = (version, welded_walls, welded_fences)
+        return welded_walls, welded_fences
 
     def resize_for_world(self, world_w, world_h):
         screen_limit_w = self.desktop_w - WINDOW_SCREEN_MARGIN

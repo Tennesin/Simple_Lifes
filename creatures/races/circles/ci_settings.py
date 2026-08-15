@@ -472,6 +472,27 @@ PSYCHE_HELPFULNESS_INFLUENCE = 0.6
 PSYCHE_SOCIAL_RESPONSE_INFLUENCE = 0.5
 PSYCHE_JEALOUSY_INFLUENCE = 0.4
 
+# ---------- Скорбь по умершим сородичам ----------
+GRIEF_BASE_PENALTY = {
+    "parent_child": -40.0,
+    "sibling": -28.0,
+    "close_bond": -18.0,       # старик и его подопечный / близкий друг (relationship >= CLOSE_FRIEND_SANITY_RELATIONSHIP)
+    "acquaintance": -8.0,      # просто положительные отношения, но не близкие
+    "witness_stranger": -3.0,  # видел смерть незнакомца своими глазами - и только тогда
+}
+GRIEF_WITNESS_VISION_ONLY = True
+GRIEF_ACQUAINTANCE_MIN_RELATIONSHIP = 5.0
+
+GRIEF_UNNATURAL_DEATH_MULTIPLIER = 1.4    # смерть не от старости - трагедия, бьёт сильнее
+GRIEF_NATURAL_OLD_AGE_MULTIPLIER = 0.5    # смерть от старости - ожидаемо, бьёт мягче
+GRIEF_YOUTH_SHOCK_BONUS = 0.6             # доп. надбавка, если умерший погиб совсем молодым (не от старости)
+
+GRIEF_CHILD_MOURNER_MULTIPLIER = 1.3      # дети переживают потерю острее
+GRIEF_OLD_MOURNER_MULTIPLIER = 0.75       # старики стойче переносят смерть
+
+GRIEF_ATTACHMENT_LOSS_FACTOR = 0.5        # доля скорби, дополнительно бьющая по привязанности
+GRIEF_CALM_LOSS_FACTOR = 0.6              # доля скорби, бьющая по спокойствию
+
 # ---------- Древо Родословной ----------
 GENEALOGY_MAX_DEPTH = 6
 GENEALOGY_NODE_RADIUS = 16

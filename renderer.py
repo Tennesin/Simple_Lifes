@@ -296,9 +296,10 @@ class WorldRenderer:
         pos = game.camera.apply_pos((creature.x, creature.y))
         vision_radius = creature.effective_vision_radius()
 
-        blocking_polylines = [w.points for w in game.world.walls if w.points]
+        welded_walls, welded_fences = game.welded_landscape_polylines()
+        blocking_polylines = list(welded_walls)
         if not creature.can_jump_fences():
-            blocking_polylines += [f.points for f in game.world.fences if f.points]
+            blocking_polylines += welded_fences
 
         polygon_world = geometry.visibility_polygon(creature.x, creature.y, vision_radius, blocking_polylines)
         polygon_screen = [game.camera.apply_pos(p) for p in polygon_world]
