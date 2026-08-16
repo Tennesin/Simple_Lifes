@@ -2,19 +2,19 @@
 
 from . import geometry
 from . import diet
-from .base_entity import BaseEntity
-from .ai.utility import GoalComponent, lookup_creature
+from .base_entity import BaseEntity, LivingEntity, same_race, filter_same_race
+from .ai import GoalComponent, lookup_creature
 from .navigation import NavGrid, NavGridCache, SpatialGrid, BasePathfinder
 from .diet import (
-    DIET_HERBIVORE, DIET_CARNIVORE, DIET_OMNIVORE,
-    FOOD_CATEGORY_PLANT, FOOD_CATEGORY_MEAT, DIET_DISPLAY_MAP, diet_allows_category,
+    DIET_HERBIVORE, DIET_OMNIVORE,
+    FOOD_CATEGORY_PLANT, DIET_DISPLAY_MAP, diet_allows_category,
 )
 
 __all__ = [
     "geometry", "diet",
-    "BaseEntity",
+    "BaseEntity", "LivingEntity", "same_race", "filter_same_race",
     "GoalComponent", "lookup_creature",
     "NavGrid", "NavGridCache", "SpatialGrid", "BasePathfinder",
-    "DIET_HERBIVORE", "DIET_CARNIVORE", "DIET_OMNIVORE",
-    "FOOD_CATEGORY_PLANT", "FOOD_CATEGORY_MEAT", "DIET_DISPLAY_MAP", "diet_allows_category",
+    "DIET_HERBIVORE", "DIET_OMNIVORE",
+    "FOOD_CATEGORY_PLANT", "DIET_DISPLAY_MAP", "diet_allows_category",
 ]

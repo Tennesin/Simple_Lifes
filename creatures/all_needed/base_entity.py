@@ -13,6 +13,10 @@ class BaseEntity:
 
 class LivingEntity(BaseEntity):
     """Общий контракт живого существа"""
+    id: str
+    x: float
+    y: float
+    is_dead: bool
     race_name: str = None
 
     diet: str = None
@@ -84,3 +88,9 @@ class LivingEntity(BaseEntity):
 
     def save(self, base_path):
         raise NotImplementedError
+
+def same_race(a, b) -> bool:
+    return getattr(a, "race_name", None) == getattr(b, "race_name", None)
+
+def filter_same_race(reference, others):
+    return [o for o in others if same_race(reference, o)]

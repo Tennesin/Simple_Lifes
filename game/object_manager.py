@@ -773,7 +773,7 @@ class ObjectManager(_InitialResourceMixin, _NaturalGrowthMixin, _LookupMixin):
     def __init__(self, game):
         self.game = game
         self.spawn_managers = {
-            descriptor.race_name: descriptor.spawn_manager_cls(self.game)
+            descriptor.race_name: descriptor.spawn_manager_cls(self.game, descriptor)
             for descriptor in all_races()
             if descriptor.spawn_manager_cls is not None
         }

@@ -15,7 +15,6 @@ class RenderLayer:
     insert_after: str
     draw_fn: Callable
 
-
 @dataclass(frozen=True)
 class MinimapLayer:
     """Один слой отрисовки миникарты, специфичный для расы.
@@ -147,6 +146,7 @@ _RACES_CACHE: Optional[dict] = None
 
 def _discover_races() -> dict:
     registry = {}
+    legacy_count = 0
     for module_info in pkgutil.iter_modules(races_package.__path__):
         race_pkg_name = f"{races_package.__name__}.{module_info.name}"
         try:
@@ -156,9 +156,26 @@ def _discover_races() -> dict:
         descriptor = getattr(race_module, "RACE_DESCRIPTOR", None)
         if descriptor is None:
             continue
-        registry[descriptor.race_name] = descriptor
-    return registry
 
+        if descriptor.race_name in registry:
+            raise RuntimeError(
+                f"Раса '{descriptor.race_name}' зарегистрирована более одного раза "
+                f"(конфликт при обработке пакета '{race_pkg_name}'). "
+                f"race_name должен быть уникален среди всех creatures/races/*/race.py."
+            )
+        registry[descriptor.race_name] = descriptor
+
+        if descriptor.is_legacy_default:
+            legacy_count += 1
+
+    if legacy_count > 1:
+        raise RuntimeError(
+            f"{legacy_count} рас помечены is_legacy_default=True, а должна быть ровно одна - "
+            f"иначе сохранения без поля 'race' (сделанные до мультирасовости) "
+            f"будут загружаться неоднозначно."
+        )
+
+    return registry
 
 def _races() -> dict:
     global _RACES_CACHE

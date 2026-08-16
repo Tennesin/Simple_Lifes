@@ -29,10 +29,10 @@ class Creature(LivingEntity):
     diet = RACE_DIET
     food_category_map = RACE_FOOD_CATEGORY_MAP
 
-    def __init__(self, creature_id, name=None, temperament=None, gender=None):
+    def __init__(self, creature_id, name=None, temperament=None, gender=None, name_pools=None):
         self.id = creature_id
         self.gender = gender if gender in GENDER_LIST else random.choice(GENDER_LIST)
-        self.name = name if name else random_name(self.gender)
+        self.name = name if name else random_name(self.gender, pools=name_pools)
         self.player_named = False
         self.hp = HP_MAX
         self.hunger = HUNGER_MAX

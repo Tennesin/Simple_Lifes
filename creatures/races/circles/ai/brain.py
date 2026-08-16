@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from settings import WALL_VISION_BLOCK_MARGIN
 from ..ci_settings import *
 from ..ci_info import *
-from ....all_needed import geometry
+from ....all_needed import geometry, filter_same_race
 from .circles_instincts import UniversalInstincts
 from .adult_ai import AdultAI
 from .child_ai import ChildAI
@@ -165,6 +165,8 @@ class _PerceptionMixin(_BrainMixinBase):
                                and any(math.hypot(c.x - px, c.y - py) < vision_radius for px, py in r.points)]
 
         visible_graveyards = [g for g in graveyards if g.distance_to_point(c.x, c.y) < vision_radius]
+        visible_companions = filter_same_race(c, visible_companions)
+        visible_corpses = filter_same_race(c, visible_corpses)
 
         self.instincts.register_landmarks(
             visible_water, visible_bushes, visible_campfires, dt, visible_graveyards,
@@ -272,7 +274,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
 
     def _dispatch_life_stage(self, perception, ctx: "WorldFrameContext"):
         c = self.c
-        other_creatures = ctx.creatures
+        other_creatures = filter_same_race(c, ctx.creatures)
         roads = ctx.roads
         storage_fields = ctx.race_collections.get("storage_fields", [])
         graveyards = ctx.race_collections.get("graveyards", [])

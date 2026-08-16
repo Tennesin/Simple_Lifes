@@ -20,14 +20,16 @@ def circle_spawn_dispatch(object_manager, wx, wy, placement_mode):
     object_manager.spawn_managers["circle"].create_creature_at(wx, wy, gender)
 
 class CircleSpawnManager:
-    def __init__(self, game):
+    def __init__(self, game, descriptor=None):
         self.game = game
+        self.descriptor = descriptor
         self.genealogy = GenealogyRegistry()
 
     def create_creature_at(self, wx, wy, gender):
         game = self.game
         new_id = str(uuid.uuid4())[:8]
-        creature = Creature(new_id, gender=gender)
+        pools = self.descriptor.name_pools if self.descriptor else None
+        creature = Creature(new_id, gender=gender, name_pools=pools)
         creature.x = wx
         creature.y = wy
         creature.comfort_point = (wx, wy)
@@ -47,7 +49,8 @@ class CircleSpawnManager:
                 if father is not None else mother.temperament
 
         new_id = str(uuid.uuid4())[:8]
-        child = Creature(new_id, temperament=temperament, gender=gender)
+        pools = self.descriptor.name_pools if self.descriptor else None
+        child = Creature(new_id, temperament=temperament, gender=gender, name_pools=pools)
 
         cx, cy = self._pick_child_spawn_point(mother)
         child.x = cx

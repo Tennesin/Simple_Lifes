@@ -1,23 +1,26 @@
-"""Универсальные понятия питания."""
+"""Универсальные понятия питания.
 
-from info import INFO_DIET_HERBIVORE, INFO_DIET_CARNIVORE, INFO_DIET_OMNIVORE
+ПРИМЕЧАНИЕ: DIET_CARNIVORE / FOOD_CATEGORY_MEAT намеренно убраны отсюда -
+в проекте пока нет ни одного ресурса категории "мясо" (труп/туша как объект
+поедания) и ни одна раса им не пользуется. Как только появится модель
+"труп -> Carcass -> ресурс" (см. docs/HOW_TO_ADD_RACE.md, раздел про
+хищников), нужно будет вернуть DIET_CARNIVORE и FOOD_CATEGORY_MEAT и завести
+для них реального потребителя, а не мёртвую ветку API."""
+
+from info import INFO_DIET_HERBIVORE, INFO_DIET_OMNIVORE
 
 DIET_HERBIVORE = "herbivore"
-DIET_CARNIVORE = "carnivore"
 DIET_OMNIVORE = "omnivore"
 
 FOOD_CATEGORY_PLANT = "plant"
-FOOD_CATEGORY_MEAT = "meat"
 
 DIET_ALLOWED_CATEGORIES = {
     DIET_HERBIVORE: (FOOD_CATEGORY_PLANT,),
-    DIET_CARNIVORE: (FOOD_CATEGORY_MEAT,),
-    DIET_OMNIVORE: (FOOD_CATEGORY_PLANT, FOOD_CATEGORY_MEAT),
+    DIET_OMNIVORE: (FOOD_CATEGORY_PLANT,),
 }
 
 DIET_DISPLAY_MAP = {
     DIET_HERBIVORE: INFO_DIET_HERBIVORE,
-    DIET_CARNIVORE: INFO_DIET_CARNIVORE,
     DIET_OMNIVORE: INFO_DIET_OMNIVORE,
 }
 

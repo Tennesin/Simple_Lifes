@@ -449,8 +449,9 @@ class WorldManager:
 
 _registry_attrs = {attr for _, attr, _ in WorldManager._WORLD_OBJECT_REGISTRY}
 _expected_attrs = set(WorldState.COLLECTION_NAMES) - {"creatures"}
-assert _registry_attrs == _expected_attrs, (
-    f"WorldManager._WORLD_OBJECT_REGISTRY разошёлся с WorldState.COLLECTION_NAMES: "
-    f"в реестре лишние {_registry_attrs - _expected_attrs}, "
-    f"не хватает {_expected_attrs - _registry_attrs}"
-)
+if _registry_attrs != _expected_attrs:
+    raise RuntimeError(
+        f"WorldManager._WORLD_OBJECT_REGISTRY разошёлся с WorldState.COLLECTION_NAMES: "
+        f"в реестре лишние {_registry_attrs - _expected_attrs}, "
+        f"не хватает {_expected_attrs - _registry_attrs}"
+    )

@@ -187,7 +187,7 @@ class CircleTickProcessor:
                     game.player.grabbed_creature = None
                 continue
 
-            birth_request = creature.family.update(ctx.dt, world.creatures, ctx.creatures_by_id, world.storage_fields)
+            birth_request = creature.family.update(ctx.dt, race_creatures, ctx.creatures_by_id, world.storage_fields)
             if birth_request is not None:
                 game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
 
@@ -218,11 +218,10 @@ class CircleTickProcessor:
     # =====================================================================
 
     def _process_grief(self, race_creatures):
-        world = self.game.world
         for creature in race_creatures:
             if creature.is_dead and creature._pending_grief:
                 creature._pending_grief = False
-                apply_grief_for_death(creature, world.creatures)
+                apply_grief_for_death(creature, race_creatures)
 
     # =====================================================================
     # Домен: взаимодействия существ с миром (еда/вода/шипы/костёр/разговоры и т.д.)
