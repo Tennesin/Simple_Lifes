@@ -5,7 +5,7 @@ import time
 import pygame
 import math
 
-from objects import Bush, WaterPuddle
+from objects import Bush, WaterPuddle,  Campfire
 from settings import *
 from info import *
 from game.widgets import Button, ScrollArea
@@ -1368,6 +1368,23 @@ def circle_object_panel_extra_lines(obj, creatures):
             if claimant is not None:
                 name = claimant.name if claimant.name else claimant.id
                 lines.append((INFO_INFO_CLAIMED_BY.format(name=name), (255, 210, 60)))
+
+    if isinstance(obj, Campfire):
+        residents = [
+            c for c in creatures
+            if not c.is_dead and c.known_campfire is not None
+            and math.hypot(c.known_campfire[0] - obj.x, c.known_campfire[1] - obj.y) < 5
+        ]
+        occupancy_color = (255, 120, 90) if len(residents) >= CAMPFIRE_MAX_OCCUPANTS else (190, 190, 190)
+        lines.append((
+            INFO_INFO_CAMPFIRE_OCCUPANCY.format(count=len(residents), max=CAMPFIRE_MAX_OCCUPANTS),
+            occupancy_color
+        ))
+        if residents:
+            names = ", ".join(r.name if r.name else r.id for r in residents)
+            lines.append((INFO_INFO_CAMPFIRE_RESIDENTS.format(names=names), (200, 200, 200)))
+        else:
+            lines.append((INFO_INFO_CAMPFIRE_RESIDENTS_NONE, (150, 150, 150)))
 
     if hasattr(obj, "fruits") and hasattr(obj, "water"):
         owner_ids = getattr(obj, "owner_ids", None)

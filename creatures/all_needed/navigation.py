@@ -385,14 +385,15 @@ class BasePathfinder:
             return None
 
         if c.following_road_active:
-            blocked_by_wall = wall_polylines and geometry.segment_blocked_by_polylines(
-                c.x, c.y, goal[0], goal[1], wall_polylines)
+            clearance = NAV_OBSTACLE_INFLATE
+            keeps_clearance = (not wall_polylines) or geometry.segment_keeps_clearance(
+                c.x, c.y, goal[0], goal[1], wall_polylines, clearance)
             blocked_by_sea = (
                     biome_grid is not None
                     and (biome_grid.get_at(goal[0], goal[1]) == BIOME_SEA
                          or biome_grid.get_at(c.x, c.y) == BIOME_SEA)
             )
-            if blocked_by_wall or blocked_by_sea:
+            if not keeps_clearance or blocked_by_sea:
                 return self._update_navigation(goal, nav_grid, dt, fallback_nav_grid=fallback_nav_grid)
             self.reset_navigation()
             return goal

@@ -93,6 +93,35 @@ def segment_blocked_by_polylines(x1, y1, x2, y2, polylines):
                 return True
     return False
 
+def segment_keeps_clearance(x1, y1, x2, y2, polylines, clearance, step=8.0):
+    dist = math.hypot(x2 - x1, y2 - y1)
+    steps = max(1, int(dist / step)) if dist > 1e-6 else 0
+
+    min_x, max_x = (x1, x2) if x1 <= x2 else (x2, x1)
+    min_y, max_y = (y1, y2) if y1 <= y2 else (y2, y1)
+    margin = clearance + 4
+
+    for points in polylines:
+        if not points:
+            continue
+        seg_min_x = min(p[0] for p in points) - margin
+        seg_max_x = max(p[0] for p in points) + margin
+        seg_min_y = min(p[1] for p in points) - margin
+        seg_max_y = max(p[1] for p in points) + margin
+        if max_x < seg_min_x or min_x > seg_max_x or max_y < seg_min_y or min_y > seg_max_y:
+            continue
+
+        for i in range(len(points) - 1):
+            ax, ay = points[i]
+            bx, by = points[i + 1]
+            for s in range(steps + 1):
+                t = (s / steps) if steps else 0.0
+                px = x1 + (x2 - x1) * t
+                py = y1 + (y2 - y1) * t
+                if point_segment_distance(px, py, ax, ay, bx, by) < clearance:
+                    return False
+    return True
+
 def ray_segment_intersection(ox, oy, dx, dy, ax, ay, bx, by):
     v1x, v1y = ox - ax, oy - ay
     v2x, v2y = bx - ax, by - ay

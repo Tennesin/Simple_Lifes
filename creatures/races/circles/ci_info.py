@@ -253,7 +253,9 @@ INFO_FEMALE_VARIANTS = {
 INFO_BTN_DRAW_CHILD_ROAD = "Детская дорога"
 INFO_BTN_CREATE_MALE = "Самец"
 INFO_BTN_CREATE_FEMALE = "Самка"
-
+INFO_INFO_CAMPFIRE_OCCUPANCY = "Жителей: {count}/{max}"
+INFO_INFO_CAMPFIRE_RESIDENTS = "Живут здесь: {names}"
+INFO_INFO_CAMPFIRE_RESIDENTS_NONE = "Жителей ещё нет"
 INFO_INFO_CLAIMED_BY = "Территория самца: {name}"
 INFO_INFO_STORAGE_FRUITS = "Фруктов на складе: {count}"
 INFO_INFO_STORAGE_WATER = "Воды на складе: {count}"
