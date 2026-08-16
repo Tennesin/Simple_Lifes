@@ -404,6 +404,12 @@ class Creature(LivingEntity):
                 self.graveyard_alert_pos = None
                 self.graveyard_alert_timer = 0.0
             self.memory.forget_memory("graveyard", position[0], position[1])
+        elif landmark_type == "water":
+            if self.water_memory_target is not None:
+                wx, wy = self.water_memory_target
+                if abs(wx - position[0]) < 8 and abs(wy - position[1]) < 8:
+                    self.water_memory_target = None
+            self.memory.forget_memory("water", position[0], position[1])
 
     # ---------- Отрисовка ----------
 

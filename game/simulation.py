@@ -234,6 +234,8 @@ class Simulation:
                     owner.territory.claims_count["water"] = max(
                         0, owner.territory.claims_count.get("water", 0) - 1)
             game.object_manager.unlink_road_endpoints("water", water.id)
+            for creature in world.creatures:
+                creature.on_landmark_removed("water", water.id, (water.x, water.y))
 
         if game.selected_object in removed:
             game.selected_object = None

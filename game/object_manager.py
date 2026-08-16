@@ -360,7 +360,13 @@ class _BiomeCascadeMixin:
                 self._cleanup_campfire_references(fire)
 
         if clear_water:
-            world.water_puddles = [w for w in world.water_puddles if not in_zone_fn(w)]
+            flooded_water = [w for w in world.water_puddles if in_zone_fn(w)]
+            if flooded_water:
+                world.water_puddles = [w for w in world.water_puddles if not in_zone_fn(w)]
+                for water in flooded_water:
+                    self.unlink_road_endpoints("water", water.id)
+                    for creature in world.creatures:
+                        creature.on_landmark_removed("water", water.id, (water.x, water.y))
 
         if clear_trees:
             world.trees = [t for t in world.trees if not in_zone_fn(t)]
@@ -721,6 +727,9 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
 
     def _on_delete_water(self, obj):
         self.unlink_road_endpoints("water", obj.id)
+        pos = (obj.x, obj.y)
+        for creature in self.game.world.creatures:
+            creature.on_landmark_removed("water", obj.id, pos)
 
     def _on_delete_bush(self, obj):
         self.unlink_road_endpoints("bush", obj.id)
