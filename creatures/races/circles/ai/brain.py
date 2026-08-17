@@ -280,6 +280,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
         graveyards = ctx.race_collections.get("graveyards", [])
         child_roads = ctx.race_collections.get("child_roads", [])
         construction_sites = ctx.race_collections.get("construction_sites", [])
+        houses = ctx.race_collections.get("houses", [])
 
         dt = ctx.dt
         creatures_by_id, road_crossings = ctx.creatures_by_id, ctx.road_crossings
@@ -307,6 +308,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
                 storage_fields=storage_fields,
                 visible_corpses=perception.visible_corpses,
                 graveyards=graveyards,
+                houses=houses,
                 dt=dt,
                 other_by_id=creatures_by_id,
                 road_crossings=road_crossings,

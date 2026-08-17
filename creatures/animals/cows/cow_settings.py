@@ -11,11 +11,14 @@ COW_BASE_SPEED_MULTIPLIER = 1.0
 COW_RADIUS = 16
 
 # ---------- Ресурсы ----------
-# Мясо и кожа - "посмертный" ресурс (появится вместе с логикой разделки туши).
 COW_MEAT_MIN, COW_MEAT_MAX = 20, 32
-COW_LEATHER_MIN, COW_LEATHER_MAX = 6, 10
-# Молоко - прижизненный возобновляемый ресурс, по аналогии с зарядами WaterPuddle (objects.py).
 COW_MILK_MAX_CHARGES = 4
+# ---------- Кожа (выпадает после смерти) ----------
+COW_LEATHER_MIN, COW_LEATHER_MAX = 6, 10
+LEATHER_LIFETIME = 45.0
+LEATHER_SIZE = 20
+LEATHER_COLOR = (120, 80, 45)
+LEATHER_COLOR_BORDER = (80, 50, 25)
 
 # ---------- Внешний вид: тёмно-серый прямоугольник + белые точки + 2 тонкие ножки того же цвета ----------
 COW_BODY_WIDTH = 44

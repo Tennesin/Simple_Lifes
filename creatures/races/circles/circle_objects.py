@@ -3,15 +3,12 @@
 import math
 import time
 import uuid
-
+import random
 import pygame
 
 from objects import PolylineRoad
 from .ci_settings import *
-from .ci_info import (
-    INFO_OBJECT_STORAGE_FIELD, INFO_OBJECT_GRAVEYARD, INFO_GRAVEYARD_DEFAULT_NAME,
-    INFO_OBJECT_CONSTRUCTION_SITE, INFO_OBJECT_CHILD_ROAD,
-)
+from .ci_info import *
 from ...all_needed import geometry
 
 class StorageField:
@@ -311,3 +308,100 @@ class ChildRoad(PolylineRoad):
         croad.checked_by = data.get("checked_by")
         croad.created = data.get("created", time.time())
         return croad
+
+class House:
+    """Жилой дом. Пока только хранит данные (вместимость, внешность) -
+    подключение к сну/защите/рождению детей будет добавлено отдельно,
+    когда появятся соответствующие механики."""
+
+    def __init__(self, x, y, capacity=None, owner_ids=None, house_id=None):
+        self.id = house_id if house_id else str(uuid.uuid4())[:8]
+        self.x = x
+        self.y = y
+        self.width, self.height = HOUSE_DEFAULT_SIZE
+        # ---------- Вместимость "выбирает" самец-строитель в момент завершения стройки ----------
+        self.capacity = capacity if capacity is not None else random.randint(
+            HOUSE_MIN_RESIDENTS, HOUSE_MAX_RESIDENTS)
+        self.owner_ids = set(owner_ids) if owner_ids else set()
+        self.created = time.time()
+
+        # ---------- Внешность фиксируется один раз при постройке ----------
+        self.door_slot = random.choice(("left", "center", "right"))
+        self.window_slots = self._roll_window_slots()
+
+    def _roll_window_slots(self):
+        free_slots = [slot for slot in ("left", "center", "right") if slot != self.door_slot]
+        if random.random() < 0.5:
+            return [random.choice(free_slots)]
+        return list(free_slots)
+
+    def get_type_name(self):
+        return INFO_OBJECT_HOUSE
+
+    def distance_to_point(self, px, py):
+        dx = max(self.x - self.width / 2 - px, 0, px - (self.x + self.width / 2))
+        dy = max(self.y - self.height / 2 - py, 0, py - (self.y + self.height / 2))
+        return math.hypot(dx, dy)
+
+    def _slot_positions(self, wall_rect):
+        slot_width = self.width / 3
+        return {
+            "left": wall_rect.x + slot_width / 2,
+            "center": wall_rect.x + slot_width * 1.5,
+            "right": wall_rect.x + slot_width * 2.5,
+        }
+
+    def draw(self, screen, screen_pos):
+        sx, sy = int(screen_pos[0]), int(screen_pos[1])
+        half_w, half_h = self.width // 2, self.height // 2
+
+        wall_rect = pygame.Rect(sx - half_w, sy - half_h, self.width, self.height)
+        pygame.draw.rect(screen, HOUSE_COLOR_WALL, wall_rect)
+        pygame.draw.rect(screen, HOUSE_COLOR_WALL_BORDER, wall_rect, 2)
+
+        roof_points = [
+            (sx - half_w - 6, sy - half_h),
+            (sx + half_w + 6, sy - half_h),
+            (sx, sy - half_h - HOUSE_ROOF_HEIGHT),
+        ]
+        pygame.draw.polygon(screen, HOUSE_COLOR_ROOF, roof_points)
+        pygame.draw.polygon(screen, HOUSE_COLOR_ROOF_BORDER, roof_points, 2)
+
+        slot_x = self._slot_positions(wall_rect)
+        self._draw_door(screen, slot_x[self.door_slot], wall_rect)
+        for slot in self.window_slots:
+            self._draw_window(screen, slot_x[slot], wall_rect)
+
+    def _draw_door(self, screen, center_x, wall_rect):
+        door_w, door_h = 18, int(wall_rect.height * 0.65)
+        door_rect = pygame.Rect(0, 0, door_w, door_h)
+        door_rect.midbottom = (int(center_x), wall_rect.bottom)
+        pygame.draw.rect(screen, HOUSE_COLOR_DOOR, door_rect)
+        pygame.draw.rect(screen, HOUSE_COLOR_DOOR_BORDER, door_rect, 2)
+        pygame.draw.circle(screen, HOUSE_COLOR_DOOR_HANDLE, (door_rect.right - 4, door_rect.centery), 2)
+
+    def _draw_window(self, screen, center_x, wall_rect):
+        size = 16
+        rect = pygame.Rect(0, 0, size, size)
+        rect.center = (int(center_x), wall_rect.centery)
+        pygame.draw.rect(screen, HOUSE_COLOR_WINDOW, rect)
+        pygame.draw.rect(screen, HOUSE_COLOR_WINDOW_BORDER, rect, 2)
+        pygame.draw.line(screen, HOUSE_COLOR_WINDOW_BORDER, (rect.centerx, rect.top), (rect.centerx, rect.bottom), 2)
+        pygame.draw.line(screen, HOUSE_COLOR_WINDOW_BORDER, (rect.left, rect.centery), (rect.right, rect.centery), 2)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "x": self.x, "y": self.y,
+            "capacity": self.capacity, "owner_ids": list(self.owner_ids),
+            "door_slot": self.door_slot, "window_slots": self.window_slots,
+            "created": self.created,
+        }
+
+    @staticmethod
+    def from_dict(data):
+        house = House(data["x"], data["y"], capacity=data.get("capacity"),
+                      owner_ids=data.get("owner_ids"), house_id=data.get("id"))
+        house.door_slot = data.get("door_slot", house.door_slot)
+        house.window_slots = data.get("window_slots", house.window_slots)
+        house.created = data.get("created", time.time())
+        return house

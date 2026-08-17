@@ -161,11 +161,12 @@ class TopBarPanel:
             ("btn_water", INFO_BTN_WATER),
             ("btn_tree", INFO_BTN_TREE),
             ("btn_stone", INFO_BTN_STONE),
+            ("btn_grass", INFO_BTN_GRASS),
         ]
         for i, (attr, label) in enumerate(nature_labels):
             y = menu_top + 5 + i * (BUTTON_HEIGHT + gap)
             setattr(self, attr, Button(pygame.Rect(item_x, y, 90, BUTTON_HEIGHT), label))
-        self.menu_nature_rect = pygame.Rect(450, menu_top, 100, self.btn_stone.rect.bottom + 5 - menu_top)
+        self.menu_nature_rect = pygame.Rect(450, menu_top, 100, self.btn_grass.rect.bottom + 5 - menu_top)
 
         # ---------- Меню "Игрок" (core-инструменты) ----------
         item_x = 565
@@ -241,6 +242,7 @@ class TopBarPanel:
             self.btn_water.draw(screen, mouse_pos, colors=self._MENU_COLORS)
             self.btn_tree.draw(screen, mouse_pos, colors=self._MENU_COLORS)
             self.btn_stone.draw(screen, mouse_pos, colors=self._MENU_COLORS)
+            self.btn_grass.draw(screen, mouse_pos, colors=self._MENU_COLORS)
 
         if game.world_loaded and game.show_player_menu:
             pygame.draw.rect(screen, MENU_BG, self.menu_player_rect)
@@ -326,13 +328,14 @@ class ObjectPanel:
         return (0, 0)
 
     def _get_resource_label(self, obj):
-        """Core-объекты: Tree (wood), Stone (stone), WaterPuddle (charges)."""
         if hasattr(obj, "wood"):
             return INFO_INFO_TREE_WOOD.format(count=int(obj.wood))
         if hasattr(obj, "stone") and not hasattr(obj, "fruits") and not hasattr(obj, "build_type"):
             return INFO_INFO_STONE_AMOUNT.format(count=int(obj.stone))
         if hasattr(obj, "charges") and hasattr(obj, "max_charges"):
             return INFO_INFO_WATER_CHARGES.format(count=int(obj.charges))
+        if hasattr(obj, "food"):
+            return INFO_INFO_FOOD_AMOUNT.format(count=int(obj.food))
         return None
 
     def _collect_extra_lines(self, obj):

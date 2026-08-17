@@ -12,7 +12,7 @@ from info import *
 from player import Player
 from objects import (
     Fruit, Spike, WaterPuddle, Bush, Campfire, Road,
-    RoadCrossing, Wall, Fence, Tree, Stone,
+    RoadCrossing, Wall, Fence, Tree, Stone, Grass, Meat,
     )
 import settings
 
@@ -117,6 +117,8 @@ _CORE_OBJECT_REGISTRY = (
     ("walls.json", "walls", Wall),
     ("fences.json", "fences", Fence),
     ("road_crossings.json", "road_crossings", RoadCrossing),
+    ("grass.json", "grass", Grass),
+    ("meats.json", "meats", Meat),
 )
 
 def _collect_race_object_registry():

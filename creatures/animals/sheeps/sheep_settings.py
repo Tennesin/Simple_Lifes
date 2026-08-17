@@ -12,7 +12,12 @@ SHEEP_RADIUS = 12  # для find_creature_at/find_object_at, коллизий и
 
 # ---------- Ресурсы (появляются на теле сразу, расходуются позже при разделке/стрижке) ----------
 SHEEP_MEAT_MIN, SHEEP_MEAT_MAX = 8, 14
+# ---------- Шерсть (после смерти или стрижки) ----------
 SHEEP_WOOL_MIN, SHEEP_WOOL_MAX = 4, 8
+WOOL_LIFETIME = 360.0
+WOOL_SIZE = 18
+WOOL_COLOR = (250, 250, 245)
+WOOL_COLOR_BORDER = (210, 210, 205)
 
 # ---------- Внешний вид: белое овальное тело + две тонкие чёрные прямоугольные ножки ----------
 SHEEP_BODY_WIDTH = 34

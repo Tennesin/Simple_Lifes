@@ -90,6 +90,23 @@ STONE_COLOR = (140, 140, 140)
 STONE_COLOR_BORDER = (90, 90, 90)
 STONE_COLOR_LIGHT = (200, 200, 200)
 
+# ---------- Трава ----------
+GRASS_FOOD_MIN = 15
+GRASS_FOOD_MAX = 155
+GRASS_BASE_WIDTH = 20       # ширина при GRASS_FOOD_MIN
+GRASS_MAX_WIDTH = 70        # ширина при GRASS_FOOD_MAX
+GRASS_HEIGHT = 22
+GRASS_COLOR = (60, 150, 70)
+GRASS_COLOR_DARK = (40, 120, 55)
+GRASS_BLADE_MIN_COUNT = 5
+GRASS_BLADE_MAX_COUNT = 14
+
+# ---------- Мясо ----------
+MEAT_LIFETIME = 20.0
+MEAT_COLOR = (200, 60, 60)
+MEAT_COLOR_FAT = (240, 235, 220)
+MEAT_COLOR_BORDER = (120, 30, 30)
+
 # ---------- Натуральный рост деревьев и кустов ----------
 NATURAL_TREE_SPAWN_INTERVAL = (25.0, 45.0)   # как часто мир "пытается" вырастить дерево
 NATURAL_TREE_SPAWN_CHANCE = 0.35             # шанс успеха при попытке

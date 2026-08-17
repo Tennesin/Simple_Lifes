@@ -14,14 +14,11 @@ from .mechanics.input_events import (
 )
 
 from .creature import Creature
-from .ci_info import (
-    INFO_BTN_CREATE_MALE, INFO_BTN_CREATE_FEMALE, INFO_BTN_GRAVEYARD,
-    INFO_BTN_DRAW_CHILD_ROAD, INFO_TOOL_CHILD_ROAD_HINT,
-    INFO_SETTINGS_MINIMAP_CONSTRUCTIONS,
+from .ci_info import *
+from .ci_settings import GRAVEYARD_DEFAULT_SIZE, CHILD_ROAD_COLOR_PENDING, HOUSE_DEFAULT_SIZE
+from .circle_objects import (
+    ChildRoad, StorageField, ConstructionSite, Graveyard, House
 )
-from .ci_settings import GRAVEYARD_DEFAULT_SIZE, CHILD_ROAD_COLOR_PENDING
-from .circle_objects import ChildRoad, StorageField, ConstructionSite, Graveyard
-
 from .mechanics.tick import CircleTickProcessor, tick_circle_world
 from .mechanics.creature_lifecycle import (
     CircleSpawnManager, circle_spawn_dispatch,
@@ -33,7 +30,7 @@ from .mechanics.panel import (
 from .mechanics.creature_lifecycle import load_creature_from_state as load_circle_creature
 from .mechanics.render import (
     draw_child_roads, draw_storage_fields, draw_construction_sites, draw_graveyards,
-    draw_minimap_child_roads, draw_minimap_constructions,
+    draw_minimap_child_roads, draw_minimap_constructions, draw_houses,
 )
 
 RACE_DESCRIPTOR = RaceDescriptor(
@@ -52,6 +49,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
     world_collections=(
         "child_roads", "child_road_crossings",
         "storage_fields", "construction_sites", "graveyards",
+        "houses",
     ),
     persistence_registry=(
         ("child_roads.json", "child_roads", ChildRoad),
@@ -59,6 +57,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ("construction_sites.json", "construction_sites", ConstructionSite),
         ("graveyards.json", "graveyards", Graveyard),
         ("child_road_crossings.json", "child_road_crossings", RoadCrossing),
+        ("houses.json", "houses", House),
     ),
     placeable_objects=(
         PlaceableObjectSpec(
@@ -69,12 +68,20 @@ RACE_DESCRIPTOR = RaceDescriptor(
             mutual_clearance_additive=True,
             manually_placeable=False,
         ),
+        PlaceableObjectSpec(
+            obj_type="house", attr="houses", cls=House, label=INFO_BTN_HOUSE,
+            placement_clearance=HOUSE_DEFAULT_SIZE[0] / 2 + 10,
+            blocks_creature_spawn=True,
+            mutual_clearance_additive=True,
+            manually_placeable=False,
+        ),
     ),
     render_layers=(
         RenderLayer("child_roads", insert_after="road_crossings", draw_fn=draw_child_roads),
         RenderLayer("storage_fields", insert_after="campfires", draw_fn=draw_storage_fields),
         RenderLayer("construction_sites", insert_after="campfires", draw_fn=draw_construction_sites),
         RenderLayer("graveyards", insert_after="campfires", draw_fn=draw_graveyards),
+        RenderLayer("houses", insert_after="campfires", draw_fn=draw_houses),
     ),
     road_networks=(
         RoadNetworkSpec(
@@ -108,12 +115,14 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ExtraObjectCollectionSpec(attr="storage_fields", on_delete=on_delete_storage_field),
         ExtraObjectCollectionSpec(attr="graveyards", on_delete=on_delete_graveyard),
         ExtraObjectCollectionSpec(attr="construction_sites", on_delete=on_delete_construction_site),
+        ExtraObjectCollectionSpec(attr="houses"),
     ),
     extra_world_save_fn=save_circle_genealogy,
     extra_world_load_fn=load_circle_genealogy,
     biome_cascade_specs=(
         BiomeCascadeSpec(attr="graveyards", clear_on_flood=True, on_removed=on_delete_graveyard),
         BiomeCascadeSpec(attr="storage_fields", clear_on_flood=True, on_removed=on_delete_storage_field),
+        BiomeCascadeSpec(attr="houses", clear_on_flood=True),
     ),
     mouse_down_hooks=(circle_handle_relationships_scrollbar_down,),
     mouse_up_hooks=(circle_handle_relationships_scrollbar_up,),

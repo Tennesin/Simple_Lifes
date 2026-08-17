@@ -1410,4 +1410,14 @@ def circle_object_panel_extra_lines(obj, creatures):
             percent = int(min(100, obj.build_progress / obj.build_time * 100)) if obj.build_time > 0 else 0
             lines.append((INFO_INFO_CONSTRUCTION_PROGRESS.format(percent=percent), (235, 140, 30)))
 
+    if hasattr(obj, "capacity") and hasattr(obj, "door_slot"):
+        owner_ids = getattr(obj, "owner_ids", None)
+        if owner_ids:
+            owner_names = []
+            for owner_id in owner_ids:
+                owner = next((c for c in creatures if c.id == owner_id), None)
+                owner_names.append(owner.name if owner and owner.name else owner_id)
+            lines.append((INFO_INFO_HOUSE_OWNER.format(name=", ".join(owner_names)), (255, 210, 60)))
+        lines.append((INFO_INFO_HOUSE_CAPACITY.format(count=obj.capacity), (200, 200, 200)))
+
     return lines

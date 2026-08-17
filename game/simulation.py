@@ -26,11 +26,6 @@ class Simulation:
         self._tree_grid = SpatialGrid(cell_size=200)
         self._stone_grid = SpatialGrid(cell_size=200)
 
-        # ---------- Один тик-процессор на каждую зарегистрированную расу
-        # (game/race_registry.py, шаги A.3/A.4). Раньше здесь был
-        # единственный self._circle_tick = CircleTickProcessor(game),
-        # жёстко завязанный на Circle - теперь состав процессоров
-        # целиком определяется реестром рас. ----------
         self._tick_processors = [
             descriptor.tick_processor_cls(game) for descriptor in all_races()
         ]
@@ -51,6 +46,7 @@ class Simulation:
         self._handle_natural_growth(dt)
         self._update_bushes(dt)
         self._tick_race_world_objects(dt)
+        self._tick_meat_decay(dt)
 
         ctx = self._prepare_frame_context(dt)
 
@@ -171,6 +167,20 @@ class Simulation:
         for descriptor in all_races():
             if descriptor.world_tick_fn is not None:
                 descriptor.world_tick_fn(game, dt)
+
+    def _tick_meat_decay(self, dt):
+        game = self.game
+        world = game.world
+        if not world.meats:
+            return
+        expired = [m for m in world.meats if m.tick(dt)]
+        if not expired:
+            return
+        world.meats = [m for m in world.meats if m not in expired]
+        if game.selected_object in expired:
+            game.selected_object = None
+        if game.player.grabbed_object in expired:
+            game.player.grabbed_object = None
 
     # =====================================================================
     # Домен: очистка "недолговечных" объектов - съеденные фрукты,

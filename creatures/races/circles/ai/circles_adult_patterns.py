@@ -9,7 +9,7 @@ from ..ci_info import *
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration, scale, GoalComponent, lookup_creature
 from objects import Campfire
-from ..circle_objects import StorageField, Graveyard, ConstructionSite
+from ..circle_objects import StorageField, Graveyard, ConstructionSite, House
 
 @dataclass
 class DecisionContext:
@@ -28,6 +28,7 @@ class DecisionContext:
     storage_fields: list = field(default_factory=list)
     visible_corpses: list = field(default_factory=list)
     graveyards: list = field(default_factory=list)
+    houses: list = field(default_factory=list)
     dt: float = 0.0
     other_by_id: Optional[dict] = None
     road_crossings: Optional[list] = None
@@ -835,6 +836,7 @@ class Construction(GoalComponent):
         "campfire": 20,
         "storage": STORAGE_FIELD_RADIUS + 8,
         "graveyard": max(GRAVEYARD_DEFAULT_SIZE) / 2 + 10,
+        "house": max(HOUSE_DEFAULT_SIZE) / 2 + 10,
     }
 
     def __init__(self, creature, instincts):
@@ -1046,6 +1048,10 @@ class Construction(GoalComponent):
         for gy in ctx.graveyards:
             if gy.distance_to_point(px, py) < footprint:
                 return False
+        for house in ctx.houses:
+            house_radius = max(house.width, house.height) / 2
+            if math.hypot(px - house.x, py - house.y) < footprint + house_radius:
+                return False
         for site in ctx.construction_sites:
             site_radius = max(site.width, site.height) / 2
             if math.hypot(px - site.x, py - site.y) < footprint + site_radius:
@@ -1058,7 +1064,12 @@ class Construction(GoalComponent):
             return self._pick_new_campfire_point(ctx, attempts=max(attempts, 30))
 
         anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
-        dist_range = GRAVEYARD_BUILD_OFFSET_RANGE if build_type == "graveyard" else STORAGE_BUILD_OFFSET_RANGE
+        if build_type == "graveyard":
+            dist_range = GRAVEYARD_BUILD_OFFSET_RANGE
+        elif build_type == "house":
+            dist_range = HOUSE_BUILD_OFFSET_RANGE
+        else:
+            dist_range = STORAGE_BUILD_OFFSET_RANGE
 
         fallback = None
         for _ in range(attempts):
@@ -1200,6 +1211,17 @@ class Construction(GoalComponent):
         elif site.build_type == "graveyard":
             new_object = Graveyard(site.x, site.y)
             ctx.graveyards.append(new_object)
+        elif site.build_type == "house":
+            new_object = House(site.x, site.y)
+            primary_owner_id = getattr(site, "house_owner_id", None) or c.id
+            new_object.owner_ids.add(primary_owner_id)
+
+            primary_owner = next((o for o in ctx.other_creatures if o.id == primary_owner_id), None)
+            partner_id = primary_owner.partner_id if primary_owner is not None else None
+            if partner_id is not None and partner_id in site.contributor_ids:
+                new_object.owner_ids.add(partner_id)
+
+            ctx.houses.append(new_object)
 
         if site in ctx.construction_sites:
             ctx.construction_sites.remove(site)
@@ -1275,11 +1297,15 @@ class Construction(GoalComponent):
             return None
         c.build_help_check_timer = random.uniform(*BUILD_HELP_CHECK_INTERVAL)
 
+        sites_by_id = {s.id: s for s in ctx.construction_sites}
+
         candidates = [
             o for o in ctx.visible_companions
             if o.gender == GENDER_MALE and o.life_stage == LIFE_STAGE_ADULT
                and o.construction_target_id is not None and o.construction_phase in ("deposit", "build")
                and c.social.get_relationship(o) >= BUILD_HELP_MIN_RELATIONSHIP
+               and sites_by_id.get(o.construction_target_id) is not None
+               and sites_by_id[o.construction_target_id].build_type != "house"
         ]
         if not candidates:
             return None

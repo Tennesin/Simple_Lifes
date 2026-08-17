@@ -87,16 +87,30 @@ def _draw_creatures(renderer, screen, game, camera, in_view):
             if show_creature_names and creature_name and not creature.is_dead:
                 renderer.draw_creature_name(screen, creature_name, pos)
 
+def _draw_grass(renderer, screen, game, camera, in_view):
+    for patch in game.world.grass:
+        if in_view(patch.x, patch.y):
+            pos = camera.apply_pos((patch.x, patch.y))
+            patch.draw(screen, pos)
+
+def _draw_meat(renderer, screen, game, camera, in_view):
+    for meat in game.world.meats:
+        if in_view(meat.x, meat.y):
+            pos = camera.apply_pos((meat.x, meat.y))
+            meat.draw(screen, pos)
+
 CORE_RENDER_LAYERS = (
     ("roads", _draw_roads),
     ("road_crossings", _draw_road_crossings),
     ("landscape", _draw_landscape),
+    ("grass", _draw_grass),
     ("water_puddles", _draw_water),
     ("bushes", _draw_bushes),
     ("trees", _draw_trees),
     ("stones", _draw_stones),
     ("campfires", _draw_campfires),
     ("fruits", _draw_fruits),
+    ("meat", _draw_meat),
     ("spikes", _draw_spikes),
     ("creatures", _draw_creatures),
 )

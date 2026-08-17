@@ -421,16 +421,34 @@ GRAVEYARD_BORDER_THICKNESS = 6
 GRAVEYARD_DATA_RETENTION = 900.0
 GRAVEYARD_BURIAL_DISTANCE = 70
 
+# ---------- Дом ----------
+HOUSE_DEFAULT_SIZE = (70, 70)
+HOUSE_COLOR_WALL = (150, 150, 150)
+HOUSE_COLOR_WALL_BORDER = (90, 90, 90)
+HOUSE_COLOR_ROOF = (120, 70, 40)
+HOUSE_COLOR_ROOF_BORDER = (80, 45, 25)
+HOUSE_COLOR_DOOR = (100, 65, 35)
+HOUSE_COLOR_DOOR_BORDER = (20, 20, 20)
+HOUSE_COLOR_DOOR_HANDLE = (230, 200, 80)
+HOUSE_COLOR_WINDOW = (235, 210, 90)
+HOUSE_COLOR_WINDOW_BORDER = (20, 20, 20)
+HOUSE_ROOF_HEIGHT = 26
+HOUSE_MIN_RESIDENTS = 3
+HOUSE_MAX_RESIDENTS = 9
+HOUSE_BUILD_OFFSET_RANGE = (150, 350)
+
 # ---------- Требования построек: {ресурс: количество} + время стройки (сек) ----------
 BUILDING_REQUIREMENTS = {
     "campfire": {"wood": 2, "stone": 1, "build_time": 3.0},
     "storage": {"wood": 15, "stone": 12, "build_time": 15.0},
     "graveyard": {"wood": 14, "stone": 3, "build_time": 10.0},
+    "house": {"wood": 18, "stone": 25, "build_time": 60.0},
 }
 CONSTRUCTION_SITE_SIZE = {
     "campfire": (36, 36),
     "storage": (46, 46),
     "graveyard": (60, 44),
+    "house": HOUSE_DEFAULT_SIZE,
 }
 CONSTRUCTION_SITE_COLOR_INCOMPLETE = (220, 40, 40)
 CONSTRUCTION_SITE_COLOR_READY = (235, 140, 30)

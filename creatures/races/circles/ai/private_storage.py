@@ -55,12 +55,13 @@ class PrivateStorage(Storage):
 
 
 class PrivateConstruction(Construction):
-    """Construction rules with explicit ownership for storage sites."""
+    _OWNER_ATTR_BY_TYPE = {"storage": "storage_owner_id", "house": "house_owner_id"}
 
     def _site_belongs_to(self, site, ctx):
-        if site.build_type != "storage":
+        owner_attr = self._OWNER_ATTR_BY_TYPE.get(site.build_type)
+        if owner_attr is None:
             return True
-        return same_household(self.c, getattr(site, "storage_owner_id", None), ctx.other_creatures)
+        return same_household(self.c, getattr(site, owner_attr, None), ctx.other_creatures)
 
     def _determine_need(self, campfire_pos, ctx):
         c = self.c
@@ -96,54 +97,62 @@ class PrivateConstruction(Construction):
         return None
 
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
-        if build_type != "storage":
+        owner_attr = self._OWNER_ATTR_BY_TYPE.get(build_type)
+        if owner_attr is None:
             return super()._find_or_create_site(build_type, campfire_pos, ctx)
 
         c = self.c
         for site in ctx.construction_sites:
-            if site.build_type != "storage":
+            if site.build_type != build_type:
                 continue
             if math.hypot(c.x - site.x, c.y - site.y) >= CONSTRUCTION_SITE_SEARCH_RADIUS:
                 continue
             if self._site_belongs_to(site, ctx):
-                if getattr(site, "storage_owner_id", None) is None:
-                    site.storage_owner_id = c.id
+                if getattr(site, owner_attr, None) is None:
+                    setattr(site, owner_attr, c.id)
                 return site
 
         site = super()._find_or_create_site(build_type, campfire_pos, ctx)
-        site.storage_owner_id = c.id
+        setattr(site, owner_attr, c.id)
         return site
 
     def _find_orphaned_site(self, ctx):
         c = self.c
-        storage_candidates = [s for s in ctx.construction_sites
-                              if s.build_type == "storage"
-                              and self._site_belongs_to(s, ctx)
-                              and math.hypot(c.x - s.x, c.y - s.y)
-                                  < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR]
-        if storage_candidates:
-            site = min(storage_candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
-            if getattr(site, "storage_owner_id", None) is None:
-                site.storage_owner_id = c.id
+        candidates = []
+        for build_type in self._OWNER_ATTR_BY_TYPE:
+            candidates.extend(
+                s for s in ctx.construction_sites
+                if s.build_type == build_type
+                and self._site_belongs_to(s, ctx)
+                and math.hypot(c.x - s.x, c.y - s.y)
+                    < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR
+            )
+        if candidates:
+            site = min(candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
+            owner_attr = self._OWNER_ATTR_BY_TYPE[site.build_type]
+            if getattr(site, owner_attr, None) is None:
+                setattr(site, owner_attr, c.id)
             return site
         return super()._find_orphaned_site(ctx)
 
-
-# Persist ownership for unfinished construction sites.
 _original_site_to_dict = ConstructionSite.to_dict
 _original_site_from_dict = ConstructionSite.from_dict
 
+_OWNER_ATTR_BY_TYPE = PrivateConstruction._OWNER_ATTR_BY_TYPE
+
 def _site_to_dict(site):
     data = _original_site_to_dict(site)
-    if site.build_type == "storage":
-        data["storage_owner_id"] = getattr(site, "storage_owner_id", None)
+    owner_attr = _OWNER_ATTR_BY_TYPE.get(site.build_type)
+    if owner_attr is not None:
+        data[owner_attr] = getattr(site, owner_attr, None)
     return data
 
 @staticmethod
 def _site_from_dict(data):
     site = _original_site_from_dict(data)
-    if site.build_type == "storage":
-        site.storage_owner_id = data.get("storage_owner_id")
+    owner_attr = _OWNER_ATTR_BY_TYPE.get(site.build_type)
+    if owner_attr is not None:
+        setattr(site, owner_attr, data.get(owner_attr))
     return site
 
 ConstructionSite.to_dict = _site_to_dict

@@ -33,6 +33,12 @@ def draw_graveyards(renderer, screen, game, camera, in_view):
             pos = camera.apply_pos((gy.x, gy.y))
             gy.draw(screen, pos)
 
+def draw_houses(renderer, screen, game, camera, in_view):
+    for house in game.world.houses:
+        if in_view(house.x, house.y):
+            pos = camera.apply_pos((house.x, house.y))
+            house.draw(screen, pos)
+
 # =========================================================================
 # Слои миникарты, специфичные для расы 'Круг'.
 # =========================================================================

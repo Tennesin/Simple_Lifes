@@ -14,11 +14,10 @@ def _collect_race_collections():
     return tuple(names)
 
 class WorldState:
-
     CORE_COLLECTIONS = (
         "fruits", "spikes", "water_puddles", "bushes", "trees", "stones",
         "campfires", "creatures", "roads", "road_crossings",
-        "walls", "fences",
+        "walls", "fences", "grass", "meats",
     )
 
     RACE_COLLECTIONS = _collect_race_collections()

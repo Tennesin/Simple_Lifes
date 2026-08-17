@@ -323,6 +323,90 @@ class Campfire(WorldObject):
         fire._apply_base(data)
         return fire
 
+class Grass(WorldObject):
+    type_name = INFO_OBJECT_GRASS
+
+    def __init__(self, x, y, food_amount=None):
+        super().__init__(x, y)
+        self.food = food_amount if food_amount is not None else random.randint(GRASS_FOOD_MIN, GRASS_FOOD_MAX)
+        self._recompute_geometry()
+
+    def has_food(self):
+        return self.food > 0
+
+    def _recompute_geometry(self):
+        ratio = (self.food - GRASS_FOOD_MIN) / max(1, (GRASS_FOOD_MAX - GRASS_FOOD_MIN))
+        ratio = max(0.0, min(1.0, ratio))
+        self.width = GRASS_BASE_WIDTH + (GRASS_MAX_WIDTH - GRASS_BASE_WIDTH) * ratio
+        self.radius = self.width / 2
+        self.blade_count = int(GRASS_BLADE_MIN_COUNT + (GRASS_BLADE_MAX_COUNT - GRASS_BLADE_MIN_COUNT) * ratio)
+
+    def draw(self, screen, screen_pos):
+        sx, sy = int(screen_pos[0]), int(screen_pos[1])
+        half_w = self.width / 2
+        base_y = sy + GRASS_HEIGHT // 3
+        step = self.width / max(1, self.blade_count - 1) if self.blade_count > 1 else 0
+        start_x = sx - half_w
+        for i in range(self.blade_count):
+            blade_x = start_x + step * i
+            sway = (i % 3 - 1) * 3
+            tip = (blade_x + sway, base_y - GRASS_HEIGHT)
+            left = (blade_x - 3, base_y)
+            right = (blade_x + 3, base_y)
+            color = GRASS_COLOR if i % 2 == 0 else GRASS_COLOR_DARK
+            pygame.draw.polygon(screen, color, [left, right, tip])
+
+    def to_dict(self):
+        d = self._base_dict()
+        d["food"] = self.food
+        return d
+
+    @staticmethod
+    def from_dict(data):
+        grass = Grass(data["x"], data["y"], food_amount=data.get("food"))
+        grass._apply_base(data)
+        return grass
+
+class Meat(WorldObject):
+    type_name = INFO_OBJECT_MEAT
+
+    def __init__(self, x, y, food_amount=0):
+        super().__init__(x, y)
+        self.food = food_amount
+        self.radius = 12
+        self.lifetime = MEAT_LIFETIME
+
+    def has_food(self):
+        return self.food > 0
+
+    def tick(self, dt):
+        """Возвращает True, когда мясо пора удалить (истёк срок лежания)."""
+        self.lifetime -= dt
+        return self.lifetime <= 0
+
+    def draw(self, screen, screen_pos):
+        sx, sy = int(screen_pos[0]), int(screen_pos[1])
+        rect = pygame.Rect(sx - self.radius, int(sy - self.radius * 0.7),
+                           self.radius * 2, int(self.radius * 1.4))
+        pygame.draw.ellipse(screen, MEAT_COLOR, rect)
+        pygame.draw.ellipse(screen, MEAT_COLOR_BORDER, rect, 2)
+        fat_rect = pygame.Rect(int(sx - self.radius * 0.6), int(sy - self.radius * 0.3),
+                               int(self.radius * 1.2), int(self.radius * 0.5))
+        pygame.draw.ellipse(screen, MEAT_COLOR_FAT, fat_rect)
+
+    def to_dict(self):
+        d = self._base_dict()
+        d["food"] = self.food
+        d["lifetime"] = self.lifetime
+        return d
+
+    @staticmethod
+    def from_dict(data):
+        meat = Meat(data["x"], data["y"], food_amount=data.get("food", 0))
+        meat._apply_base(data)
+        meat.lifetime = data.get("lifetime", MEAT_LIFETIME)
+        return meat
+
 # --------------- Дороги ---------------
 
 class Road(PolylineRoad):

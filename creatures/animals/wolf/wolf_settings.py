@@ -10,7 +10,11 @@ WOLF_SPEED = 110
 WOLF_BASE_SPEED_MULTIPLIER = 1.0
 WOLF_RADIUS = 13
 
-# ---------- Ресурсы ----------
+# ---------- Шкура ----------
+HIDE_LIFETIME = 45.0
+HIDE_SIZE = 18
+HIDE_COLOR = (200, 200, 205)
+HIDE_COLOR_BORDER = (150, 150, 155)
 WOLF_HIDE_MIN, WOLF_HIDE_MAX = 5, 9
 
 # ---------- Внешний вид: светло-серый прямоугольник + 2 маленькие треугольные ножки того же цвета ----------

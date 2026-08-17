@@ -1,4 +1,6 @@
 # --------------------- Названия объектов ---------------------
+INFO_OBJECT_GRASS = "Трава"
+INFO_OBJECT_MEAT = "Мясо"
 INFO_OBJECT_FRUIT = "Фрукт"
 INFO_OBJECT_SPIKE = "Шипы"
 INFO_OBJECT_WATER = "Вода"
@@ -35,6 +37,7 @@ INFO_BTN_PAUSE = "Пауза"
 INFO_BTN_EXIT = "Выйти"
 INFO_BTN_RESUME = "Продолжить"
 INFO_BTN_CREATE = "Создать"
+INFO_BTN_GRASS = "Трава"
 INFO_BTN_FRUIT = "Фрукт"
 INFO_BTN_SPIKE = "Шипы"
 INFO_BTN_WATER = "Вода"
@@ -87,6 +90,7 @@ INFO_INFO_CREATED = "Создан: {created}"
 INFO_INFO_TREE_WOOD = "Древесины: {count}"
 INFO_INFO_STONE_AMOUNT = "Камня: {count}"
 INFO_INFO_WATER_CHARGES = "Заряды воды: {count}"
+INFO_INFO_FOOD_AMOUNT = "Пищи: {count}"
 INFO_INFO_DELETE_HINT = "Ctrl+ЛКМ / Del — удалить"
 
 # --------------------- Экраны создания/загрузки мира ---------------------

@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .game import Game
 from objects import (
     Fruit, Spike, WaterPuddle, Bush, Campfire,
-    RoadCrossing, Tree, Stone
+    RoadCrossing, Tree, Stone, Grass, Meat,
 )
 from settings import *
 
@@ -62,6 +62,8 @@ _CORE_OBJECT_TYPE_REGISTRY = {
     "campfire": ("campfires", Campfire),
     "tree": ("trees", Tree),
     "stone": ("stones", Stone),
+    "grass": ("grass", Grass),
+    "meat": ("meats", Meat),
 }
 
 def _build_object_type_registry():
@@ -641,6 +643,8 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
         ("campfires", "_on_delete_campfire"),
         ("walls", "_on_delete_wall"),
         ("fences", "_on_delete_fence"),
+        ("grass", None),
+        ("meats", None),
     )
 
     def find_creature_at(self, wx, wy):
@@ -679,6 +683,8 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
             (game.world.campfires, _circle_hit),
             (game.world.trees, _circle_hit),
             (game.world.stones, _circle_hit),
+            (game.world.grass, _circle_hit),
+            (game.world.meats, _circle_hit),
         )
         for collection, check in circle_checks:
             for obj in collection:
