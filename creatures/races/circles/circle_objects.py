@@ -6,10 +6,39 @@ import uuid
 import random
 import pygame
 
-from objects import PolylineRoad
+from objects import PolylineRoad, WorldObject
 from .ci_settings import *
 from .ci_info import *
 from ...all_needed import geometry
+
+class Campfire(WorldObject):
+    type_name = INFO_OBJECT_CAMPFIRE
+
+    def __init__(self, x, y):
+        super().__init__(x, y, gen_id=True)
+        self.radius = 16
+        self.effect_radius = CAMPFIRE_RADIUS
+
+    def draw(self, screen, screen_pos):
+        sx, sy = int(screen_pos[0]), int(screen_pos[1])
+        halo = pygame.Surface((self.effect_radius * 2, self.effect_radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(halo, (255, 170, 60, 18),
+                           (self.effect_radius, self.effect_radius), self.effect_radius)
+        screen.blit(halo, (sx - self.effect_radius, sy - self.effect_radius))
+
+        pygame.draw.circle(screen, (90, 70, 60), (sx, sy), self.radius + 3)
+        pygame.draw.circle(screen, CAMPFIRE_COLOR_BORDER, (sx, sy), self.radius, 2)
+        pygame.draw.circle(screen, CAMPFIRE_COLOR, (sx, sy - 2), self.radius - 5)
+        pygame.draw.circle(screen, CAMPFIRE_COLOR_CORE, (sx, sy - 4), self.radius - 9)
+
+    def to_dict(self):
+        return self._base_dict()
+
+    @staticmethod
+    def from_dict(data):
+        fire = Campfire(data["x"], data["y"])
+        fire._apply_base(data)
+        return fire
 
 class StorageField:
     def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None, house_id=None):

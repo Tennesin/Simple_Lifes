@@ -12,7 +12,7 @@ from game.race_registry import (
 if TYPE_CHECKING:
     from .game import Game
 from objects import (
-    Fruit, Spike, WaterPuddle, Bush, Campfire,
+    Fruit, Spike, WaterPuddle, Bush,
     RoadCrossing, Tree, Stone, Grass, Meat,
 )
 from settings import *
@@ -59,7 +59,6 @@ _CORE_OBJECT_TYPE_REGISTRY = {
     "spike": ("spikes", Spike),
     "water": ("water_puddles", WaterPuddle),
     "bush": ("bushes", Bush),
-    "campfire": ("campfires", Campfire),
     "tree": ("trees", Tree),
     "stone": ("stones", Stone),
     "grass": ("grass", Grass),
@@ -335,8 +334,8 @@ class _BiomeCascadeMixin:
         self._destroy_objects_invalidated_by_biome_change(wx, wy, radius, biome_type)
 
     def clear_core_objects_in_zone(self, in_zone_fn, clear_fruits=True, clear_spikes=True,
-                                    clear_water=True, clear_bushes=True, clear_campfires=True,
-                                    clear_trees=True, clear_stones=True):
+                                   clear_water=True, clear_bushes=True,
+                                   clear_trees=True, clear_stones=True):
         """Публичный generic-хелпер: чистит только CORE-коллекции."""
         game = self.game
         world = game.world
@@ -354,12 +353,6 @@ class _BiomeCascadeMixin:
             for bush in [b for b in world.bushes if in_zone_fn(b)]:
                 world.bushes.remove(bush)
                 self.unlink_road_endpoints("bush", bush.id)
-
-        if clear_campfires:
-            for fire in [f for f in world.campfires if in_zone_fn(f)]:
-                world.campfires.remove(fire)
-                self.unlink_road_endpoints("campfire", fire.id)
-                self._cleanup_campfire_references(fire)
 
         if clear_water:
             flooded_water = [w for w in world.water_puddles if in_zone_fn(w)]
@@ -415,16 +408,9 @@ class _BiomeCascadeMixin:
         elif biome_type == BIOME_DESERT:
             self.clear_core_objects_in_zone(
                 _in_flood_zone,
-                clear_fruits=False, clear_spikes=False, clear_campfires=False, clear_stones=False,
+                clear_fruits=False, clear_spikes=False, clear_stones=False,
             )
             self._clear_race_cascade_objects(_in_flood_zone, flood=False)
-
-    def _cleanup_campfire_references(self, fire):
-        game = self.game
-        fire_pos = (fire.x, fire.y)
-        for creature in game.world.creatures:
-            creature.on_landmark_removed("campfire", fire.id, fire_pos)
-
 
 # =========================================================================
 # Домен: дорожная сеть - привязка к ориентирам, перекрёстки, "примагничивание"
@@ -640,7 +626,6 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
         ("bushes", "_on_delete_bush"),
         ("trees", None),
         ("stones", None),
-        ("campfires", "_on_delete_campfire"),
         ("walls", "_on_delete_wall"),
         ("fences", "_on_delete_fence"),
         ("grass", None),
@@ -680,7 +665,6 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
             (game.world.spikes, _circle_hit),
             (game.world.water_puddles, _circle_hit),
             (game.world.bushes, _circle_hit),
-            (game.world.campfires, _circle_hit),
             (game.world.trees, _circle_hit),
             (game.world.stones, _circle_hit),
             (game.world.grass, _circle_hit),
@@ -739,10 +723,6 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
 
     def _on_delete_bush(self, obj):
         self.unlink_road_endpoints("bush", obj.id)
-
-    def _on_delete_campfire(self, obj):
-        self.unlink_road_endpoints("campfire", obj.id)
-        self._cleanup_campfire_references(obj)
 
     def _on_delete_wall(self, obj):
         self.game.world.landscape_version += 1

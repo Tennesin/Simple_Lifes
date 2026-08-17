@@ -3,7 +3,14 @@
 from ..ci_settings import (
     CHILD_ROAD_COLOR_SAFE, CHILD_ROAD_COLOR_DANGEROUS, CHILD_ROAD_COLOR_PENDING,
     STORAGE_FIELD_COLOR_BORDER, GRAVEYARD_COLOR_FILL, GRAVEYARD_COLOR_BORDER,
+    CAMPFIRE_COLOR,
 )
+
+def draw_campfires(renderer, screen, game, camera, in_view):
+    for fire in game.world.campfires:
+        if in_view(fire.x, fire.y):
+            pos = camera.apply_pos((fire.x, fire.y))
+            fire.draw(screen, pos)
 
 def draw_child_roads(renderer, screen, game, camera, in_view):
     for croad in game.world.child_roads:
@@ -58,6 +65,12 @@ def draw_minimap_child_roads(panel, screen, game, to_minimap, scale, display):
             color = CHILD_ROAD_COLOR_PENDING
         pts = [to_minimap(px, py) for px, py in croad.points]
         pygame.draw.lines(screen, color, False, pts, 1)
+
+def draw_minimap_campfires(panel, screen, game, to_minimap, scale, display):
+    import pygame
+    for fire in game.world.campfires:
+        pos = to_minimap(fire.x, fire.y)
+        pygame.draw.circle(screen, CAMPFIRE_COLOR, (int(pos[0]), int(pos[1])), 2)
 
 def draw_minimap_constructions(panel, screen, game, to_minimap, scale, display):
     import pygame

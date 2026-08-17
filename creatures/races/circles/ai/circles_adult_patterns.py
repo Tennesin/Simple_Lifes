@@ -8,8 +8,7 @@ from ..ci_settings import *
 from ..ci_info import *
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration, scale, GoalComponent, lookup_creature
-from objects import Campfire
-from ..circle_objects import StorageField, Graveyard, ConstructionSite, House
+from ..circle_objects import StorageField, Graveyard, ConstructionSite, House, Campfire
 
 @dataclass
 class DecisionContext:

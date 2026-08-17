@@ -1,7 +1,6 @@
 import math
 import random
 
-from settings import CAMPFIRE_RADIUS
 from ..ci_settings import *
 from ..ci_info import *
 from .circles_adult_patterns import (

@@ -20,7 +20,6 @@ BIOME_PREVIEW_COLOR = {
 }
 _CORE_OBJECT_MENU_ITEMS = (
     ("spike", INFO_BTN_SPIKE),
-    ("campfire", INFO_BTN_CAMPFIRE),
 )
 
 # ---------- Базовые инструменты игрока (core), к ним добавляются расовые ----------
@@ -465,11 +464,6 @@ def _mm_draw_stones(panel, screen, game, to_minimap, scale, display):
             pos = to_minimap(stone.x, stone.y)
             pygame.draw.circle(screen, STONE_COLOR, (int(pos[0]), int(pos[1])), 2)
 
-def _mm_draw_campfires(panel, screen, game, to_minimap, scale, display):
-    for fire in game.world.campfires:
-        pos = to_minimap(fire.x, fire.y)
-        pygame.draw.circle(screen, CAMPFIRE_COLOR, (int(pos[0]), int(pos[1])), 2)
-
 def _mm_draw_fruits(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_fruits"]:
         for fruit in game.world.fruits:
@@ -496,7 +490,6 @@ _CORE_MINIMAP_LAYERS = (
     ("bushes", _mm_draw_bushes),
     ("trees", _mm_draw_trees),
     ("stones", _mm_draw_stones),
-    ("campfires", _mm_draw_campfires),
     ("fruits", _mm_draw_fruits),
     ("spikes", _mm_draw_spikes),
     ("creatures", _mm_draw_creatures),

@@ -11,8 +11,8 @@ from game.race_registry import (
 from info import *
 from player import Player
 from objects import (
-    Fruit, Spike, WaterPuddle, Bush, Campfire, Road,
-    RoadCrossing, Wall, Fence, Tree, Stone, Grass, Meat,
+    Fruit, Spike, WaterPuddle, Bush, Road, RoadCrossing,
+    Wall, Fence, Tree, Stone, Grass, Meat,
     )
 import settings
 
@@ -112,7 +112,6 @@ _CORE_OBJECT_REGISTRY = (
     ("bushes.json", "bushes", Bush),
     ("trees.json", "trees", Tree),
     ("stones.json", "stones", Stone),
-    ("campfires.json", "campfires", Campfire),
     ("roads.json", "roads", Road),
     ("walls.json", "walls", Wall),
     ("fences.json", "fences", Fence),

@@ -16,8 +16,7 @@ def _collect_race_collections():
 class WorldState:
     CORE_COLLECTIONS = (
         "fruits", "spikes", "water_puddles", "bushes", "trees", "stones",
-        "campfires", "creatures", "roads", "road_crossings",
-        "walls", "fences", "grass", "meats",
+        "creatures", "roads", "road_crossings", "walls", "fences", "grass", "meats",
     )
 
     RACE_COLLECTIONS = _collect_race_collections()
@@ -39,7 +38,6 @@ class WorldFrameContext:
     spikes: list = field(default_factory=list)
     water_puddles: list = field(default_factory=list)
     bushes: list = field(default_factory=list)
-    campfires: list = field(default_factory=list)
     creatures: list = field(default_factory=list)
     roads: list = field(default_factory=list)
     walls: list = field(default_factory=list)

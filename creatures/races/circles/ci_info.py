@@ -7,6 +7,7 @@ from .ci_settings import (
 )
 
 # --------------------- Названия объектов ---------------------
+INFO_OBJECT_CAMPFIRE = "Костёр"
 INFO_OBJECT_STORAGE_FIELD = "Склад"
 INFO_OBJECT_GRAVEYARD = "Кладбище"
 INFO_OBJECT_CHILD_ROAD = "Детская дорога"
@@ -256,6 +257,7 @@ INFO_FEMALE_VARIANTS = {
 # --------------------- Объекты и механики, специфичные для расы 'Круг' ---------------------
 INFO_BTN_DRAW_CHILD_ROAD = "Детская дорога"
 INFO_BTN_HOUSE = "Дом"
+INFO_BTN_CAMPFIRE = "Костёр"
 INFO_BTN_CREATE_MALE = "Самец"
 INFO_BTN_CREATE_FEMALE = "Самка"
 INFO_INFO_CAMPFIRE_OCCUPANCY = "Жителей: {count}/{max}"

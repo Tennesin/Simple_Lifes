@@ -329,8 +329,13 @@ STORAGE_ATTRACTIVENESS_MIN_WATER = 4
 MATE_STORAGE_ATTRACTIVENESS_BONUS = 60.0
 CONSTRUCTION_PUBERTY_DRIVE_BONUS = 12.0
 
+# ---------- Костёр (сам объект) ----------
+CAMPFIRE_RADIUS = 650
+CAMPFIRE_COLOR = (235, 130, 40)
+CAMPFIRE_COLOR_CORE = (255, 200, 60)
+CAMPFIRE_COLOR_BORDER = (120, 50, 15)
 # ---------- Вместимость костра / основание нового поселения ----------
-CAMPFIRE_MAX_OCCUPANTS = 12
+CAMPFIRE_MAX_OCCUPANTS = 30
 NEW_CAMPFIRE_DISTANCE_RANGE = (900.0, 1200.0)   # желаемая дистанция нового костра от всех существующих
 NEW_CAMPFIRE_JOIN_SEARCH_RADIUS = 900.0         # если рядом уже кто-то строит костёр - не начинаем свой
 

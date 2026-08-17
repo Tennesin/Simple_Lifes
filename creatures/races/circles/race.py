@@ -8,16 +8,17 @@ from game.race_registry import (
     ExtraObjectCollectionSpec, BiomeCascadeSpec,
 )
 from .mechanics.input_events import (
-    on_delete_storage_field, on_delete_graveyard, on_delete_construction_site, on_delete_house,
-    circle_handle_relationships_scrollbar_down, circle_handle_relationships_scrollbar_up,
-    circle_handle_relationships_scrollbar_motion, circle_handle_relationships_wheel,
+    on_delete_storage_field, on_delete_graveyard, on_delete_construction_site,
+    on_delete_house, on_delete_campfire, circle_handle_relationships_scrollbar_down,
+    circle_handle_relationships_scrollbar_up, circle_handle_relationships_wheel,
+    circle_handle_relationships_scrollbar_motion,
 )
 
 from .creature import Creature
 from .ci_info import *
 from .ci_settings import GRAVEYARD_DEFAULT_SIZE, CHILD_ROAD_COLOR_PENDING, HOUSE_DEFAULT_SIZE
 from .circle_objects import (
-    ChildRoad, StorageField, ConstructionSite, Graveyard, House
+    ChildRoad, StorageField, ConstructionSite, Graveyard, House, Campfire
 )
 from .mechanics.tick import CircleTickProcessor, tick_circle_world
 from .mechanics.creature_lifecycle import (
@@ -29,8 +30,8 @@ from .mechanics.panel import (
 )
 from .mechanics.creature_lifecycle import load_creature_from_state as load_circle_creature
 from .mechanics.render import (
-    draw_child_roads, draw_storage_fields, draw_construction_sites, draw_graveyards,
-    draw_minimap_child_roads, draw_minimap_constructions, draw_houses,
+    draw_child_roads, draw_campfires, draw_storage_fields, draw_construction_sites, draw_graveyards,
+    draw_minimap_child_roads, draw_minimap_campfires, draw_minimap_constructions, draw_houses,
 )
 
 RACE_DESCRIPTOR = RaceDescriptor(
@@ -49,7 +50,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
     world_collections=(
         "child_roads", "child_road_crossings",
         "storage_fields", "construction_sites", "graveyards",
-        "houses",
+        "houses", "campfires",
     ),
     persistence_registry=(
         ("child_roads.json", "child_roads", ChildRoad),
@@ -58,6 +59,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ("graveyards.json", "graveyards", Graveyard),
         ("child_road_crossings.json", "child_road_crossings", RoadCrossing),
         ("houses.json", "houses", House),
+        ("campfires.json", "campfires", Campfire),
     ),
     placeable_objects=(
         PlaceableObjectSpec(
@@ -75,13 +77,17 @@ RACE_DESCRIPTOR = RaceDescriptor(
             mutual_clearance_additive=True,
             manually_placeable=False,
         ),
+        PlaceableObjectSpec(
+            obj_type="campfire", attr="campfires", cls=Campfire, label=INFO_BTN_CAMPFIRE,
+        ),
     ),
     render_layers=(
         RenderLayer("child_roads", insert_after="road_crossings", draw_fn=draw_child_roads),
-        RenderLayer("storage_fields", insert_after="campfires", draw_fn=draw_storage_fields),
-        RenderLayer("construction_sites", insert_after="campfires", draw_fn=draw_construction_sites),
-        RenderLayer("graveyards", insert_after="campfires", draw_fn=draw_graveyards),
-        RenderLayer("houses", insert_after="campfires", draw_fn=draw_houses),
+        RenderLayer("campfires", insert_after="stones", draw_fn=draw_campfires),
+        RenderLayer("storage_fields", insert_after="stones", draw_fn=draw_storage_fields),
+        RenderLayer("construction_sites", insert_after="stones", draw_fn=draw_construction_sites),
+        RenderLayer("graveyards", insert_after="stones", draw_fn=draw_graveyards),
+        RenderLayer("houses", insert_after="stones", draw_fn=draw_houses),
     ),
     road_networks=(
         RoadNetworkSpec(
@@ -100,7 +106,8 @@ RACE_DESCRIPTOR = RaceDescriptor(
     ),
     minimap_layers=(
         MinimapLayer("child_roads", insert_after="roads", draw_fn=draw_minimap_child_roads),
-        MinimapLayer("constructions", insert_after="campfires", draw_fn=draw_minimap_constructions),
+        MinimapLayer("campfires", insert_after="stones", draw_fn=draw_minimap_campfires),
+        MinimapLayer("constructions", insert_after="stones", draw_fn=draw_minimap_constructions),
     ),
     object_panel_extra_fn=circle_object_panel_extra_lines,
     secondary_panel_specs=(
@@ -116,6 +123,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ExtraObjectCollectionSpec(attr="graveyards", on_delete=on_delete_graveyard),
         ExtraObjectCollectionSpec(attr="construction_sites", on_delete=on_delete_construction_site),
         ExtraObjectCollectionSpec(attr="houses", on_delete=on_delete_house),
+        ExtraObjectCollectionSpec(attr="campfires", on_delete=on_delete_campfire),
     ),
     extra_world_save_fn=save_circle_genealogy,
     extra_world_load_fn=load_circle_genealogy,
@@ -123,6 +131,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         BiomeCascadeSpec(attr="graveyards", clear_on_flood=True, on_removed=on_delete_graveyard),
         BiomeCascadeSpec(attr="storage_fields", clear_on_flood=True, on_removed=on_delete_storage_field),
         BiomeCascadeSpec(attr="houses", clear_on_flood=True, on_removed=on_delete_house),
+        BiomeCascadeSpec(attr="campfires", clear_on_flood=True, on_removed=on_delete_campfire),
     ),
     mouse_down_hooks=(circle_handle_relationships_scrollbar_down,),
     mouse_up_hooks=(circle_handle_relationships_scrollbar_up,),

@@ -1,10 +1,12 @@
 """Private household storage rules for Circle adults."""
 
 import math
+import random
 
 from ..ci_settings import *
 from ..circle_objects import ConstructionSite
 from .circles_adult_patterns import Storage, Construction
+from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration
 
 def same_household(creature, owner_id, other_creatures=None):
@@ -62,6 +64,10 @@ class PrivateStorage(Storage):
 class PrivateConstruction(Construction):
     _OWNER_ATTR_BY_TYPE = {"storage": "storage_owner_id", "house": "house_owner_id"}
 
+    # ---------- Расстояние, в пределах которого разные найденные точки костра
+    # считаются "тем же самым" ориентиром (не плодим дубликаты-якоря) ----------
+    CAMPFIRE_ANCHOR_MERGE_RADIUS = 5
+
     def _site_belongs_to(self, site, ctx):
         owner_attr = self._OWNER_ATTR_BY_TYPE.get(site.build_type)
         if owner_attr is None:
@@ -111,6 +117,58 @@ class PrivateConstruction(Construction):
                 return "graveyard"
         return None
 
+    # =====================================================================
+    # Домен: место для дома - сперва пробуем "встроиться в общество" рядом
+    # с уже существующим или строящимся костром. Если анкеров нет вообще
+    # (костров ещё не построено) или ни у одного не нашлось свободного
+    # места - _find_or_create_site ниже сам переключит самца на постройку
+    # нового костра в другом месте.
+    # =====================================================================
+
+    def _collect_campfire_anchors(self, campfire_pos, ctx):
+        anchors = []
+
+        def _add(pos):
+            if pos is None:
+                return
+            if any(math.hypot(pos[0] - a[0], pos[1] - a[1]) < self.CAMPFIRE_ANCHOR_MERGE_RADIUS
+                   for a in anchors):
+                return
+            anchors.append(pos)
+
+        _add(campfire_pos)
+        for fire in ctx.campfires:
+            _add((fire.x, fire.y))
+        for site in ctx.construction_sites:
+            if site.build_type == "campfire":
+                _add((site.x, site.y))
+        return anchors
+
+    def _score_best_house_site_near(self, anchor, biome_grid, ctx):
+        best_point, best_score = None, None
+        for _ in range(HOUSE_SITE_SCORE_ATTEMPTS):
+            angle = random.uniform(0, 2 * math.pi)
+            dist = random.uniform(*HOUSE_BUILD_OFFSET_RANGE)
+            point = geometry.clamped_point(anchor[0], anchor[1], angle, dist)
+            if not self._point_clear(point, "house", biome_grid, ctx):
+                continue
+            score = self._score_house_site(point, anchor, biome_grid, ctx)
+            if best_score is None or score > best_score:
+                best_score, best_point = score, point
+        return best_point, best_score
+
+    def _pick_house_point(self, campfire_pos, biome_grid, ctx):
+        anchors = self._collect_campfire_anchors(campfire_pos, ctx)
+
+        best_point, best_score = None, None
+        for anchor in anchors:
+            point, score = self._score_best_house_site_near(anchor, biome_grid, ctx)
+            if point is None:
+                continue
+            if best_score is None or score > best_score:
+                best_score, best_point = score, point
+        return best_point
+
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
         owner_attr = self._OWNER_ATTR_BY_TYPE.get(build_type)
         if owner_attr is None:
@@ -141,6 +199,13 @@ class PrivateConstruction(Construction):
                     return site
 
         site = super()._find_or_create_site(build_type, campfire_pos, ctx)
+        if site is None:
+            if build_type == "house":
+                # ---------- Рядом с костром (или костров вообще нет) не нашлось
+                # свободного места - самец сам закладывает новый костёр в другом месте ----------
+                return self._find_or_create_site("campfire", campfire_pos, ctx)
+            return None
+
         setattr(site, owner_attr, c.id)
         if build_type == "storage":
             house = next((h for h in ctx.houses if c.id in h.owner_ids), None)

@@ -5,7 +5,8 @@ import time
 import pygame
 import math
 
-from objects import Bush, WaterPuddle,  Campfire
+from objects import Bush, WaterPuddle
+from ..circle_objects import Campfire
 from settings import *
 from info import *
 from game.widgets import Button, ScrollArea

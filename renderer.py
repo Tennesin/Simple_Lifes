@@ -58,12 +58,6 @@ def _draw_stones(renderer, screen, game, camera, in_view):
             pos = camera.apply_pos((stone.x, stone.y))
             stone.draw(screen, pos)
 
-def _draw_campfires(renderer, screen, game, camera, in_view):
-    for fire in game.world.campfires:
-        if in_view(fire.x, fire.y):
-            pos = camera.apply_pos((fire.x, fire.y))
-            fire.draw(screen, pos)
-
 def _draw_fruits(renderer, screen, game, camera, in_view):
     for fruit in game.world.fruits:
         if fruit.active and in_view(fruit.x, fruit.y):
@@ -108,7 +102,6 @@ CORE_RENDER_LAYERS = (
     ("bushes", _draw_bushes),
     ("trees", _draw_trees),
     ("stones", _draw_stones),
-    ("campfires", _draw_campfires),
     ("fruits", _draw_fruits),
     ("meat", _draw_meat),
     ("spikes", _draw_spikes),

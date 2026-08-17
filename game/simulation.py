@@ -114,8 +114,7 @@ class Simulation:
         return WorldFrameContext(
             dt=dt,
             fruits=world.fruits, spikes=world.spikes, water_puddles=world.water_puddles,
-            bushes=world.bushes, campfires=world.campfires, creatures=world.creatures,
-            roads=world.roads,
+            bushes=world.bushes, creatures=world.creatures, roads=world.roads,
             walls=world.walls, fences=world.fences, trees=world.trees, stones=world.stones,
             road_crossings=world.road_crossings,
             wall_bounds=wall_bounds, fence_bounds=fence_bounds,
