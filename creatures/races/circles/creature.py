@@ -202,6 +202,7 @@ class Creature(LivingEntity):
         # ---------- Жильё ----------
         self.home_id = None
         self.home_eviction_timer = 0.0
+        self.at_home = False
 
         # ---------- Добыча ресурсов и строительство ----------
         self.carry_capacity = random.randint(*CREATURE_CARRY_CAPACITY_RANGE)
@@ -251,6 +252,15 @@ class Creature(LivingEntity):
         if self.gender == GENDER_FEMALE and self.is_pregnant:
             return False
         return True
+
+    def is_in_own_house(self, houses):
+        if self.home_id is None:
+            return False
+        house = next((h for h in houses if h.id == self.home_id), None)
+        if house is None:
+            return False
+        half_w, half_h = house.width / 2, house.height / 2
+        return abs(self.x - house.x) <= half_w and abs(self.y - house.y) <= half_h
 
     def get_type_name(self):
         return INFO_CREATURE_KIND

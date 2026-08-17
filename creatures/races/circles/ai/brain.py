@@ -190,7 +190,7 @@ class _PerceptionMixin(_BrainMixinBase):
 
 class _ReflexMixin(_BrainMixinBase):
 
-    def _resolve_sleep_state(self, nearby_corpse_threats):
+    def _resolve_sleep_state(self, nearby_corpse_threats, in_house=False):
         c = self.c
         if not c.is_sleeping:
             return False
@@ -208,7 +208,12 @@ class _ReflexMixin(_BrainMixinBase):
             return False
 
         c.state = STATE_SLEEP
-        c.goal_text = INFO_CREATURE_GOAL_SLEEP_FORCED if c.sleep_forced else INFO_CREATURE_GOAL_SLEEP_FIRE
+        if c.sleep_forced:
+            c.goal_text = INFO_CREATURE_GOAL_SLEEP_FORCED
+        elif in_house:
+            c.goal_text = INFO_CREATURE_GOAL_SLEEP_AT_HOME
+        else:
+            c.goal_text = INFO_CREATURE_GOAL_SLEEP_FIRE
         c.target = (c.x, c.y)
         return True
 
@@ -246,9 +251,21 @@ class _ReflexMixin(_BrainMixinBase):
 
 class _DispatchMixin(_LifeStageDispatchBase):
 
-    def _fallback_goal(self, dt, biome_grid):
+    def _fallback_goal(self, dt, biome_grid, ctx=None):
         c = self.c
         c.state = STATE_CALM
+
+        houses = ctx.race_collections.get("houses", []) if ctx is not None else []
+        house = next((h for h in houses if h.id == c.home_id), None) if c.home_id is not None else None
+        if house is not None:
+            if not c.is_in_own_house(houses):
+                c.goal_text = INFO_CREATURE_GOAL_IDLE_GO_HOME
+                c.target = (house.x, house.y)
+                return c.target
+            c.goal_text = INFO_CREATURE_GOAL_IDLE_AT_HOME
+            c.target = (c.x, c.y)
+            return c.target
+
         if c.freeze_timer > 0:
             c.freeze_timer -= dt
             c.goal_text = INFO_CREATURE_GOAL_FROZEN
@@ -274,14 +291,8 @@ class _DispatchMixin(_LifeStageDispatchBase):
 
     def _is_in_own_house(self, ctx):
         c = self.c
-        if c.home_id is None:
-            return False
         houses = ctx.race_collections.get("houses", [])
-        house = next((h for h in houses if h.id == c.home_id), None)
-        if house is None:
-            return False
-        half_w, half_h = house.width / 2, house.height / 2
-        return abs(c.x - house.x) <= half_w and abs(c.y - house.y) <= half_h
+        return c.is_in_own_house(houses)
 
     def _dispatch_life_stage(self, perception, ctx: "WorldFrameContext"):
         c = self.c
@@ -341,7 +352,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
                 goal = self.adult.decide(dctx)
 
         if goal is None:
-            return self._fallback_goal(dt, biome_grid)
+            return self._fallback_goal(dt, biome_grid, ctx)
 
         c.target = goal
         return goal
@@ -379,7 +390,7 @@ class CreatureBrain(_TimerTickMixin, _PerceptionMixin, _ReflexMixin, _DispatchMi
         else:
             nearby_corpse_threats = [t for t in threat_corpses if c.distance_to(t) < perception.reaction_distance]
 
-        if self._resolve_sleep_state(nearby_corpse_threats):
+        if self._resolve_sleep_state(nearby_corpse_threats, in_house=in_house):
             return None
 
         if in_house:

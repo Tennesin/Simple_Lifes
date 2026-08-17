@@ -115,6 +115,8 @@ class CreatureNeeds:
                 drain_multiplier *= PREGNANCY_ENERGY_MULTIPLIER
             if biome == BIOME_DESERT:
                 drain_multiplier *= DESERT_ENERGY_DRAIN_MULTIPLIER
+            if getattr(c, "at_home", False):
+                drain_multiplier *= HOME_ENERGY_DRAIN_MULTIPLIER
             c.energy -= (dt / ENERGY_DRAIN_INTERVAL) * drain_multiplier
             if c.energy <= 0:
                 c.energy = 0

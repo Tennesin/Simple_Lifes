@@ -272,8 +272,7 @@ class SurvivalNeeds(GoalComponent):
         c = self.c
         if not c.seeking_food:
             return None
-        deficit = scale(HUNGER_SATISFY_THRESHOLD - c.hunger, 0, HUNGER_SATISFY_THRESHOLD)
-        score = self.SCORE_FOOD_BASE + deficit * self.SCORE_FOOD_MAX_BONUS
+        score = self.SCORE_FOOD_BASE + self.SCORE_FOOD_MAX_BONUS
 
         def execute():
             self.instincts.check_stale_food_memory(ctx.visible_fruits)
@@ -289,6 +288,38 @@ class SurvivalNeeds(GoalComponent):
             return self.instincts.pursue_search_target(ctx.visible_companions, biome_grid=ctx.biome_grid)
 
         return Consideration("food", score, execute)
+
+    def _consider_water(self, ctx):
+        c = self.c
+        if not c.seeking_water:
+            return None
+        score = self.SCORE_WATER_BASE + self.SCORE_WATER_MAX_BONUS
+
+        def execute():
+            self.instincts.check_stale_water_memory(ctx.visible_water)
+            found = self.instincts.nearest_water_target(ctx.visible_water, biome_grid=ctx.biome_grid)
+            c.state = STATE_SEEKING
+            if found:
+                c.goal_text = INFO_CREATURE_GOAL_SEEK_WATER
+                return found
+            route = self.roads.pursue_known_link("water", ctx)
+            if route:
+                return route
+            c.goal_text = INFO_CREATURE_GOAL_SEEK_WATER_ACTIVE
+            return self.instincts.pursue_search_target(ctx.visible_companions, biome_grid=ctx.biome_grid)
+
+        return Consideration("water", score, execute)
+
+    def _consider_sanity(self, ctx):
+        c = self.c
+        if not c.seeking_sanity:
+            return None
+        score = self.SCORE_SANITY_BASE + self.SCORE_SANITY_MAX_BONUS
+
+        def execute():
+            return self._seek_sanity_relief(ctx, urgent=False)
+
+        return Consideration("sanity", score, execute)
 
     def _consider_water(self, ctx):
         c = self.c
@@ -1022,7 +1053,7 @@ class Construction(GoalComponent):
     def _footprint_radius(self, build_type):
         return self._BUILDING_FINAL_FOOTPRINT.get(build_type, 30)
 
-    def _point_clear(self, point, build_type, biome_grid, ctx):
+    def _point_clear(self, point, build_type, biome_grid, ctx, skip_house_id=None):
         px, py = point
         if biome_grid is not None and biome_grid.get_at(px, py) in (BIOME_SEA, BIOME_RIVER):
             return False
@@ -1048,6 +1079,8 @@ class Construction(GoalComponent):
             if gy.distance_to_point(px, py) < footprint:
                 return False
         for house in ctx.houses:
+            if house.id == skip_house_id:
+                continue
             house_radius = max(house.width, house.height) / 2
             if math.hypot(px - house.x, py - house.y) < footprint + house_radius:
                 return False
@@ -1127,7 +1160,7 @@ class Construction(GoalComponent):
         for side_sign in sides:
             px = house.x + side_sign * (half_house_w + STORAGE_HOUSE_GAP + half_store_w)
             point = (px, house.y)
-            if self._point_clear(point, "storage", ctx.biome_grid, ctx):
+            if self._point_clear(point, "storage", ctx.biome_grid, ctx, skip_house_id=house.id):  # НОВОЕ
                 return point
         return None
 

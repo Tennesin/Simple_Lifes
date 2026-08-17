@@ -1422,4 +1422,13 @@ def circle_object_panel_extra_lines(obj, creatures):
         resident_count = len(getattr(obj, "resident_ids", ()))
         lines.append((INFO_INFO_HOUSE_CAPACITY.format(count=f"{resident_count}/{obj.capacity}"), (200, 200, 200)))
 
+        inside_now = [c for c in creatures
+                      if not c.is_dead and getattr(c, "home_id", None) == obj.id
+                      and hasattr(c, "is_in_own_house") and c.is_in_own_house([obj])]
+        if inside_now:
+            names = ", ".join(c.name if c.name else c.id for c in inside_now)
+            lines.append((INFO_INFO_HOUSE_INSIDE_NOW.format(names=names), (150, 220, 150)))
+        else:
+            lines.append((INFO_INFO_HOUSE_INSIDE_EMPTY, (150, 150, 150)))
+
     return lines
