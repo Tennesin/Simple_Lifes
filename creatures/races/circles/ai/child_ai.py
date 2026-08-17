@@ -106,7 +106,7 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
 class _ChildSleepMixin(_ChildAIMixinBase):
 
-    def _consider_child_sleep(self, biome_grid=None):
+    def _consider_child_sleep(self, biome_grid=None, houses=None):
         c = self.c
         if not c.seeking_sleep:
             return None
@@ -114,10 +114,9 @@ class _ChildSleepMixin(_ChildAIMixinBase):
         score = SCORE_CHILD_SLEEP_BASE + deficit * SCORE_CHILD_SLEEP_MAX_BONUS
 
         def execute():
-            return self.instincts.seek_sleep_spot(biome_grid=biome_grid)
+            return self.instincts.seek_sleep_spot(biome_grid=biome_grid, houses=houses)
 
         return Consideration("child_sleep", score, execute)
-
 
 # =========================================================================
 # Домен: сигнал голода/жажды - сперва склад, потом зов родителей
@@ -458,7 +457,7 @@ class ChildAI(_ChildDistressMixin, _ChildSleepMixin, _ChildHungerMixin,
         self.instincts = instincts
 
     def decide(self, visible_companions, visible_roads, storage_fields, other_creatures, dt,
-               visible_child_roads=None, biome_grid=None):
+               visible_child_roads=None, biome_grid=None, houses=None):
         c = self.c
         c.state = STATE_CALM
         visible_child_roads = visible_child_roads or []
@@ -485,7 +484,7 @@ class ChildAI(_ChildDistressMixin, _ChildSleepMixin, _ChildHungerMixin,
 
         considerations = [
             self._consider_distress(visible_companions, biome_grid=biome_grid),
-            self._consider_child_sleep(biome_grid=biome_grid),
+            self._consider_child_sleep(biome_grid=biome_grid, houses=houses),
             self._consider_hunger_signal(visible_companions, other_creatures, storage_fields, biome_grid=biome_grid),
             self._consider_child_road_play(visible_child_roads, dt),
             self._consider_free_time(visible_companions, visible_roads, dt),

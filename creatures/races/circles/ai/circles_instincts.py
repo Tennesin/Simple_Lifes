@@ -117,8 +117,22 @@ class _CorpseHandlingInstinctMixin:
 
 class _SleepInstinctMixin:
 
-    def seek_sleep_spot(self, biome_grid=None):
+    def seek_sleep_spot(self, biome_grid=None, houses=None):
         c = self.c
+
+        house = self._resolve_home_house(houses)
+        if house is not None:
+            dist_to_house = math.hypot(c.x - house.x, c.y - house.y)
+            if dist_to_house > HOUSE_SLEEP_ARRIVAL_DISTANCE:
+                c.goal_text = INFO_CREATURE_GOAL_SLEEP_GO_HOUSE
+                c.target = (house.x, house.y)
+                return c.target
+            c.goal_text = INFO_CREATURE_GOAL_SLEEP_AT_HOME
+            c.target = (c.x, c.y)
+            c.is_sleeping = True
+            c.sleep_forced = False
+            return c.target
+
         campfire_pos = None
         campfire_memories = c.memory.get_campfire_memories()
         if campfire_memories:
@@ -159,6 +173,12 @@ class _SleepInstinctMixin:
         c.goal_text = INFO_CREATURE_GOAL_SLEEP_ON_MOVE
         return self.pursue_search_target(biome_grid=biome_grid)
 
+    def _resolve_home_house(self, houses):
+        c = self.c
+        if not houses or c.home_id is None:
+            return None
+        return next((h for h in houses if h.id == c.home_id), None)
+
 
 # =========================================================================
 # Домен: поиск знакомых ориентиров (костёр/кладбище/склад) и их регистрация
@@ -189,7 +209,14 @@ class _LandmarkLookupMixin:
             return min(memories, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
         return c.known_graveyard
 
-    def find_storage_field(self, storage_fields):
+    def find_storage_field(self, storage_fields, houses=None):
+        c = self.c
+        if houses:
+            house = next((h for h in houses if c.id in h.owner_ids or c.home_id == h.id), None)
+            if house is not None:
+                field = next((f for f in storage_fields if getattr(f, "house_id", None) == house.id), None)
+                if field is not None:
+                    return field
         campfire_pos = self.nearest_known_campfire()
         if campfire_pos is None or not storage_fields:
             return None

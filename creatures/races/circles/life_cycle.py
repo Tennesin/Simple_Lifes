@@ -43,6 +43,9 @@ class CreatureAging:
             c.play_target_id = None
             c.play_role = None
             c.play_timer = 0.0
+            # ---------- Сыновья получают отсрочку перед выселением из родного дома ----------
+            if c.gender == GENDER_MALE and c.home_id is not None:
+                c.home_eviction_timer = HOUSE_SON_GRACE_PERIOD
 
     def _apply_old_modifiers(self):
         c = self.c
@@ -138,7 +141,7 @@ class CreatureFamily:
         self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
         self.birth_cooldown = 0.0
 
-    def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None):
+    def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None, houses=None):
         c = self.c
         if c.is_dead or c.is_grabbed:
             return None
@@ -153,14 +156,14 @@ class CreatureFamily:
         if (c.partner_id is None and c.life_stage == LIFE_STAGE_ADULT
                 and self.pair_check_timer <= 0):
             self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
-            self._try_form_pair(other_creatures, storage_fields)
+            self._try_form_pair(other_creatures, storage_fields, houses)
             if c.partner_id is not None and (partner is None or partner.id != c.partner_id):
                 partner = self._find_partner(other_creatures, c.partner_id, creatures_by_id)
 
         if c.is_pregnant:
             return self._update_pregnancy(dt)
 
-        self._try_conceive(dt, partner)
+        self._try_conceive(dt, partner, houses)
         return None
 
     def _find_partner(self, other_creatures, partner_id, creatures_by_id):
@@ -186,7 +189,7 @@ class CreatureFamily:
 
     # ---------- Зачатие ----------
 
-    def _try_conceive(self, dt, partner):
+    def _try_conceive(self, dt, partner, houses=None):
         c = self.c
         if c.gender != GENDER_FEMALE:
             return
@@ -208,6 +211,9 @@ class CreatureFamily:
         if partner.panic_active or partner.fear_timer > 0 or partner.is_sleeping:
             return
 
+        if not self._family_house_has_space(c, partner, houses):
+            return
+
         chance = PREGNANCY_CHANCE_PER_SEC
         if c.puberty_active or partner.puberty_active:
             chance *= PUBERTY_PREGNANCY_CHANCE_MULTIPLIER
@@ -216,9 +222,20 @@ class CreatureFamily:
             c.is_pregnant = True
             c.pregnancy_timer = random.uniform(*PREGNANCY_DURATION)
 
+    @staticmethod
+    def _family_house_has_space(c, partner, houses):
+        # ---------- Совместимость со старыми мирами / семьями без дома: не блокируем ----------
+        if not houses:
+            return True
+        owner_id = c.id if c.gender == GENDER_MALE else partner.id
+        house = next((h for h in houses if owner_id in h.owner_ids), None)
+        if house is None:
+            return True
+        return house.has_space()
+
     # ---------- Образование пары ----------
 
-    def _try_form_pair(self, other_creatures, storage_fields=None):
+    def _try_form_pair(self, other_creatures, storage_fields=None, houses=None):
         c = self.c
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return
@@ -262,6 +279,30 @@ class CreatureFamily:
         c.social.adjust_mutual_relationship(partner, FAMILY_PAIR_BOND_BONUS)
         c.psyche.on_pair_formed()
         partner.psyche.on_pair_formed()
+        self._resolve_pair_housing(c, partner, houses)
+
+    @staticmethod
+    def _resolve_pair_housing(a, b, houses):
+        if not houses:
+            return
+        male, female = (a, b) if a.gender == GENDER_MALE else (b, a)
+        male_house = next((h for h in houses if male.id in h.owner_ids), None)
+
+        if male_house is not None and male_house.has_space():
+            if female.home_id and female.home_id != male_house.id:
+                old = next((h for h in houses if h.id == female.home_id), None)
+                if old is not None:
+                    old.remove_resident(female.id)
+            if male_house.add_resident(female.id):
+                female.home_id = male_house.id
+        else:
+            # ---------- У жениха своего дома пока нет - невеста покидает отчий дом,
+            # переедет, когда муж построит жильё ----------
+            if female.home_id:
+                old = next((h for h in houses if h.id == female.home_id), None)
+                if old is not None:
+                    old.remove_resident(female.id)
+                female.home_id = None
 
     def _is_blood_relative(self, other):
         c = self.c

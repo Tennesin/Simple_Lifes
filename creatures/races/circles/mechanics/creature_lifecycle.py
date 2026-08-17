@@ -70,6 +70,11 @@ class CircleSpawnManager:
             child.relationships[father.id] = FAMILY_PARENT_START_RELATIONSHIP
             father.relationships[child.id] = FAMILY_PARENT_START_RELATIONSHIP
 
+        if mother.home_id is not None:
+            house = next((h for h in game.world.houses if h.id == mother.home_id), None)
+            if house is not None and house.add_resident(child.id):
+                child.home_id = house.id
+
         game.world.creatures.append(child)
         if game.world_path:
             child.save(os.path.join(game.world_path, "creatures"))
@@ -126,6 +131,8 @@ _CREATURE_SIMPLE_FIELDS = (
     ("feed_target_id", "feed_target_id", None),
     ("urgent_child_id", "urgent_child_id", None),
     ("urgent_child_timer", "urgent_child_timer", 0.0),
+    ("home_id", "home_id", None),
+    ("home_eviction_timer", "home_eviction_timer", 0.0),
 )
 
 _CREATURE_TUPLE_FIELDS = (

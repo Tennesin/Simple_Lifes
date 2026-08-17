@@ -8,7 +8,7 @@ from game.race_registry import (
     ExtraObjectCollectionSpec, BiomeCascadeSpec,
 )
 from .mechanics.input_events import (
-    on_delete_storage_field, on_delete_graveyard, on_delete_construction_site,
+    on_delete_storage_field, on_delete_graveyard, on_delete_construction_site, on_delete_house,
     circle_handle_relationships_scrollbar_down, circle_handle_relationships_scrollbar_up,
     circle_handle_relationships_scrollbar_motion, circle_handle_relationships_wheel,
 )
@@ -115,14 +115,14 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ExtraObjectCollectionSpec(attr="storage_fields", on_delete=on_delete_storage_field),
         ExtraObjectCollectionSpec(attr="graveyards", on_delete=on_delete_graveyard),
         ExtraObjectCollectionSpec(attr="construction_sites", on_delete=on_delete_construction_site),
-        ExtraObjectCollectionSpec(attr="houses"),
+        ExtraObjectCollectionSpec(attr="houses", on_delete=on_delete_house),
     ),
     extra_world_save_fn=save_circle_genealogy,
     extra_world_load_fn=load_circle_genealogy,
     biome_cascade_specs=(
         BiomeCascadeSpec(attr="graveyards", clear_on_flood=True, on_removed=on_delete_graveyard),
         BiomeCascadeSpec(attr="storage_fields", clear_on_flood=True, on_removed=on_delete_storage_field),
-        BiomeCascadeSpec(attr="houses", clear_on_flood=True),
+        BiomeCascadeSpec(attr="houses", clear_on_flood=True, on_removed=on_delete_house),
     ),
     mouse_down_hooks=(circle_handle_relationships_scrollbar_down,),
     mouse_up_hooks=(circle_handle_relationships_scrollbar_up,),

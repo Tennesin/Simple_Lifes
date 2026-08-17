@@ -265,7 +265,7 @@ class SurvivalNeeds(GoalComponent):
         score = self.SCORE_SLEEP_BASE + deficit * self.SCORE_SLEEP_MAX_BONUS
 
         def execute():
-            return self.instincts.seek_sleep_spot(biome_grid=ctx.biome_grid)
+            return self.instincts.seek_sleep_spot(biome_grid=ctx.biome_grid, houses=ctx.houses)
 
         return Consideration("sleep", score, execute)
 
@@ -743,7 +743,7 @@ class Storage(GoalComponent):
 
     def _pursue(self, ctx):
         c = self.c
-        field = self.instincts.find_storage_field(ctx.storage_fields)
+        field = self.instincts.find_storage_field(ctx.storage_fields, houses=ctx.houses)
         if field is None:
             if c.storage_supply_mode and (c.carried_fruit or c.carried_water):
                 c.storage_supply_mode = False
@@ -834,7 +834,7 @@ class Construction(GoalComponent):
 
     _BUILDING_FINAL_FOOTPRINT = {
         "campfire": 20,
-        "storage": STORAGE_FIELD_RADIUS + 8,
+        "storage": max(STORAGE_FIELD_WIDTH, STORAGE_FIELD_HEIGHT) / 2 + 8,
         "graveyard": max(GRAVEYARD_DEFAULT_SIZE) / 2 + 10,
         "house": max(HOUSE_DEFAULT_SIZE) / 2 + 10,
     }
@@ -1062,15 +1062,13 @@ class Construction(GoalComponent):
         c = self.c
         if build_type == "campfire":
             return self._pick_new_campfire_point(ctx, attempts=max(attempts, 30))
+        if build_type == "house":
+            return self._pick_house_point(campfire_pos, biome_grid, ctx)
+        if build_type == "storage":
+            return self._pick_storage_point(ctx)
 
         anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
-        if build_type == "graveyard":
-            dist_range = GRAVEYARD_BUILD_OFFSET_RANGE
-        elif build_type == "house":
-            dist_range = HOUSE_BUILD_OFFSET_RANGE
-        else:
-            dist_range = STORAGE_BUILD_OFFSET_RANGE
-
+        dist_range = GRAVEYARD_BUILD_OFFSET_RANGE
         fallback = None
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
@@ -1080,6 +1078,59 @@ class Construction(GoalComponent):
                 return point
             fallback = point
         return fallback
+
+    def _pick_house_point(self, campfire_pos, biome_grid, ctx):
+        c = self.c
+        anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
+        best_point, best_score = None, None
+        for _ in range(HOUSE_SITE_SCORE_ATTEMPTS):
+            angle = random.uniform(0, 2 * math.pi)
+            dist = random.uniform(*HOUSE_BUILD_OFFSET_RANGE)
+            point = geometry.clamped_point(anchor[0], anchor[1], angle, dist)
+            if not self._point_clear(point, "house", biome_grid, ctx):
+                continue
+            score = self._score_house_site(point, campfire_pos, biome_grid, ctx)
+            if best_score is None or score > best_score:
+                best_score, best_point = score, point
+        return best_point
+
+    def _score_house_site(self, point, campfire_pos, biome_grid, ctx):
+        px, py = point
+        score = 0.0
+        biome = biome_grid.get_at(px, py) if biome_grid is not None else BIOME_PLAINS
+        if biome == BIOME_DESERT:
+            score -= HOUSE_DESERT_PENALTY
+
+        # ---------- Есть ли место сбоку под будущий склад ----------
+        half_house_w = HOUSE_DEFAULT_SIZE[0] / 2
+        side_w = STORAGE_FIELD_WIDTH + STORAGE_HOUSE_GAP * 2
+        left_ok = self._point_clear((px - half_house_w - side_w / 2, py), "storage", biome_grid, ctx)
+        right_ok = self._point_clear((px + half_house_w + side_w / 2, py), "storage", biome_grid, ctx)
+        if left_ok or right_ok:
+            score += HOUSE_STORAGE_ROOM_BONUS
+
+        # ---------- Не слишком далеко и не впритык к костру ----------
+        if campfire_pos is not None:
+            dist = math.hypot(px - campfire_pos[0], py - campfire_pos[1])
+            score -= abs(dist - HOUSE_CAMPFIRE_DISTANCE_IDEAL) * 0.05
+
+        return score
+
+    def _pick_storage_point(self, ctx):
+        c = self.c
+        house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+        if house is None:
+            return None
+        half_house_w = house.width / 2
+        half_store_w = STORAGE_FIELD_WIDTH / 2
+        sides = [1, -1]
+        random.shuffle(sides)
+        for side_sign in sides:
+            px = house.x + side_sign * (half_house_w + STORAGE_HOUSE_GAP + half_store_w)
+            point = (px, house.y)
+            if self._point_clear(point, "storage", ctx.biome_grid, ctx):
+                return point
+        return None
 
     def _pick_new_campfire_point(self, ctx, attempts=30):
         c = self.c
@@ -1196,6 +1247,7 @@ class Construction(GoalComponent):
         if site.build_type == "campfire":
             new_object = Campfire(site.x, site.y)
             ctx.campfires.append(new_object)
+
         elif site.build_type == "storage":
             new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos)
             primary_owner_id = getattr(site, "storage_owner_id", None) or c.id
@@ -1207,19 +1259,41 @@ class Construction(GoalComponent):
                 new_object.add_owner(partner_id)
 
             new_object.built_by = c.id
+            new_object.house_id = getattr(site, "linked_house_id", None)
             ctx.storage_fields.append(new_object)
+
         elif site.build_type == "graveyard":
             new_object = Graveyard(site.x, site.y)
             ctx.graveyards.append(new_object)
+
         elif site.build_type == "house":
-            new_object = House(site.x, site.y)
+            cap_range = HOUSE_CAPACITY_RANGE.get(c.temperament, (4, 6))
+            new_object = House(site.x, site.y, capacity=random.randint(*cap_range))
             primary_owner_id = getattr(site, "house_owner_id", None) or c.id
             new_object.owner_ids.add(primary_owner_id)
+            new_object.resident_ids.add(primary_owner_id)
+            c.home_id = new_object.id
 
             primary_owner = next((o for o in ctx.other_creatures if o.id == primary_owner_id), None)
-            partner_id = primary_owner.partner_id if primary_owner is not None else None
-            if partner_id is not None and partner_id in site.contributor_ids:
+            partner_id = primary_owner.partner_id if primary_owner is not None else c.partner_id
+            if partner_id is not None:
                 new_object.owner_ids.add(partner_id)
+                if new_object.add_resident(partner_id):
+                    partner = next((o for o in ctx.other_creatures if o.id == partner_id), None)
+                    if partner is not None:
+                        partner.home_id = new_object.id
+
+            # ---------- Ещё не расселённые дети переезжают вместе с семьёй ----------
+            for child in ctx.other_creatures:
+                if (not child.is_dead and child.home_id is None
+                        and child.parent_ids and primary_owner_id in child.parent_ids):
+                    if new_object.add_resident(child.id):
+                        child.home_id = new_object.id
+
+            # ---------- "Осиротевший" склад из старого мира привязываем к новому дому ----------
+            for field in ctx.storage_fields:
+                if primary_owner_id in field.owner_ids and getattr(field, "house_id", None) is None:
+                    field.house_id = new_object.id
 
             ctx.houses.append(new_object)
 

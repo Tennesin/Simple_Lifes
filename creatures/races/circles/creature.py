@@ -199,6 +199,10 @@ class Creature(LivingEntity):
         self.storage_supply_check_timer = random.uniform(*STORAGE_SUPPLY_CHECK_INTERVAL)
         self.storage_supply_mode = False
 
+        # ---------- Жильё ----------
+        self.home_id = None
+        self.home_eviction_timer = 0.0
+
         # ---------- Добыча ресурсов и строительство ----------
         self.carry_capacity = random.randint(*CREATURE_CARRY_CAPACITY_RANGE)
         self.carried_resources = {"wood": 0, "stone": 0}
@@ -504,6 +508,8 @@ class Creature(LivingEntity):
             "psyche_attachment": self.psyche.attachment,
             "carry_capacity": self.carry_capacity,
             "carried_resources": self.carried_resources,
+            "home_id": self.home_id,
+            "home_eviction_timer": self.home_eviction_timer,
         }
         with open(os.path.join(folder_path, "state.json"), 'w') as f:
             json.dump(state, f, indent=2)

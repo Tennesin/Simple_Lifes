@@ -4,6 +4,7 @@ import math
 
 from settings import *
 from ..ci_settings import *
+from ..ci_info import INFO_CREATURE_GOAL_HOUSE_EVICTED
 from ..life_cycle import apply_grief_for_death
 from .input_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
 
@@ -37,9 +38,10 @@ class CircleTickProcessor:
         genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
         race_creatures = self._race_creatures()
 
-        ctx.campfire_occupancy = self._compute_campfire_occupancy(ctx.campfires, race_creatures)  # НОВОЕ
+        ctx.campfire_occupancy = self._compute_campfire_occupancy(ctx.campfires, race_creatures)
 
         self._reconcile_storage_ownership(ctx)
+        self._reconcile_house_ownership(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
         self._process_grief(race_creatures)
@@ -74,6 +76,60 @@ class CircleTickProcessor:
     # =====================================================================
     # Домен: наследование прав на семейный склад при смерти владельца
     # =====================================================================
+
+    def _reconcile_house_ownership(self, ctx):
+        world = self.game.world
+        if not world.houses:
+            return
+        creatures_by_id = ctx.creatures_by_id or {c.id: c for c in world.creatures}
+
+        for house in world.houses:
+            dead_residents = [rid for rid in house.resident_ids
+                              if creatures_by_id.get(rid) is None or creatures_by_id[rid].is_dead]
+            for rid in dead_residents:
+                house.remove_resident(rid)
+
+            if not house.owner_ids:
+                continue
+            dead_owners = [oid for oid in house.owner_ids
+                           if creatures_by_id.get(oid) is None or creatures_by_id[oid].is_dead]
+            for owner_id in dead_owners:
+                self._transfer_house_owner(house, owner_id, world)
+
+    def _transfer_house_owner(self, house, owner_id, world):
+        house.owner_ids.discard(owner_id)
+        house.remove_resident(owner_id)
+
+        heir_id = None
+        partner = next((c for c in world.creatures if not c.is_dead and c.partner_id == owner_id), None)
+        if partner is not None and partner.id in house.resident_ids:
+            heir_id = partner.id
+        else:
+            sons = [c for c in world.creatures
+                    if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
+                    and c.gender == GENDER_MALE and c.id in house.resident_ids]
+            if sons:
+                heir_id = min(sons, key=lambda s: s.age).id  # самый младший сын
+            else:
+                unmarried_daughters = [c for c in world.creatures
+                                       if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
+                                       and c.gender == GENDER_FEMALE and c.partner_id is None
+                                       and c.id in house.resident_ids]
+                if unmarried_daughters:
+                    heir_id = random.choice(unmarried_daughters).id
+                else:
+                    any_children = [c for c in world.creatures
+                                    if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
+                                    and c.id in house.resident_ids]
+                    if any_children:
+                        heir_id = random.choice(any_children).id
+
+        if heir_id is not None:
+            house.owner_ids.add(heir_id)
+            for field in world.storage_fields:
+                if getattr(field, "house_id", None) == house.id and owner_id in field.owner_ids:
+                    field.owner_ids.discard(owner_id)
+                    field.add_owner(heir_id)
 
     def _reconcile_storage_ownership(self, ctx):
         world = self.game.world
@@ -180,6 +236,17 @@ class CircleTickProcessor:
                     game.player.grabbed_creature = None
                 continue
 
+            # ---------- Выселение сына по истечении отсрочки ----------
+            if creature.home_eviction_timer > 0:
+                creature.home_eviction_timer -= ctx.dt
+                if creature.home_eviction_timer <= 0 and creature.home_id is not None:
+                    house = next((h for h in world.houses if h.id == creature.home_id), None)
+                    if house is not None:
+                        house.remove_resident(creature.id)
+                    creature.home_id = None
+                    creature.home_eviction_timer = 0.0
+                    creature.goal_text = INFO_CREATURE_GOAL_HOUSE_EVICTED
+
             if (game.biome_manager.grid is not None
                     and game.biome_manager.grid.get_at(creature.x, creature.y) == BIOME_SEA):
                 creature.die("утонул в море")
@@ -187,7 +254,8 @@ class CircleTickProcessor:
                     game.player.grabbed_creature = None
                 continue
 
-            birth_request = creature.family.update(ctx.dt, race_creatures, ctx.creatures_by_id, world.storage_fields)
+            birth_request = creature.family.update(
+                ctx.dt, race_creatures, ctx.creatures_by_id, world.storage_fields, world.houses)
             if birth_request is not None:
                 game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
 

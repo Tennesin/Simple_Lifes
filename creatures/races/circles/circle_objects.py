@@ -12,15 +12,18 @@ from .ci_info import *
 from ...all_needed import geometry
 
 class StorageField:
-    def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None):
+    def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None, house_id=None):
         self.x = x
         self.y = y
+        self.width = STORAGE_FIELD_WIDTH
+        self.height = STORAGE_FIELD_HEIGHT
         self.radius = STORAGE_FIELD_RADIUS
         self.fruits = 0
         self.water = 0
         self.built_by = None
         self.owner_ids = set(owner_ids) if owner_ids else set()
         self.campfire_pos = owner_campfire_pos
+        self.house_id = house_id
         self.created = time.time()
         self.id = str(uuid.uuid4())[:8]
         self.owner_ids = set(list(owner_ids)[:STORAGE_FIELD_MAX_OWNERS]) if owner_ids else set()
@@ -80,9 +83,14 @@ class StorageField:
         return math.hypot(self.campfire_pos[0] - campfire_pos[0],
                           self.campfire_pos[1] - campfire_pos[1]) < tolerance
 
+    def is_owned_by_house(self, house_id):
+        return self.house_id == house_id
+
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
-        pygame.draw.circle(screen, STORAGE_FIELD_COLOR_BORDER, (sx, sy), self.radius, 3)
+        half_w, half_h = self.width // 2, self.height // 2
+        rect = pygame.Rect(sx - half_w, sy - half_h, self.width, self.height)
+        pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, rect, 3)
 
     def to_dict(self):
         return {
@@ -191,6 +199,7 @@ class ConstructionSite:
         self.y = y
         self.build_type = build_type  # "campfire" | "storage" | "graveyard"
         self.width, self.height = CONSTRUCTION_SITE_SIZE.get(build_type, (40, 40))
+        self.linked_house_id = None
 
         req = BUILDING_REQUIREMENTS[build_type]
         self.required_wood = req["wood"]
@@ -237,6 +246,7 @@ class ConstructionSite:
             "deposited_wood": self.deposited_wood, "deposited_stone": self.deposited_stone,
             "build_progress": self.build_progress, "is_building": self.is_building,
             "campfire_pos": list(self.campfire_pos) if self.campfire_pos else None,
+            "linked_house_id": self.linked_house_id,
             "created": self.created,
         }
 
@@ -251,6 +261,7 @@ class ConstructionSite:
         site.build_progress = data.get("build_progress", 0.0)
         site.is_building = data.get("is_building", False)
         site.created = data.get("created", time.time())
+        site.linked_house_id = data.get("linked_house_id")
         return site
 
 
@@ -310,24 +321,32 @@ class ChildRoad(PolylineRoad):
         return croad
 
 class House:
-    """Жилой дом. Пока только хранит данные (вместимость, внешность) -
-    подключение к сну/защите/рождению детей будет добавлено отдельно,
-    когда появятся соответствующие механики."""
-
-    def __init__(self, x, y, capacity=None, owner_ids=None, house_id=None):
+    def __init__(self, x, y, capacity=None, owner_ids=None, resident_ids=None, house_id=None):
         self.id = house_id if house_id else str(uuid.uuid4())[:8]
         self.x = x
         self.y = y
         self.width, self.height = HOUSE_DEFAULT_SIZE
-        # ---------- Вместимость "выбирает" самец-строитель в момент завершения стройки ----------
-        self.capacity = capacity if capacity is not None else random.randint(
-            HOUSE_MIN_RESIDENTS, HOUSE_MAX_RESIDENTS)
+        self.capacity = capacity if capacity is not None else random.randint(3, 6)
         self.owner_ids = set(owner_ids) if owner_ids else set()
+        self.resident_ids = set(resident_ids) if resident_ids else set()
         self.created = time.time()
 
-        # ---------- Внешность фиксируется один раз при постройке ----------
         self.door_slot = random.choice(("left", "center", "right"))
         self.window_slots = self._roll_window_slots()
+
+    def has_space(self):
+        return len(self.resident_ids) < self.capacity
+
+    def add_resident(self, creature_id):
+        if creature_id in self.resident_ids:
+            return True
+        if len(self.resident_ids) >= self.capacity:
+            return False
+        self.resident_ids.add(creature_id)
+        return True
+
+    def remove_resident(self, creature_id):
+        self.resident_ids.discard(creature_id)
 
     def _roll_window_slots(self):
         free_slots = [slot for slot in ("left", "center", "right") if slot != self.door_slot]
@@ -392,7 +411,9 @@ class House:
     def to_dict(self):
         return {
             "id": self.id, "x": self.x, "y": self.y,
-            "capacity": self.capacity, "owner_ids": list(self.owner_ids),
+            "capacity": self.capacity,
+            "owner_ids": list(self.owner_ids),
+            "resident_ids": list(self.resident_ids),
             "door_slot": self.door_slot, "window_slots": self.window_slots,
             "created": self.created,
         }
@@ -400,7 +421,9 @@ class House:
     @staticmethod
     def from_dict(data):
         house = House(data["x"], data["y"], capacity=data.get("capacity"),
-                      owner_ids=data.get("owner_ids"), house_id=data.get("id"))
+                      owner_ids=data.get("owner_ids"),
+                      resident_ids=data.get("resident_ids"),
+                      house_id=data.get("id"))
         house.door_slot = data.get("door_slot", house.door_slot)
         house.window_slots = data.get("window_slots", house.window_slots)
         house.created = data.get("created", time.time())

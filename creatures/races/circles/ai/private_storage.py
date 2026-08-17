@@ -32,6 +32,11 @@ class PrivateStorage(Storage):
 
     def _owned_field(self, ctx):
         c = self.c
+        house = next((h for h in ctx.houses if c.id in h.owner_ids or c.home_id == h.id), None)
+        if house is not None:
+            field = next((f for f in ctx.storage_fields if f.house_id == house.id), None)
+            if field is not None:
+                return field
         campfire_pos = self.instincts.nearest_known_campfire()
         if campfire_pos is None:
             return None
@@ -41,7 +46,7 @@ class PrivateStorage(Storage):
         return None
 
     def consider(self, ctx):
-        if self.instincts.nearest_known_campfire() is None or self._owned_field(ctx) is None:
+        if self._owned_field(ctx) is None:
             return [None]
         return [Consideration("storage", self.SCORE, lambda: self._pursue(ctx))]
 
@@ -67,6 +72,16 @@ class PrivateConstruction(Construction):
         c = self.c
         sites = ctx.construction_sites
 
+        owns_house = any(c.id in h.owner_ids for h in ctx.houses)
+        if not owns_house:
+            already_building = any(
+                s.build_type == "house" and self._site_belongs_to(s, ctx)
+                for s in sites
+            )
+            if already_building:
+                return None  # дом уже в процессе - на остальное пока не отвлекаемся
+            return "house"
+
         if campfire_pos is None:
             nearby_campfire_site = any(
                 s.build_type == "campfire"
@@ -77,9 +92,9 @@ class PrivateConstruction(Construction):
                 return "campfire"
             return None
 
+        house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
         owned_field = next((f for f in ctx.storage_fields
-                            if f.is_owned_by_campfire(campfire_pos)
-                            and field_belongs_to(c, f, ctx.other_creatures)), None)
+                            if house is not None and f.house_id == house.id), None)
         if owned_field is None:
             owned_site = next((s for s in sites
                                if s.build_type == "storage"
@@ -112,9 +127,35 @@ class PrivateConstruction(Construction):
                     setattr(site, owner_attr, c.id)
                 return site
 
+        if build_type == "house":
+            # ---------- Миграция: если у самца уже есть свой (осиротевший) склад без дома -
+            # строим дом вплотную к нему, а не в произвольном месте ----------
+            orphan = next((f for f in ctx.storage_fields
+                           if c.id in f.owner_ids and getattr(f, "house_id", None) is None), None)
+            if orphan is not None:
+                point = self._pick_house_point_near_storage(orphan, ctx)
+                if point is not None:
+                    site = ConstructionSite(point[0], point[1], "house", campfire_pos=campfire_pos)
+                    ctx.construction_sites.append(site)
+                    setattr(site, owner_attr, c.id)
+                    return site
+
         site = super()._find_or_create_site(build_type, campfire_pos, ctx)
         setattr(site, owner_attr, c.id)
+        if build_type == "storage":
+            house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+            if house is not None:
+                site.linked_house_id = house.id
         return site
+
+    def _pick_house_point_near_storage(self, storage, ctx):
+        half_house_w = HOUSE_DEFAULT_SIZE[0] / 2
+        for side_sign in (1, -1):
+            px = storage.x + side_sign * (storage.radius + STORAGE_HOUSE_GAP + half_house_w)
+            point = (px, storage.y)
+            if self._point_clear(point, "house", ctx.biome_grid, ctx):
+                return point
+        return None
 
     def _find_orphaned_site(self, ctx):
         c = self.c

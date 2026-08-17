@@ -67,8 +67,9 @@ def draw_minimap_constructions(panel, screen, game, to_minimap, scale, display):
 
     for field in game.world.storage_fields:
         pos = to_minimap(field.x, field.y)
-        size = max(4, int(field.radius * 2 * scale_x))
-        field_rect = pygame.Rect(0, 0, size, size)
+        w = max(4, int(field.width * scale_x))
+        h = max(3, int(field.height * scale_y))
+        field_rect = pygame.Rect(0, 0, w, h)
         field_rect.center = (int(pos[0]), int(pos[1]))
         pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, field_rect, 1)
 

@@ -272,6 +272,17 @@ class _DispatchMixin(_LifeStageDispatchBase):
                        else INFO_CREATURE_GOAL_EXPLORE)
         return c.target
 
+    def _is_in_own_house(self, ctx):
+        c = self.c
+        if c.home_id is None:
+            return False
+        houses = ctx.race_collections.get("houses", [])
+        house = next((h for h in houses if h.id == c.home_id), None)
+        if house is None:
+            return False
+        half_w, half_h = house.width / 2, house.height / 2
+        return abs(c.x - house.x) <= half_w and abs(c.y - house.y) <= half_h
+
     def _dispatch_life_stage(self, perception, ctx: "WorldFrameContext"):
         c = self.c
         other_creatures = filter_same_race(c, ctx.creatures)
@@ -290,7 +301,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
         if c.life_stage == LIFE_STAGE_CHILD:
             goal = self.child.decide(perception.visible_companions, perception.visible_roads, storage_fields,
                                      other_creatures, dt, visible_child_roads=perception.visible_child_roads,
-                                     biome_grid=biome_grid)
+                                     biome_grid=biome_grid, houses=houses)
         else:
             threat_corpses = [] if c.can_handle_corpses() else perception.visible_corpses
             all_threats = perception.visible_spikes + threat_corpses
@@ -358,10 +369,12 @@ class CreatureBrain(_TimerTickMixin, _PerceptionMixin, _ReflexMixin, _DispatchMi
         if c.life_stage == LIFE_STAGE_CHILD:
             self.child.maybe_signal_parent(perception.visible_companions)
 
+        in_house = self._is_in_own_house(ctx)
+
         can_handle_corpses = c.can_handle_corpses()
         threat_corpses = [] if can_handle_corpses else perception.visible_corpses
 
-        if c.calm_timer > 0 or c.following_road:
+        if c.calm_timer > 0 or c.following_road or in_house:
             nearby_corpse_threats = []
         else:
             nearby_corpse_threats = [t for t in threat_corpses if c.distance_to(t) < perception.reaction_distance]
@@ -369,7 +382,10 @@ class CreatureBrain(_TimerTickMixin, _PerceptionMixin, _ReflexMixin, _DispatchMi
         if self._resolve_sleep_state(nearby_corpse_threats):
             return None
 
-        if c.fear_timer > 0 and c.fear_source is not None:
+        if in_house:
+            # ---------- Дома круг в полной безопасности - игнорирует испуг от внешнего мира ----------
+            goal = self._dispatch_life_stage(perception, ctx)
+        elif c.fear_timer > 0 and c.fear_source is not None:
             goal = self._flee_from_fear()
         elif nearby_corpse_threats:
             goal = self._flee_from_corpse(nearby_corpse_threats, perception.visible_companions)

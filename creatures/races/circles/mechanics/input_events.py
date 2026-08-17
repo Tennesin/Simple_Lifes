@@ -7,7 +7,12 @@ import math
 from settings import DEFAULT_SCROLL_SPEED
 from game.object_manager import footprint_radius
 from ..ci_info import INFO_CREATURE_GOAL_NAMED
-from ..ci_settings import NAME_ASSIGN_RELATIONSHIP_BONUS, GRAVEYARD_BURIAL_DISTANCE
+from ....all_needed import geometry
+from ..ci_settings import (
+    NAME_ASSIGN_RELATIONSHIP_BONUS, GRAVEYARD_BURIAL_DISTANCE,
+    GENDER_MALE, LIFE_STAGE_CHILD, CHILD_DISTRESS_THRESHOLD,
+    HOUSE_DESTRUCTION_PANIC_DURATION, HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY,
+)
 
 # =========================================================================
 # Домен: труп сородича — перехват переноски при двойном клике и передача
@@ -81,6 +86,26 @@ def on_delete_graveyard(game, gy):
     pos = (gy.x, gy.y)
     for creature in game.world.creatures:
         creature.on_landmark_removed("graveyard", gy.id, pos)
+
+def on_delete_house(game, house):
+    # ---------- Склад, привязанный к дому, гибнет вместе с ним ----------
+    for field in [f for f in game.world.storage_fields if getattr(f, "house_id", None) == house.id]:
+        game.world.storage_fields.remove(field)
+        game.object_manager.unlink_road_endpoints("storage", field.id)
+
+    residents = [c for c in game.world.creatures
+                 if not c.is_dead and (c.id in house.owner_ids or c.id in house.resident_ids)]
+
+    for creature in residents:
+        creature.home_id = None
+        creature.fear_timer = max(creature.fear_timer, HOUSE_DESTRUCTION_PANIC_DURATION)
+        creature.fear_source = (house.x, house.y)
+        creature.player_relationship = geometry.clamp(
+            creature.player_relationship + HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY, -100.0, 100.0)
+        creature.psyche.on_hazard_encountered()
+        if creature.life_stage == LIFE_STAGE_CHILD:
+            # ---------- Ребёнок инстинктивно кинется искать видимого родителя (см. ChildAI._consider_distress) ----------
+            creature.child_distress_timer = CHILD_DISTRESS_THRESHOLD + 1.0
 
 def on_delete_construction_site(game, site):
     for creature in game.world.creatures:

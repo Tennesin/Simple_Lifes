@@ -1418,6 +1418,7 @@ def circle_object_panel_extra_lines(obj, creatures):
                 owner = next((c for c in creatures if c.id == owner_id), None)
                 owner_names.append(owner.name if owner and owner.name else owner_id)
             lines.append((INFO_INFO_HOUSE_OWNER.format(name=", ".join(owner_names)), (255, 210, 60)))
-        lines.append((INFO_INFO_HOUSE_CAPACITY.format(count=obj.capacity), (200, 200, 200)))
+        resident_count = len(getattr(obj, "resident_ids", ()))
+        lines.append((INFO_INFO_HOUSE_CAPACITY.format(count=f"{resident_count}/{obj.capacity}"), (200, 200, 200)))
 
     return lines
