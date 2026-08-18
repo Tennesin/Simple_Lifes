@@ -67,21 +67,22 @@ class ResourceActions:
             return None
         return c.social.best_companion(candidates)
 
-    def go_fetch_fruit(self, visible_fruits):
+    def go_fetch_fruit(self, visible_fruits, recipient=None):
         c = self.c
         if not c.eats_food_type("fruit"):
             return None
         target_fruit = min(visible_fruits, key=c.distance_to) if visible_fruits else None
+        fetch_text, carry_text = self._feed_food_texts(recipient)
 
         if target_fruit is not None:
             if c.distance_to(target_fruit) < EAT_DISTANCE:
                 target_fruit.active = False
                 c.carried_fruit = True
-                c.goal_text = INFO_CREATURE_GOAL_FEED_CARRY_FOOD
+                c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
             c.state = STATE_SEEKING
-            c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_FOOD
+            c.goal_text = fetch_text
             c.target = (target_fruit.x, target_fruit.y)
             return c.target
 
@@ -89,27 +90,40 @@ class ResourceActions:
         if memory_positions:
             pos = min(memory_positions, key=lambda p: math.hypot(c.x - p[0], c.y - p[1]))
             c.state = STATE_SEEKING
-            c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_FOOD
+            c.goal_text = fetch_text
             c.target = pos
             return pos
         return None
 
-    def go_fetch_water(self, visible_water, biome_grid=None):
+    @staticmethod
+    def _feed_food_texts(recipient):
+        if recipient is not None and recipient.life_stage != LIFE_STAGE_CHILD:
+            return INFO_CREATURE_GOAL_FEED_FETCH_FOOD_ADULT, INFO_CREATURE_GOAL_FEED_CARRY_FOOD_ADULT
+        return INFO_CREATURE_GOAL_FEED_FETCH_FOOD, INFO_CREATURE_GOAL_FEED_CARRY_FOOD
+
+    @staticmethod
+    def _feed_water_texts(recipient):
+        if recipient is not None and recipient.life_stage != LIFE_STAGE_CHILD:
+            return INFO_CREATURE_GOAL_FEED_FETCH_WATER_ADULT, INFO_CREATURE_GOAL_FEED_CARRY_WATER_ADULT
+        return INFO_CREATURE_GOAL_FEED_FETCH_WATER, INFO_CREATURE_GOAL_FEED_CARRY_WATER
+
+    def go_fetch_water(self, visible_water, biome_grid=None, recipient=None):
         c = self.c
         available_water = [w for w in visible_water if w.has_water()]
         target_water = min(available_water, key=c.distance_to) if available_water else None
+        fetch_text, carry_text = self._feed_water_texts(recipient)
 
         if target_water is not None:
             if c.distance_to(target_water) < EAT_DISTANCE + target_water.radius:
                 if target_water.take_charge():
                     c.carried_water = True
-                    c.goal_text = INFO_CREATURE_GOAL_FEED_CARRY_WATER
+                    c.goal_text = carry_text
                     c.target = (c.x, c.y)
                     return c.target
                 # заряд иссяк прямо в момент подхода - падаем в общий поиск ниже
             else:
                 c.state = STATE_SEEKING
-                c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
+                c.goal_text = fetch_text
                 c.target = (target_water.x, target_water.y)
                 return c.target
 
@@ -117,21 +131,21 @@ class ResourceActions:
         if memory_positions:
             pos = min(memory_positions, key=lambda p: math.hypot(c.x - p[0], c.y - p[1]))
             c.state = STATE_SEEKING
-            c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
+            c.goal_text = fetch_text
             c.target = pos
             return pos
 
         if biome_grid is not None:
             if biome_grid.get_at(c.x, c.y) == BIOME_RIVER:
                 c.carried_water = True
-                c.goal_text = INFO_CREATURE_GOAL_FEED_CARRY_WATER
+                c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
             vision_radius = c.aging.effective_vision_radius()
             river_point = biome_grid.find_nearest_of_type(c.x, c.y, BIOME_RIVER, vision_radius)
             if river_point:
                 c.state = STATE_SEEKING
-                c.goal_text = INFO_CREATURE_GOAL_FEED_FETCH_WATER
+                c.goal_text = fetch_text
                 c.target = river_point
                 return river_point
 
@@ -146,9 +160,13 @@ class ResourceActions:
             c.feed_target_id = None
             return None
 
+        is_adult_recipient = target.life_stage != LIFE_STAGE_CHILD
+        deliver_text = INFO_CREATURE_GOAL_FEED_DELIVER_ADULT if is_adult_recipient else INFO_CREATURE_GOAL_FEED_DELIVER
+        done_text = INFO_CREATURE_GOAL_FEED_DONE_ADULT if is_adult_recipient else INFO_CREATURE_GOAL_FEED_DONE
+
         c.state = STATE_SEEKING
         if c.distance_to(target) > FEED_DISTANCE:
-            c.goal_text = INFO_CREATURE_GOAL_FEED_DELIVER
+            c.goal_text = deliver_text
             c.target = (target.x, target.y)
             return c.target
 
@@ -166,10 +184,9 @@ class ResourceActions:
         c.psyche.on_help_given()
         target.psyche.on_help_received()
         c.feed_target_id = None
-        c.goal_text = INFO_CREATURE_GOAL_FEED_DONE
+        c.goal_text = done_text
         c.target = (c.x, c.y)
         return c.target
-
 
 # =========================================================================
 # Базовые нужды: голод/жажда/сон/санити/выживание
@@ -606,11 +623,12 @@ class Feeding(GoalComponent):
             if recipient is not None and (recipient.hunger < CHILD_FEED_HUNGER_THRESHOLD
                                           or recipient.thirst < CHILD_FEED_THIRST_THRESHOLD):
                 if recipient.hunger < CHILD_FEED_HUNGER_THRESHOLD:
-                    goal = self.actions.go_fetch_fruit(ctx.visible_fruits)
+                    goal = self.actions.go_fetch_fruit(ctx.visible_fruits, recipient=recipient)
                     if goal:
                         return goal
                 if recipient.thirst < CHILD_FEED_THIRST_THRESHOLD:
-                    goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid)
+                    goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid,
+                                                       recipient=recipient)
                     if goal:
                         return goal
             c.feed_target_id = None
@@ -630,11 +648,11 @@ class Feeding(GoalComponent):
 
         c.feed_target_id = needy.id
         if needy.hunger < CHILD_FEED_HUNGER_THRESHOLD:
-            goal = self.actions.go_fetch_fruit(ctx.visible_fruits)
+            goal = self.actions.go_fetch_fruit(ctx.visible_fruits, recipient=needy)
             if goal:
                 return goal
         if needy.thirst < CHILD_FEED_THIRST_THRESHOLD:
-            goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid)
+            goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid, recipient=needy)
             if goal:
                 return goal
 
@@ -1218,6 +1236,7 @@ class Construction(GoalComponent):
 
         site = ConstructionSite(point[0], point[1], build_type, campfire_pos=campfire_pos)
         ctx.construction_sites.append(site)
+        c.pending_site_cleanup = site
         return site
 
     # ---------- Доставка материалов / стройка ----------
@@ -1432,7 +1451,7 @@ class Construction(GoalComponent):
                and o.construction_target_id is not None and o.construction_phase in ("deposit", "build")
                and c.social.get_relationship(o) >= BUILD_HELP_MIN_RELATIONSHIP
                and sites_by_id.get(o.construction_target_id) is not None
-               and sites_by_id[o.construction_target_id].build_type != "house"
+               and sites_by_id[o.construction_target_id].build_type not in ("house", "storage")
         ]
         if not candidates:
             return None

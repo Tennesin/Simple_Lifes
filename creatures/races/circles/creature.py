@@ -214,6 +214,7 @@ class Creature(LivingEntity):
         self.construction_phase = None  # None | "deposit" | "build"
         self.gather_needed_amount = None
         self.pending_construction_cleanup = None
+        self.pending_site_cleanup = None
         self.construction_check_timer = random.uniform(*CONSTRUCTION_CHECK_INTERVAL)
         self.build_help_check_timer = random.uniform(*BUILD_HELP_CHECK_INTERVAL)
 

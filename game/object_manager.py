@@ -340,7 +340,7 @@ class _BiomeCascadeMixin:
 
     def clear_core_objects_in_zone(self, in_zone_fn, clear_fruits=True, clear_spikes=True,
                                    clear_water=True, clear_bushes=True,
-                                   clear_trees=True, clear_stones=True):
+                                   clear_trees=True, clear_stones=True, clear_grass=False):
         """Публичный generic-хелпер: чистит только CORE-коллекции."""
         game = self.game
         world = game.world
@@ -374,6 +374,9 @@ class _BiomeCascadeMixin:
         if clear_stones:
             world.stones = [s for s in world.stones if not in_zone_fn(s)]
 
+        if clear_grass:
+            world.grass = [g for g in world.grass if not in_zone_fn(g)]
+
     def _clear_race_cascade_objects(self, in_zone_fn, flood):
         game = self.game
         for spec in all_biome_cascade_specs():
@@ -404,16 +407,26 @@ class _BiomeCascadeMixin:
         def _point_in_flood_zone(px, py):
             return math.hypot(px - wx, py - wy) <= radius
 
-        if biome_type in (BIOME_RIVER, BIOME_SEA):
-            self.clear_core_objects_in_zone(_in_flood_zone, clear_stones=(biome_type == BIOME_SEA))
+        if biome_type == BIOME_SEA:
+            # ---------- Море смывает всё, включая траву ----------
+            self.clear_core_objects_in_zone(_in_flood_zone, clear_stones=True, clear_grass=True)
+            self._clear_race_cascade_objects(_in_flood_zone, flood=True)
+            for spec in all_road_networks():
+                self._flood_road_network(spec, _point_in_flood_zone)
+
+        elif biome_type == BIOME_RIVER:
+            # ---------- ИЗМЕНЕНО: у реки трава на берегу - обычное дело, не трогаем её,
+            # камни как и раньше тоже остаются (в отличие от моря) ----------
+            self.clear_core_objects_in_zone(_in_flood_zone, clear_stones=False, clear_grass=False)
             self._clear_race_cascade_objects(_in_flood_zone, flood=True)
             for spec in all_road_networks():
                 self._flood_road_network(spec, _point_in_flood_zone)
 
         elif biome_type == BIOME_DESERT:
+            # ---------- ИЗМЕНЕНО: трава не может расти на песке - убираем вместе с кустами/деревьями ----------
             self.clear_core_objects_in_zone(
                 _in_flood_zone,
-                clear_fruits=False, clear_spikes=False, clear_stones=False,
+                clear_fruits=False, clear_spikes=False, clear_stones=False, clear_grass=True,
             )
             self._clear_race_cascade_objects(_in_flood_zone, flood=False)
 

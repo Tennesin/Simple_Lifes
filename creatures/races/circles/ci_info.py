@@ -105,6 +105,12 @@ INFO_CREATURE_GOAL_FEED_FETCH_WATER = "Идёт за водой для ребё�
 INFO_CREATURE_GOAL_FEED_CARRY_WATER = "Набирает воду, чтобы отнести ребёнку"
 INFO_CREATURE_GOAL_FEED_DELIVER = "Несёт еду/воду голодному ребёнку"
 INFO_CREATURE_GOAL_FEED_DONE = "Покормил ребёнка"
+INFO_CREATURE_GOAL_FEED_FETCH_FOOD_ADULT = "Идёт за фруктом для сородича"
+INFO_CREATURE_GOAL_FEED_CARRY_FOOD_ADULT = "Подбирает фрукт, чтобы отнести сородичу"
+INFO_CREATURE_GOAL_FEED_FETCH_WATER_ADULT = "Идёт за водой для сородича"
+INFO_CREATURE_GOAL_FEED_CARRY_WATER_ADULT = "Набирает воду, чтобы отнести сородичу"
+INFO_CREATURE_GOAL_FEED_DELIVER_ADULT = "Несёт еду/воду голодному сородичу"
+INFO_CREATURE_GOAL_FEED_DONE_ADULT = "Покормил сородича"
 INFO_CREATURE_GOAL_STORAGE_DELIVER = "Несёт запасы на склад"
 INFO_CREATURE_GOAL_STORAGE_STOCKED = "Пополнил семейный склад"
 INFO_CREATURE_GOAL_CHILD_SEEK_STORAGE = "Идёт к семейным запасам за едой"
@@ -240,6 +246,7 @@ INFO_FEMALE_VARIANTS = {
     INFO_CREATURE_GOAL_CURIOSITY_HAZARD_KNOWN: "Разглядела и запомнила: это опасно",
     INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN: "Заинтересовалась неизвестным объектом",
     INFO_CREATURE_GOAL_FEED_DONE: "Покормила ребёнка",
+    INFO_CREATURE_GOAL_FEED_DONE_ADULT: "Покормила сородича",
     INFO_CREATURE_GOAL_STORAGE_STOCKED: "Пополнила семейный склад",
     INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN: "Узнала знакомую опасность с первого взгляда",
 

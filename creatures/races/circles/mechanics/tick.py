@@ -2,6 +2,7 @@ import shutil
 import random
 import math
 
+from game.object_manager import footprint_radius
 from settings import *
 from ..ci_settings import *
 from ..ci_info import INFO_CREATURE_GOAL_HOUSE_EVICTED
@@ -282,14 +283,23 @@ class CircleTickProcessor:
 
             target = creature.decide(ctx)
 
+            # ---------- НОВОЕ: чистим зону в момент закладки - на случай невидимого
+            # существу природного объекта на выбранной точке ----------
+            if creature.pending_site_cleanup is not None:
+                new_site = creature.pending_site_cleanup
+                creature.pending_site_cleanup = None
+                if new_site in world.construction_sites:
+                    cleanup_area_for_new_construction(game, new_site, footprint_radius(new_site) + 10)
+
             if creature.pending_construction_cleanup is not None:
                 build_type, new_object = creature.pending_construction_cleanup
                 creature.pending_construction_cleanup = None
                 if new_object is not None:
                     if build_type == "graveyard":
                         cleanup_area_for_new_graveyard(game, new_object)
-                    elif build_type in ("campfire", "storage"):
-                        cleanup_area_for_new_construction(game, new_object, new_object.radius + 10)
+                    else:
+                        cleanup_area_for_new_construction(
+                            game, new_object, footprint_radius(new_object) + 10)
 
             creature.pathfinder.move_towards(
                 target, ctx.dt, biome_grid=game.biome_manager.grid,

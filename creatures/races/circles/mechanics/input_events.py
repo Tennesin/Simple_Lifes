@@ -133,7 +133,8 @@ def _clear_construction_sites_in_zone(game, in_zone_fn):
 
 def cleanup_area_for_new_graveyard(game, gy):
     game.object_manager.clear_core_objects_in_zone(
-        lambda obj: gy.distance_to_point(obj.x, obj.y) <= footprint_radius(obj)
+        lambda obj: gy.distance_to_point(obj.x, obj.y) <= footprint_radius(obj),
+        clear_grass=True,
     )
     _clear_construction_sites_in_zone(
         game, lambda site: gy.distance_to_point(site.x, site.y) <= footprint_radius(site)
@@ -143,7 +144,7 @@ def cleanup_area_for_new_construction(game, obj, radius):
     def _in_zone(other):
         return other is not obj and math.hypot(other.x - obj.x, other.y - obj.y) <= radius + footprint_radius(other)
 
-    game.object_manager.clear_core_objects_in_zone(_in_zone)
+    game.object_manager.clear_core_objects_in_zone(_in_zone, clear_grass=True)
     _clear_construction_sites_in_zone(game, _in_zone)
 
 # =========================================================================

@@ -201,9 +201,16 @@ class PrivateConstruction(Construction):
         site = super()._find_or_create_site(build_type, campfire_pos, ctx)
         if site is None:
             if build_type == "house":
-                # ---------- Рядом с костром (или костров вообще нет) не нашлось
-                # свободного места - самец сам закладывает новый костёр в другом месте ----------
-                return self._find_or_create_site("campfire", campfire_pos, ctx)
+                orphan = next((f for f in ctx.storage_fields
+                               if c.id in f.owner_ids and getattr(f, "house_id", None) is None), None)
+                if orphan is not None:
+                    point = self._pick_house_point_near_storage(orphan, ctx)
+                    if point is not None:
+                        site = ConstructionSite(point[0], point[1], "house", campfire_pos=campfire_pos)
+                        ctx.construction_sites.append(site)
+                        setattr(site, owner_attr, c.id)
+                        c.pending_site_cleanup = site
+                        return site
             return None
 
         setattr(site, owner_attr, c.id)
