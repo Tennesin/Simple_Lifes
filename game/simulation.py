@@ -23,6 +23,7 @@ class Simulation:
         self._tree_spawn_timer = random.uniform(*NATURAL_TREE_SPAWN_INTERVAL)
         self._bush_spawn_timer = random.uniform(*NATURAL_BUSH_SPAWN_INTERVAL)
         self._stone_spawn_timer = random.uniform(*NATURAL_STONE_SPAWN_INTERVAL)
+        self._grass_spawn_timer = random.uniform(*NATURAL_GRASS_SPAWN_INTERVAL)
         self._tree_grid = SpatialGrid(cell_size=200)
         self._stone_grid = SpatialGrid(cell_size=200)
 
@@ -150,6 +151,12 @@ class Simulation:
             self._stone_spawn_timer = random.uniform(*NATURAL_STONE_SPAWN_INTERVAL)
             if random.random() < NATURAL_STONE_SPAWN_CHANCE:
                 game.object_manager.try_natural_stone_growth()
+
+        self._grass_spawn_timer -= dt
+        if self._grass_spawn_timer <= 0:
+            self._grass_spawn_timer = random.uniform(*NATURAL_GRASS_SPAWN_INTERVAL)
+            if random.random() < NATURAL_GRASS_SPAWN_CHANCE:
+                game.object_manager.try_natural_grass_growth()
 
     # =====================================================================
     # Домен: тик кустов и неживых объектов

@@ -233,6 +233,7 @@ class _InitialResourceMixin(_PlacementMixin):
         self._scatter_initial_objects(rng, int(INITIAL_BUSH_COUNT * area_ratio), "bush")
         self._scatter_initial_objects(rng, int(INITIAL_STONE_COUNT * area_ratio), "stone")
         self._scatter_initial_objects(rng, int(INITIAL_SPIKE_COUNT * area_ratio), "spike")
+        self._scatter_initial_objects(rng, int(INITIAL_GRASS_COUNT * area_ratio), "grass")
 
     def _scatter_initial_objects(self, rng, count, obj_type):
         game = self.game
@@ -265,6 +266,7 @@ _GROWTH_RULES = {
     "tree": (TREE_MAX_TOTAL, lambda biome: biome == BIOME_PLAINS),
     "bush": (BUSH_MAX_TOTAL, lambda biome: biome == BIOME_PLAINS),
     "stone": (STONE_MAX_TOTAL, lambda biome: biome != BIOME_SEA),
+    "grass": (GRASS_MAX_TOTAL, lambda biome: biome == BIOME_PLAINS),
 }
 
 class _NaturalGrowthMixin(_PlacementMixin):
@@ -315,6 +317,9 @@ class _NaturalGrowthMixin(_PlacementMixin):
 
     def try_natural_stone_growth(self):
         self._try_natural_growth("stone")
+
+    def try_natural_grass_growth(self):
+        self._try_natural_growth("grass")
 
 
 # =========================================================================

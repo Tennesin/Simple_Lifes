@@ -1191,19 +1191,45 @@ class Construction(GoalComponent):
         return fallback
 
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
+        owner_attr = self._OWNER_ATTR_BY_TYPE.get(build_type)
+        if owner_attr is None:
+            return super()._find_or_create_site(build_type, campfire_pos, ctx)
+
         c = self.c
-        construction_sites = ctx.construction_sites
-        existing = next((s for s in construction_sites
-                         if s.build_type == build_type
-                         and math.hypot(c.x - s.x, c.y - s.y) < CONSTRUCTION_SITE_SEARCH_RADIUS), None)
-        if existing is not None:
-            return existing
+        for site in ctx.construction_sites:
+            if site.build_type != build_type:
+                continue
+            if math.hypot(c.x - site.x, c.y - site.y) >= CONSTRUCTION_SITE_SEARCH_RADIUS:
+                continue
+            if self._site_belongs_to(site, ctx):
+                if getattr(site, owner_attr, None) is None:
+                    setattr(site, owner_attr, c.id)
+                return site
+
+        if build_type == "house":
+            orphan = next((f for f in ctx.storage_fields
+                           if c.id in f.owner_ids and getattr(f, "house_id", None) is None), None)
+            if orphan is not None:
+                point = self._pick_house_point_near_storage(orphan, ctx)
+                if point is not None:
+                    site = ConstructionSite(point[0], point[1], "house", campfire_pos=campfire_pos)
+                    ctx.construction_sites.append(site)
+                    setattr(site, owner_attr, c.id)
+                    return site
 
         point = self._pick_point(build_type, campfire_pos, ctx.biome_grid, ctx)
         if point is None:
+            if build_type == "house":
+                return self._find_or_create_site("campfire", campfire_pos, ctx)
             return None
+
         site = ConstructionSite(point[0], point[1], build_type, campfire_pos=campfire_pos)
-        construction_sites.append(site)
+        ctx.construction_sites.append(site)
+        setattr(site, owner_attr, c.id)
+        if build_type == "storage":
+            house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+            if house is not None:
+                site.linked_house_id = house.id
         return site
 
     # ---------- Доставка материалов / стройка ----------

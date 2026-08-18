@@ -100,6 +100,11 @@ GRASS_COLOR = (60, 150, 70)
 GRASS_COLOR_DARK = (40, 120, 55)
 GRASS_BLADE_MIN_COUNT = 5
 GRASS_BLADE_MAX_COUNT = 14
+# ---------- Генерация травы (начальная + естественная) ----------
+INITIAL_GRASS_COUNT = 90
+NATURAL_GRASS_SPAWN_INTERVAL = (20.0, 35.0)
+NATURAL_GRASS_SPAWN_CHANCE = 0.35
+GRASS_MAX_TOTAL = 300
 
 # ---------- Мясо ----------
 MEAT_LIFETIME = 20.0
