@@ -177,8 +177,13 @@ class _SleepInstinctMixin:
         c = self.c
         if not houses or c.home_id is None:
             return None
-        return next((h for h in houses if h.id == c.home_id), None)
-
+        house = next((h for h in houses if h.id == c.home_id), None)
+        if house is None:
+            return None
+        if c.id not in house.resident_ids:
+            c.home_id = None
+            return None
+        return house
 
 # =========================================================================
 # Домен: поиск знакомых ориентиров (костёр/кладбище/склад) и их регистрация

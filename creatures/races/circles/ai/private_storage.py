@@ -10,7 +10,9 @@ from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration
 
 def same_household(creature, owner_id, other_creatures=None):
-    if owner_id is None or creature.id == owner_id:
+    if owner_id is None:
+        return False
+    if creature.id == owner_id:
         return True
     if creature.partner_id == owner_id:
         return True
@@ -36,9 +38,7 @@ class PrivateStorage(Storage):
         c = self.c
         house = next((h for h in ctx.houses if c.id in h.owner_ids or c.home_id == h.id), None)
         if house is not None:
-            field = next((f for f in ctx.storage_fields if f.house_id == house.id), None)
-            if field is not None:
-                return field
+            return house.storage_field(ctx.storage_fields)
         campfire_pos = self.instincts.nearest_known_campfire()
         if campfire_pos is None:
             return None

@@ -80,6 +80,9 @@ def apply_name_edit(creature, new_name):
 def on_delete_storage_field(game, field):
     game.object_manager.unlink_road_endpoints("storage", field.id)
 
+def storage_field_can_delete(game, field):
+    return getattr(field, "house_id", None) is None
+
 def on_delete_campfire(game, fire):
     game.object_manager.unlink_road_endpoints("campfire", fire.id)
     fire_pos = (fire.x, fire.y)

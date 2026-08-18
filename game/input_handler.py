@@ -549,7 +549,8 @@ class _MouseDownMixin:
                                mouse_y - game.player.last_click_pos[1]) < Player.DOUBLE_CLICK_DIST
             )
             if is_double_click:
-                if obj_here and not isinstance(obj_here, (Wall, Fence)) and not self._is_road_object(obj_here):
+                if (obj_here and not isinstance(obj_here, (Wall, Fence)) and not self._is_road_object(obj_here)
+                        and not getattr(obj_here, "is_locked", False)):
                     if isinstance(obj_here, LivingEntity):
                         obj_here.on_grab_start(game.world)
                     game.player.grabbed_object = obj_here
@@ -728,6 +729,8 @@ class _MouseMotionMixin:
                 obj = game.player.grabbed_object
                 obj.x = max(10, min(wx, game.camera.world_w - 10))
                 obj.y = max(10, min(wy, game.camera.world_h - 10))
+                if hasattr(obj, "on_object_moved"):
+                    obj.on_object_moved(game)
             return
 
         if game.dragging and not game.placement_mode:

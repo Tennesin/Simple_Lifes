@@ -8,7 +8,7 @@ from game.race_registry import (
     ExtraObjectCollectionSpec, BiomeCascadeSpec,
 )
 from .mechanics.input_events import (
-    on_delete_storage_field, on_delete_graveyard, on_delete_construction_site,
+    on_delete_storage_field, storage_field_can_delete, on_delete_graveyard, on_delete_construction_site,
     on_delete_house, on_delete_campfire, circle_handle_relationships_scrollbar_down,
     circle_handle_relationships_scrollbar_up, circle_handle_relationships_wheel,
     circle_handle_relationships_scrollbar_motion,
@@ -119,7 +119,8 @@ RACE_DESCRIPTOR = RaceDescriptor(
         LandmarkSpec(type_name="graveyard", attr="graveyards"),
     ),
     extra_object_collections=(
-        ExtraObjectCollectionSpec(attr="storage_fields", on_delete=on_delete_storage_field),
+        ExtraObjectCollectionSpec(attr="storage_fields", on_delete=on_delete_storage_field,
+                                  can_delete_fn=storage_field_can_delete),
         ExtraObjectCollectionSpec(attr="graveyards", on_delete=on_delete_graveyard),
         ExtraObjectCollectionSpec(attr="construction_sites", on_delete=on_delete_construction_site),
         ExtraObjectCollectionSpec(attr="houses", on_delete=on_delete_house),

@@ -83,6 +83,7 @@ class ExtraObjectCollectionSpec:
     attr: str
     hit_margin: float = 6.0
     on_delete: Optional[Callable] = None  # (game, obj) -> None
+    can_delete_fn: Optional[Callable] = None  # (game, obj) -> bool;
 
 @dataclass(frozen=True)
 class BiomeCascadeSpec:

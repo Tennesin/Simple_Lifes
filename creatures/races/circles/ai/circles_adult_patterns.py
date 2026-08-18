@@ -1017,30 +1017,43 @@ class Construction(GoalComponent):
 
     def _determine_need(self, campfire_pos, ctx):
         c = self.c
-        construction_sites = ctx.construction_sites
+        sites = ctx.construction_sites
+
+        owns_house = any(c.id in h.owner_ids for h in ctx.houses)
+        if not owns_house:
+            already_building = any(
+                s.build_type == "house" and self._site_belongs_to(s, ctx)
+                for s in sites
+            )
+            if already_building:
+                return None
+            return "house"
 
         if campfire_pos is None:
             nearby_campfire_site = any(
                 s.build_type == "campfire"
                 and math.hypot(c.x - s.x, c.y - s.y) < NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
-                for s in construction_sites
+                for s in sites
             )
             if not nearby_campfire_site:
                 return "campfire"
             return None
 
-        field = self.instincts.find_storage_field(ctx.storage_fields)
-        if field is None:
-            if not any(s.build_type == "storage" for s in construction_sites):
+        house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+        if house is not None and house.storage_field(ctx.storage_fields) is None:
+            already_building_storage = any(
+                s.build_type == "storage" and getattr(s, "storage_owner_id", None) == c.id
+                for s in sites
+            )
+            if not already_building_storage:
                 return "storage"
 
         if c.known_graveyard is None:
             linked = self._find_campfire_linked_graveyard(campfire_pos, ctx.graveyards)
             if linked is not None:
                 c.known_graveyard = (linked.x, linked.y)
-            elif not any(s.build_type == "graveyard" for s in construction_sites):
+            elif not any(s.build_type == "graveyard" for s in sites):
                 return "graveyard"
-
         return None
 
     def _find_campfire_linked_graveyard(self, campfire_pos, graveyards):
@@ -1318,8 +1331,15 @@ class Construction(GoalComponent):
                 new_object.add_owner(partner_id)
 
             new_object.built_by = c.id
-            new_object.house_id = getattr(site, "linked_house_id", None)
             ctx.storage_fields.append(new_object)
+
+            # ---------- НОВОЕ: склад сразу становится неотделимой частью дома ----------
+            linked_house_id = getattr(site, "linked_house_id", None)
+            house = next((h for h in ctx.houses if h.id == linked_house_id), None) if linked_house_id else None
+            if house is not None:
+                house.attach_storage(new_object)
+            else:
+                new_object.house_id = linked_house_id
 
         elif site.build_type == "graveyard":
             new_object = Graveyard(site.x, site.y)
@@ -1352,7 +1372,7 @@ class Construction(GoalComponent):
             # ---------- "Осиротевший" склад из старого мира привязываем к новому дому ----------
             for field in ctx.storage_fields:
                 if primary_owner_id in field.owner_ids and getattr(field, "house_id", None) is None:
-                    field.house_id = new_object.id
+                    new_object.attach_storage(field)
 
             ctx.houses.append(new_object)
 

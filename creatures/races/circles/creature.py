@@ -259,6 +259,8 @@ class Creature(LivingEntity):
         house = next((h for h in houses if h.id == self.home_id), None)
         if house is None:
             return False
+        if self.id not in house.resident_ids:
+            return False
         half_w, half_h = house.width / 2, house.height / 2
         return abs(self.x - house.x) <= half_w and abs(self.y - house.y) <= half_h
 

@@ -455,7 +455,7 @@ HOUSE_STORAGE_ROOM_BONUS = 25.0
 # ---------- Склад: теперь прямоугольный, впритык к дому ----------
 STORAGE_FIELD_WIDTH = 30
 STORAGE_FIELD_HEIGHT = int(HOUSE_DEFAULT_SIZE[1] * 0.8)   # ~56, 80% высоты дома
-STORAGE_HOUSE_GAP = 6
+STORAGE_HOUSE_GAP = 0
 STORAGE_FIELD_RADIUS = max(STORAGE_FIELD_WIDTH, STORAGE_FIELD_HEIGHT) / 2
 # ---------- Семейный склад запасов ----------
 STORAGE_FIELD_MAX_FRUITS = 12

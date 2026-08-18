@@ -115,6 +115,10 @@ class StorageField:
     def is_owned_by_house(self, house_id):
         return self.house_id == house_id
 
+    @property
+    def is_locked(self):
+        return self.house_id is not None
+
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         half_w, half_h = self.width // 2, self.height // 2
@@ -362,6 +366,10 @@ class House:
 
         self.door_slot = random.choice(("left", "center", "right"))
         self.window_slots = self._roll_window_slots()
+        # ---------- Склад - неотделимая часть дома ----------
+        self.has_storage = False
+        self.storage_id = None
+        self.storage_side = None  # "left" | "right" - с какой стороны дома он стоит
 
     def has_space(self):
         return len(self.resident_ids) < self.capacity
@@ -376,6 +384,49 @@ class House:
 
     def remove_resident(self, creature_id):
         self.resident_ids.discard(creature_id)
+
+    # ---------- Склад: физическая привязка к дому ----------
+
+    def attach_storage(self, field):
+        self.has_storage = True
+        self.storage_id = field.id
+        self.storage_side = "left" if field.x < self.x else "right"
+        field.house_id = self.id
+        field.x, field.y = self._compute_storage_position()
+
+    def _compute_storage_position(self):
+        half_house_w = self.width / 2
+        half_store_w = STORAGE_FIELD_WIDTH / 2
+        side_sign = 1 if self.storage_side == "right" else -1
+        px = self.x + side_sign * (half_house_w + STORAGE_HOUSE_GAP + half_store_w)
+        return (px, self.y)
+
+    def on_object_moved(self, game):
+        if not self.has_storage or self.storage_id is None:
+            return
+        field = next((f for f in game.world.storage_fields if f.id == self.storage_id), None)
+        if field is None:
+            self.has_storage = False
+            self.storage_id = None
+            return
+        field.x, field.y = self._compute_storage_position()
+
+    def storage_field(self, storage_fields):
+        if self.storage_id is not None:
+            field = next((f for f in storage_fields if f.id == self.storage_id), None)
+            if field is not None:
+                self.has_storage = True
+                return field
+            self.has_storage = False
+            self.storage_id = None
+
+        field = next((f for f in storage_fields if f.is_owned_by_house(self.id)), None)
+        if field is not None:
+            self.attach_storage(field)
+            return field
+
+        self.has_storage = False
+        return None
 
     def _roll_window_slots(self):
         free_slots = [slot for slot in ("left", "center", "right") if slot != self.door_slot]
@@ -445,6 +496,9 @@ class House:
             "resident_ids": list(self.resident_ids),
             "door_slot": self.door_slot, "window_slots": self.window_slots,
             "created": self.created,
+            "has_storage": self.has_storage,
+            "storage_id": self.storage_id,
+            "storage_side": self.storage_side,
         }
 
     @staticmethod
@@ -456,4 +510,7 @@ class House:
         house.door_slot = data.get("door_slot", house.door_slot)
         house.window_slots = data.get("window_slots", house.window_slots)
         house.created = data.get("created", time.time())
+        house.has_storage = data.get("has_storage", False)
+        house.storage_id = data.get("storage_id")
+        house.storage_side = data.get("storage_side")
         return house

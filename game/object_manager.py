@@ -758,11 +758,12 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
         for spec in all_extra_object_collections():
             collection = getattr(game.world, spec.attr)
             if obj in collection:
+                if spec.can_delete_fn is not None and not spec.can_delete_fn(game, obj):
+                    return
                 collection.remove(obj)
                 if spec.on_delete is not None:
                     spec.on_delete(game, obj)
                 return
-
 
 # =========================================================================
 # Итоговый класс: композиция доменов
