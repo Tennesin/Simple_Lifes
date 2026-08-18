@@ -134,19 +134,20 @@ class StorageField:
             "campfire_pos": list(self.campfire_pos) if self.campfire_pos else None,
             "created": self.created,
             "id": self.id,
+            "house_id": self.house_id,
         }
 
     @staticmethod
     def from_dict(data):
         owner_ids = data.get("owner_ids")
         if owner_ids is None:
-            # ---------- Миграция старых сохранений: единственный известный строитель становится владельцем ----------
             legacy_builder = data.get("built_by")
             owner_ids = [legacy_builder] if legacy_builder else []
         field = StorageField(
             data["x"], data["y"],
             owner_campfire_pos=tuple(data["campfire_pos"]) if data.get("campfire_pos") else None,
             owner_ids=owner_ids,
+            house_id=data.get("house_id"),
         )
         field.fruits = data.get("fruits", 0)
         field.water = data.get("water", 0)

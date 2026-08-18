@@ -168,7 +168,7 @@ class _PlacementMixin:
                         return False
         return True
 
-    def check_object_placement_valid(self, wx, wy, obj_type=None):
+    def check_object_placement_valid(self, wx, wy, obj_type=None, exclude=None):
         game = self.game
         obj_type = obj_type if obj_type is not None else game.placement_mode
 
@@ -183,7 +183,7 @@ class _PlacementMixin:
             else:
                 if biome in (BIOME_RIVER, BIOME_SEA):
                     return False
-                if obj_type in ("water", "bush") and biome == BIOME_DESERT:
+                if obj_type in ("water", "bush", "grass") and biome == BIOME_DESERT:
                     return False
                 if obj_type == "tree" and biome != BIOME_PLAINS:
                     return False
@@ -197,24 +197,24 @@ class _PlacementMixin:
         )
         for collection in fixed_clearance_collections:
             for obj in collection:
+                if obj is exclude:
+                    continue
                 if math.hypot(wx - obj.x, wy - obj.y) < max(20, clearance):
                     return False
 
-        # ---------- Единый проход по ВСЕМ зарегистрированным типам объектов
-        # (core: вода/куст/костёр/дерево/камень + расовые placeable_objects,
-        # например кладбище) - никакой расы тут по имени не знаем. ----------
         for other_attr, _other_cls in _OBJECT_TYPE_REGISTRY.values():
             if other_attr in _FIXED_CLEARANCE_ATTRS:
                 continue
             additive = other_attr in _MUTUAL_CLEARANCE_ADDITIVE_ATTRS
             for obj in getattr(game.world, other_attr):
+                if obj is exclude:
+                    continue
                 own_clearance = footprint_radius(obj) + 15
                 required = (own_clearance + clearance) if additive else max(own_clearance, clearance)
                 if distance_to_footprint(obj, wx, wy) < required:
                     return False
 
         return True
-
 
 # =========================================================================
 # Домен: первичное наполнение только что созданного мира ресурсами (core-only)
@@ -728,6 +728,12 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
                     continue
                 if obj in getattr(game.world, spec.attr):
                     return spec.secondary_panel_attr
+        return None
+
+    def resolve_obj_type_for_instance(self, obj):
+        for obj_type, (_attr, cls) in _OBJECT_TYPE_REGISTRY.items():
+            if isinstance(obj, cls):
+                return obj_type
         return None
 
     def _on_delete_spike(self, obj):

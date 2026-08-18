@@ -727,8 +727,17 @@ class _MouseMotionMixin:
             if mouse_y > UI_HEIGHT:
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 obj = game.player.grabbed_object
-                obj.x = max(10, min(wx, game.camera.world_w - 10))
-                obj.y = max(10, min(wy, game.camera.world_h - 10))
+                wx = max(10, min(wx, game.camera.world_w - 10))
+                wy = max(10, min(wy, game.camera.world_h - 10))
+
+                if isinstance(obj, LivingEntity):
+                    obj.x, obj.y = wx, wy
+                else:
+                    obj_type = game.object_manager.resolve_obj_type_for_instance(obj)
+                    if obj_type is None or game.object_manager.check_object_placement_valid(
+                            wx, wy, obj_type=obj_type, exclude=obj):
+                        obj.x, obj.y = wx, wy
+
                 if hasattr(obj, "on_object_moved"):
                     obj.on_object_moved(game)
             return
@@ -787,7 +796,6 @@ class _MouseMotionMixin:
         else:
             self.placement_hover.mode = None
             self.placement_hover.check_pos = None
-
 
 # =========================================================================
 # Домен: экраны "Создание мира" / "Загрузка мира"
