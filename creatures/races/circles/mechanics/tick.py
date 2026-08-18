@@ -42,6 +42,7 @@ class CircleTickProcessor:
 
         self._reconcile_storage_ownership(ctx)
         self._reconcile_house_ownership(ctx)
+        self._reconcile_construction_ownership(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
         self._process_grief(race_creatures)
@@ -95,6 +96,21 @@ class CircleTickProcessor:
                            if creatures_by_id.get(oid) is None or creatures_by_id[oid].is_dead]
             for owner_id in dead_owners:
                 self._transfer_house_owner(house, owner_id, world)
+
+    def _reconcile_construction_ownership(self, ctx):
+        world = self.game.world
+        if not world.construction_sites:
+            return
+        creatures_by_id = ctx.creatures_by_id or {c.id: c for c in world.creatures}
+
+        for site in world.construction_sites:
+            for attr in ("storage_owner_id", "house_owner_id"):
+                owner_id = getattr(site, attr, None)
+                if owner_id is None:
+                    continue
+                owner = creatures_by_id.get(owner_id)
+                if owner is None or owner.is_dead:
+                    setattr(site, attr, None)
 
     def _transfer_house_owner(self, house, owner_id, world):
         house.owner_ids.discard(owner_id)

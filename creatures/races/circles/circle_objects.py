@@ -251,6 +251,10 @@ class ConstructionSite:
     def get_type_name(self):
         return INFO_OBJECT_CONSTRUCTION_SITE
 
+    @property
+    def is_locked(self):
+        return True
+
     def resources_complete(self):
         return self.deposited_wood >= self.required_wood and self.deposited_stone >= self.required_stone
 

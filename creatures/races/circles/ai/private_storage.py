@@ -63,16 +63,16 @@ class PrivateStorage(Storage):
 
 class PrivateConstruction(Construction):
     _OWNER_ATTR_BY_TYPE = {"storage": "storage_owner_id", "house": "house_owner_id"}
-
-    # ---------- Расстояние, в пределах которого разные найденные точки костра
-    # считаются "тем же самым" ориентиром (не плодим дубликаты-якоря) ----------
     CAMPFIRE_ANCHOR_MERGE_RADIUS = 5
 
     def _site_belongs_to(self, site, ctx):
         owner_attr = self._OWNER_ATTR_BY_TYPE.get(site.build_type)
         if owner_attr is None:
             return True
-        return same_household(self.c, getattr(site, owner_attr, None), ctx.other_creatures)
+        owner_id = getattr(site, owner_attr, None)
+        if owner_id is None:
+            return True
+        return same_household(self.c, owner_id, ctx.other_creatures)
 
     def _determine_need(self, campfire_pos, ctx):
         c = self.c
