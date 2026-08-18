@@ -18,6 +18,8 @@ from ....all_needed.ai.utility import Consideration, pick_best, scale
 SCORE_CHILD_DISTRESS_BASE = 90.0
 SCORE_CHILD_DISTRESS_MAX_BONUS = 10.0
 
+SCORE_CHILD_BEING_FED = 82.0
+
 SCORE_CHILD_SLEEP_BASE = 60.0
 SCORE_CHILD_SLEEP_MAX_BONUS = 15.0
 
@@ -27,10 +29,14 @@ SCORE_CHILD_HUNGER_MAX_BONUS = 30.0
 SCORE_CHILD_FREE_TIME = 30.0
 SCORE_CHILD_PLAY_CONTINUE = 55.0
 
+SCORE_CHILD_GO_HOME = 12.0
 SCORE_CHILD_EXPLORE = 8.0
 
 SCORE_CHILD_ROAD_PLAY_NEW = 48.0
 SCORE_CHILD_ROAD_PLAY_ACTIVE = 58.0
+
+# ---------- На сколько "затягивать" точку побега/погони обратно к костру ----------
+CHILD_PLAY_TERRITORY_PULLBACK = 0.9
 
 class _ChildAIMixinBase:
     c: "Creature"
@@ -38,8 +44,7 @@ class _ChildAIMixinBase:
 
 # =========================================================================
 # Общие утилиты без собственного домена: поиск видимого родителя по
-# parent_ids. Используется из distress/hunger/decide, поэтому вынесен
-# отдельно - как _SharedUtilsMixin в circles_adult_patterns.py
+# parent_ids и поиск "приёмного" старика-опекуна.
 # =========================================================================
 
 class _ChildSharedUtilsMixin:
@@ -55,6 +60,15 @@ class _ChildSharedUtilsMixin:
             if parent is not None:
                 return parent
         return None
+
+    @staticmethod
+    def _find_elder_guardian(child_id, other_creatures):
+        return next(
+            (o for o in other_creatures
+             if not o.is_dead and o.life_stage == LIFE_STAGE_OLD
+             and getattr(o, "elder_ward_id", None) == child_id),
+            None
+        )
 
 # =========================================================================
 # Домен: испуг/одиночество - ребёнок ищет родителя или знакомый костёр
@@ -101,6 +115,47 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
 
 # =========================================================================
+# Домен: перехват кормления - если взрослый уже несёт еду/воду именно
+# этому ребёнку, ребёнок бросает всё (включая игры) и ждёт на месте,
+# вместо того чтобы убегать от кормильца.
+# =========================================================================
+
+class _ChildFeedInterruptMixin(_ChildAIMixinBase):
+
+    @staticmethod
+    def _find_incoming_feeder(visible_companions, child_id):
+        return next(
+            (o for o in visible_companions
+             if getattr(o, "feed_target_id", None) == child_id
+             and (o.carried_fruit or o.carried_water)),
+            None
+        )
+
+    def _consider_being_fed(self, visible_companions):
+        c = self.c
+        feeder = self._find_incoming_feeder(visible_companions, c.id)
+        if feeder is None:
+            return None
+
+        def execute():
+            return self._await_feeding()
+
+        return Consideration("child_await_feeding", SCORE_CHILD_BEING_FED, execute)
+
+    def _await_feeding(self):
+        c = self.c
+        if c.play_target_id is not None:
+            self._end_child_tag_game()
+        if c.following_child_road is not None:
+            self._end_child_road_play()
+
+        c.state = STATE_SEEKING
+        c.goal_text = INFO_CREATURE_GOAL_CHILD_AWAIT_FEEDING
+        c.target = (c.x, c.y)
+        return c.target
+
+
+# =========================================================================
 # Домен: сон ребёнка
 # =========================================================================
 
@@ -119,7 +174,16 @@ class _ChildSleepMixin(_ChildAIMixinBase):
         return Consideration("child_sleep", score, execute)
 
 # =========================================================================
-# Домен: сигнал голода/жажды - сперва склад, потом зов родителей
+# Домен: сигнал голода/жажды.
+#
+# Приоритет цели:
+#   1) семейный склад (если есть доступ и там что-то есть);
+#   2) если родитель прямо рядом - остановиться и подождать/позвать;
+#   3) если есть живой родитель ИЛИ "приёмный" старик-опекун - идти к ИХ
+#      дому (собственный дом ребёнка, дом родителя, дом опекуна - в этом
+#      порядке);
+#   4) если ребёнок - настоящий сирота (нет ни родителей, ни опекуна) -
+#      идти к костру или в активный поиск.
 # =========================================================================
 
 class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
@@ -132,8 +196,19 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         if parent is not None:
             parent.urgent_child_id = c.id
             parent.urgent_child_timer = CHILD_URGENT_SIGNAL_HOLD_TIME
+            return
 
-    def _consider_hunger_signal(self, visible_companions, other_creatures, storage_fields, biome_grid=None):
+        guardian = next(
+            (o for o in visible_companions
+             if o.life_stage == LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id),
+            None
+        )
+        if guardian is not None:
+            guardian.urgent_child_id = c.id
+            guardian.urgent_child_timer = CHILD_URGENT_SIGNAL_HOLD_TIME
+
+    def _consider_hunger_signal(self, visible_companions, other_creatures, storage_fields, houses,
+                                 biome_grid=None):
         c = self.c
         if not (c.hunger < CHILD_FEED_HUNGER_THRESHOLD or c.thirst < CHILD_FEED_THIRST_THRESHOLD):
             return None
@@ -145,16 +220,18 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         deficit = max(hunger_deficit, thirst_deficit)
         score = SCORE_CHILD_HUNGER_BASE + deficit * SCORE_CHILD_HUNGER_MAX_BONUS
 
-        if c.urgent_child_timer > 0:
+        parent = self._find_visible_parent(c.parent_ids, visible_companions)
+        if parent is not None and c.distance_to(parent) < TALK_DISTANCE:
             score = max(score, SCORE_CHILD_FREE_TIME + 5.0)
 
         def execute():
             return self._handle_child_hunger_signal(visible_companions, other_creatures, storage_fields,
-                                                    biome_grid=biome_grid)
+                                                    houses, biome_grid=biome_grid)
 
         return Consideration("child_hunger_signal", score, execute)
 
-    def _handle_child_hunger_signal(self, visible_companions, other_creatures, storage_fields, biome_grid=None):
+    def _handle_child_hunger_signal(self, visible_companions, other_creatures, storage_fields, houses,
+                                     biome_grid=None):
         c = self.c
         if not (c.hunger < CHILD_FEED_HUNGER_THRESHOLD or c.thirst < CHILD_FEED_THIRST_THRESHOLD):
             return None
@@ -169,18 +246,37 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
                 c.target = (field.x, field.y)
                 return c.target
 
-        if not c.family.has_living_parent(other_creatures):
-            return None
-
         parent = self._find_visible_parent(c.parent_ids, visible_companions)
-        if c.urgent_child_timer > 0 and parent is not None:
+        if parent is not None and c.distance_to(parent) < TALK_DISTANCE:
             c.state = STATE_SEEKING
             c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
             c.target = (c.x, c.y)
             return c.target
 
-        campfire_pos = self.instincts.nearest_known_campfire()
+        guardian = self._find_elder_guardian(c.id, other_creatures)
+        has_caretaker = c.family.has_living_parent(other_creatures) or guardian is not None
 
+        if has_caretaker:
+            caretaker_house = self._find_caretaker_house(other_creatures, houses, guardian)
+            if caretaker_house is not None:
+                dist = math.hypot(c.x - caretaker_house.x, c.y - caretaker_house.y)
+                c.state = STATE_SEEKING
+                if dist > HOUSE_SLEEP_ARRIVAL_DISTANCE:
+                    c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_GO_HOME
+                    c.target = (caretaker_house.x, caretaker_house.y)
+                else:
+                    c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+                    c.target = (c.x, c.y)
+                return c.target
+
+            # ---------- Опекун есть, но дома пока нет - просто ждём/ищем поблизости ----------
+            c.state = STATE_SEEKING
+            c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+            c.target = self.instincts.pursue_search_target(biome_grid=biome_grid)
+            return c.target
+
+        # ---------- Настоящий сирота: некому идти домой - тянется к костру ----------
+        campfire_pos = self.instincts.nearest_known_campfire()
         c.state = STATE_SEEKING
         c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
         if campfire_pos:
@@ -196,8 +292,35 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             return None
         return min(candidates, key=c.distance_to)
 
+    def _find_caretaker_house(self, other_creatures, houses, guardian=None):
+        c = self.c
+        if not houses:
+            return None
+
+        if c.home_id is not None:
+            house = next((h for h in houses if h.id == c.home_id), None)
+            if house is not None:
+                return house
+
+        if c.parent_ids:
+            for pid in c.parent_ids:
+                if pid is None:
+                    continue
+                parent = next((o for o in other_creatures if o.id == pid and not o.is_dead), None)
+                if parent is not None and parent.home_id is not None:
+                    house = next((h for h in houses if h.id == parent.home_id), None)
+                    if house is not None:
+                        return house
+
+        if guardian is not None and guardian.home_id is not None:
+            house = next((h for h in houses if h.id == guardian.home_id), None)
+            if house is not None:
+                return house
+
+        return None
+
 # =========================================================================
-# Домен: спонтанное исследование окрестностей
+# Домен: спонтанное исследование окрестностей (с обходом моря)
 # =========================================================================
 
 class _ChildExploreMixin(_ChildAIMixinBase):
@@ -219,23 +342,47 @@ class _ChildExploreMixin(_ChildAIMixinBase):
         return Consideration("child_explore", SCORE_CHILD_EXPLORE, execute)
 
 # =========================================================================
-# Домен: догонялки со сверстником
+# Домен: "дома скучно не бывает" - если ребёнку сейчас нечем заняться
+# (не голоден, не хочет спать, не боится, нет игры или партнёра для неё),
+# он идёт домой вместо бесцельного блуждания - как и взрослые.
+# Работает только для детей, у которых уже есть свой дом (home_id).
+# =========================================================================
+
+class _ChildHomeMixin(_ChildAIMixinBase):
+
+    def _consider_go_home(self, houses):
+        c = self.c
+        if not houses or c.home_id is None:
+            return None
+        house = next((h for h in houses if h.id == c.home_id), None)
+        if house is None:
+            return None
+
+        def execute():
+            if not c.is_in_own_house(houses):
+                c.goal_text = INFO_CREATURE_GOAL_IDLE_GO_HOME
+                c.target = (house.x, house.y)
+            else:
+                c.goal_text = INFO_CREATURE_GOAL_IDLE_AT_HOME
+                c.target = (c.x, c.y)
+            return c.target
+
+        return Consideration("child_go_home", SCORE_CHILD_GO_HOME, execute)
+
+# =========================================================================
+# Домен: догонялки со сверстником - строго в пределах территории костра
+# (если костёр известен) и с обходом моря на побеге/погоне.
 # =========================================================================
 
 class _ChildTagGameMixin(_ChildAIMixinBase):
 
-    def _consider_free_time(self, visible_companions, visible_roads, dt):
+    def _consider_free_time(self, visible_companions, visible_roads, dt, biome_grid=None):
         c = self.c
         active_game = c.play_target_id is not None and c.play_role is not None
 
-        if c.urgent_child_timer > 0:
-            if active_game:
-                self._end_child_tag_game()
-            return None
-
         if active_game:
             def execute():
-                return self._pursue_child_tag_game(visible_companions, dt)
+                return self._pursue_child_tag_game(visible_companions, dt, biome_grid=biome_grid)
 
             return Consideration("child_play_continue", SCORE_CHILD_PLAY_CONTINUE, execute)
 
@@ -255,7 +402,7 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
                     playmate = min(other_children, key=c.distance_to)
                     self._start_child_tag_game(playmate)
                     started_tag = True
-                    return self._pursue_child_tag_game(visible_companions, dt)
+                    return self._pursue_child_tag_game(visible_companions, dt, biome_grid=biome_grid)
 
             if not started_tag and visible_roads and random.random() < CHILD_ROAD_RUN_CHANCE:
                 safe_roads = [r for r in visible_roads if c.known_roads.get(r.id) != "dangerous"]
@@ -277,7 +424,7 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
         c.play_role = "chaser"
         c.play_timer = 0.0
 
-    def _pursue_child_tag_game(self, visible_companions, dt):
+    def _pursue_child_tag_game(self, visible_companions, dt, biome_grid=None):
         c = self.c
         partner = next((o for o in visible_companions if o.id == c.play_target_id), None)
         if partner is None or partner.is_dead or partner.life_stage != LIFE_STAGE_CHILD:
@@ -295,6 +442,8 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
         if c.temperament == TEMPERAMENT_NORMAL:
             c.speed_factor = SPEED_MULTIPLIER[TEMPERAMENT_EXPLORER] / SPEED_MULTIPLIER[TEMPERAMENT_NORMAL]
 
+        anchor = self.instincts.nearest_known_campfire()
+
         if c.play_role == "chaser":
             dist = c.distance_to(partner)
             if dist < CHILD_TAG_DISTANCE:
@@ -302,13 +451,29 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
                 partner.play_role = "chaser"
                 partner.play_timer = c.play_timer
                 c.play_role = "runner"
-                c.target = c.flee_point((partner.x, partner.y), CHILD_FLEE_DISTANCE)
+                raw_target = c.flee_point((partner.x, partner.y), CHILD_FLEE_DISTANCE)
+                c.target = self._confine_play_point(raw_target, anchor, biome_grid)
                 return c.target
             c.target = (partner.x, partner.y)
             return c.target
 
-        c.target = c.flee_point((partner.x, partner.y), CHILD_FLEE_DISTANCE)
+        raw_target = c.flee_point((partner.x, partner.y), CHILD_FLEE_DISTANCE)
+        c.target = self._confine_play_point(raw_target, anchor, biome_grid)
         return c.target
+
+    def _confine_play_point(self, point, anchor, biome_grid):
+        """Удерживает точку побега/погони в радиусе действия знакомого костра
+        (если он известен) и не даёт ей упасть в море."""
+        if point is None:
+            return point
+        if anchor is not None:
+            ax, ay = anchor
+            px, py = point
+            dist = math.hypot(px - ax, py - ay)
+            if dist > CAMPFIRE_RADIUS:
+                ratio = (CAMPFIRE_RADIUS * CHILD_PLAY_TERRITORY_PULLBACK) / dist
+                point = (ax + (px - ax) * ratio, ay + (py - ay) * ratio)
+        return self.instincts.avoid_sea(point, biome_grid)
 
     def _end_child_tag_game(self, partner=None):
         c = self.c
@@ -333,11 +498,6 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
         c = self.c
 
         self._tick_child_road_disinterest(dt)
-
-        if c.urgent_child_timer > 0:
-            if c.following_child_road is not None:
-                self._end_child_road_play()
-            return None
 
         if c.following_child_road is not None:
             def execute():
@@ -449,8 +609,8 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
 # Итоговый класс: композиция доменов + единственная точка входа decide()
 # =========================================================================
 
-class ChildAI(_ChildDistressMixin, _ChildSleepMixin, _ChildHungerMixin,
-              _ChildExploreMixin, _ChildTagGameMixin, _ChildRoadPlayMixin):
+class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _ChildHungerMixin,
+              _ChildExploreMixin, _ChildHomeMixin, _ChildTagGameMixin, _ChildRoadPlayMixin):
 
     def __init__(self, creature, instincts):
         self.c = creature
@@ -461,6 +621,7 @@ class ChildAI(_ChildDistressMixin, _ChildSleepMixin, _ChildHungerMixin,
         c = self.c
         c.state = STATE_CALM
         visible_child_roads = visible_child_roads or []
+        houses = houses or []
 
         near_fire = self.instincts.is_near_known_campfire()
         near_parent = False
@@ -484,10 +645,13 @@ class ChildAI(_ChildDistressMixin, _ChildSleepMixin, _ChildHungerMixin,
 
         considerations = [
             self._consider_distress(visible_companions, biome_grid=biome_grid),
+            self._consider_being_fed(visible_companions),
             self._consider_child_sleep(biome_grid=biome_grid, houses=houses),
-            self._consider_hunger_signal(visible_companions, other_creatures, storage_fields, biome_grid=biome_grid),
+            self._consider_hunger_signal(visible_companions, other_creatures, storage_fields, houses,
+                                          biome_grid=biome_grid),
             self._consider_child_road_play(visible_child_roads, dt),
-            self._consider_free_time(visible_companions, visible_roads, dt),
+            self._consider_free_time(visible_companions, visible_roads, dt, biome_grid=biome_grid),
+            self._consider_go_home(houses),
             self._consider_explore(biome_grid=biome_grid),
         ]
 
