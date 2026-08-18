@@ -344,6 +344,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
                 campfires=campfires,
                 construction_sites=construction_sites,
                 all_threats=all_threats,
+                all_grass=ctx.grass,
             )
 
             if c.life_stage == LIFE_STAGE_OLD:

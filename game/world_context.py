@@ -44,6 +44,7 @@ class WorldFrameContext:
     fences: list = field(default_factory=list)
     trees: list = field(default_factory=list)
     stones: list = field(default_factory=list)
+    grass: list = field(default_factory=list)
     road_crossings: list = field(default_factory=list)
     wall_bounds: list = field(default_factory=list)
     fence_bounds: list = field(default_factory=list)

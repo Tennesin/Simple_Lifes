@@ -41,6 +41,7 @@ class DecisionContext:
     campfires: list = field(default_factory=list)
     construction_sites: list = field(default_factory=list)
     all_threats: list = field(default_factory=list)
+    all_grass: list = field(default_factory=list)
 
 # =========================================================================
 # Общие операции с переноской ресурсов - раньше разбросаны между
@@ -1628,10 +1629,25 @@ class Roads(GoalComponent):
         c = self.c
         ex, ey = road.points[-1] if c.road_direction > 0 else road.points[0]
         self._learn_link_on_arrival(road)
+
         useful_objects = ctx.visible_fruits + ctx.visible_water + ctx.visible_bushes + ctx.visible_campfires
         helpful = any(math.hypot(ex - o.x, ey - o.y) < ROAD_OUTCOME_RADIUS for o in useful_objects)
-        if not helpful and ctx.graveyards:
-            helpful = any(gy.distance_to_point(ex, ey) < ROAD_OUTCOME_RADIUS for gy in ctx.graveyards)
+
+        if not helpful:
+            structures = list(ctx.graveyards) + list(ctx.houses) + list(ctx.storage_fields) + list(ctx.campfires)
+            helpful = any(
+                self._distance_to_structure(obj, ex, ey) < ROAD_OUTCOME_RADIUS
+                for obj in structures
+            )
+
+        # ---------- Река у конца дороги ----------
+        if not helpful and ctx.biome_grid is not None:
+            helpful = ctx.biome_grid.get_at(ex, ey) == BIOME_RIVER
+
+        # ---------- Травяная поляна поблизости ----------
+        if not helpful and ctx.all_grass:
+            helpful = any(math.hypot(ex - g.x, ey - g.y) < ROAD_OUTCOME_RADIUS for g in ctx.all_grass)
+
         nearby_danger = sum(1 for t in ctx.all_threats if math.hypot(ex - t.x, ey - t.y) < ROAD_OUTCOME_RADIUS)
 
         if helpful and nearby_danger == 0:
@@ -1664,6 +1680,12 @@ class Roads(GoalComponent):
         if resource is None:
             return
         c.known_road_links[resource] = {"road_id": road.id, "target_end": reached_end_key}
+
+    @staticmethod
+    def _distance_to_structure(obj, px, py):
+        if hasattr(obj, "distance_to_point"):
+            return obj.distance_to_point(px, py)
+        return math.hypot(px - obj.x, py - obj.y)
 
 
 # =========================================================================
