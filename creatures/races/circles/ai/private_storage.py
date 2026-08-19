@@ -78,16 +78,6 @@ class PrivateConstruction(Construction):
         c = self.c
         sites = ctx.construction_sites
 
-        owns_house = any(c.id in h.owner_ids for h in ctx.houses)
-        if not owns_house:
-            already_building = any(
-                s.build_type == "house" and self._site_belongs_to(s, ctx)
-                for s in sites
-            )
-            if already_building:
-                return None  # дом уже в процессе - на остальное пока не отвлекаемся
-            return "house"
-
         if campfire_pos is None:
             nearby_campfire_site = any(
                 s.build_type == "campfire"
@@ -97,6 +87,16 @@ class PrivateConstruction(Construction):
             if not nearby_campfire_site:
                 return "campfire"
             return None
+
+        owns_house = any(c.id in h.owner_ids for h in ctx.houses)
+        if not owns_house:
+            already_building = any(
+                s.build_type == "house" and self._site_belongs_to(s, ctx)
+                for s in sites
+            )
+            if already_building:
+                return None  # дом уже в процессе - на остальное пока не отвлекаемся
+            return "house"
 
         house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
         owned_field = next((f for f in ctx.storage_fields

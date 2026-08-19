@@ -1402,10 +1402,10 @@ def circle_object_panel_extra_lines(obj, creatures):
 
     if hasattr(obj, "build_type"):
         lines.append((
-            INFO_INFO_CONSTRUCTION_WOOD.format(deposited=obj.deposited_wood, required=obj.required_wood),
+            INFO_INFO_CONSTRUCTION_WOOD.format(deposited=int(obj.deposited_wood), required=obj.required_wood),
             (200, 170, 120)))
         lines.append((
-            INFO_INFO_CONSTRUCTION_STONE.format(deposited=obj.deposited_stone, required=obj.required_stone),
+            INFO_INFO_CONSTRUCTION_STONE.format(deposited=int(obj.deposited_stone), required=obj.required_stone),
             (200, 200, 200)))
         if obj.is_building:
             percent = int(min(100, obj.build_progress / obj.build_time * 100)) if obj.build_time > 0 else 0

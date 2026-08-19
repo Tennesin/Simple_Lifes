@@ -1133,15 +1133,13 @@ class Construction(GoalComponent):
 
         anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
         dist_range = GRAVEYARD_BUILD_OFFSET_RANGE
-        fallback = None
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
             dist = random.uniform(*dist_range)
             point = geometry.clamped_point(anchor[0], anchor[1], angle, dist)
             if self._point_clear(point, build_type, biome_grid, ctx):
                 return point
-            fallback = point
-        return fallback
+        return None
 
     def _pick_house_point(self, campfire_pos, biome_grid, ctx):
         c = self.c
@@ -1201,26 +1199,24 @@ class Construction(GoalComponent):
         existing_fires = list(ctx.campfires)
         pending_sites = [s for s in ctx.construction_sites if s.build_type == "campfire"]
 
-        fallback = None
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
             dist = random.uniform(*NEW_CAMPFIRE_DISTANCE_RANGE)
             point = geometry.clamped_point(c.x, c.y, angle, dist)
 
             far_enough = (
-                all(math.hypot(point[0] - f.x, point[1] - f.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
-                    for f in existing_fires)
-                and all(math.hypot(point[0] - s.x, point[1] - s.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
-                        for s in pending_sites)
+                    all(math.hypot(point[0] - f.x, point[1] - f.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
+                        for f in existing_fires)
+                    and all(math.hypot(point[0] - s.x, point[1] - s.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
+                            for s in pending_sites)
             )
             if not far_enough:
                 continue
 
             if self._point_clear(point, "campfire", ctx.biome_grid, ctx):
                 return point
-            fallback = point
 
-        return fallback
+        return None
 
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
         c = self.c
@@ -1445,6 +1441,10 @@ class Construction(GoalComponent):
             c.build_help_check_timer -= ctx.dt
             return None
         c.build_help_check_timer = random.uniform(*BUILD_HELP_CHECK_INTERVAL)
+
+        own_need = self._determine_need(c.known_campfire, ctx)
+        if own_need in ("house", "storage"):
+            return None
 
         sites_by_id = {s.id: s for s in ctx.construction_sites}
 
