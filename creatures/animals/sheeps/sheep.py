@@ -7,6 +7,8 @@ import pygame
 from ...all_needed.base_creature import CreatureBase
 from .sheep_settings import *
 from .names import SHEEP_NAME_POOLS
+from objects import Meat
+from .sheep_objects import Wool
 
 class Sheep(CreatureBase):
     race_name = "sheep"
@@ -50,3 +52,28 @@ class Sheep(CreatureBase):
         body_rect = pygame.Rect(sx - half_w, sy - half_h, SHEEP_BODY_WIDTH, SHEEP_BODY_HEIGHT)
         pygame.draw.ellipse(screen, SHEEP_COLOR_BODY, body_rect)
         pygame.draw.ellipse(screen, SHEEP_COLOR_BODY_BORDER, body_rect, 2)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
+            "name": self.name, "hp": self.hp, "meat": self.meat,
+            "wool": self.wool, "created": self.created,
+        }
+
+    @staticmethod
+    def from_dict(data):
+        sheep = Sheep(data["id"], data["x"], data["y"], gender=data.get("gender"))
+        sheep.name = data.get("name", sheep.name)
+        sheep.hp = data.get("hp", sheep.hp)
+        sheep.meat = data.get("meat", sheep.meat)
+        sheep.wool = data.get("wool", sheep.wool)
+        sheep.created = data.get("created", sheep.created)
+        return sheep
+
+    def get_drops(self):
+        drops = []
+        if self.meat > 0:
+            drops.append(Meat(self.x, self.y, food_amount=self.meat))
+        if self.wool > 0:
+            drops.append(Wool(self.x, self.y, self.wool))
+        return drops

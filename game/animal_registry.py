@@ -47,7 +47,6 @@ def _discover_animals() -> dict:
         registry[descriptor.animal_name] = descriptor
     return registry
 
-
 def _animals() -> dict:
     global _ANIMALS_CACHE
     if _ANIMALS_CACHE is None:
@@ -67,10 +66,8 @@ def get_animal(animal_name: str) -> AnimalDescriptor:
 def all_animal_names() -> Tuple[str, ...]:
     return tuple(_animals().keys())
 
-
 def all_animals() -> Tuple[AnimalDescriptor, ...]:
     return tuple(_animals().values())
-
 
 def animal_placement_lookup() -> dict:
     """placement_mode -> (animal_name, spawn_fn) - аналог creature_placement_lookup()."""

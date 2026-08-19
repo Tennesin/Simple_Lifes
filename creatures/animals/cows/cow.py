@@ -7,7 +7,8 @@ import pygame
 from ...all_needed.base_creature import CreatureBase
 from .cow_settings import *
 from .names import COW_NAME_POOLS
-
+from objects import Meat
+from .cow_objects import Leather
 
 class Cow(CreatureBase):
     race_name = "cow"
@@ -68,3 +69,31 @@ class Cow(CreatureBase):
 
         for ox, oy in self._spot_offsets:
             pygame.draw.circle(screen, COW_COLOR_SPOTS, (sx + ox, sy + oy), COW_SPOT_RADIUS)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
+            "name": self.name, "hp": self.hp, "meat": self.meat,
+            "leather": self.leather, "milk_charges": self.milk_charges,
+            "created": self.created,
+        }
+
+    @staticmethod
+    def from_dict(data):
+        cow = Cow(data["id"], data["x"], data["y"], gender=data.get("gender"))
+        cow.name = data.get("name", cow.name)
+        cow.hp = data.get("hp", cow.hp)
+        cow.meat = data.get("meat", cow.meat)
+        cow.leather = data.get("leather", cow.leather)
+        cow.milk_charges = data.get("milk_charges", cow.milk_charges)
+        cow.created = data.get("created", cow.created)
+        return cow
+
+    def get_drops(self):
+        """Ресурсы, которые корова оставляет после себя вместо трупа."""
+        drops = []
+        if self.meat > 0:
+            drops.append(Meat(self.x, self.y, food_amount=self.meat))
+        if self.leather > 0:
+            drops.append(Leather(self.x, self.y, self.leather))
+        return drops

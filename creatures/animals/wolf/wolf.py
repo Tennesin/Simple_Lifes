@@ -6,6 +6,7 @@ import pygame
 from ...all_needed.base_creature import CreatureBase
 from .wolf_settings import *
 from .names import WOLF_NAME_POOLS
+from .wolf_objects import Hide
 
 class Wolf(CreatureBase):
     race_name = "wolf"
@@ -45,3 +46,25 @@ class Wolf(CreatureBase):
         body_rect = pygame.Rect(sx - half_w, sy - half_h, WOLF_BODY_WIDTH, WOLF_BODY_HEIGHT)
         pygame.draw.rect(screen, WOLF_COLOR_BODY, body_rect, border_radius=3)
         pygame.draw.rect(screen, WOLF_COLOR_BODY_BORDER, body_rect, 2, border_radius=3)
+
+    def to_dict(self):
+        return {
+            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
+            "name": self.name, "hp": self.hp, "hide": self.hide,
+            "created": self.created,
+        }
+
+    @staticmethod
+    def from_dict(data):
+        wolf = Wolf(data["id"], data["x"], data["y"], gender=data.get("gender"))
+        wolf.name = data.get("name", wolf.name)
+        wolf.hp = data.get("hp", wolf.hp)
+        wolf.hide = data.get("hide", wolf.hide)
+        wolf.created = data.get("created", wolf.created)
+        return wolf
+
+    def get_drops(self):
+        drops = []
+        if self.hide > 0:
+            drops.append(Hide(self.x, self.y, self.hide))
+        return drops

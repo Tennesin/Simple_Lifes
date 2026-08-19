@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from game.race_registry import all_races
+from game.animal_registry import all_animals
 
 def _collect_race_collections():
     names = []
@@ -13,14 +14,19 @@ def _collect_race_collections():
                 names.append(name)
     return tuple(names)
 
+def _collect_animal_collections():
+    return tuple(descriptor.world_collection for descriptor in all_animals())
+
 class WorldState:
     CORE_COLLECTIONS = (
         "fruits", "spikes", "water_puddles", "bushes", "trees", "stones",
         "creatures", "roads", "road_crossings", "walls", "fences", "grass", "meats",
+        "leathers", "wools", "hides",
     )
 
     RACE_COLLECTIONS = _collect_race_collections()
-    COLLECTION_NAMES = CORE_COLLECTIONS + RACE_COLLECTIONS
+    ANIMAL_COLLECTIONS = _collect_animal_collections()
+    COLLECTION_NAMES = CORE_COLLECTIONS + RACE_COLLECTIONS + ANIMAL_COLLECTIONS
 
     def __init__(self):
         self.landscape_version = 0

@@ -1,6 +1,7 @@
 """Базовый шаблон существа - общий для ВСЕХ будущих рас и животных."""
 
 import random
+import time
 
 from names import random_name
 from .base_entity import LivingEntity
@@ -57,6 +58,9 @@ class CreatureBase(LivingEntity):
         self.nav_path_index = 0
         self.nav_goal = None
         self.nav_recalc_timer = 0.0
+
+        # ---------- Метка создания - нужна животным для отображения в ObjectPanel ----------
+        self.created = time.time()
 
     # ---------- Переопределяем заглушку из LivingEntity ----------
     def effective_vision_radius(self):

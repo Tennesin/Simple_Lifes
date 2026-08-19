@@ -1,0 +1,25 @@
+"""Регистрация животного 'Волк' в animal_registry."""
+
+import uuid
+
+from game.animal_registry import AnimalDescriptor
+from .wolf import Wolf
+from .wolf_settings import WOLF_KIND_NAME
+from .names import WOLF_NAME_POOLS
+
+def spawn_wolf(object_manager, wx, wy, placement_mode):
+    new_id = str(uuid.uuid4())[:8]
+    wolf = Wolf(new_id, wx, wy)
+    object_manager.game.world.wolves.append(wolf)
+
+ANIMAL_DESCRIPTOR = AnimalDescriptor(
+    animal_name="wolf",
+    animal_cls=Wolf,
+    loader_fn=Wolf.from_dict,
+    spawn_fn=spawn_wolf,
+    world_collection="wolves",
+    save_filename="wolves.json",
+    placement_mode="animal_wolf",
+    placement_label=WOLF_KIND_NAME,
+    name_pools=WOLF_NAME_POOLS,
+)
