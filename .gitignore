@@ -3,3 +3,4 @@ __pycache__/
 *.pyc
 err/
 text_maker.py
+warning_detector.py

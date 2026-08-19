@@ -235,7 +235,7 @@ class PrivateConstruction(Construction):
 
     _PUBLIC_ORPHAN_TYPES = frozenset(("campfire", "graveyard"))
 
-    def _find_orphaned_site(self, ctx):
+    def _find_orphaned_site(self, ctx, type_filter=None):
         c = self.c
         candidates = []
         for build_type in self._OWNER_ATTR_BY_TYPE:

@@ -1,7 +1,6 @@
 """Класс коровы - минимальный набор данных + отрисовка."""
 
 import random
-import math
 import pygame
 
 from ...all_needed.base_creature import CreatureBase

@@ -200,14 +200,14 @@ class Memory:
     # ---------- Сохранение/загрузка ----------
 
     def save(self, path):
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding="utf-8") as f:
             json.dump({
                 "memories": self.memories,
                 "intuitive_memories": self.intuitive_memories,
             }, f, indent=2)
 
     def load(self, path):
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, list):
             self.memories = data
