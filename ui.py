@@ -11,6 +11,7 @@ from game.race_registry import (
     all_minimap_layers, all_object_panel_extensions,
     all_secondary_panel_specs, PlayerToolSpec, all_road_networks,
 )
+from game.animal_registry import all_animal_object_panel_extensions
 
 BIOME_PREVIEW_COLOR = {
     "biome_plains": COLOR_LIGHT,
@@ -335,11 +336,15 @@ class ObjectPanel:
             return INFO_INFO_WATER_CHARGES.format(count=int(obj.charges))
         if hasattr(obj, "food"):
             return INFO_INFO_FOOD_AMOUNT.format(count=int(obj.food))
+        if hasattr(obj, "amount"):
+            return INFO_INFO_RESOURCE_AMOUNT.format(count=int(obj.amount))
         return None
 
     def _collect_extra_lines(self, obj):
         lines = []
         for extra_fn in all_object_panel_extensions():
+            lines.extend(extra_fn(obj, self.game.world.creatures))
+        for extra_fn in all_animal_object_panel_extensions():
             lines.extend(extra_fn(obj, self.game.world.creatures))
         return lines
 

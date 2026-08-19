@@ -9,6 +9,8 @@ from .sheep_settings import *
 from .names import SHEEP_NAME_POOLS
 from objects import Meat
 from .sheep_objects import Wool
+from settings import MEAT_COLOR
+from info import INFO_INFO_ANIMAL_MEAT
 
 class Sheep(CreatureBase):
     race_name = "sheep"
@@ -77,3 +79,11 @@ class Sheep(CreatureBase):
         if self.wool > 0:
             drops.append(Wool(self.x, self.y, self.wool))
         return drops
+
+def sheep_object_panel_extra_lines(obj, all_creatures):
+    if not isinstance(obj, Sheep):
+        return []
+    return [
+        (INFO_INFO_ANIMAL_MEAT.format(count=int(obj.meat)), MEAT_COLOR),
+        (SHEEP_INFO_WOOL.format(count=int(obj.wool)), WOOL_COLOR),
+    ]

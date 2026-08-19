@@ -9,6 +9,8 @@ from .cow_settings import *
 from .names import COW_NAME_POOLS
 from objects import Meat
 from .cow_objects import Leather
+from settings import MEAT_COLOR
+from info import INFO_INFO_ANIMAL_MEAT
 
 class Cow(CreatureBase):
     race_name = "cow"
@@ -97,3 +99,15 @@ class Cow(CreatureBase):
         if self.leather > 0:
             drops.append(Leather(self.x, self.y, self.leather))
         return drops
+
+# =========================================================================
+# Строки панели объекта - расширение generic ObjectPanel
+# =========================================================================
+
+def cow_object_panel_extra_lines(obj, all_creatures):
+    if not isinstance(obj, Cow):
+        return []
+    return [
+        (INFO_INFO_ANIMAL_MEAT.format(count=int(obj.meat)), MEAT_COLOR),
+        (COW_INFO_LEATHER.format(count=int(obj.leather)), LEATHER_COLOR),
+    ]

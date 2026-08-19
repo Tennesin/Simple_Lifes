@@ -25,6 +25,8 @@ class AnimalDescriptor:
 
     name_pools: Optional[dict] = None
     tick_fn: Optional[Callable] = None
+    # ---------- Строки для ObjectPanel, специфичные для этого животного (по аналогии с RaceDescriptor) ----------
+    object_panel_extra_fn: Optional[Callable] = None  # (obj, all_creatures) -> list[(text, color)]
 
 _ANIMALS_CACHE: Optional[dict] = None
 
@@ -75,6 +77,9 @@ def animal_placement_lookup() -> dict:
         descriptor.placement_mode: (descriptor.animal_name, descriptor.spawn_fn)
         for descriptor in all_animals()
     }
+
+def all_animal_object_panel_extensions() -> Tuple[Callable, ...]:
+    return tuple(d.object_panel_extra_fn for d in all_animals() if d.object_panel_extra_fn is not None)
 
 def all_animal_persistence_entries() -> Tuple[Tuple[str, str], ...]:
     """(save_filename, world_collection) - аналог _WORLD_OBJECT_REGISTRY."""

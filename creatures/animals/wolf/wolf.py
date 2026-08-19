@@ -68,3 +68,10 @@ class Wolf(CreatureBase):
         if self.hide > 0:
             drops.append(Hide(self.x, self.y, self.hide))
         return drops
+
+def wolf_object_panel_extra_lines(obj, all_creatures):
+    if not isinstance(obj, Wolf):
+        return []
+    return [
+        (WOLF_INFO_HIDE.format(count=int(obj.hide)), HIDE_COLOR),
+    ]

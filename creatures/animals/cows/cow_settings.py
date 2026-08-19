@@ -34,3 +34,4 @@ COW_LEG_HEIGHT = 12
 
 # ---------- Текст ----------
 COW_KIND_NAME = "Корова"
+COW_INFO_LEATHER = "Кожа: {count}"

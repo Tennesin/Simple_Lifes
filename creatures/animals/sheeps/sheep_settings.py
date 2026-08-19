@@ -30,3 +30,4 @@ SHEEP_LEG_HEIGHT = 10
 
 # ---------- Текст ----------
 SHEEP_KIND_NAME = "Овца"
+SHEEP_INFO_WOOL = "Шерсть: {count}"

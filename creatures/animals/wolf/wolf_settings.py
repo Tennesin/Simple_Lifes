@@ -28,3 +28,4 @@ WOLF_LEG_HEIGHT = 8
 
 # ---------- Текст ----------
 WOLF_KIND_NAME = "Волк"
+WOLF_INFO_HIDE = "Шкура: {count}"

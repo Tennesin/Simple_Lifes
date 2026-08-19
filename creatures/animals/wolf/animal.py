@@ -3,7 +3,7 @@
 import uuid
 
 from game.animal_registry import AnimalDescriptor
-from .wolf import Wolf
+from .wolf import Wolf, wolf_object_panel_extra_lines
 from .wolf_settings import WOLF_KIND_NAME
 from .names import WOLF_NAME_POOLS
 
@@ -22,4 +22,5 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     placement_mode="animal_wolf",
     placement_label=WOLF_KIND_NAME,
     name_pools=WOLF_NAME_POOLS,
+    object_panel_extra_fn=wolf_object_panel_extra_lines,
 )
