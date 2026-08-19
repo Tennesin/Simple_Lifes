@@ -523,6 +523,12 @@ class Creature(LivingEntity):
             "carried_resources": self.carried_resources,
             "home_id": self.home_id,
             "home_eviction_timer": self.home_eviction_timer,
+            "construction_target_id": self.construction_target_id,
+            "construction_phase": self.construction_phase,
+            "gather_target_id": self.gather_target_id,
+            "gather_type": self.gather_type,
+            "gather_progress": self.gather_progress,
+            "gather_needed_amount": self.gather_needed_amount,
         }
         with open(os.path.join(folder_path, "state.json"), 'w') as f:
             json.dump(state, f, indent=2)

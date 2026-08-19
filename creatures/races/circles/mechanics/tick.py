@@ -1,10 +1,12 @@
 import shutil
 import random
 import math
+import pygame
 
 from game.object_manager import footprint_radius
 from settings import *
 from ..ci_settings import *
+from ..circle_objects import ConstructionSite
 from ..ci_info import INFO_CREATURE_GOAL_HOUSE_EVICTED
 from ..life_cycle import apply_grief_for_death
 from .input_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
@@ -44,6 +46,7 @@ class CircleTickProcessor:
         self._reconcile_storage_ownership(ctx)
         self._reconcile_house_ownership(ctx)
         self._reconcile_construction_ownership(ctx)
+        self._process_player_construction_boost(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
         ready_for_interact = self._process_living_creatures(ctx, race_creatures, genealogy)
         self._process_grief(race_creatures)
@@ -74,6 +77,60 @@ class CircleTickProcessor:
                     occupancy[fire.id] = occupancy.get(fire.id, 0) + 1
                     break
         return occupancy
+
+    # =====================================================================
+    # Домен: ускорение строительства игроком (Z + ЛКМ на выбранной стройплощадке)
+    # =====================================================================
+
+    def _process_player_construction_boost(self, ctx):
+        game = self.game
+        site = game.selected_object
+        if not isinstance(site, ConstructionSite):
+            return
+        if site not in game.world.construction_sites:
+            return
+        if not self._player_boost_combo_held():
+            return
+        self._apply_player_construction_boost(site, ctx.dt)
+
+    @staticmethod
+    def _player_boost_combo_held():
+        keys = pygame.key.get_pressed()
+        buttons = pygame.mouse.get_pressed()
+        return bool(keys[pygame.K_z]) and bool(buttons[0])
+
+    @staticmethod
+    def _apply_player_construction_boost(site, dt):
+        remaining_dt = dt
+
+        if not site.is_building:
+            wood_needed = site.needed("wood")
+            if wood_needed > 0:
+                gain = min(wood_needed, PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE * remaining_dt)
+                site.deposited_wood += gain
+                site.player_deposited_wood += gain
+                remaining_dt -= gain / PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE
+                if remaining_dt <= 0 or site.needed("wood") > 0:
+                    return
+
+            stone_needed = site.needed("stone")
+            if stone_needed > 0:
+                gain = min(stone_needed, PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE * remaining_dt)
+                site.deposited_stone += gain
+                site.player_deposited_stone += gain
+                remaining_dt -= gain / PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE
+                if remaining_dt <= 0 or site.needed("stone") > 0:
+                    return
+
+            site.is_building = True
+
+        if remaining_dt <= 0 or site.build_time <= 0:
+            return
+        remaining_progress = max(0.0, site.build_time - site.build_progress)
+        gain = min(remaining_progress,
+                   site.build_time * PLAYER_CONSTRUCTION_BOOST_PROGRESS_RATE * remaining_dt)
+        site.build_progress += gain
+        site.player_build_progress += gain
 
     # =====================================================================
     # Домен: наследование прав на семейный склад при смерти владельца

@@ -126,6 +126,7 @@ class PrivateConstruction(Construction):
     # =====================================================================
 
     def _collect_campfire_anchors(self, campfire_pos, ctx):
+        c = self.c
         anchors = []
 
         def _add(pos):
@@ -142,6 +143,9 @@ class PrivateConstruction(Construction):
         for site in ctx.construction_sites:
             if site.build_type == "campfire":
                 _add((site.x, site.y))
+
+        if not anchors:
+            anchors.append((c.x, c.y))
         return anchors
 
     def _score_best_house_site_near(self, anchor, biome_grid, ctx):
@@ -229,6 +233,8 @@ class PrivateConstruction(Construction):
                 return point
         return None
 
+    _PUBLIC_ORPHAN_TYPES = frozenset(("campfire", "graveyard"))
+
     def _find_orphaned_site(self, ctx):
         c = self.c
         candidates = []
@@ -238,7 +244,7 @@ class PrivateConstruction(Construction):
                 if s.build_type == build_type
                 and self._site_belongs_to(s, ctx)
                 and math.hypot(c.x - s.x, c.y - s.y)
-                    < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR
+                < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR
             )
         if candidates:
             site = min(candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
@@ -246,7 +252,7 @@ class PrivateConstruction(Construction):
             if getattr(site, owner_attr, None) is None:
                 setattr(site, owner_attr, c.id)
             return site
-        return super()._find_orphaned_site(ctx)
+        return super()._find_orphaned_site(ctx, type_filter=self._PUBLIC_ORPHAN_TYPES)
 
 _original_site_to_dict = ConstructionSite.to_dict
 _original_site_from_dict = ConstructionSite.from_dict

@@ -249,6 +249,10 @@ class ConstructionSite:
         self.campfire_pos = campfire_pos
         self.created = time.time()
 
+        self.player_deposited_wood = 0.0
+        self.player_deposited_stone = 0.0
+        self.player_build_progress = 0.0
+
     def get_type_name(self):
         return INFO_OBJECT_CONSTRUCTION_SITE
 
@@ -286,6 +290,9 @@ class ConstructionSite:
             "campfire_pos": list(self.campfire_pos) if self.campfire_pos else None,
             "linked_house_id": self.linked_house_id,
             "created": self.created,
+            "player_deposited_wood": self.player_deposited_wood,
+            "player_deposited_stone": self.player_deposited_stone,
+            "player_build_progress": self.player_build_progress,
         }
 
     @staticmethod
@@ -300,8 +307,10 @@ class ConstructionSite:
         site.is_building = data.get("is_building", False)
         site.created = data.get("created", time.time())
         site.linked_house_id = data.get("linked_house_id")
+        site.player_deposited_wood = data.get("player_deposited_wood", 0.0)
+        site.player_deposited_stone = data.get("player_deposited_stone", 0.0)
+        site.player_build_progress = data.get("player_build_progress", 0.0)
         return site
-
 
 class ChildRoad(PolylineRoad):
 

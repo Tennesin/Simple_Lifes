@@ -133,6 +133,12 @@ _CREATURE_SIMPLE_FIELDS = (
     ("urgent_child_timer", "urgent_child_timer", 0.0),
     ("home_id", "home_id", None),
     ("home_eviction_timer", "home_eviction_timer", 0.0),
+    ("construction_target_id", "construction_target_id", None),
+    ("construction_phase", "construction_phase", None),
+    ("gather_target_id", "gather_target_id", None),
+    ("gather_type", "gather_type", None),
+    ("gather_progress", "gather_progress", 0.0),
+    ("gather_needed_amount", "gather_needed_amount", None),
 )
 
 _CREATURE_TUPLE_FIELDS = (

@@ -107,6 +107,13 @@ class CreaturePsyche:
         self._adjust("satisfaction", PSYCHE_BIRTH_BONUS)
         self._adjust("attachment", PSYCHE_BIRTH_BONUS * 0.5)
 
+    def on_player_construction_help(self, share):
+        """Игрок ускорил стройку через Z+ЛКМ - реакция пропорциональна его доле в работе."""
+        magnitude = PSYCHE_PLAYER_HELP_BONUS * geometry.clamp(share, 0.0, 1.0)
+        self._adjust("satisfaction", magnitude)
+        self._adjust("joy", magnitude * 0.6)
+        self._adjust("confidence", magnitude * 0.3)
+
     def on_territory_intruded(self):
         """У НАРУШИТЕЛЯ, которого прогнали с чужой территории."""
         self._adjust("calmness", PSYCHE_TERRITORY_INTRUDER_PENALTY)

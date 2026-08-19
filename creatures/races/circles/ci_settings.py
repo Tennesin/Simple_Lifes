@@ -398,6 +398,11 @@ BUILD_HELP_RELATIONSHIP_BONUS = 12.0
 BUILD_HELP_SPEED_BONUS_PER_HELPER = 0.6
 CONSTRUCTION_CLEARANCE_MARGIN = 15
 ORPHAN_SITE_SEARCH_RADIUS_FACTOR = 2.5
+# ---------- Ускорение стройки игроком (Z + ЛКМ на выбранной стройплощадке) ----------
+PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE = 10.0    # ед. дерева/камня в секунду
+PLAYER_CONSTRUCTION_BOOST_PROGRESS_RATE = 0.10    # доля build_time в секунду (10%/сек)
+PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX = 25.0  # бонус к player_relationship при 100% доле игрока в стройке
+PSYCHE_PLAYER_HELP_BONUS = 10.0                   # макс. прибавка к психике при 100% доле игрока
 
 # ---------- Детские дороги ----------
 CHILD_ROAD_COLOR_PENDING = (255, 230, 40)

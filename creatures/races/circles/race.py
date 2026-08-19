@@ -79,6 +79,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ),
         PlaceableObjectSpec(
             obj_type="campfire", attr="campfires", cls=Campfire, label=INFO_BTN_CAMPFIRE,
+            manually_placeable=False,
         ),
     ),
     render_layers=(

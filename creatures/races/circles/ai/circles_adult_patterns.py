@@ -1372,6 +1372,8 @@ class Construction(GoalComponent):
         if site in ctx.construction_sites:
             ctx.construction_sites.remove(site)
 
+        self._react_to_player_construction_help(site, c, ctx)
+
         c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_DONE
         c.construction_target_id = None
         c.construction_phase = None
@@ -1416,7 +1418,7 @@ class Construction(GoalComponent):
 
     # ---------- Восстановление после перезапуска / кооперация ----------
 
-    def _find_orphaned_site(self, ctx):
+    def _find_orphaned_site(self, ctx, type_filter=None):
         c = self.c
         if c.gender != GENDER_MALE or c.life_stage != LIFE_STAGE_ADULT:
             return None
@@ -1429,9 +1431,10 @@ class Construction(GoalComponent):
                        if not o.is_dead and o.construction_target_id is not None}
 
         candidates = [s for s in ctx.construction_sites
-                     if s.id not in claimed_ids
-                     and math.hypot(c.x - s.x, c.y - s.y)
-                         < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR]
+                      if s.id not in claimed_ids
+                      and (type_filter is None or s.build_type in type_filter)
+                      and math.hypot(c.x - s.x, c.y - s.y)
+                      < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR]
         if not candidates:
             return None
         return min(candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
@@ -1468,6 +1471,31 @@ class Construction(GoalComponent):
         c.target = (target_worker.x, target_worker.y)
         return c.target
 
+    def _react_to_player_construction_help(self, site, finisher, ctx):
+        total_units = site.required_wood + site.required_stone + site.build_time
+        if total_units <= 0:
+            return
+        player_units = (site.player_deposited_wood + site.player_deposited_stone
+                        + site.player_build_progress)
+        if player_units <= 0:
+            return
+        share = geometry.clamp(player_units / total_units, 0.0, 1.0)
+
+        target = finisher
+        owner_attr = getattr(self, "_OWNER_ATTR_BY_TYPE", {}).get(site.build_type)
+        if owner_attr is not None:
+            owner_id = getattr(site, owner_attr, None)
+            if owner_id is not None:
+                owner = next((o for o in ctx.other_creatures if o.id == owner_id), None)
+                if owner is not None:
+                    target = owner
+
+        bonus = PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX * share
+        target.player_relationship = geometry.clamp(
+            target.player_relationship + bonus, -100.0, 100.0)
+        target.psyche.on_player_construction_help(share)
+        target.player_reactions.add_memory(
+            "construction_help", share=round(share, 2), relationship_after=target.player_relationship)
 
 # =========================================================================
 # Дороги, нарисованные игроком, и перекрёстки
