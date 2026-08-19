@@ -11,7 +11,7 @@ from game.race_registry import (
     all_minimap_layers, all_object_panel_extensions,
     all_secondary_panel_specs, PlayerToolSpec, all_road_networks,
 )
-from game.animal_registry import all_animal_object_panel_extensions
+from game.animal_registry import all_animals, all_animal_object_panel_extensions
 
 BIOME_PREVIEW_COLOR = {
     "biome_plains": COLOR_LIGHT,
@@ -73,13 +73,14 @@ class TopBarPanel:
         self.btn_game = Button(pygame.Rect(10, 5, 100, BUTTON_HEIGHT), INFO_BTN_GAME)
         self.btn_landscape = Button(pygame.Rect(120, 5, 100, BUTTON_HEIGHT), INFO_BTN_LANDSCAPE)
         self.btn_lifes = Button(pygame.Rect(230, 5, 100, BUTTON_HEIGHT), INFO_BTN_LIFES)
-        self.btn_objects = Button(pygame.Rect(340, 5, 100, BUTTON_HEIGHT), INFO_BTN_OBJECTS)
-        self.btn_nature = Button(pygame.Rect(450, 5, 100, BUTTON_HEIGHT), INFO_BTN_NATURE)
-        self.btn_player = Button(pygame.Rect(560, 5, 100, BUTTON_HEIGHT), INFO_BTN_PLAYER)
+        self.btn_animals = Button(pygame.Rect(340, 5, 100, BUTTON_HEIGHT), INFO_BTN_ANIMALS)
+        self.btn_objects = Button(pygame.Rect(450, 5, 100, BUTTON_HEIGHT), INFO_BTN_OBJECTS)
+        self.btn_nature = Button(pygame.Rect(560, 5, 100, BUTTON_HEIGHT), INFO_BTN_NATURE)
+        self.btn_player = Button(pygame.Rect(670, 5, 100, BUTTON_HEIGHT), INFO_BTN_PLAYER)
 
         menu_top = 35
 
-        # ---------- Меню "Игра" ----------
+        # ---------- Меню "Игра" (без изменений) ----------
         item_x, item_w = 15, 130
         self.btn_create_world = Button(pygame.Rect(item_x, menu_top + 5, item_w, BUTTON_HEIGHT), INFO_BTN_CREATE_WORLD)
         self.btn_load_world = Button(
@@ -92,7 +93,7 @@ class TopBarPanel:
             pygame.Rect(item_x, menu_top + 5 + 4 * (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_EXIT)
         self.menu_game_rect = pygame.Rect(10, menu_top, item_w + 10, self.btn_exit.rect.bottom + 5 - menu_top)
 
-        # ---------- Меню "Ландшафт" ----------
+        # ---------- Меню "Ландшафт" (без изменений) ----------
         item_x, item_w = 125, 110
         self.btn_wall = Button(pygame.Rect(item_x, menu_top + 5, item_w, BUTTON_HEIGHT), INFO_BTN_WALL)
         self.btn_fence = Button(
@@ -108,7 +109,7 @@ class TopBarPanel:
         self.menu_landscape_rect = pygame.Rect(120, menu_top, item_w + 10,
                                                self.btn_biome_sea.rect.bottom + 5 - menu_top)
 
-        # ---------- Меню "Живность" (полностью generic, было и раньше) ----------
+        # ---------- Меню "Расы" (generic) ----------
         item_x = 235
         self.creature_placement_buttons = {}
         y = menu_top + 5
@@ -121,8 +122,20 @@ class TopBarPanel:
                 y += BUTTON_HEIGHT + gap
         self.menu_lifes_rect = pygame.Rect(230, menu_top, 100, lifes_bottom + 5 - menu_top)
 
-        # ---------- Меню "Объект" (core-типы + заявленные расами, было и раньше) ----------
+        # ---------- Меню "Животные" (НОВОЕ, generic из animal_registry) ----------
         item_x = 345
+        self.animal_placement_buttons = {}
+        y = menu_top + 5
+        animals_bottom = y
+        for descriptor in all_animals():
+            btn = Button(pygame.Rect(item_x, y, 90, BUTTON_HEIGHT), descriptor.placement_label)
+            self.animal_placement_buttons[descriptor.placement_mode] = btn
+            animals_bottom = btn.rect.bottom
+            y += BUTTON_HEIGHT + gap
+        self.menu_animals_rect = pygame.Rect(340, menu_top, 100, animals_bottom + 5 - menu_top)
+
+        # ---------- Меню "Объект" (сдвинуто с 340 на 450) ----------
+        item_x = 455
         self.object_placement_buttons = {}
         self.road_tool_buttons = {}
         y = menu_top + 5
@@ -151,10 +164,10 @@ class TopBarPanel:
             objects_bottom = btn.rect.bottom
             y += BUTTON_HEIGHT + gap
 
-        self.menu_objects_rect = pygame.Rect(340, menu_top, 140, objects_bottom + 5 - menu_top)
+        self.menu_objects_rect = pygame.Rect(450, menu_top, 140, objects_bottom + 5 - menu_top)
 
-        # ---------- Меню "Природа" (core) ----------
-        item_x = 455
+        # ---------- Меню "Природа" (сдвинуто с 450 на 560) ----------
+        item_x = 565
         nature_labels = [
             ("btn_fruit", INFO_BTN_FRUIT),
             ("btn_bush", INFO_BTN_BUSH),
@@ -166,10 +179,10 @@ class TopBarPanel:
         for i, (attr, label) in enumerate(nature_labels):
             y = menu_top + 5 + i * (BUTTON_HEIGHT + gap)
             setattr(self, attr, Button(pygame.Rect(item_x, y, 90, BUTTON_HEIGHT), label))
-        self.menu_nature_rect = pygame.Rect(450, menu_top, 100, self.btn_grass.rect.bottom + 5 - menu_top)
+        self.menu_nature_rect = pygame.Rect(560, menu_top, 100, self.btn_grass.rect.bottom + 5 - menu_top)
 
-        # ---------- Меню "Игрок" (core-инструменты) ----------
-        item_x = 565
+        # ---------- Меню "Игрок" (сдвинуто с 560 на 670) ----------
+        item_x = 675
         self.player_tool_buttons = {}
         all_tools = _CORE_PLAYER_TOOLS + all_player_tools()
         y = menu_top + 5
@@ -179,7 +192,7 @@ class TopBarPanel:
             self.player_tool_buttons[spec.tool_value] = btn
             player_bottom = btn.rect.bottom
             y += BUTTON_HEIGHT + gap
-        self.menu_player_rect = pygame.Rect(560, menu_top, 100, player_bottom + 5 - menu_top)
+        self.menu_player_rect = pygame.Rect(670, menu_top, 100, player_bottom + 5 - menu_top)
 
     def draw(self, screen):
         game = self.game
@@ -193,6 +206,9 @@ class TopBarPanel:
 
         self.btn_lifes.enabled = game.world_loaded
         self.btn_lifes.draw(screen, mouse_pos)
+
+        self.btn_animals.enabled = game.world_loaded
+        self.btn_animals.draw(screen, mouse_pos)
 
         self.btn_objects.enabled = game.world_loaded
         self.btn_objects.draw(screen, mouse_pos)
@@ -226,6 +242,11 @@ class TopBarPanel:
         if game.world_loaded and game.show_lifes_menu:
             pygame.draw.rect(screen, MENU_BG, self.menu_lifes_rect)
             for btn in self.creature_placement_buttons.values():
+                btn.draw(screen, mouse_pos, colors=self._MENU_COLORS)
+
+        if game.world_loaded and game.show_animals_menu:
+            pygame.draw.rect(screen, MENU_BG, self.menu_animals_rect)
+            for btn in self.animal_placement_buttons.values():
                 btn.draw(screen, mouse_pos, colors=self._MENU_COLORS)
 
         if game.world_loaded and game.show_objects_menu:
@@ -488,6 +509,12 @@ def _mm_draw_creatures(panel, screen, game, to_minimap, scale, display):
         color = creature.draw_minimap_color() if hasattr(creature, "draw_minimap_color") else (200, 30, 30)
         pygame.draw.circle(screen, color, (int(pos[0]), int(pos[1])), 2)
 
+def _mm_draw_animals(panel, screen, game, to_minimap, scale, display):
+    for descriptor in all_animals():
+        for animal in getattr(game.world, descriptor.world_collection):
+            pos = to_minimap(animal.x, animal.y)
+            pygame.draw.circle(screen, (225, 205, 90), (int(pos[0]), int(pos[1])), 2)
+
 _CORE_MINIMAP_LAYERS = (
     ("roads", _mm_draw_roads),
     ("landscape", _mm_draw_landscape),
@@ -498,6 +525,7 @@ _CORE_MINIMAP_LAYERS = (
     ("fruits", _mm_draw_fruits),
     ("spikes", _mm_draw_spikes),
     ("creatures", _mm_draw_creatures),
+    ("animals", _mm_draw_animals),
 )
 
 class MinimapPanel:

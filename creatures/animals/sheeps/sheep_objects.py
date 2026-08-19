@@ -9,6 +9,7 @@ class Wool(WorldObject):
     """Практического применения пока нет."""
 
     type_name = "Шерсть"
+    drop_collection_attr = "wools"
 
     def __init__(self, x, y, amount):
         super().__init__(x, y)

@@ -4,6 +4,7 @@ import uuid
 
 from game.animal_registry import AnimalDescriptor
 from .sheep import Sheep, sheep_object_panel_extra_lines
+from .sheep_objects import Wool
 from .sheep_settings import SHEEP_KIND_NAME
 from .names import SHEEP_NAME_POOLS
 
@@ -23,4 +24,6 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     placement_label=SHEEP_KIND_NAME,
     name_pools=SHEEP_NAME_POOLS,
     object_panel_extra_fn=sheep_object_panel_extra_lines,
+    drop_collections=("wools",),
+    drop_persistence_registry=(("wools.json", "wools", Wool),),
 )

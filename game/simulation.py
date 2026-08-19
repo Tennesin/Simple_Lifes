@@ -7,6 +7,7 @@ from creatures.all_needed import navigation
 from creatures.all_needed.navigation import SpatialGrid
 from game.world_context import WorldState, WorldFrameContext
 from game.race_registry import all_races
+from game.animal_registry import all_animal_drop_collections
 
 class Simulation:
 
@@ -47,7 +48,7 @@ class Simulation:
         self._handle_natural_growth(dt)
         self._update_bushes(dt)
         self._tick_race_world_objects(dt)
-        self._tick_meat_decay(dt)
+        self._tick_transient_drop_decay(dt)
 
         ctx = self._prepare_frame_context(dt)
 
@@ -173,19 +174,21 @@ class Simulation:
             if descriptor.world_tick_fn is not None:
                 descriptor.world_tick_fn(game, dt)
 
-    def _tick_meat_decay(self, dt):
+    def _tick_transient_drop_decay(self, dt):
         game = self.game
         world = game.world
-        if not world.meats:
-            return
-        expired = [m for m in world.meats if m.tick(dt)]
-        if not expired:
-            return
-        world.meats = [m for m in world.meats if m not in expired]
-        if game.selected_object in expired:
-            game.selected_object = None
-        if game.player.grabbed_object in expired:
-            game.player.grabbed_object = None
+        for attr in ("meats",) + all_animal_drop_collections():
+            collection = getattr(world, attr)
+            if not collection:
+                continue
+            expired = [obj for obj in collection if obj.tick(dt)]
+            if not expired:
+                continue
+            setattr(world, attr, [obj for obj in collection if obj not in expired])
+            if game.selected_object in expired:
+                game.selected_object = None
+            if game.player.grabbed_object in expired:
+                game.player.grabbed_object = None
 
     # =====================================================================
     # Домен: очистка "недолговечных" объектов - съеденные фрукты,

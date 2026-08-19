@@ -9,6 +9,8 @@ from game.race_registry import (
     creature_placement_lookup, all_secondary_panel_specs, all_road_networks,
     all_mouse_down_hooks, all_mouse_up_hooks, all_mouse_motion_hooks, all_mouse_wheel_hooks,
 )
+from game.animal_registry import animal_placement_lookup
+from creatures.all_needed.base_creature import CreatureBase
 from creatures.all_needed.base_entity import LivingEntity
 
 def _dispatch_hooks(hooks, game, event, mouse_x, mouse_y):
@@ -436,9 +438,14 @@ class _MouseDownMixin:
         if event.button == 1 and mouse_y > UI_HEIGHT:
             wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
             placement_lookup = creature_placement_lookup()
+            animal_lookup = animal_placement_lookup()
             if game.placement_mode in placement_lookup:
                 if game.object_manager.check_creature_placement_valid(wx, wy):
                     _race_name, spawn_fn = placement_lookup[game.placement_mode]
+                    spawn_fn(game.object_manager, wx, wy, game.placement_mode)
+            elif game.placement_mode in animal_lookup:
+                if game.object_manager.check_creature_placement_valid(wx, wy):
+                    _animal_name, spawn_fn = animal_lookup[game.placement_mode]
                     spawn_fn(game.object_manager, wx, wy, game.placement_mode)
             else:
                 if game.object_manager.check_object_placement_valid(wx, wy):
@@ -460,6 +467,9 @@ class _MouseDownMixin:
 
         elif game.world_loaded and ui.btn_lifes.collidepoint(mouse_x, mouse_y):
             self._toggle_menu("show_lifes_menu")
+
+        elif game.world_loaded and ui.btn_animals.collidepoint(mouse_x, mouse_y):
+            self._toggle_menu("show_animals_menu")
 
         elif game.world_loaded and ui.btn_objects.collidepoint(mouse_x, mouse_y):
             self._toggle_menu("show_objects_menu")
@@ -491,6 +501,9 @@ class _MouseDownMixin:
             self._handle_landscape_menu_click(mouse_x, mouse_y)
 
         elif game.world_loaded and game.show_lifes_menu and self._handle_lifes_menu_click(mouse_x, mouse_y):
+            pass
+
+        elif game.world_loaded and game.show_animals_menu and self._handle_animals_menu_click(mouse_x, mouse_y):
             pass
 
         elif game.world_loaded and game.show_objects_menu:
@@ -583,7 +596,7 @@ class _MouseDownMixin:
             else:
                 obj_hit = game.object_manager.find_object_at(wx, wy)
                 if obj_hit:
-                    if isinstance(obj_hit, LivingEntity):
+                    if isinstance(obj_hit, LivingEntity) and not isinstance(obj_hit, CreatureBase):
                         game.selected_creature = obj_hit
                         game.selected_object = None
                         game.clear_secondary_selections()
@@ -620,9 +633,17 @@ class _MouseDownMixin:
                 return True
         return False
 
+    def _handle_animals_menu_click(self, mouse_x, mouse_y):
+        game = self.game
+        for placement_mode, btn in game.ui.animal_placement_buttons.items():
+            if btn.collidepoint(mouse_x, mouse_y):
+                game.object_manager.start_placement(placement_mode)
+                return True
+        return False
+
     def _release_grabbed_object(self, obj):
         game = self.game
-        if isinstance(obj, LivingEntity):
+        if isinstance(obj, LivingEntity) and not isinstance(obj, CreatureBase):
             if not obj.on_grab_release(game):
                 game.selected_object = None
                 game.clear_secondary_selections()
@@ -787,7 +808,11 @@ class _MouseMotionMixin:
                     self.placement_hover.check_pos = (mouse_x, mouse_y)
                     wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                     game.placement_pos = (wx, wy)
-                    if game.placement_mode in ("creature_male", "creature_female"):
+                    is_creature_like = (
+                            game.placement_mode in ("creature_male", "creature_female")
+                            or game.placement_mode in animal_placement_lookup()
+                    )
+                    if is_creature_like:
                         game.placement_valid = game.object_manager.check_creature_placement_valid(wx, wy)
                     else:
                         game.placement_valid = game.object_manager.check_object_placement_valid(wx, wy)

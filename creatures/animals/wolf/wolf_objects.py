@@ -6,7 +6,9 @@ from objects import WorldObject
 from .wolf_settings import HIDE_LIFETIME, HIDE_COLOR, HIDE_COLOR_BORDER, HIDE_SIZE
 
 class Hide(WorldObject):
+
     type_name = "Шкура"
+    drop_collection_attr = "hides"
 
     def __init__(self, x, y, amount):
         super().__init__(x, y)

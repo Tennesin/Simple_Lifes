@@ -68,6 +68,7 @@ class Game:
         self.placement_mode = None
         self.show_game_menu = False
         self.show_lifes_menu = False
+        self.show_animals_menu = False
         self.show_landscape_menu = False
         self.show_objects_menu = False
         self.show_player_menu = False
@@ -109,6 +110,7 @@ class Game:
         self.show_game_menu = False
         self.show_landscape_menu = False
         self.show_lifes_menu = False
+        self.show_animals_menu = False
         self.show_objects_menu = False
         self.show_player_menu = False
         self.show_nature_menu = False

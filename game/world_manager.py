@@ -15,7 +15,7 @@ from objects import (
     Wall, Fence, Tree, Stone, Grass, Meat,
     )
 import settings
-from game.animal_registry import all_animals
+from game.animal_registry import all_animals, all_animal_drop_persistence_entries
 from .world_context import WorldState
 from .widgets import TextInputBox, ScrollArea
 
@@ -138,12 +138,16 @@ def _collect_animal_object_registry():
         for descriptor in all_animals()
     )
 
+def _collect_animal_drop_object_registry():
+    return all_animal_drop_persistence_entries()
+
 class WorldManager:
     def __init__(self, game):
         self.game = game
 
     _WORLD_OBJECT_REGISTRY = (
-        _CORE_OBJECT_REGISTRY + _collect_race_object_registry() + _collect_animal_object_registry()
+            _CORE_OBJECT_REGISTRY + _collect_race_object_registry()
+            + _collect_animal_object_registry() + _collect_animal_drop_object_registry()
     )
 
     # ---------- Экран создания мира ----------

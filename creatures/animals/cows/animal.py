@@ -4,6 +4,7 @@ import uuid
 
 from game.animal_registry import AnimalDescriptor
 from .cow import Cow, cow_object_panel_extra_lines
+from .cow_objects import Leather
 from .cow_settings import COW_KIND_NAME
 from .names import COW_NAME_POOLS
 
@@ -23,4 +24,6 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     placement_label=COW_KIND_NAME,
     name_pools=COW_NAME_POOLS,
     object_panel_extra_fn=cow_object_panel_extra_lines,
+    drop_collections=("leathers",),
+    drop_persistence_registry=(("leathers.json", "leathers", Leather),),
 )

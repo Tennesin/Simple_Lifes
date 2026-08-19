@@ -7,7 +7,6 @@ from typing import Callable, Optional, Tuple, Type
 
 import creatures.animals as animals_package
 
-
 @dataclass(frozen=True)
 class AnimalDescriptor:
 
@@ -25,8 +24,11 @@ class AnimalDescriptor:
 
     name_pools: Optional[dict] = None
     tick_fn: Optional[Callable] = None
-    # ---------- Строки для ObjectPanel, специфичные для этого животного (по аналогии с RaceDescriptor) ----------
     object_panel_extra_fn: Optional[Callable] = None  # (obj, all_creatures) -> list[(text, color)]
+
+    # ---------- Дроп-ресурсы животного - generic по образцу world_collections/persistence_registry расы ----------
+    drop_collections: Tuple[str, ...] = ()
+    drop_persistence_registry: Tuple[Tuple[str, str, Type], ...] = ()
 
 _ANIMALS_CACHE: Optional[dict] = None
 
@@ -77,6 +79,28 @@ def animal_placement_lookup() -> dict:
         descriptor.placement_mode: (descriptor.animal_name, descriptor.spawn_fn)
         for descriptor in all_animals()
     }
+
+def all_animal_drop_collections() -> Tuple[str, ...]:
+    result = []
+    seen = set()
+    for descriptor in all_animals():
+        for name in descriptor.drop_collections:
+            if name not in seen:
+                seen.add(name)
+                result.append(name)
+    return tuple(result)
+
+def all_animal_drop_persistence_entries() -> Tuple[Tuple[str, str, Type], ...]:
+    entries = []
+    seen_attrs = set()
+    for descriptor in all_animals():
+        for entry in descriptor.drop_persistence_registry:
+            _filename, attr, _cls = entry
+            if attr in seen_attrs:
+                continue
+            seen_attrs.add(attr)
+            entries.append(entry)
+    return tuple(entries)
 
 def all_animal_object_panel_extensions() -> Tuple[Callable, ...]:
     return tuple(d.object_panel_extra_fn for d in all_animals() if d.object_panel_extra_fn is not None)

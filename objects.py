@@ -340,6 +340,7 @@ class Grass(WorldObject):
 
 class Meat(WorldObject):
     type_name = INFO_OBJECT_MEAT
+    drop_collection_attr = "meats"
 
     def __init__(self, x, y, food_amount=0):
         super().__init__(x, y)

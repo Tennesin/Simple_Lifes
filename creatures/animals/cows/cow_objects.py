@@ -5,11 +5,11 @@ import pygame
 from objects import WorldObject
 from .cow_settings import LEATHER_LIFETIME, LEATHER_COLOR, LEATHER_COLOR_BORDER, LEATHER_SIZE
 
-
 class Leather(WorldObject):
     """Кожа коровы."""
 
     type_name = "Кожа"
+    drop_collection_attr = "leathers"
 
     def __init__(self, x, y, amount):
         super().__init__(x, y)

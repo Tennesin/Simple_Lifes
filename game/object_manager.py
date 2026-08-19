@@ -4,10 +4,12 @@ import random
 import settings
 from creatures.all_needed import geometry
 from typing import TYPE_CHECKING
+from settings import *
 from game.race_registry import (
     all_races, all_road_networks, all_landmark_specs,
     all_extra_object_collections, all_biome_cascade_specs,
-)
+    )
+from game.animal_registry import all_animals, all_animal_drop_collections
 
 if TYPE_CHECKING:
     from .game import Game
@@ -15,7 +17,6 @@ from objects import (
     Fruit, Spike, WaterPuddle, Bush,
     RoadCrossing, Tree, Stone, Grass, Meat,
 )
-from settings import *
 
 
 def _segment_intersection(p1, p2, p3, p4):
@@ -149,6 +150,10 @@ class _PlacementMixin:
         for c in game.world.creatures:
             if math.hypot(wx - c.x, wy - c.y) < 30:
                 return False
+        for descriptor in all_animals():
+            for animal in getattr(game.world, descriptor.world_collection):
+                if math.hypot(wx - animal.x, wy - animal.y) < 30:
+                    return False
         for water in game.world.water_puddles:
             if math.hypot(wx - water.x, wy - water.y) < water.radius + 20:
                 return False
@@ -190,11 +195,14 @@ class _PlacementMixin:
 
         clearance = _PLACEMENT_CLEARANCE_REGISTRY.get(obj_type, 0)
 
-        fixed_clearance_collections = (
+        fixed_clearance_collections = [
             [f for f in game.world.fruits if f.active],
             game.world.spikes,
             game.world.creatures,
-        )
+        ]
+        for descriptor in all_animals():
+            fixed_clearance_collections.append(getattr(game.world, descriptor.world_collection))
+
         for collection in fixed_clearance_collections:
             for obj in collection:
                 if obj is exclude:
@@ -678,7 +686,7 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
             if creature.is_dead and _circle_hit(creature):
                 return creature
 
-        circle_checks = (
+        circle_checks = [
             (game.world.fruits, lambda f: f.active and _circle_hit(f)),
             (game.world.spikes, _circle_hit),
             (game.world.water_puddles, _circle_hit),
@@ -687,7 +695,12 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
             (game.world.stones, _circle_hit),
             (game.world.grass, _circle_hit),
             (game.world.meats, _circle_hit),
-        )
+        ]
+        for descriptor in all_animals():
+            circle_checks.append((getattr(game.world, descriptor.world_collection), _circle_hit))
+        for attr in all_animal_drop_collections():
+            circle_checks.append((getattr(game.world, attr), _circle_hit))
+
         for collection, check in circle_checks:
             for obj in collection:
                 if check(obj):
@@ -757,6 +770,9 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
     def delete_object(self, obj):
         game = self.game
 
+        if self._delete_animal(obj):
+            return
+
         for spec in all_road_networks():
             collection = getattr(game.world, spec.road_collection)
             if obj in collection:
@@ -774,6 +790,12 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
                     getattr(self, handler_name)(obj)
                 return
 
+        for attr in all_animal_drop_collections():
+            collection = getattr(game.world, attr)
+            if obj in collection:
+                collection.remove(obj)
+                return
+
         for spec in all_extra_object_collections():
             collection = getattr(game.world, spec.attr)
             if obj in collection:
@@ -783,6 +805,35 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
                 if spec.on_delete is not None:
                     spec.on_delete(game, obj)
                 return
+
+    # =====================================================================
+    # Домен: смерть животного (не расы) - вместо трупа выпадает набор
+    # generic-ресурсов, определённый самим животным через get_drops().
+    # =====================================================================
+
+    def _delete_animal(self, obj):
+        game = self.game
+        for descriptor in all_animals():
+            collection = getattr(game.world, descriptor.world_collection)
+            if obj in collection:
+                collection.remove(obj)
+                self._spawn_animal_drops(obj)
+                if game.selected_object is obj:
+                    game.selected_object = None
+                if game.player.grabbed_object is obj:
+                    game.player.grabbed_object = None
+                return True
+        return False
+
+    def _spawn_animal_drops(self, animal):
+        game = self.game
+        get_drops = getattr(animal, "get_drops", None)
+        if get_drops is None:
+            return
+        for drop in get_drops():
+            target_attr = getattr(drop, "drop_collection_attr", None)
+            if target_attr is not None and hasattr(game.world, target_attr):
+                getattr(game.world, target_attr).append(drop)
 
 # =========================================================================
 # Итоговый класс: композиция доменов

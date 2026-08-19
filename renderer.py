@@ -4,6 +4,7 @@ from settings import *
 from info import *
 import settings
 from game.race_registry import all_races
+from game.animal_registry import all_animals, all_animal_drop_collections
 from creatures.all_needed import geometry
 
 # =========================================================================
@@ -97,6 +98,20 @@ def _draw_meat(renderer, screen, game, camera, in_view):
             pos = camera.apply_pos((meat.x, meat.y))
             meat.draw(screen, pos)
 
+def _draw_animals(renderer, screen, game, camera, in_view):
+    for descriptor in all_animals():
+        for animal in getattr(game.world, descriptor.world_collection):
+            if in_view(animal.x, animal.y):
+                pos = camera.apply_pos((animal.x, animal.y))
+                animal.draw(screen, pos)
+
+def _draw_animal_drops(renderer, screen, game, camera, in_view):
+    for attr in all_animal_drop_collections():
+        for drop in getattr(game.world, attr):
+            if in_view(drop.x, drop.y):
+                pos = camera.apply_pos((drop.x, drop.y))
+                drop.draw(screen, pos)
+
 CORE_RENDER_LAYERS = (
     ("roads", _draw_roads),
     ("road_crossings", _draw_road_crossings),
@@ -108,8 +123,10 @@ CORE_RENDER_LAYERS = (
     ("stones", _draw_stones),
     ("fruits", _draw_fruits),
     ("meat", _draw_meat),
+    ("animal_drops", _draw_animal_drops),
     ("spikes", _draw_spikes),
     ("creatures", _draw_creatures),
+    ("animals", _draw_animals),
 )
 
 class Camera:

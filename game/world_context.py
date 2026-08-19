@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from game.race_registry import all_races
-from game.animal_registry import all_animals
+from game.animal_registry import all_animals, all_animal_drop_collections
 
 def _collect_race_collections():
     names = []
@@ -17,6 +17,9 @@ def _collect_race_collections():
 def _collect_animal_collections():
     return tuple(descriptor.world_collection for descriptor in all_animals())
 
+def _collect_animal_drop_collections():
+    return all_animal_drop_collections()
+
 class WorldState:
     CORE_COLLECTIONS = (
         "fruits", "spikes", "water_puddles", "bushes", "trees", "stones",
@@ -25,7 +28,8 @@ class WorldState:
 
     RACE_COLLECTIONS = _collect_race_collections()
     ANIMAL_COLLECTIONS = _collect_animal_collections()
-    COLLECTION_NAMES = CORE_COLLECTIONS + RACE_COLLECTIONS + ANIMAL_COLLECTIONS
+    ANIMAL_DROP_COLLECTIONS = _collect_animal_drop_collections()
+    COLLECTION_NAMES = CORE_COLLECTIONS + RACE_COLLECTIONS + ANIMAL_COLLECTIONS + ANIMAL_DROP_COLLECTIONS
 
     def __init__(self):
         self.landscape_version = 0

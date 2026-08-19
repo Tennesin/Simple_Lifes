@@ -11,9 +11,9 @@ DEFAULT_VISION_RADIUS = 900
 SPIKE_NAV_BLOCK_RADIUS = 35
 
 # ---------- Адаптивное окно под размер мира ----------
-WINDOW_MIN_WIDTH = 850
-WINDOW_MIN_HEIGHT = 500
-WINDOW_MAX_WIDTH = 1000
+WINDOW_MIN_WIDTH = 1000
+WINDOW_MIN_HEIGHT = 520
+WINDOW_MAX_WIDTH = 1200
 WINDOW_MAX_HEIGHT = 750
 WINDOW_SCREEN_MARGIN = 80     # запас от разрешения экрана пользователя (панель задач и т.п.)
 
