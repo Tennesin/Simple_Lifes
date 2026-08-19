@@ -15,7 +15,7 @@ from objects import (
     Wall, Fence, Tree, Stone, Grass, Meat,
     )
 import settings
-
+from game.animal_registry import all_animals
 from .world_context import WorldState
 from .widgets import TextInputBox, ScrollArea
 
@@ -132,12 +132,19 @@ def _collect_race_object_registry():
             entries.append(entry)
     return tuple(entries)
 
+def _collect_animal_object_registry():
+    return tuple(
+        (descriptor.save_filename, descriptor.world_collection, descriptor.animal_cls)
+        for descriptor in all_animals()
+    )
 
 class WorldManager:
     def __init__(self, game):
         self.game = game
 
-    _WORLD_OBJECT_REGISTRY = _CORE_OBJECT_REGISTRY + _collect_race_object_registry()
+    _WORLD_OBJECT_REGISTRY = (
+        _CORE_OBJECT_REGISTRY + _collect_race_object_registry() + _collect_animal_object_registry()
+    )
 
     # ---------- Экран создания мира ----------
 

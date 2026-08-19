@@ -21,7 +21,6 @@ class WorldState:
     CORE_COLLECTIONS = (
         "fruits", "spikes", "water_puddles", "bushes", "trees", "stones",
         "creatures", "roads", "road_crossings", "walls", "fences", "grass", "meats",
-        "leathers", "wools", "hides",
     )
 
     RACE_COLLECTIONS = _collect_race_collections()
