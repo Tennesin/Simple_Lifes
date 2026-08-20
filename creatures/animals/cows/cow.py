@@ -74,7 +74,8 @@ class Cow(CreatureBase):
     def to_dict(self):
         return {
             "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
-            "name": self.name, "hp": self.hp, "meat": self.meat,
+            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
+            "energy": self.energy, "meat": self.meat,
             "leather": self.leather, "milk_charges": self.milk_charges,
             "created": self.created,
         }
@@ -84,6 +85,9 @@ class Cow(CreatureBase):
         cow = Cow(data["id"], data["x"], data["y"], gender=data.get("gender"))
         cow.name = data.get("name", cow.name)
         cow.hp = data.get("hp", cow.hp)
+        cow.hunger = data.get("hunger", cow.hunger)
+        cow.thirst = data.get("thirst", cow.thirst)
+        cow.energy = data.get("energy", cow.energy)
         cow.meat = data.get("meat", cow.meat)
         cow.leather = data.get("leather", cow.leather)
         cow.milk_charges = data.get("milk_charges", cow.milk_charges)

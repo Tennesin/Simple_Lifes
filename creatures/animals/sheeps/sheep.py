@@ -58,7 +58,8 @@ class Sheep(CreatureBase):
     def to_dict(self):
         return {
             "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
-            "name": self.name, "hp": self.hp, "meat": self.meat,
+            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
+            "energy": self.energy, "meat": self.meat,
             "wool": self.wool, "created": self.created,
         }
 
@@ -67,6 +68,9 @@ class Sheep(CreatureBase):
         sheep = Sheep(data["id"], data["x"], data["y"], gender=data.get("gender"))
         sheep.name = data.get("name", sheep.name)
         sheep.hp = data.get("hp", sheep.hp)
+        sheep.hunger = data.get("hunger", sheep.hunger)
+        sheep.thirst = data.get("thirst", sheep.thirst)
+        sheep.energy = data.get("energy", sheep.energy)
         sheep.meat = data.get("meat", sheep.meat)
         sheep.wool = data.get("wool", sheep.wool)
         sheep.created = data.get("created", sheep.created)

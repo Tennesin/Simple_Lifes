@@ -11,7 +11,8 @@ from game.race_registry import (
     all_minimap_layers, all_object_panel_extensions,
     all_secondary_panel_specs, PlayerToolSpec, all_road_networks,
 )
-from game.animal_registry import all_animals, all_animal_object_panel_extensions
+from game.animal_registry import all_animals, all_animal_object_panel_extensions, animal_classes
+from game.animal_panel import AnimalPanel
 
 BIOME_PREVIEW_COLOR = {
     "biome_plains": COLOR_LIGHT,
@@ -1037,6 +1038,7 @@ class UIManager:
             self._secondary_panels[spec.attr_name] = (spec, spec.panel_cls(game, self.font))
 
         self.object_panel = ObjectPanel(game, self.font)
+        self.animal_panel = AnimalPanel(game, self.font)
         self.minimap = MinimapPanel(game, self.font)
         self.world_screens = WorldScreensPanel(game)
         self.settings_panel = SettingsPanel(game, self.font)
@@ -1085,6 +1087,7 @@ class UIManager:
             if hasattr(panel, "rebuild_layout"):
                 panel.rebuild_layout(window_w, window_h)
         self.minimap.rebuild_layout(window_w, window_h)
+        self.animal_panel.rebuild_layout(window_w, window_h)
 
     def active_modal_panel(self):
         for _spec, panel in self._secondary_panels.values():
@@ -1116,7 +1119,10 @@ class UIManager:
                     panel.draw(screen)
 
         if game.selected_object:
-            self.object_panel.draw(screen)
+            if isinstance(game.selected_object, animal_classes()):
+                self.animal_panel.draw(screen)
+            else:
+                self.object_panel.draw(screen)
         if game.show_minimap and game.world_loaded:
             self.minimap.draw(screen)
 

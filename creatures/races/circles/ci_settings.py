@@ -1,8 +1,8 @@
 """Настройки, специфичные для расы 'Круг'."""
 from settings import WATER_PUDDLE_CHARGE_VALUE
-from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
+from ...all_needed.diet import DIET_OMNIVORE, FOOD_CATEGORY_PLANT
 
-RACE_DIET = DIET_HERBIVORE
+RACE_DIET = DIET_OMNIVORE
 RACE_FOOD_CATEGORY_MAP = {
     "fruit": FOOD_CATEGORY_PLANT,
 }

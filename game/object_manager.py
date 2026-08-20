@@ -811,19 +811,22 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
     # generic-ресурсов, определённый самим животным через get_drops().
     # =====================================================================
 
-    def _delete_animal(self, obj):
+    def remove_animal_and_drop(self, animal):
         game = self.game
         for descriptor in all_animals():
             collection = getattr(game.world, descriptor.world_collection)
-            if obj in collection:
-                collection.remove(obj)
-                self._spawn_animal_drops(obj)
-                if game.selected_object is obj:
+            if animal in collection:
+                collection.remove(animal)
+                self._spawn_animal_drops(animal)
+                if game.selected_object is animal:
                     game.selected_object = None
-                if game.player.grabbed_object is obj:
+                if game.player.grabbed_object is animal:
                     game.player.grabbed_object = None
                 return True
         return False
+
+    def _delete_animal(self, obj):
+        return self.remove_animal_and_drop(obj)
 
     def _spawn_animal_drops(self, animal):
         game = self.game

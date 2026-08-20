@@ -50,7 +50,8 @@ class Wolf(CreatureBase):
     def to_dict(self):
         return {
             "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
-            "name": self.name, "hp": self.hp, "hide": self.hide,
+            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
+            "energy": self.energy, "hide": self.hide,
             "created": self.created,
         }
 
@@ -59,6 +60,9 @@ class Wolf(CreatureBase):
         wolf = Wolf(data["id"], data["x"], data["y"], gender=data.get("gender"))
         wolf.name = data.get("name", wolf.name)
         wolf.hp = data.get("hp", wolf.hp)
+        wolf.hunger = data.get("hunger", wolf.hunger)
+        wolf.thirst = data.get("thirst", wolf.thirst)
+        wolf.energy = data.get("energy", wolf.energy)
         wolf.hide = data.get("hide", wolf.hide)
         wolf.created = data.get("created", wolf.created)
         return wolf

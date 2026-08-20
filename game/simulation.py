@@ -7,7 +7,7 @@ from creatures.all_needed import navigation
 from creatures.all_needed.navigation import SpatialGrid
 from game.world_context import WorldState, WorldFrameContext
 from game.race_registry import all_races
-from game.animal_registry import all_animal_drop_collections
+from game.animal_registry import all_animals, all_animal_drop_collections
 
 class Simulation:
 
@@ -48,6 +48,7 @@ class Simulation:
         self._handle_natural_growth(dt)
         self._update_bushes(dt)
         self._tick_race_world_objects(dt)
+        self._tick_animals(dt)
         self._tick_transient_drop_decay(dt)
 
         ctx = self._prepare_frame_context(dt)
@@ -109,6 +110,10 @@ class Simulation:
         race_collections = {
             name: getattr(world, name, []) for name in WorldState.RACE_COLLECTIONS
         }
+        animal_collections = {
+            descriptor.world_collection: getattr(world, descriptor.world_collection, [])
+            for descriptor in all_animals()
+        }
 
         wall_bounds = [(w, *w.get_bounding_circle()) for w in world.walls if w.points]
         fence_bounds = [(f, *f.get_bounding_circle()) for f in world.fences if f.points]
@@ -118,9 +123,9 @@ class Simulation:
             fruits=world.fruits, spikes=world.spikes, water_puddles=world.water_puddles,
             bushes=world.bushes, creatures=world.creatures, roads=world.roads,
             walls=world.walls, fences=world.fences, trees=world.trees, stones=world.stones,
-            road_crossings=world.road_crossings, grass=world.grass,
-            wall_bounds=wall_bounds, fence_bounds=fence_bounds,
-            race_collections=race_collections, creatures_by_id=creatures_by_id,
+            road_crossings=world.road_crossings, grass=world.grass, wall_bounds=wall_bounds,
+            fence_bounds=fence_bounds, race_collections=race_collections,
+            animal_collections=animal_collections, creatures_by_id=creatures_by_id,
             nav_grid_no_fences=nav_grid_no_fences, nav_grid_with_fences=nav_grid_with_fences,
             nav_grid_no_fences_fallback=nav_grid_no_fences_fallback,
             nav_grid_with_fences_fallback=nav_grid_with_fences_fallback,
@@ -173,6 +178,11 @@ class Simulation:
         for descriptor in all_races():
             if descriptor.world_tick_fn is not None:
                 descriptor.world_tick_fn(game, dt)
+
+    def _tick_animals(self, dt):
+        for descriptor in all_animals():
+            if descriptor.tick_fn is not None:
+                descriptor.tick_fn(self.game, dt)
 
     def _tick_transient_drop_decay(self, dt):
         game = self.game

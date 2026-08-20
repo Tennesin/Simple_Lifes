@@ -108,3 +108,6 @@ def all_animal_object_panel_extensions() -> Tuple[Callable, ...]:
 def all_animal_persistence_entries() -> Tuple[Tuple[str, str], ...]:
     """(save_filename, world_collection) - аналог _WORLD_OBJECT_REGISTRY."""
     return tuple((d.save_filename, d.world_collection) for d in all_animals())
+
+def animal_classes() -> Tuple[Type, ...]:
+    return tuple(d.animal_cls for d in all_animals())

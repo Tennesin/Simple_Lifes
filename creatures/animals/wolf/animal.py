@@ -6,6 +6,7 @@ from game.animal_registry import AnimalDescriptor
 from .wolf import Wolf, wolf_object_panel_extra_lines
 from .wolf_objects import Hide
 from .wolf_settings import WOLF_KIND_NAME
+from .wolf_ai import tick_wolf
 from .names import WOLF_NAME_POOLS
 
 def spawn_wolf(object_manager, wx, wy, placement_mode):
@@ -26,4 +27,5 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     object_panel_extra_fn=wolf_object_panel_extra_lines,
     drop_collections=("hides",),
     drop_persistence_registry=(("hides.json", "hides", Hide),),
+    tick_fn=tick_wolf,
 )

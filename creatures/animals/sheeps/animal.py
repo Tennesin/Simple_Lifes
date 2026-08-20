@@ -6,6 +6,7 @@ from game.animal_registry import AnimalDescriptor
 from .sheep import Sheep, sheep_object_panel_extra_lines
 from .sheep_objects import Wool
 from .sheep_settings import SHEEP_KIND_NAME
+from .sheep_ai import tick_sheep
 from .names import SHEEP_NAME_POOLS
 
 def spawn_sheep(object_manager, wx, wy, placement_mode):
@@ -26,4 +27,5 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     object_panel_extra_fn=sheep_object_panel_extra_lines,
     drop_collections=("wools",),
     drop_persistence_registry=(("wools.json", "wools", Wool),),
+    tick_fn=tick_sheep,
 )

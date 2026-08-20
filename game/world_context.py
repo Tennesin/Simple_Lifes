@@ -59,6 +59,7 @@ class WorldFrameContext:
     fence_bounds: list = field(default_factory=list)
 
     race_collections: dict = field(default_factory=dict)
+    animal_collections: dict = field(default_factory=dict)
 
     creatures_by_id: Optional[dict] = None
     nav_grid_no_fences: object = None
