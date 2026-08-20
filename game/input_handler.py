@@ -246,6 +246,7 @@ class _MenuMixin:
             (ui.btn_tree, "tree"),
             (ui.btn_stone, "stone"),
             (ui.btn_grass, "grass"),
+            (ui.btn_meat, "meat"),
         )
         for btn, obj_type in button_map:
             if btn.collidepoint(pos):

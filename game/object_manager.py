@@ -136,7 +136,12 @@ class _PlacementMixin:
         if entry is None:
             return
         attr, cls = entry
-        getattr(game.world, attr).append(cls(wx, wy))
+        if game.placement_mode == "meat":
+            obj = cls(wx, wy, food_amount=random.randint(
+                MEAT_PLACEMENT_AMOUNT_MIN, MEAT_PLACEMENT_AMOUNT_MAX))
+        else:
+            obj = cls(wx, wy)
+        getattr(game.world, attr).append(obj)
         if game.placement_mode in _LANDSCAPE_VERSION_BUMP_TYPES:
             game.world.landscape_version += 1
 

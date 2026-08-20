@@ -192,12 +192,13 @@ class TopBarPanel:
             ("btn_tree", INFO_BTN_TREE),
             ("btn_stone", INFO_BTN_STONE),
             ("btn_grass", INFO_BTN_GRASS),
+            ("btn_meat", INFO_BTN_MEAT),
         ]
         for i, (attr, label) in enumerate(nature_labels):
             y = menu_top + 5 + i * (BUTTON_HEIGHT + gap)
             setattr(self, attr, Button(pygame.Rect(item_x, y, 90, BUTTON_HEIGHT), label))
         self.menu_nature_rect = pygame.Rect(
-            self.btn_nature.rect.x, menu_top, 100, self.btn_grass.rect.bottom + 5 - menu_top)
+            self.btn_nature.rect.x, menu_top, 100, self.btn_meat.rect.bottom + 5 - menu_top)
 
         # ---------- Меню "Игрок" ----------
         item_x = self.btn_player.rect.x + 5
@@ -290,6 +291,7 @@ class TopBarPanel:
             self.btn_tree.draw(screen, mouse_pos, colors=self._MENU_COLORS)
             self.btn_stone.draw(screen, mouse_pos, colors=self._MENU_COLORS)
             self.btn_grass.draw(screen, mouse_pos, colors=self._MENU_COLORS)
+            self.btn_meat.draw(screen, mouse_pos, colors=self._MENU_COLORS)
 
         if game.world_loaded and game.show_player_menu:
             pygame.draw.rect(screen, MENU_BG, self.menu_player_rect)
