@@ -45,6 +45,7 @@ class RoamingAnimalMixin:
                     if biome_grid is None or biome_grid.get_at(new_x, new_y) != BIOME_SEA:
                         e.x = max(15, min(new_x, settings.WORLD_WIDTH - 15))
                         e.y = max(15, min(new_y, settings.WORLD_HEIGHT - 15))
+                self._reset_navigation()
                 break
 
     def _update_seek_state(self, hunger_seek_ratio, hunger_satisfy_ratio,
@@ -110,11 +111,64 @@ class RoamingAnimalMixin:
             return (nearest_puddle.x, nearest_puddle.y)
         return river_point
 
-    def move_towards(self, target, dt, biome_grid=None, speed_multiplier=1.0):
+    # ---------- НОВОЕ: контекстный A* - включается только когда прямая линия перекрыта ----------
+
+    def _reset_navigation(self):
+        e = self.entity
+        e.nav_path = []
+        e.nav_path_index = 0
+        e.nav_goal = None
+        e.nav_recalc_timer = 0.0
+
+    def _navigate_with_astar(self, target, dt, nav_grid, fallback_nav_grid=None):
+        e = self.entity
+
+        if e.nav_recalc_timer > 0:
+            e.nav_recalc_timer -= dt
+
+        goal_changed = (
+                e.nav_goal is None or
+                math.hypot(e.nav_goal[0] - target[0], e.nav_goal[1] - target[1]) > settings.NAV_GOAL_CHANGE_THRESHOLD
+        )
+        path_exhausted = not e.nav_path or e.nav_path_index >= len(e.nav_path)
+        needs_recalc = goal_changed or path_exhausted or e.nav_recalc_timer <= 0
+
+        if needs_recalc:
+            path = nav_grid.find_path((e.x, e.y), target, max_nodes=settings.NAV_MAX_ASTAR_NODES)
+            if not path and fallback_nav_grid is not None:
+                path = fallback_nav_grid.find_path((e.x, e.y), target, max_nodes=settings.NAV_MAX_ASTAR_NODES)
+            e.nav_goal = target
+            e.nav_recalc_timer = random.uniform(*settings.NAV_PATH_RECALC_INTERVAL)
+            e.nav_path = path if path else []
+            e.nav_path_index = 0
+
+        if not e.nav_path:
+            # A* не нашёл дорогу (например, полностью отрезаны морем) - хотя бы не стоим на месте
+            return target
+
+        while (e.nav_path_index < len(e.nav_path) - 1 and
+               math.hypot(e.x - e.nav_path[e.nav_path_index][0],
+                          e.y - e.nav_path[e.nav_path_index][1]) < settings.NAV_WAYPOINT_REACHED_DISTANCE):
+            e.nav_path_index += 1
+
+        return e.nav_path[e.nav_path_index]
+
+    def move_towards(self, target, dt, biome_grid=None, speed_multiplier=1.0,
+                     nav_grid=None, fallback_nav_grid=None):
         e, cfg = self.entity, self.cfg
         if target is None:
+            self._reset_navigation()
             return
-        tx, ty = target
+
+        waypoint = target
+        if nav_grid is not None:
+            # ---------- Дешёвая ветка: если по прямой ничего не мешает - никакого A*, просто идём ----------
+            if nav_grid.has_line_of_sight((e.x, e.y), target):
+                self._reset_navigation()
+            else:
+                waypoint = self._navigate_with_astar(target, dt, nav_grid, fallback_nav_grid)
+
+        tx, ty = waypoint
         dx, dy = tx - e.x, ty - e.y
         dist = math.hypot(dx, dy)
         if dist < 2:

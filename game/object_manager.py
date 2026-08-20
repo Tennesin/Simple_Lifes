@@ -456,6 +456,8 @@ class _RoadNetworkMixin:
         ("campfire", "campfires"),
         ("water", "water_puddles"),
         ("bush", "bushes"),
+        ("tree", "trees"),
+        ("stone", "stones"),
     )
 
     def _network_spec(self, obj_type):

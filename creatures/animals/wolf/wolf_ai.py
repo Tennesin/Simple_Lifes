@@ -166,7 +166,7 @@ def _get_ai(wolf):
         wolf._wolf_ai = ai
     return ai
 
-def tick_wolf(game, dt):
+def tick_wolf(game, dt, nav_grid=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     prey_lists = [world.cow, world.sheep]
@@ -182,10 +182,10 @@ def tick_wolf(game, dt):
         ai.update_needs(dt)
         if wolf.hp <= 0:
             continue
-        # ---------- Игрок держит волка - ИИ не решает и не двигает его, только тикают нужды ----------
         if wolf is not game.player.grabbed_object:
             target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
                                spikes=world.spikes)
             chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
-            ai.move_towards(target, dt, biome_grid=biome_grid, speed_multiplier=chase_mult)
+            ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
+                            speed_multiplier=chase_mult)
         ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)

@@ -50,7 +50,7 @@ class NavGridCache:
             for f in fences:
                 grid.mark_polyline(f.points, inflate, soft_margin=soft_margin)
         for s in spikes:
-            grid.mark_circle(s.x, s.y, spike_block_radius)
+            grid.mark_circle(s.x, s.y, spike_block_radius, soft_margin=SPIKE_NAV_SOFT_MARGIN)
         if biome_grid is not None:
             grid.mark_biome(biome_grid, BIOME_SEA)
         return grid
@@ -296,6 +296,9 @@ class NavGrid:
                 prev_cell = (cx, cy)
 
         return True
+
+    def has_line_of_sight(self, p1, p2):
+        return self._line_of_sight(p1, p2)
 
     def _smooth_path(self, points):
         if len(points) <= 2:

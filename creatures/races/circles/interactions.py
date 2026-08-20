@@ -127,6 +127,7 @@ class CreatureInteractions:
                 c.memory.add_memory("spike", spike.x, spike.y, importance=-2.0)
                 c.knowledge["spike"] = True
                 c.psyche.on_hazard_encountered()
+                c.pathfinder.reset_navigation()
 
                 if c.following_road is not None:
                     c.known_roads[c.following_road.id] = "dangerous"

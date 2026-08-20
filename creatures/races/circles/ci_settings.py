@@ -150,7 +150,11 @@ ROAD_FOLLOW_CHANCE_FACTOR = 0.5
 ROAD_FOLLOW_REROLL_INTERVAL = (3.0, 6.0)
 ROAD_OUTCOME_RADIUS = 90
 ROAD_DANGEROUS_THRESHOLD = 2
-ROAD_LINK_RESOURCE_MAP = {"water": "water", "bush": "food"}
+ROAD_LINK_RESOURCE_MAP = {
+    "water": "water", "bush": "food",
+    "tree": "wood", "stone": "stone",
+    "campfire": "campfire",
+}
 CROSSING_POINT_TOLERANCE = 10       # px - с какого расстояния до точки перекрёстка существо считается "стоящим" на нём
 CROSSING_SWITCH_CHANCE_FACTOR = 0.4
 

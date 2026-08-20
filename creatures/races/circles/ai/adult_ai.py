@@ -244,7 +244,7 @@ class AdultAI:
         self.puberty = PubertyCourtship(creature)
         self.partner_bond = PartnerBond(creature)
         self.storage = PrivateStorage(creature, instincts, self.actions)
-        self.construction = PrivateConstruction(creature, instincts)
+        self.construction = PrivateConstruction(creature, instincts, self.roads)
         self.child_road_verification = ChildRoadVerification(creature)
         self.curiosity = Curiosity(creature, AdultCuriosityStrategy(creature))
 

@@ -378,6 +378,13 @@ class SurvivalNeeds(GoalComponent):
             c.target = campfire_pos
             return campfire_pos
 
+        route = self.roads.pursue_known_link("campfire", ctx)
+        if route:
+            c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_FIRE if urgent
+                           else INFO_CREATURE_GOAL_SANITY_FIRE)
+            c.target = route
+            return route
+
         companions = [o for o in other_creatures
                       if o is not c and not o.is_dead and c.distance_to(o) < VISION_RADIUS]
         nearest_companion = c.social.best_companion(companions)
@@ -858,6 +865,7 @@ class Construction(GoalComponent):
     def __init__(self, creature, instincts):
         self.c = creature
         self.instincts = instincts
+        self.roads = roads
 
     def consider(self, ctx):
         c = self.c
@@ -1372,6 +1380,11 @@ class Construction(GoalComponent):
             c.state = STATE_SEEKING
             c.goal_text = (INFO_CREATURE_GOAL_GATHER_WOOD if res_type == "wood"
                            else INFO_CREATURE_GOAL_GATHER_STONE)
+            if self.roads is not None:
+                route = self.roads.pursue_known_link(res_type, ctx)
+                if route:
+                    c.target = route
+                    return route
             c.target = self.instincts.pursue_search_target()
             return c.target
 
@@ -1638,11 +1651,13 @@ class Roads(GoalComponent):
         ex, ey = road.points[-1] if c.road_direction > 0 else road.points[0]
         self._learn_link_on_arrival(road)
 
-        useful_objects = ctx.visible_fruits + ctx.visible_water + ctx.visible_bushes + ctx.visible_campfires
+        useful_objects = (ctx.visible_fruits + ctx.visible_water + ctx.visible_bushes
+                          + ctx.visible_campfires + ctx.visible_trees + ctx.visible_stones)
         helpful = any(math.hypot(ex - o.x, ey - o.y) < ROAD_OUTCOME_RADIUS for o in useful_objects)
 
         if not helpful:
-            structures = list(ctx.graveyards) + list(ctx.houses) + list(ctx.storage_fields) + list(ctx.campfires)
+            structures = (list(ctx.graveyards) + list(ctx.houses) + list(ctx.storage_fields)
+                          + list(ctx.campfires) + list(ctx.construction_sites))
             helpful = any(
                 self._distance_to_structure(obj, ex, ey) < ROAD_OUTCOME_RADIUS
                 for obj in structures
