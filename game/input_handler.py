@@ -92,9 +92,10 @@ class _KeyboardMixin:
             game.player.grabbed_creature.release_by_player()
             game.player.grabbed_creature = None
         elif game.player.grabbed_object is not None:
-            obj = game.player.grabbed_object
-            game.player.grabbed_object = None
-            self._release_grabbed_object(obj)
+            if game.player.grabbed_object_valid:
+                obj = game.player.grabbed_object
+                game.player.grabbed_object = None
+                self._release_grabbed_object(obj)
         elif self._reset_active_road_drawing():
             pass
         elif game.player.drawing_landscape is not None:
@@ -315,6 +316,8 @@ class _MouseDownMixin:
             return True
 
         if event.button == 1 and game.player.grabbed_object is not None:
+            if not game.player.grabbed_object_valid:
+                return True
             obj = game.player.grabbed_object
             game.player.grabbed_object = None
             self._release_grabbed_object(obj)
@@ -753,11 +756,17 @@ class _MouseMotionMixin:
 
                 if isinstance(obj, LivingEntity):
                     obj.x, obj.y = wx, wy
+                    game.player.grabbed_object_valid = True
                 else:
                     obj_type = game.object_manager.resolve_obj_type_for_instance(obj)
-                    if obj_type is None or game.object_manager.check_object_placement_valid(
-                            wx, wy, obj_type=obj_type, exclude=obj):
+                    if obj_type is None:
                         obj.x, obj.y = wx, wy
+                        game.player.grabbed_object_valid = True
+                    else:
+                        valid = game.object_manager.check_object_placement_valid(
+                            wx, wy, obj_type=obj_type, exclude=obj)
+                        obj.x, obj.y = wx, wy
+                        game.player.grabbed_object_valid = valid
 
                 if hasattr(obj, "on_object_moved"):
                     obj.on_object_moved(game)

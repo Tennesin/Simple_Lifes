@@ -1,7 +1,7 @@
 """Универсальный ИИ травоядных: бродит, ест траву, пьёт воду, в панике убегает от волков."""
 
 from .roaming_ai import RoamingAnimalMixin
-from settings import BIOME_RIVER
+import settings
 
 class GrazerAI(RoamingAnimalMixin):
 
@@ -16,6 +16,7 @@ class GrazerAI(RoamingAnimalMixin):
 
     def update_needs(self, dt):
         a, cfg = self.entity, self.cfg
+        self._tick_spike_invuln(dt)
         if a.hp <= 0:
             return
         a.hunger = max(0.0, a.hunger - dt / cfg["hunger_drain_interval"])
@@ -33,7 +34,7 @@ class GrazerAI(RoamingAnimalMixin):
 
     # ---------- Решение ----------
 
-    def decide(self, dt, grass_list, water_puddles, wolves, biome_grid):
+    def decide(self, dt, grass_list, water_puddles, wolves, biome_grid, spikes=None):
         a, cfg = self.entity, self.cfg
 
         nearest_wolf = self._nearest_within(wolves, a.vision_radius)
@@ -41,6 +42,13 @@ class GrazerAI(RoamingAnimalMixin):
             self.fleeing = True
             point = a.flee_point((nearest_wolf.x, nearest_wolf.y), cfg["flee_run_distance"])
             return self._avoid_sea(point, biome_grid)
+
+        # ---------- НОВОЕ: врождённый страх шипов ----------
+        nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
+        if nearest_spike is not None:
+            self.fleeing = True
+            return self._flee_from_spike(nearest_spike, biome_grid)
+
         self.fleeing = False
 
         if a.hunger < a.hunger_max * cfg["hunger_seek_ratio"]:
@@ -57,8 +65,12 @@ class GrazerAI(RoamingAnimalMixin):
 
     # ---------- Действия вблизи ----------
 
-    def interact(self, dt, grass_list, water_puddles, biome_grid):
+    def interact(self, dt, grass_list, water_puddles, biome_grid, spikes=None):
         a, cfg = self.entity, self.cfg
+        if a.hp <= 0:
+            return
+
+        self._apply_spike_damage(spikes, biome_grid=biome_grid)
         if a.hp <= 0:
             return
 
@@ -76,5 +88,5 @@ class GrazerAI(RoamingAnimalMixin):
                 wanted = min(cfg["drink_rate"] * dt, a.thirst_max - a.thirst)
                 gained = water.consume(wanted)
                 a.thirst = min(a.thirst_max, a.thirst + gained)
-            elif biome_grid is not None and biome_grid.get_at(a.x, a.y) == BIOME_RIVER:
+            elif biome_grid is not None and biome_grid.get_at(a.x, a.y) == settings.BIOME_RIVER:
                 a.thirst = min(a.thirst_max, a.thirst + cfg["drink_rate"] * dt)

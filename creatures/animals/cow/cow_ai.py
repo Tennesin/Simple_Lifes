@@ -29,7 +29,6 @@ def _get_ai(cow):
         cow._grazer_ai = ai
     return ai
 
-
 def tick_cow(game, dt):
     world = game.world
     biome_grid = game.biome_manager.grid
@@ -47,6 +46,7 @@ def tick_cow(game, dt):
         ai.update_needs(dt)
         if cow.hp <= 0:
             continue
-        target = ai.decide(dt, world.grass, world.water_puddles, alive_wolves, biome_grid)
+        target = ai.decide(dt, world.grass, world.water_puddles, alive_wolves, biome_grid,
+                           spikes=world.spikes)
         ai.move_towards(target, dt, speed_multiplier=(COW_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0))
-        ai.interact(dt, world.grass, world.water_puddles, biome_grid)
+        ai.interact(dt, world.grass, world.water_puddles, biome_grid, spikes=world.spikes)

@@ -215,6 +215,13 @@ NAV_GOAL_CHANGE_THRESHOLD = 45
 NAV_WAYPOINT_REACHED_DISTANCE = 18
 NAV_MAX_ASTAR_NODES = 6000
 
+# ---------- Шипы: универсальное поведение ЖИВОТНЫХ (в отличие от рас, у них нет ci_settings) ----------
+ANIMAL_SPIKE_DAMAGE = 10
+ANIMAL_SPIKE_HIT_DISTANCE = 20
+ANIMAL_SPIKE_INVULN_DURATION = 0.6
+ANIMAL_SPIKE_FEAR_RADIUS = 160
+ANIMAL_SPIKE_FLEE_DISTANCE = 140
+
 # ---------- Биомы ----------
 BIOME_CELL_SIZE = 75
 BIOME_PLAINS = "plains"

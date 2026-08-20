@@ -265,7 +265,8 @@ class WorldRenderer:
             obj = game.player.grabbed_object
             if hasattr(obj, 'x') and hasattr(obj, 'y'):
                 pos = game.camera.apply_pos((obj.x, obj.y))
-                pygame.draw.circle(screen, (255, 255, 255), (int(pos[0]), int(pos[1])), 16, 2)
+                ring_color = (255, 255, 255) if game.player.grabbed_object_valid else (230, 60, 60)
+                pygame.draw.circle(screen, ring_color, (int(pos[0]), int(pos[1])), 16, 2)
 
         if game.selected_creature and not game.selected_creature.is_dead:
             self.draw_vision_circle(screen, game.selected_creature)

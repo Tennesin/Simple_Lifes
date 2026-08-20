@@ -50,6 +50,9 @@ class CreatureBase(LivingEntity):
         self.death_timer = 0.0
         self.death_cause = None
 
+        # ---------- Шипы: неуязвимость после удара (иначе урон "тикает" каждый кадр) ----------
+        self.spike_invuln_timer = 0.0
+
         # ---------- Инфраструктура для BasePathfinder. ----------
         self.target = None
         self.speed_factor = 1.0

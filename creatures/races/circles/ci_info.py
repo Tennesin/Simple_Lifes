@@ -232,39 +232,6 @@ INFO_DISTANCE_BUCKET_FAR = "далеко"
 INFO_TOOL_CHILD_ROAD_HINT = "Зажмите и ведите ЛКМ — рисовать детскую дорогу"
 INFO_SETTINGS_MINIMAP_CONSTRUCTIONS = "Показать сооружения на мини-карте"
 
-# --------------------- Женские варианты фраз ---------------------
-INFO_FEMALE_VARIANTS = {
-    STATE_SEEKING: "Занята",
-    INFO_CREATURE_STATE_DEAD: "Мертва",
-
-    INFO_CREATURE_GOAL_HIT_FLEE: "Напугана и пытается отпрянуть",
-    INFO_CREATURE_GOAL_GRABBED: "Схвачена игроком",
-    INFO_CREATURE_GOAL_GRAB_GOOD: "Похоже, тут ей понравилось",
-    INFO_CREATURE_GOAL_GRAB_BAD: "Не понравилось, куда её перенесли",
-    INFO_CREATURE_GOAL_GRAB_NEUTRAL: "Немного растеряна после перемещения",
-    INFO_CREATURE_GOAL_NAMED: "Получила имя от игрока",
-    INFO_CREATURE_GOAL_FROZEN: "Замерла на месте",
-    INFO_CREATURE_GOAL_CHILD_DISTRESS: "Испугана и ищет знакомый костёр",
-    INFO_CREATURE_GOAL_CURIOSITY_HAZARD_KNOWN: "Разглядела и запомнила: это опасно",
-    INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN: "Заинтересовалась неизвестным объектом",
-    INFO_CREATURE_GOAL_FEED_DONE: "Покормила ребёнка",
-    INFO_CREATURE_GOAL_FEED_DONE_ADULT: "Покормила сородича",
-    INFO_CREATURE_GOAL_STORAGE_STOCKED: "Пополнила семейный склад",
-    INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN: "Узнала знакомую опасность с первого взгляда",
-
-    INFO_RELATIONSHIP_NEUTRAL: "Нейтральна",
-    INFO_RELATIONSHIP_FRIENDLY: "Доброжелательна",
-    INFO_RELATIONSHIP_DEVOTED: "Предана",
-    INFO_RELATIONSHIP_CALMED: "Успокоена",
-
-    TEMPERAMENT_NORMAL: "Обычная",
-    TEMPERAMENT_EXPLORER: "Исследовательница",
-    TEMPERAMENT_LAZY: "Лентяйка",
-
-    LIFE_STAGE_ADULT: "Взрослая",
-    LIFE_STAGE_OLD: "Старуха",
-}
-
 # --------------------- Объекты и механики, специфичные для расы 'Круг' ---------------------
 INFO_BTN_DRAW_CHILD_ROAD = "Детская дорога"
 INFO_BTN_HOUSE = "Дом"
@@ -298,6 +265,56 @@ DEATH_CAUSE_DISPLAY_MAP = {
     "старость": INFO_INFO_DEATH_CAUSE_OLD_AGE,
     "получил травму от игрока": INFO_INFO_DEATH_CAUSE_PLAYER_HIT,
     "утонул в море": INFO_INFO_DEATH_CAUSE_DROWNING,
+}
+
+# --------------------- Женские варианты фраз ---------------------
+INFO_FEMALE_VARIANTS = {
+    STATE_SEEKING: "Занята",
+    INFO_CREATURE_STATE_DEAD: "Мертва",
+
+    # ---------- Причины смерти (были пропущены) ----------
+    INFO_INFO_DEATH_CAUSE_SANITY: "Причина: не выдержала одиночества",
+    INFO_INFO_DEATH_CAUSE_PLAYER_HIT: "Причина: погибла от руки игрока",
+    INFO_INFO_DEATH_CAUSE_DROWNING: "Причина: утонула в море",
+
+    INFO_CREATURE_GOAL_HIT_FLEE: "Напугана и пытается отпрянуть",
+    INFO_CREATURE_GOAL_GRABBED: "Схвачена игроком",
+    INFO_CREATURE_GOAL_GRAB_GOOD: "Похоже, тут ей понравилось",
+    INFO_CREATURE_GOAL_GRAB_BAD: "Не понравилось, куда её перенесли",
+    INFO_CREATURE_GOAL_GRAB_NEUTRAL: "Немного растеряна после перемещения",
+    INFO_CREATURE_GOAL_NAMED: "Получила имя от игрока",
+    INFO_CREATURE_GOAL_FROZEN: "Замерла на месте",
+    INFO_CREATURE_GOAL_CHILD_DISTRESS: "Испугана и ищет знакомый костёр",
+
+    # ---------- Ребёнок ждёт кормления дома (было "его") ----------
+    INFO_CREATURE_GOAL_CHILD_HUNGER_GO_HOME: "Идёт домой, там её покормят",
+
+    # ---------- Проверка детской дороги взрослым (доступно любому полу) ----------
+    INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE: "Прошла детскую дорогу — она безопасна",
+    INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER: "Прошла детскую дорогу — обнаружила опасность",
+
+    INFO_CREATURE_GOAL_CURIOSITY_HAZARD_KNOWN: "Разглядела и запомнила: это опасно",
+    INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN: "Заинтересовалась неизвестным объектом",
+    INFO_CREATURE_GOAL_FEED_DONE: "Покормила ребёнка",
+    INFO_CREATURE_GOAL_FEED_DONE_ADULT: "Покормила сородича",
+    INFO_CREATURE_GOAL_STORAGE_STOCKED: "Пополнила семейный склад",
+    INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN: "Узнала знакомую опасность с первого взгляда",
+
+    # ---------- На перспективу: сейчас недостижимо для самок, но защищаемся заранее ----------
+    INFO_CREATURE_GOAL_HOUSE_EVICTED: "Покинула родительский дом - пора своего",
+    INFO_CREATURE_GOAL_CONSTRUCTION_DONE: "Завершила постройку",
+
+    INFO_RELATIONSHIP_NEUTRAL: "Нейтральна",
+    INFO_RELATIONSHIP_FRIENDLY: "Доброжелательна",
+    INFO_RELATIONSHIP_DEVOTED: "Предана",
+    INFO_RELATIONSHIP_CALMED: "Успокоена",
+
+    TEMPERAMENT_NORMAL: "Обычная",
+    TEMPERAMENT_EXPLORER: "Исследовательница",
+    TEMPERAMENT_LAZY: "Лентяйка",
+
+    LIFE_STAGE_ADULT: "Взрослая",
+    LIFE_STAGE_OLD: "Старуха",
 }
 
 def gendered_text(text, gender):

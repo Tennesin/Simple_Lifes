@@ -11,6 +11,42 @@ class RoamingAnimalMixin:
     """Ожидает от наследника: self.entity (существо с .x/.y/.vision_radius),
     self.cfg (словарь настроек), self.target, self.decision_timer."""
 
+    # ---------- НОВОЕ: врождённый страх и урон от шипов, общий для всех животных ----------
+
+    def _tick_spike_invuln(self, dt):
+        e = self.entity
+        if e.spike_invuln_timer > 0:
+            e.spike_invuln_timer -= dt
+
+    def _nearest_spike(self, spikes, radius):
+        if not spikes:
+            return None
+        return self._nearest_within(spikes, radius)
+
+    def _flee_from_spike(self, spike, biome_grid):
+        e = self.entity
+        point = e.flee_point((spike.x, spike.y), settings.ANIMAL_SPIKE_FLEE_DISTANCE)
+        return self._avoid_sea(point, biome_grid)
+
+    def _apply_spike_damage(self, spikes, biome_grid=None):
+        e = self.entity
+        if not spikes or e.spike_invuln_timer > 0:
+            return
+        for spike in spikes:
+            if math.hypot(e.x - spike.x, e.y - spike.y) < settings.ANIMAL_SPIKE_HIT_DISTANCE:
+                e.hp = max(0.0, e.hp - settings.ANIMAL_SPIKE_DAMAGE)
+                e.spike_invuln_timer = settings.ANIMAL_SPIKE_INVULN_DURATION
+
+                dx, dy = e.x - spike.x, e.y - spike.y
+                dist = math.hypot(dx, dy)
+                if dist != 0:
+                    new_x = e.x + dx / dist * 30
+                    new_y = e.y + dy / dist * 30
+                    if biome_grid is None or biome_grid.get_at(new_x, new_y) != BIOME_SEA:
+                        e.x = max(15, min(new_x, settings.WORLD_WIDTH - 15))
+                        e.y = max(15, min(new_y, settings.WORLD_HEIGHT - 15))
+                break
+
     def _wander(self, dt, biome_grid):
         e, cfg = self.entity, self.cfg
         reached = (self.target is None or math.hypot(e.x - self.target[0], e.y - self.target[1]) < 12)

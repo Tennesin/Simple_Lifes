@@ -222,7 +222,7 @@ class TopBarPanel:
 
     def draw(self, screen):
         game = self.game
-        pygame.draw.rect(screen, PANEL_COLOR, pygame.Rect(0, 0, WINDOW_WIDTH, UI_HEIGHT))
+        pygame.draw.rect(screen, PANEL_COLOR, pygame.Rect(0, 0, screen.get_width(), UI_HEIGHT))
         mouse_pos = pygame.mouse.get_pos()
 
         self.btn_game.draw(screen, mouse_pos)

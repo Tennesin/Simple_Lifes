@@ -2,7 +2,7 @@
 
 import math
 from ...all_needed.ai.roaming_ai import RoamingAnimalMixin
-from settings import BIOME_RIVER
+import settings
 from .wolf_settings import *
 
 _WOLF_AI_CFG = {
@@ -41,6 +41,7 @@ class WolfAI(RoamingAnimalMixin):
 
     def update_needs(self, dt):
         w, cfg = self.entity, self.cfg
+        self._tick_spike_invuln(dt)
         if w.hp <= 0:
             return
         w.hunger = max(0.0, w.hunger - dt / cfg["hunger_drain_interval"])
@@ -61,8 +62,11 @@ class WolfAI(RoamingAnimalMixin):
 
     # ---------- Решение ----------
 
-    def decide(self, dt, prey_lists, water_puddles, meats, biome_grid):
+    def decide(self, dt, prey_lists, water_puddles, meats, biome_grid, spikes=None):
         w, cfg = self.entity, self.cfg
+
+        # ---------- НОВОЕ: врождённый страх шипов - выше приоритетом, чем охота ----------
+        nearest_spike = self._nearest_spike(spikes, settings.BIOME_SEA and __import__("settings").ANIMAL_SPIKE_FEAR_RADIUS)
         hungry = w.hunger < w.hunger_max * cfg["hunt_hunger_ratio"]
 
         if hungry or self.hunting_target_id is not None:
@@ -106,8 +110,12 @@ class WolfAI(RoamingAnimalMixin):
 
     # ---------- Действия вблизи ----------
 
-    def interact(self, dt, prey_lists, water_puddles, meats, biome_grid):
+    def interact(self, dt, prey_lists, water_puddles, meats, biome_grid, spikes=None):
         w, cfg = self.entity, self.cfg
+        if w.hp <= 0:
+            return
+
+        self._apply_spike_damage(spikes, biome_grid=biome_grid)
         if w.hp <= 0:
             return
 
@@ -136,9 +144,8 @@ class WolfAI(RoamingAnimalMixin):
                 wanted = min(cfg["drink_rate"] * dt, w.thirst_max - w.thirst)
                 gained = water.consume(wanted)
                 w.thirst = min(w.thirst_max, w.thirst + gained)
-            elif biome_grid is not None and biome_grid.get_at(w.x, w.y) == BIOME_RIVER:
+            elif biome_grid is not None and biome_grid.get_at(w.x, w.y) == settings.BIOME_RIVER:
                 w.thirst = min(w.thirst_max, w.thirst + cfg["drink_rate"] * dt)
-
 
 def _get_ai(wolf):
     ai = getattr(wolf, "_wolf_ai", None)
@@ -146,7 +153,6 @@ def _get_ai(wolf):
         ai = WolfAI(wolf, _WOLF_AI_CFG)
         wolf._wolf_ai = ai
     return ai
-
 
 def tick_wolf(game, dt):
     world = game.world
@@ -164,7 +170,8 @@ def tick_wolf(game, dt):
         ai.update_needs(dt)
         if wolf.hp <= 0:
             continue
-        target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid)
+        target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
+                           spikes=world.spikes)
         chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
         ai.move_towards(target, dt, speed_multiplier=chase_mult)
-        ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid)
+        ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)
