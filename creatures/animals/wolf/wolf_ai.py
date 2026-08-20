@@ -77,6 +77,11 @@ class WolfAI(RoamingAnimalMixin):
                                 cfg["thirst_seek_ratio"], cfg["thirst_satisfy_ratio"])
 
         if self.seeking_food or self.hunting_target_id is not None:
+            if self.hunting_target_id is None:
+                meat = self._nearest_within(meats, w.vision_radius, predicate=lambda m: m.has_food())
+                if meat is not None:
+                    return (meat.x, meat.y)
+
             prey = self._resolve_hunt_target(prey_lists, w.vision_radius)
             if prey is not None:
                 self.hunting_target_id = prey.id
@@ -180,5 +185,5 @@ def tick_wolf(game, dt):
         target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
                            spikes=world.spikes)
         chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
-        ai.move_towards(target, dt, speed_multiplier=chase_mult)
+        ai.move_towards(target, dt, biome_grid=biome_grid, speed_multiplier=chase_mult)
         ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)

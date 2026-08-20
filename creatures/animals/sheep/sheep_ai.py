@@ -50,5 +50,6 @@ def tick_sheep(game, dt):
             continue
         target = ai.decide(dt, world.grass, world.water_puddles, alive_wolves, biome_grid,
                            spikes=world.spikes)
-        ai.move_towards(target, dt, speed_multiplier=(SHEEP_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0))
+        ai.move_towards(target, dt, biome_grid=biome_grid,
+                        speed_multiplier=(SHEEP_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0))
         ai.interact(dt, world.grass, world.water_puddles, biome_grid, spikes=world.spikes)

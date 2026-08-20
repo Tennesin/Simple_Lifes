@@ -110,7 +110,7 @@ class RoamingAnimalMixin:
             return (nearest_puddle.x, nearest_puddle.y)
         return river_point
 
-    def move_towards(self, target, dt, speed_multiplier=1.0):
+    def move_towards(self, target, dt, biome_grid=None, speed_multiplier=1.0):
         e, cfg = self.entity, self.cfg
         if target is None:
             return
@@ -120,6 +120,8 @@ class RoamingAnimalMixin:
         if dist < 2:
             return
         speed = cfg["speed"] * speed_multiplier
+        if biome_grid is not None and biome_grid.get_at(e.x, e.y) == BIOME_RIVER:
+            speed *= settings.ANIMAL_RIVER_SWIM_SPEED_MULTIPLIER
         step = min(speed * dt, dist)
         new_x = max(15, min(e.x + dx / dist * step, settings.WORLD_WIDTH - 15))
         new_y = max(15, min(e.y + dy / dist * step, settings.WORLD_HEIGHT - 15))
