@@ -12,15 +12,15 @@ from .names import SHEEP_NAME_POOLS
 def spawn_sheep(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]
     sheep = Sheep(new_id, wx, wy)
-    object_manager.game.world.sheeps.append(sheep)
+    object_manager.game.world.sheep.append(sheep)
 
 ANIMAL_DESCRIPTOR = AnimalDescriptor(
     animal_name="sheep",
     animal_cls=Sheep,
     loader_fn=Sheep.from_dict,
     spawn_fn=spawn_sheep,
-    world_collection="sheeps",
-    save_filename="sheeps.json",
+    world_collection="sheep",
+    save_filename="sheep.json",
     placement_mode="animal_sheep",
     placement_label=SHEEP_KIND_NAME,
     name_pools=SHEEP_NAME_POOLS,

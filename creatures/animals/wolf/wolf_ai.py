@@ -151,7 +151,7 @@ def _get_ai(wolf):
 def tick_wolf(game, dt):
     world = game.world
     biome_grid = game.biome_manager.grid
-    prey_lists = [world.cows, world.sheeps]
+    prey_lists = [world.cow, world.sheep]
 
     dead = [w for w in world.wolves if w.hp <= 0]
     for wolf in dead:

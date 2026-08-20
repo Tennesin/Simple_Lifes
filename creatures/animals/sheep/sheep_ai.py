@@ -35,13 +35,13 @@ def tick_sheep(game, dt):
     world = game.world
     biome_grid = game.biome_manager.grid
 
-    dead = [s for s in world.sheeps if s.hp <= 0]
+    dead = [s for s in world.sheep if s.hp <= 0]
     for sheep in dead:
         game.object_manager.remove_animal_and_drop(sheep)
 
     alive_wolves = [w for w in world.wolves if w.hp > 0]
 
-    for sheep in world.sheeps:
+    for sheep in world.sheep:
         if sheep.hp <= 0:
             continue
         ai = _get_ai(sheep)

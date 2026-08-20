@@ -16,8 +16,8 @@ class AnimalDescriptor:
     loader_fn: Callable            # (state: dict) -> экземпляр животного
     spawn_fn: Callable             # (object_manager, wx, wy, placement_mode) -> None
 
-    world_collection: str          # имя атрибута коллекции в мире (например "sheeps")
-    save_filename: str             # имя файла сохранения (например "sheeps.json")
+    world_collection: str          # имя атрибута коллекции в мире (например "sheep")
+    save_filename: str             # имя файла сохранения (например "sheep.json")
 
     placement_mode: str            # ключ режима размещения (для будущего меню)
     placement_label: str           # подпись кнопки размещения

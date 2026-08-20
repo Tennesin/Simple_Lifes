@@ -34,13 +34,13 @@ def tick_cow(game, dt):
     world = game.world
     biome_grid = game.biome_manager.grid
 
-    dead = [c for c in world.cows if c.hp <= 0]
+    dead = [c for c in world.cow if c.hp <= 0]
     for cow in dead:
         game.object_manager.remove_animal_and_drop(cow)
 
     alive_wolves = [w for w in world.wolves if w.hp > 0]
 
-    for cow in world.cows:
+    for cow in world.cow:
         if cow.hp <= 0:
             continue
         ai = _get_ai(cow)
