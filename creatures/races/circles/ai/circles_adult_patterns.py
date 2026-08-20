@@ -862,7 +862,7 @@ class Construction(GoalComponent):
         "house": max(HOUSE_DEFAULT_SIZE) / 2 + 10,
     }
 
-    def __init__(self, creature, instincts):
+    def __init__(self, creature, instincts, roads=None):
         self.c = creature
         self.instincts = instincts
         self.roads = roads

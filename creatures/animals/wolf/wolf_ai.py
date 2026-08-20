@@ -170,6 +170,7 @@ def tick_wolf(game, dt, nav_grid=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     prey_lists = [world.cow, world.sheep]
+    wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
     dead = [w for w in world.wolves if w.hp <= 0]
     for wolf in dead:
@@ -187,5 +188,6 @@ def tick_wolf(game, dt, nav_grid=None):
                                spikes=world.spikes)
             chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
-                            speed_multiplier=chase_mult)
+                            speed_multiplier=chase_mult,
+                            wall_polylines=wall_polylines, fence_polylines=fence_polylines)
         ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)

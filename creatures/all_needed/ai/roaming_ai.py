@@ -154,7 +154,8 @@ class RoamingAnimalMixin:
         return e.nav_path[e.nav_path_index]
 
     def move_towards(self, target, dt, biome_grid=None, speed_multiplier=1.0,
-                     nav_grid=None, fallback_nav_grid=None):
+                     nav_grid=None, fallback_nav_grid=None,
+                     wall_polylines=None, fence_polylines=None):
         e, cfg = self.entity, self.cfg
         if target is None:
             self._reset_navigation()
@@ -179,4 +180,13 @@ class RoamingAnimalMixin:
         step = min(speed * dt, dist)
         new_x = max(15, min(e.x + dx / dist * step, settings.WORLD_WIDTH - 15))
         new_y = max(15, min(e.y + dy / dist * step, settings.WORLD_HEIGHT - 15))
+
+        # ---------- Физически не даём пройти сквозь стену/забор ----------
+        if wall_polylines:
+            new_x, new_y = geometry.resolve_circle_vs_polylines(
+                new_x, new_y, e.radius, wall_polylines, settings.WALL_THICKNESS)
+        if fence_polylines:
+            new_x, new_y = geometry.resolve_circle_vs_polylines(
+                new_x, new_y, e.radius, fence_polylines, settings.FENCE_THICKNESS)
+
         e.x, e.y = new_x, new_y
