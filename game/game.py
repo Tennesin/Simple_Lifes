@@ -187,14 +187,15 @@ class Game:
         screen_limit_w = self.desktop_w - WINDOW_SCREEN_MARGIN
         screen_limit_h = self.desktop_h - WINDOW_SCREEN_MARGIN
 
-        max_w = max(WINDOW_MIN_WIDTH, min(WINDOW_MAX_WIDTH, screen_limit_w))
+        min_w = max(WINDOW_MIN_WIDTH, self.ui.top_bar.min_required_width)
+        max_w = max(min_w, min(WINDOW_MAX_WIDTH, screen_limit_w))
         max_h = max(WINDOW_MIN_HEIGHT, min(WINDOW_MAX_HEIGHT, screen_limit_h))
         available_h = max_h - UI_HEIGHT
 
         new_w = min(world_w, max_w)
         new_h = min(world_h, available_h) + UI_HEIGHT
 
-        new_w = max(WINDOW_MIN_WIDTH, new_w)
+        new_w = max(min_w, new_w)
         new_h = max(WINDOW_MIN_HEIGHT, new_h)
 
         settings.WINDOW_WIDTH = new_w
@@ -205,17 +206,16 @@ class Game:
         self.ui.rebuild_layout(new_w, new_h)
 
     def restore_default_window(self):
-        settings.WINDOW_WIDTH = settings.WINDOW_DEFAULT_WIDTH
+        min_w = max(settings.WINDOW_DEFAULT_WIDTH, self.ui.top_bar.min_required_width)
+        settings.WINDOW_WIDTH = min_w
         settings.WINDOW_HEIGHT = settings.WINDOW_DEFAULT_HEIGHT
 
-        self.screen = pygame.display.set_mode(
-            (settings.WINDOW_DEFAULT_WIDTH, settings.WINDOW_DEFAULT_HEIGHT)
-        )
+        self.screen = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
         self.camera = Camera(
             settings.WORLD_WIDTH, settings.WORLD_HEIGHT,
-            settings.WINDOW_DEFAULT_WIDTH, settings.WINDOW_DEFAULT_HEIGHT - UI_HEIGHT
+            settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT - UI_HEIGHT
         )
-        self.ui.rebuild_layout(settings.WINDOW_DEFAULT_WIDTH, settings.WINDOW_DEFAULT_HEIGHT)
+        self.ui.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     # ---------- Редактирование имени существа ----------
 

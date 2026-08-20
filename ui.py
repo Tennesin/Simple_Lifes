@@ -61,28 +61,43 @@ class TopBarPanel:
         "normal": BUTTON_COLOR, "hover": MENU_HOVER,
         "disabled": BUTTON_DISABLED, "text": TEXT_COLOR,
     }
+    BUTTON_GAP = 10
+    WORLD_NAME_BUFFER = 220
 
     def __init__(self, game, font):
         self.game = game
         self.font = font
         self.btn_settings = pygame.Rect(0, 0, 0, 0)
+        self._settings_btn_width = 0
+        self.min_required_width = 0
         self._build_layout()
+
+    @staticmethod
+    def _button_width(label, min_width=90):
+        text_w = Button._get_font(FONT_SIZE_BUTTON).size(label)[0]
+        return max(min_width, text_w + 24)
 
     def _build_layout(self):
         gap = 4
 
-        self.btn_game = Button(pygame.Rect(10, 5, 100, BUTTON_HEIGHT), INFO_BTN_GAME)
-        self.btn_landscape = Button(pygame.Rect(120, 5, 100, BUTTON_HEIGHT), INFO_BTN_LANDSCAPE)
-        self.btn_lifes = Button(pygame.Rect(230, 5, 100, BUTTON_HEIGHT), INFO_BTN_LIFES)
-        self.btn_animals = Button(pygame.Rect(340, 5, 100, BUTTON_HEIGHT), INFO_BTN_ANIMALS)
-        self.btn_objects = Button(pygame.Rect(450, 5, 100, BUTTON_HEIGHT), INFO_BTN_OBJECTS)
-        self.btn_nature = Button(pygame.Rect(560, 5, 100, BUTTON_HEIGHT), INFO_BTN_NATURE)
-        self.btn_player = Button(pygame.Rect(670, 5, 100, BUTTON_HEIGHT), INFO_BTN_PLAYER)
+        x = 10
+        for attr, label in (
+                ("btn_game", INFO_BTN_GAME),
+                ("btn_landscape", INFO_BTN_LANDSCAPE),
+                ("btn_lifes", INFO_BTN_LIFES),
+                ("btn_animals", INFO_BTN_ANIMALS),
+                ("btn_objects", INFO_BTN_OBJECTS),
+                ("btn_nature", INFO_BTN_NATURE),
+                ("btn_player", INFO_BTN_PLAYER),
+        ):
+            width = self._button_width(label)
+            setattr(self, attr, Button(pygame.Rect(x, 5, width, BUTTON_HEIGHT), label))
+            x += width + self.BUTTON_GAP
 
         menu_top = 35
 
-        # ---------- Меню "Игра" (без изменений) ----------
-        item_x, item_w = 15, 130
+        # ---------- Меню "Игра" ----------
+        item_x, item_w = self.btn_game.rect.x + 5, 130
         self.btn_create_world = Button(pygame.Rect(item_x, menu_top + 5, item_w, BUTTON_HEIGHT), INFO_BTN_CREATE_WORLD)
         self.btn_load_world = Button(
             pygame.Rect(item_x, menu_top + 5 + (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_LOAD_WORLD)
@@ -92,10 +107,11 @@ class TopBarPanel:
             pygame.Rect(item_x, menu_top + 5 + 3 * (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_PAUSE)
         self.btn_exit = Button(
             pygame.Rect(item_x, menu_top + 5 + 4 * (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_EXIT)
-        self.menu_game_rect = pygame.Rect(10, menu_top, item_w + 10, self.btn_exit.rect.bottom + 5 - menu_top)
+        self.menu_game_rect = pygame.Rect(
+            self.btn_game.rect.x, menu_top, item_w + 10, self.btn_exit.rect.bottom + 5 - menu_top)
 
-        # ---------- Меню "Ландшафт" (без изменений) ----------
-        item_x, item_w = 125, 110
+        # ---------- Меню "Ландшафт" ----------
+        item_x, item_w = self.btn_landscape.rect.x + 5, 110
         self.btn_wall = Button(pygame.Rect(item_x, menu_top + 5, item_w, BUTTON_HEIGHT), INFO_BTN_WALL)
         self.btn_fence = Button(
             pygame.Rect(item_x, menu_top + 5 + (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_FENCE)
@@ -107,11 +123,11 @@ class TopBarPanel:
             pygame.Rect(item_x, menu_top + 5 + 4 * (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_BIOME_RIVER)
         self.btn_biome_sea = Button(
             pygame.Rect(item_x, menu_top + 5 + 5 * (BUTTON_HEIGHT + gap), item_w, BUTTON_HEIGHT), INFO_BTN_BIOME_SEA)
-        self.menu_landscape_rect = pygame.Rect(120, menu_top, item_w + 10,
-                                               self.btn_biome_sea.rect.bottom + 5 - menu_top)
+        self.menu_landscape_rect = pygame.Rect(
+            self.btn_landscape.rect.x, menu_top, item_w + 10, self.btn_biome_sea.rect.bottom + 5 - menu_top)
 
         # ---------- Меню "Расы" (generic) ----------
-        item_x = 235
+        item_x = self.btn_lifes.rect.x + 5
         self.creature_placement_buttons = {}
         y = menu_top + 5
         lifes_bottom = y
@@ -121,10 +137,10 @@ class TopBarPanel:
                 self.creature_placement_buttons[placement_mode] = btn
                 lifes_bottom = btn.rect.bottom
                 y += BUTTON_HEIGHT + gap
-        self.menu_lifes_rect = pygame.Rect(230, menu_top, 100, lifes_bottom + 5 - menu_top)
+        self.menu_lifes_rect = pygame.Rect(self.btn_lifes.rect.x, menu_top, 100, lifes_bottom + 5 - menu_top)
 
-        # ---------- Меню "Животные" (НОВОЕ, generic из animal_registry) ----------
-        item_x = 345
+        # ---------- Меню "Животные" ----------
+        item_x = self.btn_animals.rect.x + 5
         self.animal_placement_buttons = {}
         y = menu_top + 5
         animals_bottom = y
@@ -133,10 +149,10 @@ class TopBarPanel:
             self.animal_placement_buttons[descriptor.placement_mode] = btn
             animals_bottom = btn.rect.bottom
             y += BUTTON_HEIGHT + gap
-        self.menu_animals_rect = pygame.Rect(340, menu_top, 100, animals_bottom + 5 - menu_top)
+        self.menu_animals_rect = pygame.Rect(self.btn_animals.rect.x, menu_top, 100, animals_bottom + 5 - menu_top)
 
-        # ---------- Меню "Объект" (сдвинуто с 340 на 450) ----------
-        item_x = 455
+        # ---------- Меню "Объект" ----------
+        item_x = self.btn_objects.rect.x + 5
         self.object_placement_buttons = {}
         self.road_tool_buttons = {}
         y = menu_top + 5
@@ -165,10 +181,10 @@ class TopBarPanel:
             objects_bottom = btn.rect.bottom
             y += BUTTON_HEIGHT + gap
 
-        self.menu_objects_rect = pygame.Rect(450, menu_top, 140, objects_bottom + 5 - menu_top)
+        self.menu_objects_rect = pygame.Rect(self.btn_objects.rect.x, menu_top, 140, objects_bottom + 5 - menu_top)
 
-        # ---------- Меню "Природа" (сдвинуто с 450 на 560) ----------
-        item_x = 565
+        # ---------- Меню "Природа" ----------
+        item_x = self.btn_nature.rect.x + 5
         nature_labels = [
             ("btn_fruit", INFO_BTN_FRUIT),
             ("btn_bush", INFO_BTN_BUSH),
@@ -180,10 +196,11 @@ class TopBarPanel:
         for i, (attr, label) in enumerate(nature_labels):
             y = menu_top + 5 + i * (BUTTON_HEIGHT + gap)
             setattr(self, attr, Button(pygame.Rect(item_x, y, 90, BUTTON_HEIGHT), label))
-        self.menu_nature_rect = pygame.Rect(560, menu_top, 100, self.btn_grass.rect.bottom + 5 - menu_top)
+        self.menu_nature_rect = pygame.Rect(
+            self.btn_nature.rect.x, menu_top, 100, self.btn_grass.rect.bottom + 5 - menu_top)
 
-        # ---------- Меню "Игрок" (сдвинуто с 560 на 670) ----------
-        item_x = 675
+        # ---------- Меню "Игрок" ----------
+        item_x = self.btn_player.rect.x + 5
         self.player_tool_buttons = {}
         all_tools = _CORE_PLAYER_TOOLS + all_player_tools()
         y = menu_top + 5
@@ -193,7 +210,15 @@ class TopBarPanel:
             self.player_tool_buttons[spec.tool_value] = btn
             player_bottom = btn.rect.bottom
             y += BUTTON_HEIGHT + gap
-        self.menu_player_rect = pygame.Rect(670, menu_top, 100, player_bottom + 5 - menu_top)
+        self.menu_player_rect = pygame.Rect(self.btn_player.rect.x, menu_top, 100, player_bottom + 5 - menu_top)
+
+        # ---------- Минимально необходимая ширина окна: кнопка "Игрок" + буфер под
+        # "Мир: X" + кнопка "Настройки" + отступ от правого края. Больше руками не считаем ----------
+        self._settings_btn_width = self._button_width(INFO_BTN_SETTINGS, min_width=90)
+        self.min_required_width = (
+                self.btn_player.rect.right + self.WORLD_NAME_BUFFER
+                + self.BUTTON_GAP + self._settings_btn_width + 10
+        )
 
     def draw(self, screen):
         game = self.game
@@ -278,7 +303,7 @@ class TopBarPanel:
 
     def _draw_settings_button(self, screen, mouse_pos):
         window_w = screen.get_width()
-        btn_w, btn_h = 110, BUTTON_HEIGHT
+        btn_w, btn_h = self._settings_btn_width, BUTTON_HEIGHT
         rect = pygame.Rect(window_w - 10 - btn_w, 5, btn_w, btn_h)
         self.btn_settings = rect
 

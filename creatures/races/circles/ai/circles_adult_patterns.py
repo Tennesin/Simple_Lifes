@@ -311,38 +311,6 @@ class SurvivalNeeds(GoalComponent):
         c = self.c
         if not c.seeking_water:
             return None
-        score = self.SCORE_WATER_BASE + self.SCORE_WATER_MAX_BONUS
-
-        def execute():
-            self.instincts.check_stale_water_memory(ctx.visible_water)
-            found = self.instincts.nearest_water_target(ctx.visible_water, biome_grid=ctx.biome_grid)
-            c.state = STATE_SEEKING
-            if found:
-                c.goal_text = INFO_CREATURE_GOAL_SEEK_WATER
-                return found
-            route = self.roads.pursue_known_link("water", ctx)
-            if route:
-                return route
-            c.goal_text = INFO_CREATURE_GOAL_SEEK_WATER_ACTIVE
-            return self.instincts.pursue_search_target(ctx.visible_companions, biome_grid=ctx.biome_grid)
-
-        return Consideration("water", score, execute)
-
-    def _consider_sanity(self, ctx):
-        c = self.c
-        if not c.seeking_sanity:
-            return None
-        score = self.SCORE_SANITY_BASE + self.SCORE_SANITY_MAX_BONUS
-
-        def execute():
-            return self._seek_sanity_relief(ctx, urgent=False)
-
-        return Consideration("sanity", score, execute)
-
-    def _consider_water(self, ctx):
-        c = self.c
-        if not c.seeking_water:
-            return None
         deficit = scale(THIRST_SATISFY_THRESHOLD - c.thirst, 0, THIRST_SATISFY_THRESHOLD)
         score = self.SCORE_WATER_BASE + deficit * self.SCORE_WATER_MAX_BONUS
 
