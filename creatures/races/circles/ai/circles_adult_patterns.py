@@ -311,8 +311,7 @@ class SurvivalNeeds(GoalComponent):
         c = self.c
         if not c.seeking_water:
             return None
-        deficit = scale(THIRST_SATISFY_THRESHOLD - c.thirst, 0, THIRST_SATISFY_THRESHOLD)
-        score = self.SCORE_WATER_BASE + deficit * self.SCORE_WATER_MAX_BONUS
+        score = self.SCORE_WATER_BASE + self.SCORE_WATER_MAX_BONUS
 
         def execute():
             self.instincts.check_stale_water_memory(ctx.visible_water)

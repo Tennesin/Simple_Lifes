@@ -19,6 +19,8 @@ _WOLF_AI_CFG = {
     "drink_rate": WOLF_DRINK_RATE,
     "thirst_seek_ratio": WOLF_THIRST_SEEK_RATIO,
     "hunt_hunger_ratio": WOLF_HUNT_HUNGER_RATIO,
+    "hunger_satisfy_ratio": WOLF_HUNGER_SATISFY_RATIO,
+    "thirst_satisfy_ratio": WOLF_THIRST_SATISFY_RATIO,
     "bite_distance": WOLF_BITE_DISTANCE,
     "bite_damage": WOLF_BITE_DAMAGE,
     "bite_cooldown": WOLF_BITE_COOLDOWN,
@@ -36,6 +38,8 @@ class WolfAI(RoamingAnimalMixin):
         self.decision_timer = 0.0
         self.hunting_target_id = None
         self.bite_cooldown = 0.0
+        self.seeking_food = False
+        self.seeking_water = False
 
     # ---------- Потребности ----------
 
@@ -65,23 +69,26 @@ class WolfAI(RoamingAnimalMixin):
     def decide(self, dt, prey_lists, water_puddles, meats, biome_grid, spikes=None):
         w, cfg = self.entity, self.cfg
 
-        # ---------- НОВОЕ: врождённый страх шипов - выше приоритетом, чем охота ----------
-        nearest_spike = self._nearest_spike(spikes, settings.BIOME_SEA and __import__("settings").ANIMAL_SPIKE_FEAR_RADIUS)
-        hungry = w.hunger < w.hunger_max * cfg["hunt_hunger_ratio"]
+        nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
+        if nearest_spike is not None:
+            return self._flee_from_spike(nearest_spike, biome_grid)
 
-        if hungry or self.hunting_target_id is not None:
+        self._update_seek_state(cfg["hunt_hunger_ratio"], cfg["hunger_satisfy_ratio"],
+                                cfg["thirst_seek_ratio"], cfg["thirst_satisfy_ratio"])
+
+        if self.seeking_food or self.hunting_target_id is not None:
             prey = self._resolve_hunt_target(prey_lists, w.vision_radius)
             if prey is not None:
                 self.hunting_target_id = prey.id
                 return (prey.x, prey.y)
             self.hunting_target_id = None
 
-            if hungry:
+            if self.seeking_food:
                 meat = self._nearest_within(meats, w.vision_radius, predicate=lambda m: m.has_food())
                 if meat is not None:
                     return (meat.x, meat.y)
 
-        if w.thirst < w.thirst_max * cfg["thirst_seek_ratio"]:
+        if self.seeking_water:
             water_target = self._nearest_water_target(water_puddles, biome_grid, w.vision_radius)
             if water_target is not None:
                 return water_target
@@ -130,7 +137,7 @@ class WolfAI(RoamingAnimalMixin):
                             bit = True
                         break
 
-        if not bit and self.hunting_target_id is None and w.hunger < w.hunger_max:
+        if not bit and self.hunting_target_id is None and self.seeking_food:
             meat = self._nearest_within(meats, cfg["eat_distance"], predicate=lambda m: m.has_food())
             if meat is not None:
                 amount = min(cfg["eat_rate"] * dt, meat.food, w.hunger_max - w.hunger)
@@ -138,7 +145,7 @@ class WolfAI(RoamingAnimalMixin):
                     meat.food -= amount
                     w.hunger = min(w.hunger_max, w.hunger + amount)
 
-        if w.thirst < w.thirst_max:
+        if self.seeking_water:
             water = self._nearest_within(water_puddles, cfg["drink_distance"], predicate=lambda p: p.has_water())
             if water is not None:
                 wanted = min(cfg["drink_rate"] * dt, w.thirst_max - w.thirst)

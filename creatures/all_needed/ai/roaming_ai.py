@@ -47,6 +47,19 @@ class RoamingAnimalMixin:
                         e.y = max(15, min(new_y, settings.WORLD_HEIGHT - 15))
                 break
 
+    def _update_seek_state(self, hunger_seek_ratio, hunger_satisfy_ratio,
+                            thirst_seek_ratio, thirst_satisfy_ratio):
+        e = self.entity
+        if e.hunger < e.hunger_max * hunger_seek_ratio:
+            self.seeking_food = True
+        if self.seeking_food and e.hunger >= e.hunger_max * hunger_satisfy_ratio:
+            self.seeking_food = False
+
+        if e.thirst < e.thirst_max * thirst_seek_ratio:
+            self.seeking_water = True
+        if self.seeking_water and e.thirst >= e.thirst_max * thirst_satisfy_ratio:
+            self.seeking_water = False
+
     def _wander(self, dt, biome_grid):
         e, cfg = self.entity, self.cfg
         reached = (self.target is None or math.hypot(e.x - self.target[0], e.y - self.target[1]) < 12)

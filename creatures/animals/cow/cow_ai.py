@@ -19,6 +19,8 @@ _COW_AI_CFG = {
     "drink_rate": COW_DRINK_RATE,
     "hunger_seek_ratio": COW_HUNGER_SEEK_RATIO,
     "thirst_seek_ratio": COW_THIRST_SEEK_RATIO,
+    "hunger_satisfy_ratio": COW_HUNGER_SATISFY_RATIO,
+    "thirst_satisfy_ratio": COW_THIRST_SATISFY_RATIO,
     "flee_run_distance": COW_FLEE_RUN_DISTANCE,
 }
 

@@ -19,9 +19,10 @@ _SHEEP_AI_CFG = {
     "drink_rate": SHEEP_DRINK_RATE,
     "hunger_seek_ratio": SHEEP_HUNGER_SEEK_RATIO,
     "thirst_seek_ratio": SHEEP_THIRST_SEEK_RATIO,
+    "hunger_satisfy_ratio": SHEEP_HUNGER_SATISFY_RATIO,
+    "thirst_satisfy_ratio": SHEEP_THIRST_SATISFY_RATIO,
     "flee_run_distance": SHEEP_FLEE_RUN_DISTANCE,
 }
-
 
 def _get_ai(sheep):
     ai = getattr(sheep, "_grazer_ai", None)
@@ -29,7 +30,6 @@ def _get_ai(sheep):
         ai = GrazerAI(sheep, _SHEEP_AI_CFG)
         sheep._grazer_ai = ai
     return ai
-
 
 def tick_sheep(game, dt):
     world = game.world

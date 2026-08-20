@@ -11,6 +11,8 @@ class GrazerAI(RoamingAnimalMixin):
         self.target = None
         self.decision_timer = 0.0
         self.fleeing = False
+        self.seeking_food = False
+        self.seeking_water = False
 
     # ---------- Потребности ----------
 
@@ -43,20 +45,21 @@ class GrazerAI(RoamingAnimalMixin):
             point = a.flee_point((nearest_wolf.x, nearest_wolf.y), cfg["flee_run_distance"])
             return self._avoid_sea(point, biome_grid)
 
-        # ---------- НОВОЕ: врождённый страх шипов ----------
         nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
         if nearest_spike is not None:
             self.fleeing = True
             return self._flee_from_spike(nearest_spike, biome_grid)
 
         self.fleeing = False
+        self._update_seek_state(cfg["hunger_seek_ratio"], cfg["hunger_satisfy_ratio"],
+                                cfg["thirst_seek_ratio"], cfg["thirst_satisfy_ratio"])
 
-        if a.hunger < a.hunger_max * cfg["hunger_seek_ratio"]:
+        if self.seeking_food:
             grass = self._nearest_within(grass_list, a.vision_radius, predicate=lambda g: g.has_food())
             if grass is not None:
                 return (grass.x, grass.y)
 
-        if a.thirst < a.thirst_max * cfg["thirst_seek_ratio"]:
+        if self.seeking_water:
             water_target = self._nearest_water_target(water_puddles, biome_grid, a.vision_radius)
             if water_target is not None:
                 return water_target
@@ -74,7 +77,7 @@ class GrazerAI(RoamingAnimalMixin):
         if a.hp <= 0:
             return
 
-        if a.hunger < a.hunger_max:
+        if self.seeking_food:
             grass = self._nearest_within(grass_list, cfg["graze_distance"], predicate=lambda g: g.has_food())
             if grass is not None:
                 amount = min(cfg["graze_rate"] * dt, grass.food, a.hunger_max - a.hunger)
@@ -82,7 +85,7 @@ class GrazerAI(RoamingAnimalMixin):
                     grass.food -= amount
                     a.hunger = min(a.hunger_max, a.hunger + amount)
 
-        if a.thirst < a.thirst_max:
+        if self.seeking_water:
             water = self._nearest_within(water_puddles, cfg["drink_distance"], predicate=lambda w: w.has_water())
             if water is not None:
                 wanted = min(cfg["drink_rate"] * dt, a.thirst_max - a.thirst)
