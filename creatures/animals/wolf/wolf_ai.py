@@ -171,25 +171,21 @@ def tick_wolf(game, dt):
     biome_grid = game.biome_manager.grid
     prey_lists = [world.cow, world.sheep]
 
-    def tick_wolf(game, dt):
-        world = game.world
-        biome_grid = game.biome_manager.grid
-        prey_lists = [world.cow, world.sheep]
+    dead = [w for w in world.wolves if w.hp <= 0]
+    for wolf in dead:
+        game.object_manager.remove_animal_and_drop(wolf)
 
-        dead = [w for w in world.wolves if w.hp <= 0]
-        for wolf in dead:
-            game.object_manager.remove_animal_and_drop(wolf)
-
-        for wolf in world.wolves:
-            if wolf.hp <= 0:
-                continue
-            ai = _get_ai(wolf)
-            ai.update_needs(dt)
-            if wolf.hp <= 0:
-                continue
-            if wolf is not game.player.grabbed_object:
-                target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
-                                   spikes=world.spikes)
-                chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
-                ai.move_towards(target, dt, biome_grid=biome_grid, speed_multiplier=chase_mult)
-            ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)
+    for wolf in world.wolves:
+        if wolf.hp <= 0:
+            continue
+        ai = _get_ai(wolf)
+        ai.update_needs(dt)
+        if wolf.hp <= 0:
+            continue
+        # ---------- Игрок держит волка - ИИ не решает и не двигает его, только тикают нужды ----------
+        if wolf is not game.player.grabbed_object:
+            target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
+                               spikes=world.spikes)
+            chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
+            ai.move_towards(target, dt, biome_grid=biome_grid, speed_multiplier=chase_mult)
+        ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)
