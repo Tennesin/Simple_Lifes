@@ -9,7 +9,7 @@ from game.race_registry import (
     creature_placement_lookup, all_secondary_panel_specs, all_road_networks,
     all_mouse_down_hooks, all_mouse_up_hooks, all_mouse_motion_hooks, all_mouse_wheel_hooks,
 )
-from game.animal_registry import animal_placement_lookup
+from game.animal_registry import animal_placement_lookup, animal_classes
 from creatures.all_needed.base_creature import CreatureBase
 from creatures.all_needed.base_entity import LivingEntity
 
@@ -394,6 +394,18 @@ class _MouseDownMixin:
                 return True
         return False
 
+    def _handle_animal_stat_bar_click(self, mouse_x, mouse_y):
+        game = self.game
+        animal = game.selected_object
+        if animal is None or not hasattr(animal, "hp"):
+            return False
+        for stat_key, rect in game.ui.animal_panel.stat_bar_rects.items():
+            if rect.collidepoint(mouse_x, mouse_y):
+                direction = -1 if mouse_x < rect.centerx else 1
+                animal.adjust_stat(stat_key, direction)
+                return True
+        return False
+
     def _handle_secondary_popup_click(self, mouse_x, mouse_y):
         game = self.game
         for spec in all_secondary_panel_specs():
@@ -541,7 +553,13 @@ class _MouseDownMixin:
 
         elif game.world_loaded and self._handle_secondary_popup_click(mouse_x, mouse_y):
             pass
-        elif game.world_loaded and not game.right_panel_collapsed and self._handle_secondary_panel_click(mouse_x, mouse_y):
+        elif (game.world_loaded and not game.right_panel_collapsed and
+              self._handle_secondary_panel_click(mouse_x, mouse_y)):
+            pass
+
+        elif (game.world_loaded and game.selected_object is not None
+              and isinstance(game.selected_object, animal_classes())
+              and self._handle_animal_stat_bar_click(mouse_x, mouse_y)):
             pass
         else:
             self._handle_world_click(mouse_x, mouse_y)

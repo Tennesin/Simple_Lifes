@@ -37,23 +37,22 @@ def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None):
     biome_grid = game.biome_manager.grid
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
-    # ---------- НОВОЕ: утопление в море + перенос будущего дропа на ближайшую сушу ----------
     if biome_grid is not None:
         max_search = max(game.camera.world_w, game.camera.world_h)
-        for cow in world.cow:
+        for cow in world.cows:
             if cow.hp > 0 and biome_grid.get_at(cow.x, cow.y) == BIOME_SEA:
                 land = biome_grid.find_nearest_land(cow.x, cow.y, max_search)
                 if land is not None:
                     cow.x, cow.y = land
                 cow.hp = 0
 
-    dead = [c for c in world.cow if c.hp <= 0]
+    dead = [c for c in world.cows if c.hp <= 0]
     for cow in dead:
         game.object_manager.remove_animal_and_drop(cow)
 
     alive_wolves = [w for w in world.wolves if w.hp > 0]
 
-    for cow in world.cow:
+    for cow in world.cows:
         if cow.hp <= 0:
             continue
         ai = _get_ai(cow)

@@ -4,7 +4,6 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
-from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
 from .cow_settings import *
 from .names import COW_NAME_POOLS
 from objects import Meat
@@ -14,8 +13,8 @@ from info import INFO_INFO_ANIMAL_MEAT
 
 class Cow(CreatureBase):
     race_name = "cow"
-    diet = DIET_HERBIVORE
-    food_category_map = {"grass": FOOD_CATEGORY_PLANT}
+    diet = COW_DIET
+    food_category_map = COW_FOOD_CATEGORY_MAP
 
     def __init__(self, creature_id, x, y, gender=None):
         super().__init__(

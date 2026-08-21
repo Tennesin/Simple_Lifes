@@ -110,6 +110,8 @@ class GrazerAI(RoamingAnimalMixin):
         a, cfg = self.entity, self.cfg
         if not self.seeking_food:
             return None
+        if not a.eats_food_type("grass"):
+            return None
         deficit = scale(a.hunger_max * cfg["hunger_seek_ratio"] - a.hunger, 0, a.hunger_max)
         score = SCORE_FOOD_BASE + deficit * SCORE_FOOD_MAX_BONUS
 
@@ -176,7 +178,7 @@ class GrazerAI(RoamingAnimalMixin):
         if a.hp <= 0:
             return
 
-        if self.seeking_food:
+        if self.seeking_food and a.eats_food_type("grass"):
             grass = self._nearest_within(grass_list, cfg["graze_distance"], predicate=lambda g: g.has_food())
             if grass is not None:
                 amount = min(cfg["graze_rate"] * dt, grass.food, a.hunger_max - a.hunger)

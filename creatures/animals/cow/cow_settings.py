@@ -1,5 +1,10 @@
 """Настройки, специфичные для коров."""
 
+from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
+
+COW_DIET = DIET_HERBIVORE
+COW_FOOD_CATEGORY_MAP = {"grass": FOOD_CATEGORY_PLANT}
+
 # ---------- Базовые характеристики ----------
 COW_HP_MAX = 90
 COW_HUNGER_MAX = 28

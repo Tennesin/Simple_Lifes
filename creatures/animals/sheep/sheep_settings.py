@@ -1,5 +1,11 @@
 """Настройки, специфичные для овец."""
 
+from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
+
+# ---------- Диета (по образцу ci_settings.py: RACE_DIET / RACE_FOOD_CATEGORY_MAP) ----------
+SHEEP_DIET = DIET_HERBIVORE
+SHEEP_FOOD_CATEGORY_MAP = {"grass": FOOD_CATEGORY_PLANT}
+
 # ---------- Базовые характеристики (передаются в CreatureBase) ----------
 SHEEP_HP_MAX = 60
 SHEEP_HUNGER_MAX = 20

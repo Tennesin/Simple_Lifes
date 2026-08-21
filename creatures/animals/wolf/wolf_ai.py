@@ -125,6 +125,8 @@ class WolfAI(RoamingAnimalMixin):
             return None
         if not self.seeking_food:
             return None
+        if not w.eats_food_type("meat"):
+            return None
         meat = self._nearest_within(meats, w.vision_radius, predicate=lambda m: m.has_food())
         if meat is None:
             return None
@@ -141,8 +143,10 @@ class WolfAI(RoamingAnimalMixin):
     def _consider_hunt(self, dt, prey_lists):
         if not (self.seeking_food or self.hunting_target_id is not None):
             return None
-        score = SCORE_HUNT_COMMITTED if self.hunting_target_id is not None else SCORE_HUNT_NEW
         w = self.entity
+        if not w.eats_food_type("meat"):
+            return None
+        score = SCORE_HUNT_COMMITTED if self.hunting_target_id is not None else SCORE_HUNT_NEW
 
         def execute():
             prey = self._resolve_hunt_target(prey_lists, w.vision_radius, dt)
@@ -268,7 +272,7 @@ class WolfAI(RoamingAnimalMixin):
         if bit:
             self.hunt_timer = 0.0
 
-        if not bit and self.hunting_target_id is None and self.seeking_food:
+        if not bit and self.hunting_target_id is None and self.seeking_food and w.eats_food_type("meat"):
             meat = self._nearest_within(meats, cfg["eat_distance"], predicate=lambda m: m.has_food())
             if meat is not None:
                 amount = min(cfg["eat_rate"] * dt, meat.food, w.hunger_max - w.hunger)

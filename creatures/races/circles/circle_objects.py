@@ -50,7 +50,6 @@ class StorageField:
         self.fruits = 0
         self.water = 0
         self.built_by = None
-        self.owner_ids = set(owner_ids) if owner_ids else set()
         self.campfire_pos = owner_campfire_pos
         self.house_id = house_id
         self.created = time.time()

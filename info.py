@@ -129,6 +129,9 @@ INFO_LW_SELECT_HINT = "Выберите мир слева"
 
 # --------------------- Диета (общее понятие, расы лишь выбирают значение) ---------------------
 INFO_INFO_DIET = "Диета: {diet}"
+INFO_INFO_GENDER = "Пол: {gender}"
+INFO_GENDER_MALE = "Самец"
+INFO_GENDER_FEMALE = "Самка"
 INFO_DIET_HERBIVORE = "Травоядное"
 INFO_DIET_CARNIVORE = "Плотоядное"
 INFO_DIET_OMNIVORE = "Всеядное"

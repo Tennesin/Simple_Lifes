@@ -68,3 +68,22 @@ class CreatureBase(LivingEntity):
     # ---------- Переопределяем заглушку из LivingEntity ----------
     def effective_vision_radius(self):
         return self.vision_radius
+
+    # ---------- Клик игрока по полоске показателя на панели: -10%/+10% от максимума ----------
+    STAT_ADJUST_STEP_FACTOR = 0.10
+    _STAT_MAX_ATTR = {
+        "hp": "hp_max",
+        "hunger": "hunger_max",
+        "thirst": "thirst_max",
+        "energy": "energy_max",
+    }
+
+    def adjust_stat(self, stat_key, direction):
+        max_attr = self._STAT_MAX_ATTR.get(stat_key)
+        if max_attr is None or self.hp <= 0:
+            return
+        max_value = getattr(self, max_attr)
+        current = getattr(self, stat_key)
+        delta = direction * max_value * self.STAT_ADJUST_STEP_FACTOR
+        new_value = max(0.0, min(current + delta, max_value))
+        setattr(self, stat_key, new_value)
