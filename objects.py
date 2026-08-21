@@ -305,6 +305,12 @@ class Grass(WorldObject):
     def has_food(self):
         return self.food > 0
 
+    def graze(self, amount):
+        """Уменьшает запас и сразу пересчитывает геометрию - трава визуально
+        скудеет по мере поедания, а не остаётся прежнего размера до исчезновения."""
+        self.food = max(0.0, self.food - amount)
+        self._recompute_geometry()
+
     def _recompute_geometry(self):
         ratio = (self.food - GRASS_FOOD_MIN) / max(1, (GRASS_FOOD_MAX - GRASS_FOOD_MIN))
         ratio = max(0.0, min(1.0, ratio))
@@ -352,9 +358,10 @@ class Meat(WorldObject):
         return self.food > 0
 
     def tick(self, dt):
-        """Возвращает True, когда мясо пора удалить (истёк срок лежания)."""
+        """Возвращает True, когда мясо пора удалить - либо истёк срок лежания,
+        либо его полностью съели."""
         self.lifetime -= dt
-        return self.lifetime <= 0
+        return self.lifetime <= 0 or self.food <= 0
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])

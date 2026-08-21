@@ -183,7 +183,7 @@ class GrazerAI(RoamingAnimalMixin):
             if grass is not None:
                 amount = min(cfg["graze_rate"] * dt, grass.food, a.hunger_max - a.hunger)
                 if amount > 0:
-                    grass.food -= amount
+                    grass.graze(amount)
                     a.hunger = min(a.hunger_max, a.hunger + amount)
 
         if self.seeking_water:

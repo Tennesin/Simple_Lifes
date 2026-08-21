@@ -251,12 +251,10 @@ class RoamingAnimalMixin:
 
         waypoint = target
         if nav_grid is not None:
-            # ---------- В "мирном" режиме экономим на A*: если по прямой ничего не
-            # мешает - просто идём. В "срочном" режиме (голод/жажда/охота, п.3) этому
-            # короткому пути не доверяем и всегда считаем полноценный маршрут - иначе
-            # животное может пойти напролом рядом с шипами, испугаться и застрять,
-            # дрожа на месте (п.2) ----------
-            if not urgent and nav_grid.has_line_of_sight((e.x, e.y), target):
+            close_enough_for_direct = (
+                    math.hypot(target[0] - e.x, target[1] - e.y) <= settings.ANIMAL_URGENT_DIRECT_RANGE
+            )
+            if (not urgent or close_enough_for_direct) and nav_grid.has_line_of_sight((e.x, e.y), target):
                 self._reset_navigation()
             else:
                 waypoint = self._navigate_with_astar(target, dt, nav_grid, fallback_nav_grid, urgent=urgent)

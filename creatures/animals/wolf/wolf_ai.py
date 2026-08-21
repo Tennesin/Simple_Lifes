@@ -214,8 +214,11 @@ class WolfAI(RoamingAnimalMixin):
             current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
 
             if current is not None and current.hp > 0:
-                self.hunt_timer += dt
                 dist = math.hypot(w.x - current.x, w.y - current.y)
+                if dist > cfg["bite_distance"]:
+                    self.hunt_timer += dt
+                else:
+                    self.hunt_timer = 0.0
                 too_long = self.hunt_timer > cfg["hunt_max_duration"]
                 too_far = dist > cfg["hunt_giveup_distance"]
                 if not too_long and not too_far:
@@ -303,7 +306,6 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
     prey_lists = [world.cows, world.sheep]
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
-    # ---------- НОВОЕ: утопление в море + перенос будущего дропа на ближайшую сушу ----------
     if biome_grid is not None:
         max_search = max(game.camera.world_w, game.camera.world_h)
         for wolf in world.wolves:

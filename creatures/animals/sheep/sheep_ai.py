@@ -37,7 +37,6 @@ def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None):
     biome_grid = game.biome_manager.grid
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
-    # ---------- НОВОЕ: утопление в море + перенос будущего дропа на ближайшую сушу ----------
     if biome_grid is not None:
         max_search = max(game.camera.world_w, game.camera.world_h)
         for sheep in world.sheep:

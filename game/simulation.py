@@ -1,6 +1,6 @@
 import random
 
-from objects import Fruit, Tree, Stone
+from objects import Fruit, Tree, Stone, Grass
 from settings import *
 import settings
 from creatures.all_needed import navigation
@@ -237,6 +237,7 @@ class Simulation:
 
         self._cleanup_exhausted_resource(world, "trees", Tree, lambda t: t.has_wood())
         self._cleanup_exhausted_resource(world, "stones", Stone, lambda s: s.has_stone())
+        self._cleanup_exhausted_resource(world, "grass", Grass, lambda g: g.has_food())
         self._cleanup_exhausted_water(world)
 
         if (game.selected_object is not None
