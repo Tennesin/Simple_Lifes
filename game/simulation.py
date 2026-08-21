@@ -180,18 +180,25 @@ class Simulation:
                 descriptor.world_tick_fn(game, dt)
 
     def _tick_animals(self, dt):
-        nav_grid = self._prepare_animal_nav_grid()
+        nav_grid, nav_grid_fallback = self._prepare_animal_nav_grid()
         for descriptor in all_animals():
             if descriptor.tick_fn is not None:
-                descriptor.tick_fn(self.game, dt, nav_grid)
+                descriptor.tick_fn(self.game, dt, nav_grid, nav_grid_fallback)
 
     def _prepare_animal_nav_grid(self):
         game = self.game
-        return self._nav_cache.get(
+        nav_grid = self._nav_cache.get(
             settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
             game.world.walls, game.world.fences, game.world.spikes,
             True, NAV_OBSTACLE_INFLATE, SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=game.world.landscape_version)
+        # ---------- НОВОЕ: запасная сетка с минимальным отступом ----------
+        nav_grid_fallback = self._nav_cache.get_fallback(
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            game.world.walls, game.world.fences, game.world.spikes,
+            True, SPIKE_NAV_BLOCK_RADIUS,
+            biome_grid=game.biome_manager.grid, version=game.world.landscape_version)
+        return nav_grid, nav_grid_fallback
 
     def _tick_transient_drop_decay(self, dt):
         game = self.game

@@ -26,8 +26,9 @@ _WOLF_AI_CFG = {
     "bite_cooldown": WOLF_BITE_COOLDOWN,
     "eat_distance": WOLF_EAT_DISTANCE,
     "eat_rate": WOLF_EAT_RATE,
+    "hunt_max_duration": WOLF_HUNT_MAX_DURATION,
+    "hunt_giveup_distance": WOLF_HUNT_GIVEUP_DISTANCE,
 }
-
 
 class WolfAI(RoamingAnimalMixin):
 
@@ -37,6 +38,7 @@ class WolfAI(RoamingAnimalMixin):
         self.target = None
         self.decision_timer = 0.0
         self.hunting_target_id = None
+        self.hunt_timer = 0.0
         self.bite_cooldown = 0.0
         self.seeking_food = False
         self.seeking_water = False
@@ -69,9 +71,10 @@ class WolfAI(RoamingAnimalMixin):
     def decide(self, dt, prey_lists, water_puddles, meats, biome_grid, spikes=None):
         w, cfg = self.entity, self.cfg
 
-        nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
-        if nearest_spike is not None:
-            return self._flee_from_spike(nearest_spike, biome_grid)
+        if self.hunting_target_id is None:
+            nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
+            if nearest_spike is not None:
+                return self._flee_from_spike(nearest_spike, biome_grid)
 
         self._update_seek_state(cfg["hunt_hunger_ratio"], cfg["hunger_satisfy_ratio"],
                                 cfg["thirst_seek_ratio"], cfg["thirst_satisfy_ratio"])
@@ -82,7 +85,7 @@ class WolfAI(RoamingAnimalMixin):
                 if meat is not None:
                     return (meat.x, meat.y)
 
-            prey = self._resolve_hunt_target(prey_lists, w.vision_radius)
+            prey = self._resolve_hunt_target(prey_lists, w.vision_radius, dt)
             if prey is not None:
                 self.hunting_target_id = prey.id
                 return (prey.x, prey.y)
@@ -100,14 +103,23 @@ class WolfAI(RoamingAnimalMixin):
 
         return self._wander(dt, biome_grid)
 
-    def _resolve_hunt_target(self, prey_lists, radius):
-        w = self.entity
+    def _resolve_hunt_target(self, prey_lists, radius, dt=0.0):
+        w, cfg = self.entity, self.cfg
+
         if self.hunting_target_id is not None:
-            for prey_list in prey_lists:
-                for prey in prey_list:
-                    if prey.id == self.hunting_target_id:
-                        return prey if prey.hp > 0 else None
+            current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+
+            if current is not None and current.hp > 0:
+                self.hunt_timer += dt
+                dist = math.hypot(w.x - current.x, w.y - current.y)
+                too_long = self.hunt_timer > cfg["hunt_max_duration"]
+                too_far = dist > cfg["hunt_giveup_distance"]
+                if not too_long and not too_far:
+                    return current
+                # ---------- Погоня слишком долгая или жертва слишком далеко оторвалась - бросаем ----------
+
             self.hunting_target_id = None
+            self.hunt_timer = 0.0
 
         best, best_dist = None, radius
         for prey_list in prey_lists:
@@ -118,7 +130,19 @@ class WolfAI(RoamingAnimalMixin):
                 if d < best_dist:
                     best_dist = d
                     best = prey
+
+        if best is not None:
+            self.hunt_timer = 0.0
+
         return best
+
+    @staticmethod
+    def _find_prey_by_id(prey_lists, target_id):
+        for prey_list in prey_lists:
+            for prey in prey_list:
+                if prey.id == target_id:
+                    return prey
+        return None
 
     # ---------- Действия вблизи ----------
 
@@ -141,6 +165,9 @@ class WolfAI(RoamingAnimalMixin):
                             self.bite_cooldown = cfg["bite_cooldown"]
                             bit = True
                         break
+
+        if bit:
+            self.hunt_timer = 0.0
 
         if not bit and self.hunting_target_id is None and self.seeking_food:
             meat = self._nearest_within(meats, cfg["eat_distance"], predicate=lambda m: m.has_food())
@@ -166,7 +193,7 @@ def _get_ai(wolf):
         wolf._wolf_ai = ai
     return ai
 
-def tick_wolf(game, dt, nav_grid=None):
+def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     prey_lists = [world.cow, world.sheep]
@@ -188,6 +215,7 @@ def tick_wolf(game, dt, nav_grid=None):
                                spikes=world.spikes)
             chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
+                            fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=chase_mult,
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines)
         ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)

@@ -31,7 +31,7 @@ def _get_ai(sheep):
         sheep._grazer_ai = ai
     return ai
 
-def tick_sheep(game, dt, nav_grid=None):
+def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
@@ -53,6 +53,7 @@ def tick_sheep(game, dt, nav_grid=None):
             target = ai.decide(dt, world.grass, world.water_puddles, alive_wolves, biome_grid,
                                spikes=world.spikes)
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
+                            fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=(SHEEP_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0),
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines)
         ai.interact(dt, world.grass, world.water_puddles, biome_grid, spikes=world.spikes)

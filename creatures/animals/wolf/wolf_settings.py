@@ -52,3 +52,7 @@ WOLF_BITE_DAMAGE = 9
 WOLF_BITE_COOLDOWN = 1.2
 WOLF_EAT_DISTANCE = 20
 WOLF_EAT_RATE = 1.5
+
+# ---------- Отказ от погони: слишком долго или слишком далеко оторвалась жертва ----------
+WOLF_HUNT_MAX_DURATION = 12.0      # сек - дольше этого гнаться бессмысленно
+WOLF_HUNT_GIVEUP_DISTANCE = 500    # px - дальше этого жертва считается "оторвавшейся"
