@@ -223,13 +223,22 @@ class CreaturePanel:
         if creature.is_dead:
             status_txt = self.font.render(INFO_INFO_STATUS_DEAD, True, (210, 90, 90))
             screen.blit(status_txt, (panel.x + 10, y))
+            self._draw_genealogy_button(screen, y - 3)
             y += 26
+
             if creature.death_cause:
                 max_text_width = panel.width - 20
                 y = self._draw_wrapped_text(
                     screen, gendered_text(DEATH_CAUSE_DISPLAY_MAP.get(creature.death_cause, ""), creature.gender),
                     panel.x + 10, y, max_text_width, TEXT_COLOR)
                 y += 8
+
+            temp_txt = self.font.render(
+                INFO_INFO_TEMPERAMENT.format(temperament=gendered_text(creature.temperament, creature.gender)),
+                True, TEXT_COLOR)
+            screen.blit(temp_txt, (panel.x + 10, y))
+            y += 26
+
             timer_txt = self.font.render(INFO_INFO_DEATH_TIMER.format(time=creature.death_timer), True, TEXT_COLOR)
             screen.blit(timer_txt, (panel.x + 10, y))
             y += 30
