@@ -7,8 +7,9 @@ from .base_creature import CreatureBase, GENDER_MALE, GENDER_FEMALE, DEFAULT_GEN
 from .ai import GoalComponent, lookup_creature
 from .navigation import NavGrid, NavGridCache, SpatialGrid, BasePathfinder
 from .diet import (
-    DIET_HERBIVORE, DIET_OMNIVORE,
-    FOOD_CATEGORY_PLANT, DIET_DISPLAY_MAP, diet_allows_category,
+    DIET_HERBIVORE, DIET_CARNIVORE, DIET_OMNIVORE,
+    FOOD_CATEGORY_PLANT, FOOD_CATEGORY_RAW_MEAT, FOOD_CATEGORY_COOKED_MEAT,
+    DIET_DISPLAY_MAP, diet_allows_category,
 )
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "BaseEntity", "LivingEntity", "same_race", "filter_same_race",
     "GoalComponent", "lookup_creature",
     "NavGrid", "NavGridCache", "SpatialGrid", "BasePathfinder",
-    "DIET_HERBIVORE", "DIET_OMNIVORE",
-    "FOOD_CATEGORY_PLANT", "DIET_DISPLAY_MAP", "diet_allows_category",
+    "DIET_HERBIVORE", "DIET_CARNIVORE", "DIET_OMNIVORE",
+    "FOOD_CATEGORY_PLANT", "FOOD_CATEGORY_RAW_MEAT", "FOOD_CATEGORY_COOKED_MEAT",
+    "DIET_DISPLAY_MAP", "diet_allows_category",
 ]

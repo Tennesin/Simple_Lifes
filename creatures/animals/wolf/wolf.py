@@ -4,12 +4,15 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
+from ...all_needed.diet import DIET_CARNIVORE, FOOD_CATEGORY_RAW_MEAT
 from .wolf_settings import *
-from .names import WOLF_NAME_POOLS
 from .wolf_objects import Hide
+from .names import WOLF_NAME_POOLS
 
 class Wolf(CreatureBase):
     race_name = "wolf"
+    diet = DIET_CARNIVORE
+    food_category_map = {"meat": FOOD_CATEGORY_RAW_MEAT}
 
     def __init__(self, creature_id, x, y, gender=None):
         super().__init__(
