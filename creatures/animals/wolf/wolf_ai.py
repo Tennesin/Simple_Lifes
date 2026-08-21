@@ -300,7 +300,7 @@ def _get_ai(wolf):
 def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
     world = game.world
     biome_grid = game.biome_manager.grid
-    prey_lists = [world.cow, world.sheep]
+    prey_lists = [world.cows, world.sheep]
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
     # ---------- НОВОЕ: утопление в море + перенос будущего дропа на ближайшую сушу ----------
