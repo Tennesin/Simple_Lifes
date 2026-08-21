@@ -2,6 +2,7 @@
 
 from ...all_needed.ai.grazer_ai import GrazerAI
 from .sheep_settings import *
+from settings import BIOME_SEA
 
 _SHEEP_AI_CFG = {
     "speed": SHEEP_SPEED,
@@ -35,6 +36,16 @@ def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
+
+    # ---------- НОВОЕ: утопление в море + перенос будущего дропа на ближайшую сушу ----------
+    if biome_grid is not None:
+        max_search = max(game.camera.world_w, game.camera.world_h)
+        for sheep in world.sheep:
+            if sheep.hp > 0 and biome_grid.get_at(sheep.x, sheep.y) == BIOME_SEA:
+                land = biome_grid.find_nearest_land(sheep.x, sheep.y, max_search)
+                if land is not None:
+                    sheep.x, sheep.y = land
+                sheep.hp = 0
 
     dead = [s for s in world.sheep if s.hp <= 0]
     for sheep in dead:

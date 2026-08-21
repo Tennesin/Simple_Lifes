@@ -88,6 +88,26 @@ class BiomeGrid:
                     best = (center_x, center_y)
         return best
 
+    def find_nearest_land(self, x, y, max_radius):
+        cx0, cy0 = self.world_to_cell(x, y)
+        cell_radius = int(max_radius / self.cell_size) + 1
+        best = None
+        best_dist = max_radius
+        for dy in range(-cell_radius, cell_radius + 1):
+            for dx in range(-cell_radius, cell_radius + 1):
+                cx, cy = cx0 + dx, cy0 + dy
+                if not self.in_bounds(cx, cy):
+                    continue
+                if self.cells[self._index(cx, cy)] in BIOME_WATER_TYPES:
+                    continue
+                center_x = cx * self.cell_size + self.cell_size / 2
+                center_y = cy * self.cell_size + self.cell_size / 2
+                dist = math.hypot(center_x - x, center_y - y)
+                if dist < best_dist:
+                    best_dist = dist
+                    best = (center_x, center_y)
+        return best
+
     # ---------- Сериализация: RLE построчно (клеток может быть тысячи) ----------
 
     def to_dict(self):

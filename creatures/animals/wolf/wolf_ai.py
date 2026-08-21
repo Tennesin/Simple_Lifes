@@ -299,6 +299,16 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
     prey_lists = [world.cow, world.sheep]
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
+    # ---------- НОВОЕ: утопление в море + перенос будущего дропа на ближайшую сушу ----------
+    if biome_grid is not None:
+        max_search = max(game.camera.world_w, game.camera.world_h)
+        for wolf in world.wolves:
+            if wolf.hp > 0 and biome_grid.get_at(wolf.x, wolf.y) == settings.BIOME_SEA:
+                land = biome_grid.find_nearest_land(wolf.x, wolf.y, max_search)
+                if land is not None:
+                    wolf.x, wolf.y = land
+                wolf.hp = 0
+
     dead = [w for w in world.wolves if w.hp <= 0]
     for wolf in dead:
         game.object_manager.remove_animal_and_drop(wolf)
