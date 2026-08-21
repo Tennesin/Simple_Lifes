@@ -125,6 +125,11 @@ class Creature(LivingEntity):
         self._puberty_speed_bonus = 0.0
         self._puberty_orig_curiosity = None
         self.puberty_courtship_cooldown = 0.0
+        self.puberty_courtship_target_id = None
+        self.puberty_courtship_timer = 0.0
+        self.puberty_courtship_deadline = 0.0
+        self.puberty_courtship_fail_streak = 0
+        self.puberty_courtship_avoid = {}
 
         self.child_distress_timer = 0.0
         self.play_target_id = None

@@ -2,6 +2,20 @@ import random
 import math
 from .ci_settings import *
 
+def _shares_parent(ids_a, ids_b):
+    if not ids_a or not ids_b:
+        return False
+    set_a = {pid for pid in ids_a if pid is not None}
+    set_b = {pid for pid in ids_b if pid is not None}
+    return bool(set_a & set_b)
+
+def is_blood_relative(a, b):
+    if a.parent_ids and b.id in a.parent_ids:
+        return True
+    if b.parent_ids and a.id in b.parent_ids:
+        return True
+    return _shares_parent(a.parent_ids, b.parent_ids)
+
 class CreatureAging:
 
     def __init__(self, creature):
@@ -305,12 +319,7 @@ class CreatureFamily:
                 female.home_id = None
 
     def _is_blood_relative(self, other):
-        c = self.c
-        if c.parent_ids and other.id in c.parent_ids:
-            return True
-        if other.parent_ids and c.id in other.parent_ids:
-            return True
-        return _shares_parent(c.parent_ids, other.parent_ids)
+        return is_blood_relative(self.c, other)
 
     # ---------- Течение беременности ----------
 

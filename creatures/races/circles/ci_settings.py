@@ -300,6 +300,10 @@ PUBERTY_TALK_RATE_MULTIPLIER = 1.6
 PUBERTY_PAIR_RELATIONSHIP_DISCOUNT = 15.0
 PUBERTY_SANITY_DECAY_MULTIPLIER = 1.4
 PUBERTY_RING_COLOR = (200, 80, 220)
+PUBERTY_COURTSHIP_ATTEMPT_DURATION = (12.0, 20.0)   # сколько ухаживает за одной целью, прежде чем сдаться
+PUBERTY_COURTSHIP_MAX_FAIL_STREAK = 3               # столько неудач подряд (с разными партнёрами) - и долгий отдых
+PUBERTY_COURTSHIP_REJECT_COOLDOWN = (40.0, 80.0)    # не пытаться снова именно с этой целью
+PUBERTY_COURTSHIP_LONG_COOLDOWN = (70.0, 110.0)     # "отпустило" - долгая пауза после серии провалов
 
 # ---------- Территория самцов ----------
 TERRITORY_ENABLED_GENDER = GENDER_MALE

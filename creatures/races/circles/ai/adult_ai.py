@@ -9,6 +9,7 @@ from .circles_adult_patterns import (
     ChildRoadVerification, Curiosity, CuriosityStrategy,
     )
 from .private_storage import PrivateStorage, PrivateConstruction
+from ..life_cycle import is_blood_relative
 from ....all_needed.ai.utility import Consideration, pick_best
 
 # =========================================================================
@@ -118,6 +119,8 @@ class PubertyCourtship(GoalComponent):
     def consider(self, ctx):
         c = self.c
         if not c.puberty_active or c.partner_id is not None:
+            self._reset_courtship()
+            c.puberty_courtship_fail_streak = 0
             return [None]
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return [None]
@@ -132,11 +135,83 @@ class PubertyCourtship(GoalComponent):
 
         return [Consideration("puberty", self.SCORE, execute)]
 
+    # ---------- Сброс состояния ухаживания ----------
+
+    def _reset_courtship(self):
+        c = self.c
+        c.puberty_courtship_target_id = None
+        c.puberty_courtship_timer = 0.0
+        c.puberty_courtship_deadline = 0.0
+
+    def _tick_avoid_list(self, dt):
+        c = self.c
+        if not c.puberty_courtship_avoid:
+            return
+        expired = []
+        for target_id, remaining in c.puberty_courtship_avoid.items():
+            remaining -= dt
+            if remaining <= 0:
+                expired.append(target_id)
+            else:
+                c.puberty_courtship_avoid[target_id] = remaining
+        for target_id in expired:
+            del c.puberty_courtship_avoid[target_id]
+
+    # ---------- Выбор/удержание цели ----------
+
+    def _resolve_committed_target(self, visible_companions):
+        c = self.c
+        if c.puberty_courtship_target_id is None:
+            return None
+        target = next((o for o in visible_companions if o.id == c.puberty_courtship_target_id), None)
+        if (target is None or target.is_dead or target.partner_id is not None
+                or target.is_sleeping or target.panic_active or target.fear_timer > 0):
+            self._reset_courtship()
+            return None
+        return target
+
+    def _pick_new_target(self, ctx):
+        c = self.c
+        wellbeing_threshold = FAMILY_MIN_WELLBEING - PUBERTY_WELLBEING_DISCOUNT
+        my_threshold = (FAMILY_MIN_RELATIONSHIP - PUBERTY_PAIR_RELATIONSHIP_DISCOUNT
+                        - c.psyche.pairing_relationship_discount())
+
+        candidates = [
+            o for o in ctx.visible_companions
+            if o.gender != c.gender
+               and o.life_stage == LIFE_STAGE_ADULT
+               and o.partner_id is None
+               and not o.is_dead and not o.is_sleeping
+               and not o.panic_active and o.fear_timer <= 0
+               and o.id not in c.puberty_courtship_avoid
+               and not is_blood_relative(c, o)
+               and o.needs.wellbeing_score() >= wellbeing_threshold
+               and c.social.get_relationship(o) >= my_threshold
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=lambda o: c.social.pairing_score(o, ctx.storage_fields))
+
+    def _give_up_on(self, target_id):
+        c = self.c
+        c.puberty_courtship_avoid[target_id] = random.uniform(*PUBERTY_COURTSHIP_REJECT_COOLDOWN)
+        c.puberty_courtship_fail_streak += 1
+        self._reset_courtship()
+
+        if c.puberty_courtship_fail_streak >= PUBERTY_COURTSHIP_MAX_FAIL_STREAK:
+            c.puberty_courtship_fail_streak = 0
+            c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_LONG_COOLDOWN)
+        else:
+            c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+
+    # ---------- Основная логика тика ----------
+
     def _pursue(self, ctx):
         c = self.c
-        visible_companions, dt = ctx.visible_companions, ctx.dt
+        dt = ctx.dt
 
         if not c.puberty_active or c.partner_id is not None:
+            self._reset_courtship()
             return None
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return None
@@ -149,25 +224,23 @@ class PubertyCourtship(GoalComponent):
             c.puberty_courtship_cooldown -= dt
             return None
 
-        my_threshold = (FAMILY_MIN_RELATIONSHIP - PUBERTY_PAIR_RELATIONSHIP_DISCOUNT
-                        - c.psyche.pairing_relationship_discount())
+        self._tick_avoid_list(dt)
 
-        candidates = [
-            o for o in visible_companions
-            if o.gender != c.gender
-               and o.life_stage == LIFE_STAGE_ADULT
-               and o.partner_id is None
-               and not o.is_dead and not o.is_sleeping
-               and not o.panic_active and o.fear_timer <= 0
-               and o.needs.wellbeing_score() >= wellbeing_threshold
-               and c.social.get_relationship(o) >= my_threshold
-        ]
+        target = self._resolve_committed_target(ctx.visible_companions)
+        if target is None:
+            target = self._pick_new_target(ctx)
+            if target is None:
+                c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+                return None
+            c.puberty_courtship_target_id = target.id
+            c.puberty_courtship_timer = 0.0
+            c.puberty_courtship_deadline = random.uniform(*PUBERTY_COURTSHIP_ATTEMPT_DURATION)
 
-        if not candidates:
-            c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+        c.puberty_courtship_timer += dt
+        if c.puberty_courtship_timer > c.puberty_courtship_deadline:
+            self._give_up_on(target.id)
             return None
 
-        target = min(candidates, key=lambda o: c.social.pairing_score(o, ctx.storage_fields))
         c.state = STATE_SEEKING
         c.goal_text = INFO_CREATURE_GOAL_PUBERTY_COURT
 
@@ -176,7 +249,6 @@ class PubertyCourtship(GoalComponent):
         else:
             c.target = (c.x, c.y)
         return c.target
-
 
 # =========================================================================
 # Стратегия любопытства взрослого: опасность изучается вблизи
@@ -220,7 +292,6 @@ class AdultCuriosityStrategy(CuriosityStrategy):
         c.goal_text = INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN
         c.target = (target_obj.x, target_obj.y)
         return c.target
-
 
 # =========================================================================
 # Оркестратор: явный список компонентов вместо MRO-магии
