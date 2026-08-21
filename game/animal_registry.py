@@ -30,6 +30,10 @@ class AnimalDescriptor:
     drop_collections: Tuple[str, ...] = ()
     drop_persistence_registry: Tuple[Tuple[str, str, Type], ...] = ()
 
+    # ---------- Индивидуальная настройка отображения на мини-карте ----------
+    minimap_checkbox_label: Optional[str] = None  # текст чекбокса; если None - чекбокса не будет
+    minimap_marker_fn: Optional[Callable] = None  # (screen, pos) -> None; свой маркер вида на мини-карте
+
 _ANIMALS_CACHE: Optional[dict] = None
 
 def _discover_animals() -> dict:
@@ -104,6 +108,15 @@ def all_animal_drop_persistence_entries() -> Tuple[Tuple[str, str, Type], ...]:
 
 def all_animal_object_panel_extensions() -> Tuple[Callable, ...]:
     return tuple(d.object_panel_extra_fn for d in all_animals() if d.object_panel_extra_fn is not None)
+
+def all_animal_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
+    """('minimap_show_animal_<name>', label) - для чекбоксов настроек, по образцу
+    race_registry.all_display_checkboxes()."""
+    result = []
+    for d in all_animals():
+        if d.minimap_checkbox_label:
+            result.append((f"minimap_show_animal_{d.animal_name}", d.minimap_checkbox_label))
+    return tuple(result)
 
 def all_animal_persistence_entries() -> Tuple[Tuple[str, str], ...]:
     """(save_filename, world_collection) - аналог _WORLD_OBJECT_REGISTRY."""

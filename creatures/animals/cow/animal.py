@@ -3,11 +3,12 @@
 import uuid
 
 from game.animal_registry import AnimalDescriptor
-from .cow import Cow, cow_object_panel_extra_lines
+from .cow import Cow, cow_object_panel_extra_lines, cow_minimap_marker
 from .cow_objects import Leather
 from .cow_settings import COW_KIND_NAME
 from .cow_ai import tick_cow
 from .names import COW_NAME_POOLS
+from info import INFO_SETTINGS_MINIMAP_COWS
 
 def spawn_cow(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]
@@ -25,6 +26,8 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     placement_label=COW_KIND_NAME,
     name_pools=COW_NAME_POOLS,
     object_panel_extra_fn=cow_object_panel_extra_lines,
+    minimap_checkbox_label=INFO_SETTINGS_MINIMAP_COWS,
+    minimap_marker_fn=cow_minimap_marker,
     drop_collections=("leathers",),
     drop_persistence_registry=(("leathers.json", "leathers", Leather),),
     tick_fn=tick_cow,

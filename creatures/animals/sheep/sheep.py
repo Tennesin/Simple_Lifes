@@ -93,3 +93,10 @@ def sheep_object_panel_extra_lines(obj, all_creatures):
         (INFO_INFO_ANIMAL_MEAT.format(count=int(obj.meat)), MEAT_COLOR),
         (SHEEP_INFO_WOOL.format(count=int(obj.wool)), WOOL_COLOR),
     ]
+
+def sheep_minimap_marker(screen, pos):
+    """Овца на мини-карте: белый овал."""
+    x, y = int(pos[0]), int(pos[1])
+    rect = pygame.Rect(0, 0, 6, 4)
+    rect.center = (x, y)
+    pygame.draw.ellipse(screen, SHEEP_COLOR_BODY, rect)

@@ -41,7 +41,7 @@ class Campfire(WorldObject):
         return fire
 
 class StorageField:
-    def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None, house_id=None):
+    def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None, house_id=None, house_side=None):
         self.x = x
         self.y = y
         self.width = STORAGE_FIELD_WIDTH
@@ -52,6 +52,8 @@ class StorageField:
         self.built_by = None
         self.campfire_pos = owner_campfire_pos
         self.house_id = house_id
+        # ---------- НОВОЕ: с какой стороны дома стоит склад ("left"/"right"), None - дома нет ----------
+        self.house_side = house_side
         self.created = time.time()
         self.id = str(uuid.uuid4())[:8]
         self.owner_ids = set(list(owner_ids)[:STORAGE_FIELD_MAX_OWNERS]) if owner_ids else set()
@@ -89,9 +91,6 @@ class StorageField:
         return False
 
     def punish_theft(self, thief, other_creatures):
-        """Кража воспринимается владельцами очень болезненно. Исключение -
-        старики: если вор - ребёнок, старик-владелец на него не обижается
-        (остальные совладельцы, если среди них есть не-старики, всё равно реагируют)."""
         if not other_creatures:
             return
         thief_is_child = getattr(thief, "life_stage", None) == LIFE_STAGE_CHILD
@@ -118,11 +117,57 @@ class StorageField:
     def is_locked(self):
         return self.house_id is not None
 
+    # ---------- Отрисовка ----------
+
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         half_w, half_h = self.width // 2, self.height // 2
         rect = pygame.Rect(sx - half_w, sy - half_h, self.width, self.height)
+
+        # ---------- Полупрозрачная заливка ----------
+        fill_surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        fill_surf.fill((*STORAGE_FIELD_COLOR_BORDER, STORAGE_FIELD_FILL_ALPHA))
+        screen.blit(fill_surf, rect.topleft)
+
+        # ---------- Основная рамка ----------
         pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, rect, 3)
+
+        # ---------- Угловые столбы - лёгкая деталировка ----------
+        post_size = 5
+        for corner in (rect.topleft, rect.topright, rect.bottomleft, rect.bottomright):
+            post_rect = pygame.Rect(0, 0, post_size, post_size)
+            post_rect.center = corner
+            pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, post_rect)
+
+        # ---------- Внутренние "полки" ----------
+        shelf_count = 2
+        for i in range(1, shelf_count + 1):
+            shelf_y = rect.y + int(rect.height * i / (shelf_count + 1))
+            pygame.draw.line(screen, STORAGE_FIELD_COLOR_BORDER,
+                             (rect.x + 3, shelf_y), (rect.right - 3, shelf_y), 1)
+
+        # ---------- Диагональная крыша - только если склад физически привязан к дому ----------
+        if self.house_side in ("left", "right"):
+            self._draw_roof(screen, rect)
+
+    def _draw_roof(self, screen, rect):
+        overhang = 6
+
+        if self.house_side == "left":
+            touch_x = rect.right
+            peak_x = rect.left - overhang
+        else:
+            touch_x = rect.left
+            peak_x = rect.right + overhang
+
+        run = abs(peak_x - touch_x)
+        roof_rise = run * math.tan(math.radians(STORAGE_ROOF_ANGLE_DEG))
+        base_y = rect.top
+        peak_y = rect.top - roof_rise
+
+        roof_points = [(touch_x, base_y), (peak_x, peak_y), (peak_x, base_y)]
+        pygame.draw.polygon(screen, STORAGE_FIELD_ROOF_COLOR, roof_points)
+        pygame.draw.polygon(screen, STORAGE_FIELD_ROOF_BORDER, roof_points, 2)
 
     def to_dict(self):
         return {
@@ -134,6 +179,7 @@ class StorageField:
             "created": self.created,
             "id": self.id,
             "house_id": self.house_id,
+            "house_side": self.house_side,
         }
 
     @staticmethod
@@ -147,6 +193,7 @@ class StorageField:
             owner_campfire_pos=tuple(data["campfire_pos"]) if data.get("campfire_pos") else None,
             owner_ids=owner_ids,
             house_id=data.get("house_id"),
+            house_side=data.get("house_side"),
         )
         field.fruits = data.get("fruits", 0)
         field.water = data.get("water", 0)
@@ -405,6 +452,7 @@ class House:
         self.storage_id = field.id
         self.storage_side = "left" if field.x < self.x else "right"
         field.house_id = self.id
+        field.house_side = self.storage_side
         field.x, field.y = self._compute_storage_position()
 
     def _compute_storage_position(self):

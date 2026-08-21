@@ -32,6 +32,7 @@ from .mechanics.creature_lifecycle import load_creature_from_state as load_circl
 from .mechanics.render import (
     draw_child_roads, draw_campfires, draw_storage_fields, draw_construction_sites, draw_graveyards,
     draw_minimap_child_roads, draw_minimap_campfires, draw_minimap_constructions, draw_houses,
+    draw_minimap_houses,
 )
 
 RACE_DESCRIPTOR = RaceDescriptor(
@@ -104,11 +105,13 @@ RACE_DESCRIPTOR = RaceDescriptor(
     world_tick_fn=tick_circle_world,
     display_checkboxes=(
         ("minimap_show_constructions", INFO_SETTINGS_MINIMAP_CONSTRUCTIONS),
+        ("minimap_show_houses", INFO_SETTINGS_MINIMAP_HOUSES),
     ),
     minimap_layers=(
         MinimapLayer("child_roads", insert_after="roads", draw_fn=draw_minimap_child_roads),
         MinimapLayer("campfires", insert_after="stones", draw_fn=draw_minimap_campfires),
         MinimapLayer("constructions", insert_after="stones", draw_fn=draw_minimap_constructions),
+        MinimapLayer("houses", insert_after="stones", draw_fn=draw_minimap_houses),
     ),
     object_panel_extra_fn=circle_object_panel_extra_lines,
     secondary_panel_specs=(

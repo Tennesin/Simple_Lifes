@@ -476,6 +476,11 @@ STORAGE_FIELD_MAX_WATER = 12
 STORAGE_FIELD_COLOR_BORDER = (120, 80, 40)
 STORAGE_FIELD_DEPOSIT_DISTANCE = STORAGE_FIELD_RADIUS + 10
 STORAGE_FIELD_MAX_OWNERS = 2
+# ---------- Склад: визуальная детализация и крыша ----------
+STORAGE_FIELD_FILL_ALPHA = 40
+STORAGE_ROOF_ANGLE_DEG = 30
+STORAGE_FIELD_ROOF_COLOR = (150, 100, 55)
+STORAGE_FIELD_ROOF_BORDER = (95, 60, 30)
 
 # ---------- Требования построек: {ресурс: количество} + время стройки (сек) ----------
 BUILDING_REQUIREMENTS = {

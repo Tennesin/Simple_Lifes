@@ -224,9 +224,12 @@ def all_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
     return tuple(result)
 
 def full_default_display_settings() -> dict:
-    """Core-дефолты + дефолты чекбоксов, заявленных расами (все включены по умолчанию)."""
+    """Core-дефолты + дефолты чекбоксов, заявленных расами и животными (все включены по умолчанию)."""
+    from game.animal_registry import all_animal_display_checkboxes
     merged = dict(_CORE_DISPLAY_SETTINGS)
     for key, _label in all_display_checkboxes():
+        merged.setdefault(key, True)
+    for key, _label in all_animal_display_checkboxes():
         merged.setdefault(key, True)
     return merged
 

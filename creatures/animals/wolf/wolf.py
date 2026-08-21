@@ -81,3 +81,10 @@ def wolf_object_panel_extra_lines(obj, all_creatures):
     return [
         (WOLF_INFO_HIDE.format(count=int(obj.hide)), HIDE_COLOR),
     ]
+
+def wolf_minimap_marker(screen, pos):
+    """Волк на мини-карте: серый треугольник."""
+    x, y = int(pos[0]), int(pos[1])
+    size = 3
+    points = [(x, y - size), (x - size, y + size), (x + size, y + size)]
+    pygame.draw.polygon(screen, WOLF_COLOR_BODY, points)

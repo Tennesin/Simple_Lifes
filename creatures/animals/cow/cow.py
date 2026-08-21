@@ -116,3 +116,7 @@ def cow_object_panel_extra_lines(obj, all_creatures):
         (INFO_INFO_ANIMAL_MEAT.format(count=int(obj.meat)), MEAT_COLOR),
         (COW_INFO_LEATHER.format(count=int(obj.leather)), LEATHER_COLOR),
     ]
+
+def cow_minimap_marker(screen, pos):
+    """Корова на мини-карте: тёмно-серый круг."""
+    pygame.draw.circle(screen, COW_COLOR_BODY, (int(pos[0]), int(pos[1])), 2)

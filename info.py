@@ -135,3 +135,8 @@ INFO_GENDER_FEMALE = "Самка"
 INFO_DIET_HERBIVORE = "Травоядное"
 INFO_DIET_CARNIVORE = "Плотоядное"
 INFO_DIET_OMNIVORE = "Всеядное"
+
+# --------------------- Мини-карта: животные (настройки отображения) ---------------------
+INFO_SETTINGS_MINIMAP_SHEEP = "Показать овец на мини-карте"
+INFO_SETTINGS_MINIMAP_COWS = "Показать коров на мини-карте"
+INFO_SETTINGS_MINIMAP_WOLVES = "Показать волков на мини-карте"

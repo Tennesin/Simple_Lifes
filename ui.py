@@ -11,7 +11,9 @@ from game.race_registry import (
     all_minimap_layers, all_object_panel_extensions,
     all_secondary_panel_specs, PlayerToolSpec, all_road_networks,
 )
-from game.animal_registry import all_animals, all_animal_object_panel_extensions, animal_classes
+from game.animal_registry import (
+    all_animals, all_animal_object_panel_extensions, animal_classes, all_animal_display_checkboxes,
+)
 from game.animal_panel import AnimalPanel
 
 BIOME_PREVIEW_COLOR = {
@@ -537,11 +539,18 @@ def _mm_draw_creatures(panel, screen, game, to_minimap, scale, display):
         color = creature.draw_minimap_color() if hasattr(creature, "draw_minimap_color") else (200, 30, 30)
         pygame.draw.circle(screen, color, (int(pos[0]), int(pos[1])), 2)
 
+def _default_animal_minimap_marker(screen, pos):
+    pygame.draw.circle(screen, (225, 205, 90), (int(pos[0]), int(pos[1])), 2)
+
 def _mm_draw_animals(panel, screen, game, to_minimap, scale, display):
     for descriptor in all_animals():
+        checkbox_key = f"minimap_show_animal_{descriptor.animal_name}"
+        if not display.get(checkbox_key, True):
+            continue
+        draw_marker = descriptor.minimap_marker_fn or _default_animal_minimap_marker
         for animal in getattr(game.world, descriptor.world_collection):
             pos = to_minimap(animal.x, animal.y)
-            pygame.draw.circle(screen, (225, 205, 90), (int(pos[0]), int(pos[1])), 2)
+            draw_marker(screen, pos)
 
 _CORE_MINIMAP_LAYERS = (
     ("roads", _mm_draw_roads),
@@ -912,8 +921,8 @@ SETTINGS_TABS = (
 
 class SettingsPanel:
 
-    PANEL_WIDTH = 640
-    PANEL_HEIGHT = 480
+    PANEL_WIDTH = 700
+    PANEL_HEIGHT = 650
     SIDEBAR_RATIO = 0.20
     ROW_HEIGHT = 34
     CHECKBOX_SIZE = 18
@@ -923,7 +932,7 @@ class SettingsPanel:
         self.font = font
         self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
 
-        self._checkboxes = _CORE_DISPLAY_CHECKBOXES + all_display_checkboxes()
+        self._checkboxes = _CORE_DISPLAY_CHECKBOXES + all_display_checkboxes() + all_animal_display_checkboxes()
 
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_tab_display_rect = pygame.Rect(0, 0, 0, 0)

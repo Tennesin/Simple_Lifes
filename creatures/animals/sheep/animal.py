@@ -3,11 +3,12 @@
 import uuid
 
 from game.animal_registry import AnimalDescriptor
-from .sheep import Sheep, sheep_object_panel_extra_lines
+from .sheep import Sheep, sheep_object_panel_extra_lines, sheep_minimap_marker
 from .sheep_objects import Wool
 from .sheep_settings import SHEEP_KIND_NAME
 from .sheep_ai import tick_sheep
 from .names import SHEEP_NAME_POOLS
+from info import INFO_SETTINGS_MINIMAP_SHEEP
 
 def spawn_sheep(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]
@@ -25,6 +26,8 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     placement_label=SHEEP_KIND_NAME,
     name_pools=SHEEP_NAME_POOLS,
     object_panel_extra_fn=sheep_object_panel_extra_lines,
+    minimap_checkbox_label=INFO_SETTINGS_MINIMAP_SHEEP,
+    minimap_marker_fn=sheep_minimap_marker,
     drop_collections=("wools",),
     drop_persistence_registry=(("wools.json", "wools", Wool),),
     tick_fn=tick_sheep,
