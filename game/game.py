@@ -137,7 +137,7 @@ class Game:
         return os.path.join(BASE_WORLDS_DIR, self.SETTINGS_FILENAME)
 
     def _load_display_settings(self):
-        from game.race_registry import full_default_display_settings
+        from game.display_settings import full_default_display_settings
         merged = full_default_display_settings()
         path = self._settings_file_path()
         if os.path.exists(path):

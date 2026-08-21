@@ -37,10 +37,6 @@ COW_COLOR_LEG = COW_COLOR_BODY
 COW_LEG_WIDTH = 4
 COW_LEG_HEIGHT = 12
 
-# ---------- Текст ----------
-COW_KIND_NAME = "Корова"
-COW_INFO_LEATHER = "Кожа: {count}"
-
 # ---------- ИИ: бродяжничество, выпас, водопой, паника при волках ----------
 COW_HUNGER_DRAIN_INTERVAL = 45.0
 COW_THIRST_DRAIN_INTERVAL = 20.0
@@ -61,3 +57,8 @@ COW_HUNGER_SATISFY_RATIO = 0.95
 COW_THIRST_SATISFY_RATIO = 0.85
 COW_FLEE_RUN_DISTANCE = 160
 COW_FLEE_SPEED_MULTIPLIER = 1.5
+
+# ---------- Текст ----------
+COW_KIND_NAME = "Корова"
+COW_INFO_LEATHER = "Кожа: {count}"
+COW_MINIMAP_LABEL = "Показать коров на мини-карте"

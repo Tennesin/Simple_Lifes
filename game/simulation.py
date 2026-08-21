@@ -94,7 +94,8 @@ class Simulation:
         self._water_grid.build(w for w in world.water_puddles if w.has_water())
         self._bush_grid.build(world.bushes)
         self._campfire_grid.build(world.campfires)
-        self._creature_grid.build(c for c in world.creatures if not c.is_dead)
+        self._creature_grid.build(
+            c for c in world.creatures if not c.is_dead and not getattr(c, "at_home", False))
         self._corpse_grid.build(c for c in world.creatures if c.is_dead)
         self._tree_grid.build(t for t in world.trees if t.has_wood())
         self._stone_grid.build(s for s in world.stones if s.has_stone())

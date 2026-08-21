@@ -669,6 +669,8 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
         best = None
         best_dist = 14
         for creature in self.game.world.creatures:
+            if not creature.is_dead and getattr(creature, "at_home", False):
+                continue
             dist = math.hypot(wx - creature.x, wy - creature.y)
             if dist <= best_dist:
                 best = creature

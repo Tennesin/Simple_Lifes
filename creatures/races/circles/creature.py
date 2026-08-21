@@ -308,6 +308,7 @@ class Creature(LivingEntity):
         self.seeking_food = False
         self.seeking_water = False
         self.seeking_sanity = False
+        self.at_home = False
         self.freeze_timer = 0.0
         self.spike_invuln_timer = 0.0
         self.calm_timer = 0.0

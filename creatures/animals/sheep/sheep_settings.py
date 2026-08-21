@@ -34,10 +34,6 @@ SHEEP_COLOR_LEG = (25, 25, 25)
 SHEEP_LEG_WIDTH = 4
 SHEEP_LEG_HEIGHT = 10
 
-# ---------- Текст ----------
-SHEEP_KIND_NAME = "Овца"
-SHEEP_INFO_WOOL = "Шерсть: {count}"
-
 # ---------- ИИ: бродяжничество, выпас, водопой, паника при волках ----------
 SHEEP_HUNGER_DRAIN_INTERVAL = 40.0
 SHEEP_THIRST_DRAIN_INTERVAL = 18.0
@@ -58,3 +54,8 @@ SHEEP_HUNGER_SATISFY_RATIO = 0.95
 SHEEP_THIRST_SATISFY_RATIO = 0.85
 SHEEP_FLEE_RUN_DISTANCE = 180
 SHEEP_FLEE_SPEED_MULTIPLIER = 1.7
+
+# ---------- Текст ----------
+SHEEP_KIND_NAME = "Овца"
+SHEEP_INFO_WOOL = "Шерсть: {count}"
+SHEEP_MINIMAP_LABEL = "Показать овец на мини-карте"

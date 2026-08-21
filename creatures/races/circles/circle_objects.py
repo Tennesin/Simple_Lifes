@@ -139,35 +139,17 @@ class StorageField:
             post_rect.center = corner
             pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, post_rect)
 
-        # ---------- Внутренние "полки" ----------
-        shelf_count = 2
-        for i in range(1, shelf_count + 1):
-            shelf_y = rect.y + int(rect.height * i / (shelf_count + 1))
-            pygame.draw.line(screen, STORAGE_FIELD_COLOR_BORDER,
-                             (rect.x + 3, shelf_y), (rect.right - 3, shelf_y), 1)
+            # ---------- Внутренние полые кубы (светло-коричневые) - вместо полок и крыши ----------
+            self._draw_inner_boxes(screen, rect)
 
-        # ---------- Диагональная крыша - только если склад физически привязан к дому ----------
-        if self.house_side in ("left", "right"):
-            self._draw_roof(screen, rect)
-
-    def _draw_roof(self, screen, rect):
-        overhang = 6
-
-        if self.house_side == "left":
-            touch_x = rect.right
-            peak_x = rect.left - overhang
-        else:
-            touch_x = rect.left
-            peak_x = rect.right + overhang
-
-        run = abs(peak_x - touch_x)
-        roof_rise = run * math.tan(math.radians(STORAGE_ROOF_ANGLE_DEG))
-        base_y = rect.top
-        peak_y = rect.top - roof_rise
-
-        roof_points = [(touch_x, base_y), (peak_x, peak_y), (peak_x, base_y)]
-        pygame.draw.polygon(screen, STORAGE_FIELD_ROOF_COLOR, roof_points)
-        pygame.draw.polygon(screen, STORAGE_FIELD_ROOF_BORDER, roof_points, 2)
+    def _draw_inner_boxes(self, screen, rect):
+        box_count = 2
+        box_size = max(6, min(rect.width, rect.height) // 3)
+        step_y = rect.height / (box_count + 1)
+        for i in range(1, box_count + 1):
+            box_rect = pygame.Rect(0, 0, box_size, box_size)
+            box_rect.center = (rect.centerx, int(rect.y + step_y * i))
+            pygame.draw.rect(screen, STORAGE_FIELD_INNER_BOX_COLOR, box_rect, 2)
 
     def to_dict(self):
         return {
@@ -463,14 +445,18 @@ class House:
         return (px, self.y)
 
     def on_object_moved(self, game):
-        if not self.has_storage or self.storage_id is None:
-            return
-        field = next((f for f in game.world.storage_fields if f.id == self.storage_id), None)
-        if field is None:
-            self.has_storage = False
-            self.storage_id = None
-            return
-        field.x, field.y = self._compute_storage_position()
+        if self.has_storage and self.storage_id is not None:
+            field = next((f for f in game.world.storage_fields if f.id == self.storage_id), None)
+            if field is None:
+                self.has_storage = False
+                self.storage_id = None
+            else:
+                field.x, field.y = self._compute_storage_position()
+
+        for creature in game.world.creatures:
+            if (not creature.is_dead and getattr(creature, "home_id", None) == self.id
+                    and getattr(creature, "at_home", False)):
+                creature.x, creature.y = self.x, self.y
 
     def storage_field(self, storage_fields):
         if self.storage_id is not None:

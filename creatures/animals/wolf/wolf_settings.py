@@ -31,10 +31,6 @@ WOLF_COLOR_LEG = WOLF_COLOR_BODY
 WOLF_LEG_WIDTH = 8
 WOLF_LEG_HEIGHT = 8
 
-# ---------- Текст ----------
-WOLF_KIND_NAME = "Волк"
-WOLF_INFO_HIDE = "Шкура: {count}"
-
 # ---------- ИИ: бродяжничество, охота, водопой, поедание мяса ----------
 WOLF_HUNGER_DRAIN_INTERVAL = 35.0
 WOLF_THIRST_DRAIN_INTERVAL = 18.0
@@ -61,3 +57,8 @@ WOLF_EAT_RATE = 1.5
 # ---------- Отказ от погони: слишком долго или слишком далеко оторвалась жертва ----------
 WOLF_HUNT_MAX_DURATION = 12.0      # сек - дольше этого гнаться бессмысленно
 WOLF_HUNT_GIVEUP_DISTANCE = 500    # px - дальше этого жертва считается "оторвавшейся"
+
+# ---------- Текст ----------
+WOLF_KIND_NAME = "Волк"
+WOLF_INFO_HIDE = "Шкура: {count}"
+WOLF_MINIMAP_LABEL = "Показать волков на мини-карте"

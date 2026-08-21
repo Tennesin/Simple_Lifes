@@ -5,10 +5,9 @@ import uuid
 from game.animal_registry import AnimalDescriptor
 from .wolf import Wolf, wolf_object_panel_extra_lines, wolf_minimap_marker
 from .wolf_objects import Hide
-from .wolf_settings import WOLF_KIND_NAME
+from .wolf_settings import WOLF_KIND_NAME, WOLF_MINIMAP_LABEL
 from .wolf_ai import tick_wolf
 from .names import WOLF_NAME_POOLS
-from info import INFO_SETTINGS_MINIMAP_WOLVES
 
 def spawn_wolf(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]
@@ -26,7 +25,7 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     placement_label=WOLF_KIND_NAME,
     name_pools=WOLF_NAME_POOLS,
     object_panel_extra_fn=wolf_object_panel_extra_lines,
-    minimap_checkbox_label=INFO_SETTINGS_MINIMAP_WOLVES,
+    minimap_checkbox_label=WOLF_MINIMAP_LABEL,
     minimap_marker_fn=wolf_minimap_marker,
     drop_collections=("hides",),
     drop_persistence_registry=(("hides.json", "hides", Hide),),

@@ -7,13 +7,14 @@ from info import *
 from player import Player
 from game.widgets import Button
 from game.race_registry import (
-    all_races, all_player_tools, all_display_checkboxes,
+    all_races, all_player_tools,
     all_minimap_layers, all_object_panel_extensions,
     all_secondary_panel_specs, PlayerToolSpec, all_road_networks,
 )
 from game.animal_registry import (
-    all_animals, all_animal_object_panel_extensions, animal_classes, all_animal_display_checkboxes,
+    all_animals, all_animal_object_panel_extensions, animal_classes,
 )
+from game.display_settings import all_display_checkbox_specs
 from game.animal_panel import AnimalPanel
 
 BIOME_PREVIEW_COLOR = {
@@ -41,18 +42,6 @@ _CORE_TOOL_HINTS = {
     "biome_river": INFO_TOOL_BIOME_HINT,
     "biome_sea": INFO_TOOL_BIOME_HINT,
 }
-
-_CORE_DISPLAY_CHECKBOXES = (
-    ("show_creature_names", INFO_SETTINGS_SHOW_NAMES),
-    ("show_status_rings", INFO_SETTINGS_SHOW_STATUS_RINGS),
-    ("minimap_show_fruits", INFO_SETTINGS_MINIMAP_FRUITS),
-    ("minimap_show_bushes", INFO_SETTINGS_MINIMAP_BUSHES),
-    ("minimap_show_spikes", INFO_SETTINGS_MINIMAP_SPIKES),
-    ("minimap_show_water", INFO_SETTINGS_MINIMAP_WATER),
-    ("minimap_show_trees", INFO_SETTINGS_MINIMAP_TREES),
-    ("minimap_show_stones", INFO_SETTINGS_MINIMAP_STONES),
-    ("minimap_show_roads", INFO_SETTINGS_MINIMAP_ROADS),
-)
 
 # =====================================================================
 # Верхняя панель: главное меню + 5 выпадающих подменю
@@ -932,7 +921,7 @@ class SettingsPanel:
         self.font = font
         self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
 
-        self._checkboxes = _CORE_DISPLAY_CHECKBOXES + all_display_checkboxes() + all_animal_display_checkboxes()
+        self._checkboxes = all_display_checkbox_specs()
 
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_tab_display_rect = pygame.Rect(0, 0, 0, 0)

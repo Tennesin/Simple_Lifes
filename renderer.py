@@ -74,10 +74,8 @@ def _draw_spikes(renderer, screen, game, camera, in_view):
 def _draw_creatures(renderer, screen, game, camera, in_view):
     show_status_rings = game.display_settings["show_status_rings"]
     show_creature_names = game.display_settings["show_creature_names"]
-    houses = game.world.houses
     for creature in game.world.creatures:
-        if (not creature.is_dead and hasattr(creature, "is_in_own_house")
-                and creature.is_in_own_house(houses)):
+        if not creature.is_dead and getattr(creature, "at_home", False):
             continue
         if in_view(creature.x, creature.y):
             pos = camera.apply_pos((creature.x, creature.y))

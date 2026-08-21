@@ -6,7 +6,6 @@ from info import INFO_BTN_DRAW_ROAD, INFO_TOOL_ROAD_HINT
 
 import creatures.races as races_package
 from objects import Road
-from settings import DEFAULT_DISPLAY_SETTINGS as _CORE_DISPLAY_SETTINGS
 
 @dataclass(frozen=True)
 class RenderLayer:
@@ -222,16 +221,6 @@ def all_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
     for descriptor in all_races():
         result.extend(descriptor.display_checkboxes)
     return tuple(result)
-
-def full_default_display_settings() -> dict:
-    """Core-дефолты + дефолты чекбоксов, заявленных расами и животными (все включены по умолчанию)."""
-    from game.animal_registry import all_animal_display_checkboxes
-    merged = dict(_CORE_DISPLAY_SETTINGS)
-    for key, _label in all_display_checkboxes():
-        merged.setdefault(key, True)
-    for key, _label in all_animal_display_checkboxes():
-        merged.setdefault(key, True)
-    return merged
 
 def all_minimap_layers() -> Tuple[MinimapLayer, ...]:
     result = []
