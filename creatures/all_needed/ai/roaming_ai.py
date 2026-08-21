@@ -1,5 +1,6 @@
 """Общие примитивы простого ИИ для животных: бродяжничество,
-поиск воды, обход моря, прямолинейное движение к точке."""
+поиск воды, обход моря, прямолинейное движение к точке, "умный" побег
+(обход углов/тупиков) и усиленный A* для выживания."""
 
 import math
 import random
@@ -11,7 +12,7 @@ class RoamingAnimalMixin:
     """Ожидает от наследника: self.entity (существо с .x/.y/.vision_radius),
     self.cfg (словарь настроек), self.target, self.decision_timer."""
 
-    # ---------- НОВОЕ: врождённый страх и урон от шипов, общий для всех животных ----------
+    # ---------- Врождённый страх и урон от шипов, общий для всех животных ----------
 
     def _tick_spike_invuln(self, dt):
         e = self.entity
@@ -22,11 +23,6 @@ class RoamingAnimalMixin:
         if not spikes:
             return None
         return self._nearest_within(spikes, radius)
-
-    def _flee_from_spike(self, spike, biome_grid):
-        e = self.entity
-        point = e.flee_point((spike.x, spike.y), settings.ANIMAL_SPIKE_FLEE_DISTANCE)
-        return self._avoid_sea(point, biome_grid)
 
     def _apply_spike_damage(self, spikes, biome_grid=None):
         e = self.entity
@@ -81,9 +77,93 @@ class RoamingAnimalMixin:
             if biome_grid.get_at(point[0], point[1]) != BIOME_SEA:
                 return point
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(*cfg["wander_distance"])
+            dist_range = cfg["wander_distance"]
+            dist = random.uniform(*dist_range)
             point = geometry.clamped_point(e.x, e.y, angle, dist)
         return point
+
+    # =====================================================================
+    # НОВОЕ (п.4): "умный" побег - вместо одной прямой точки "от угрозы"
+    # перебираем веер направлений и выбираем то, что реально уводит животное
+    # подальше, а не утыкает его в угол карты/стену. Плюс отдельная проверка
+    # "а мы вообще сдвинулись, убегая?" с аварийным рывком в сторону.
+    # =====================================================================
+
+    _FLEE_ANGLE_OFFSETS_DEG = (0, -30, 30, -60, 60, -90, 90, -130, 130, 180)
+
+    def flee_from(self, threat_pos, distance, dt, biome_grid=None):
+        """Единая точка входа для побега любого животного."""
+        stuck_point = self._tick_flee_stuck(dt, distance)
+        if stuck_point is not None:
+            return self._avoid_sea(stuck_point, biome_grid, attempts=4)
+        return self._flee_point_smart(threat_pos, distance, biome_grid=biome_grid)
+
+    def _flee_point_smart(self, threat_pos, distance, biome_grid=None):
+        e = self.entity
+        base_dx = e.x - threat_pos[0]
+        base_dy = e.y - threat_pos[1]
+        base_dist = math.hypot(base_dx, base_dy)
+        base_angle = math.atan2(base_dy, base_dx) if base_dist > 1e-6 else random.uniform(0, 2 * math.pi)
+
+        min_displacement = distance * settings.ANIMAL_FLEE_MIN_DISPLACEMENT_RATIO
+        best_point, best_dist_from_threat = None, -1.0
+
+        for offset_deg in self._FLEE_ANGLE_OFFSETS_DEG:
+            angle = base_angle + math.radians(offset_deg)
+            point = geometry.clamped_point(e.x, e.y, angle, distance)
+            point = self._avoid_sea(point, biome_grid, attempts=2)
+            if point is None:
+                continue
+            displacement = math.hypot(point[0] - e.x, point[1] - e.y)
+            if displacement < min_displacement:
+                continue  # угол карты/стена почти не дали сдвинуться - такой вариант не годится
+            dist_from_threat = math.hypot(point[0] - threat_pos[0], point[1] - threat_pos[1])
+            if dist_from_threat > best_dist_from_threat:
+                best_dist_from_threat = dist_from_threat
+                best_point = point
+
+        if best_point is not None:
+            return best_point
+
+        # ---------- Совсем зажаты (со всех сторон недостаточно свободного места) -
+        # берём вариант хотя бы с максимальным реальным сдвигом ----------
+        fallback_point, fallback_disp = None, -1.0
+        for offset_deg in self._FLEE_ANGLE_OFFSETS_DEG:
+            angle = base_angle + math.radians(offset_deg)
+            point = geometry.clamped_point(e.x, e.y, angle, distance)
+            point = self._avoid_sea(point, biome_grid, attempts=2)
+            if point is None:
+                continue
+            displacement = math.hypot(point[0] - e.x, point[1] - e.y)
+            if displacement > fallback_disp:
+                fallback_disp = displacement
+                fallback_point = point
+        return fallback_point if fallback_point is not None else e.flee_point(threat_pos, distance)
+
+    def _tick_flee_stuck(self, dt, distance):
+        """Периодически проверяем: если животное убегает, но фактически почти
+        не сдвинулось (зажато углом карты/стеной/забором) - выдаём большой
+        случайный рывок в сторону вместо повторной попытки в тупиковую точку."""
+        e = self.entity
+        last_pos = getattr(self, "_flee_last_pos", None)
+        if last_pos is None:
+            self._flee_last_pos = (e.x, e.y)
+            self._flee_stuck_timer = 0.0
+            return None
+
+        self._flee_stuck_timer = getattr(self, "_flee_stuck_timer", 0.0) + dt
+        if self._flee_stuck_timer < settings.ANIMAL_FLEE_STUCK_CHECK_INTERVAL:
+            return None
+
+        moved = math.hypot(e.x - last_pos[0], e.y - last_pos[1])
+        self._flee_last_pos = (e.x, e.y)
+        self._flee_stuck_timer = 0.0
+
+        if moved < distance * settings.ANIMAL_FLEE_STUCK_MOVE_RATIO:
+            angle = random.uniform(0, 2 * math.pi)
+            return geometry.clamped_point(
+                e.x, e.y, angle, distance * settings.ANIMAL_FLEE_STUCK_ESCAPE_MULTIPLIER)
+        return None
 
     def _nearest_within(self, objects, radius, predicate=None):
         e = self.entity
@@ -111,7 +191,10 @@ class RoamingAnimalMixin:
             return (nearest_puddle.x, nearest_puddle.y)
         return river_point
 
-    # ---------- НОВОЕ: контекстный A* - включается только когда прямая линия перекрыта ----------
+    # =====================================================================
+    # Контекстный A* - включается, когда прямая линия перекрыта, либо
+    # принудительно ("urgent" - п.3), когда речь о выживании.
+    # =====================================================================
 
     def _reset_navigation(self):
         e = self.entity
@@ -120,7 +203,7 @@ class RoamingAnimalMixin:
         e.nav_goal = None
         e.nav_recalc_timer = 0.0
 
-    def _navigate_with_astar(self, target, dt, nav_grid, fallback_nav_grid=None):
+    def _navigate_with_astar(self, target, dt, nav_grid, fallback_nav_grid=None, urgent=False):
         e = self.entity
 
         if e.nav_recalc_timer > 0:
@@ -134,11 +217,16 @@ class RoamingAnimalMixin:
         needs_recalc = goal_changed or path_exhausted or e.nav_recalc_timer <= 0
 
         if needs_recalc:
-            path = nav_grid.find_path((e.x, e.y), target, max_nodes=settings.NAV_MAX_ASTAR_NODES)
+            # ---------- "Прокачанный" поиск для выживания: больше узлов на просмотр
+            # и чаще пересчёт маршрута ----------
+            max_nodes = settings.NAV_MAX_ASTAR_NODES * (settings.NAV_URGENT_NODE_MULTIPLIER if urgent else 1)
+            recalc_interval = settings.NAV_URGENT_RECALC_INTERVAL if urgent else settings.NAV_PATH_RECALC_INTERVAL
+
+            path = nav_grid.find_path((e.x, e.y), target, max_nodes=max_nodes)
             if not path and fallback_nav_grid is not None:
-                path = fallback_nav_grid.find_path((e.x, e.y), target, max_nodes=settings.NAV_MAX_ASTAR_NODES)
+                path = fallback_nav_grid.find_path((e.x, e.y), target, max_nodes=max_nodes)
             e.nav_goal = target
-            e.nav_recalc_timer = random.uniform(*settings.NAV_PATH_RECALC_INTERVAL)
+            e.nav_recalc_timer = random.uniform(*recalc_interval)
             e.nav_path = path if path else []
             e.nav_path_index = 0
 
@@ -155,7 +243,7 @@ class RoamingAnimalMixin:
 
     def move_towards(self, target, dt, biome_grid=None, speed_multiplier=1.0,
                      nav_grid=None, fallback_nav_grid=None,
-                     wall_polylines=None, fence_polylines=None):
+                     wall_polylines=None, fence_polylines=None, urgent=False):
         e, cfg = self.entity, self.cfg
         if target is None:
             self._reset_navigation()
@@ -163,11 +251,15 @@ class RoamingAnimalMixin:
 
         waypoint = target
         if nav_grid is not None:
-            # ---------- Дешёвая ветка: если по прямой ничего не мешает - никакого A*, просто идём ----------
-            if nav_grid.has_line_of_sight((e.x, e.y), target):
+            # ---------- В "мирном" режиме экономим на A*: если по прямой ничего не
+            # мешает - просто идём. В "срочном" режиме (голод/жажда/охота, п.3) этому
+            # короткому пути не доверяем и всегда считаем полноценный маршрут - иначе
+            # животное может пойти напролом рядом с шипами, испугаться и застрять,
+            # дрожа на месте (п.2) ----------
+            if not urgent and nav_grid.has_line_of_sight((e.x, e.y), target):
                 self._reset_navigation()
             else:
-                waypoint = self._navigate_with_astar(target, dt, nav_grid, fallback_nav_grid)
+                waypoint = self._navigate_with_astar(target, dt, nav_grid, fallback_nav_grid, urgent=urgent)
 
         tx, ty = waypoint
         dx, dy = tx - e.x, ty - e.y

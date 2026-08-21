@@ -217,13 +217,22 @@ NAV_PATH_RECALC_INTERVAL = (1.2, 1.8)
 NAV_GOAL_CHANGE_THRESHOLD = 45
 NAV_WAYPOINT_REACHED_DISTANCE = 18
 NAV_MAX_ASTAR_NODES = 6000
+NAV_URGENT_RECALC_INTERVAL = (0.5, 0.9)
+NAV_URGENT_NODE_MULTIPLIER = 2
 
 # ---------- Шипы: универсальное поведение ЖИВОТНЫХ (в отличие от рас, у них нет ci_settings) ----------
 ANIMAL_SPIKE_DAMAGE = 10
 ANIMAL_SPIKE_HIT_DISTANCE = 20
 ANIMAL_SPIKE_INVULN_DURATION = 0.6
-ANIMAL_SPIKE_FEAR_RADIUS = 160
+ANIMAL_SPIKE_FEAR_RADIUS = 70
 ANIMAL_SPIKE_FLEE_DISTANCE = 140
+ANIMAL_SPIKE_FLEE_COMMIT_TIME = 1.4
+
+# ---------- НОВОЕ: "умный" побег животных (обход углов/тупиков карты) ----------
+ANIMAL_FLEE_MIN_DISPLACEMENT_RATIO = 0.45   # кандидат на точку побега годится, только если реально сдвигает животное
+ANIMAL_FLEE_STUCK_CHECK_INTERVAL = 0.6      # как часто проверяем "а мы вообще сдвинулись, убегая?"
+ANIMAL_FLEE_STUCK_MOVE_RATIO = 0.15         # если за интервал сдвинулись меньше этой доли дистанции - считаем, что зажаты
+ANIMAL_FLEE_STUCK_ESCAPE_MULTIPLIER = 1.6   # аварийный рывок в сторону, если реально зажаты в угол
 
 # ---------- Биомы ----------
 BIOME_CELL_SIZE = 75

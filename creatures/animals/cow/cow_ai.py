@@ -55,5 +55,6 @@ def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None):
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
                             fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=(COW_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0),
-                            wall_polylines=wall_polylines, fence_polylines=fence_polylines)
+                            wall_polylines=wall_polylines, fence_polylines=fence_polylines,
+                            urgent=ai.is_urgent)
         ai.interact(dt, world.grass, world.water_puddles, biome_grid, spikes=world.spikes)

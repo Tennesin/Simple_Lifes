@@ -1,7 +1,10 @@
-"""ИИ волка: бродит, пьёт воду, при голоде охотится на скот, кусает, после смерти жертвы поедает мясо."""
+"""ИИ волка: взвешенная система принятия решений (Consideration + pick_best,
+по образцу расы 'Круг') - бродит, пьёт воду, при голоде охотится на скот
+или ест мясо."""
 
 import math
 from ...all_needed.ai.roaming_ai import RoamingAnimalMixin
+from ...all_needed.ai.utility import Consideration, pick_best, scale
 import settings
 from .wolf_settings import *
 
@@ -30,6 +33,15 @@ _WOLF_AI_CFG = {
     "hunt_giveup_distance": WOLF_HUNT_GIVEUP_DISTANCE,
 }
 
+# ---------- Веса принятия решений ----------
+SCORE_FLEE_SPIKE = 88.0
+SCORE_EAT_MEAT = 78.0
+SCORE_HUNT_COMMITTED = 72.0
+SCORE_HUNT_NEW = 65.0
+SCORE_WATER_BASE = 40.0
+SCORE_WATER_MAX_BONUS = 30.0
+SCORE_WANDER = 8.0
+
 class WolfAI(RoamingAnimalMixin):
 
     def __init__(self, wolf, cfg):
@@ -42,6 +54,11 @@ class WolfAI(RoamingAnimalMixin):
         self.bite_cooldown = 0.0
         self.seeking_food = False
         self.seeking_water = False
+        self.is_urgent = False  # НОВОЕ (п.3): включает "прокачанный" A* в move_towards
+
+        # ---------- НОВОЕ (п.2): тот же гистерезис страха перед шипом, что у травоядных ----------
+        self._spike_flee_commit_timer = 0.0
+        self._last_spike_threat = None
 
     # ---------- Потребности ----------
 
@@ -66,42 +83,125 @@ class WolfAI(RoamingAnimalMixin):
         if self.bite_cooldown > 0:
             self.bite_cooldown -= dt
 
-    # ---------- Решение ----------
+    # =====================================================================
+    # Домен (п.2): побег от шипов. Во время реальной погони волк шипы
+    # игнорирует - как и раньше (решение оставлено прежним).
+    # =====================================================================
+
+    def _consider_flee_spike(self, dt, spikes, biome_grid):
+        if self.hunting_target_id is not None:
+            self._spike_flee_commit_timer = 0.0
+            return None
+
+        nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
+        commit_active = self._spike_flee_commit_timer > 0
+
+        if nearest_spike is None and not commit_active:
+            return None
+
+        if nearest_spike is not None:
+            self._spike_flee_commit_timer = settings.ANIMAL_SPIKE_FLEE_COMMIT_TIME
+            threat = (nearest_spike.x, nearest_spike.y)
+        else:
+            self._spike_flee_commit_timer -= dt
+            threat = self._last_spike_threat
+
+        if threat is None:
+            return None
+        self._last_spike_threat = threat
+
+        def execute():
+            return self.flee_from(threat, settings.ANIMAL_SPIKE_FLEE_DISTANCE, dt, biome_grid=biome_grid)
+
+        return Consideration("flee_spike", SCORE_FLEE_SPIKE, execute)
+
+    # =====================================================================
+    # Домен: падаль - приоритет выше поиска новой жертвы, но ниже уже идущей погони
+    # =====================================================================
+
+    def _consider_eat_meat(self, meats):
+        w = self.entity
+        if self.hunting_target_id is not None:
+            return None
+        if not self.seeking_food:
+            return None
+        meat = self._nearest_within(meats, w.vision_radius, predicate=lambda m: m.has_food())
+        if meat is None:
+            return None
+
+        def execute():
+            return (meat.x, meat.y)
+
+        return Consideration("eat_meat", SCORE_EAT_MEAT, execute)
+
+    # =====================================================================
+    # Домен: охота на скот
+    # =====================================================================
+
+    def _consider_hunt(self, dt, prey_lists):
+        if not (self.seeking_food or self.hunting_target_id is not None):
+            return None
+        score = SCORE_HUNT_COMMITTED if self.hunting_target_id is not None else SCORE_HUNT_NEW
+        w = self.entity
+
+        def execute():
+            prey = self._resolve_hunt_target(prey_lists, w.vision_radius, dt)
+            if prey is None:
+                self.hunting_target_id = None
+                return None
+            self.hunting_target_id = prey.id
+            return (prey.x, prey.y)
+
+        return Consideration("hunt", score, execute)
+
+    # =====================================================================
+    # Домен: жажда
+    # =====================================================================
+
+    def _consider_water(self, water_puddles, biome_grid):
+        w, cfg = self.entity, self.cfg
+        if not self.seeking_water:
+            return None
+        deficit = scale(w.thirst_max * cfg["thirst_seek_ratio"] - w.thirst, 0, w.thirst_max)
+        score = SCORE_WATER_BASE + deficit * SCORE_WATER_MAX_BONUS
+
+        def execute():
+            return self._nearest_water_target(water_puddles, biome_grid, w.vision_radius)
+
+        return Consideration("water", score, execute)
+
+    # =====================================================================
+    # Домен: бродяжничество
+    # =====================================================================
+
+    def _consider_wander(self, dt, biome_grid):
+        def execute():
+            return self._wander(dt, biome_grid)
+
+        return Consideration("wander", SCORE_WANDER, execute)
+
+    # =====================================================================
+    # Итог: взвешенное решение (п.1)
+    # =====================================================================
 
     def decide(self, dt, prey_lists, water_puddles, meats, biome_grid, spikes=None):
-        w, cfg = self.entity, self.cfg
-
-        if self.hunting_target_id is None:
-            nearest_spike = self._nearest_spike(spikes, settings.ANIMAL_SPIKE_FEAR_RADIUS)
-            if nearest_spike is not None:
-                return self._flee_from_spike(nearest_spike, biome_grid)
-
+        cfg = self.cfg
         self._update_seek_state(cfg["hunt_hunger_ratio"], cfg["hunger_satisfy_ratio"],
                                 cfg["thirst_seek_ratio"], cfg["thirst_satisfy_ratio"])
 
-        if self.seeking_food or self.hunting_target_id is not None:
-            if self.hunting_target_id is None:
-                meat = self._nearest_within(meats, w.vision_radius, predicate=lambda m: m.has_food())
-                if meat is not None:
-                    return (meat.x, meat.y)
+        considerations = [
+            self._consider_flee_spike(dt, spikes, biome_grid),
+            self._consider_eat_meat(meats),
+            self._consider_hunt(dt, prey_lists),
+            self._consider_water(water_puddles, biome_grid),
+            self._consider_wander(dt, biome_grid),
+        ]
+        goal = pick_best(considerations)
 
-            prey = self._resolve_hunt_target(prey_lists, w.vision_radius, dt)
-            if prey is not None:
-                self.hunting_target_id = prey.id
-                return (prey.x, prey.y)
-            self.hunting_target_id = None
+        # ---------- НОВОЕ (п.3): "вопрос выживания" - включаем усиленный A* ----------
+        self.is_urgent = self.seeking_food or self.hunting_target_id is not None or self.seeking_water
 
-            if self.seeking_food:
-                meat = self._nearest_within(meats, w.vision_radius, predicate=lambda m: m.has_food())
-                if meat is not None:
-                    return (meat.x, meat.y)
-
-        if self.seeking_water:
-            water_target = self._nearest_water_target(water_puddles, biome_grid, w.vision_radius)
-            if water_target is not None:
-                return water_target
-
-        return self._wander(dt, biome_grid)
+        return goal if goal is not None else self._wander(dt, biome_grid)
 
     def _resolve_hunt_target(self, prey_lists, radius, dt=0.0):
         w, cfg = self.entity, self.cfg
@@ -116,7 +216,6 @@ class WolfAI(RoamingAnimalMixin):
                 too_far = dist > cfg["hunt_giveup_distance"]
                 if not too_long and not too_far:
                     return current
-                # ---------- Погоня слишком долгая или жертва слишком далеко оторвалась - бросаем ----------
 
             self.hunting_target_id = None
             self.hunt_timer = 0.0
@@ -186,6 +285,7 @@ class WolfAI(RoamingAnimalMixin):
             elif biome_grid is not None and biome_grid.get_at(w.x, w.y) == settings.BIOME_RIVER:
                 w.thirst = min(w.thirst_max, w.thirst + cfg["drink_rate"] * dt)
 
+
 def _get_ai(wolf):
     ai = getattr(wolf, "_wolf_ai", None)
     if ai is None:
@@ -217,5 +317,6 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
                             fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=chase_mult,
-                            wall_polylines=wall_polylines, fence_polylines=fence_polylines)
+                            wall_polylines=wall_polylines, fence_polylines=fence_polylines,
+                            urgent=ai.is_urgent)
         ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)
