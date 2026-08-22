@@ -474,13 +474,6 @@ class CreatureTerritory:
 # Домен: скорбь по умершим сородичам - разовое событие в момент смерти
 # =========================================================================
 
-def _shares_parent(ids_a, ids_b):
-    if not ids_a or not ids_b:
-        return False
-    set_a = {pid for pid in ids_a if pid is not None}
-    set_b = {pid for pid in ids_b if pid is not None}
-    return bool(set_a & set_b)
-
 def _grief_death_shock_multiplier(cause, deceased_age):
     if cause == "старость":
         return GRIEF_NATURAL_OLD_AGE_MULTIPLIER

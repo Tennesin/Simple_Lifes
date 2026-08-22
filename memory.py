@@ -76,8 +76,12 @@ class Memory:
             age = now - mem["timestamp"]
             decay_factor = max(0.0, 1 - age / self.decay_time)
             effective_imp = mem["importance"] * decay_factor
-            if abs(effective_imp) > 0.1:
-                result.append((mem["x"], mem["y"]))
+            if allow_negative:
+                if abs(effective_imp) > 0.1:
+                    result.append((mem["x"], mem["y"]))
+            else:
+                if effective_imp > 0.1:
+                    result.append((mem["x"], mem["y"]))
 
         self._position_cache[mem_type] = (self._version, now, result)
         return result

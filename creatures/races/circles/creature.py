@@ -331,6 +331,9 @@ class Creature(LivingEntity):
         self.following_child_road = None
         self.child_road_entry_reached = False
         self.child_road_verify_target_id = None
+        self.child_road_verify_progress = 0
+        self.child_road_verify_found_danger = False
+        self.child_road_verify_entry_reached = False
         self.play_target_id = None
         self.play_role = None
         self.is_grabbed = False
