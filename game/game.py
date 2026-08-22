@@ -80,6 +80,10 @@ class Game:
         self.create_world_screen = None
         self.load_world_screen = None
         self.settings_screen = None
+        # ---------- Диалог "Сохранить игру?" при выходе ----------
+        self.exit_confirm_active = False
+        self._exit_confirm_was_paused = False
+        self._exit_confirm_quit_app = False
 
         self.player = Player()
         self.display_settings = self._load_display_settings()
@@ -259,6 +263,9 @@ class Game:
         if self.settings_screen is not None:
             self.ui.draw_settings_screen(self.screen, self.settings_screen)
 
+        if self.exit_confirm_active:
+            self.ui.draw_exit_confirm_dialog(self.screen)
+
         pygame.display.flip()
 
     def draw_crash_screen(self):
@@ -350,7 +357,7 @@ class Game:
 
         try:
             if self.world_loaded and self.world_path:
-                self.world_manager.close_world()
+                self.world_manager.close_world(save=True)
             else:
                 self.world_loaded = False
         except Exception:
@@ -408,8 +415,46 @@ class Game:
         self._crash_creature_count = 0
         self.restore_default_window()
 
-    def request_exit(self):
-        if self.world_loaded:
-            self.world_manager.close_world()
-        else:
+    def request_exit(self, quit_app=False):
+        if self.exit_confirm_active:
+            return
+
+        if not self.world_loaded:
             self.running = False
+            return
+
+        recently_saved_manually = (
+                self.last_manual_save_time is not None and
+                time.time() - self.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
+        )
+        if recently_saved_manually:
+            # ---------- Недавно уже сохранялись вручную - повторное сохранение не нужно ----------
+            self.world_manager.close_world(save=False)
+            if quit_app:
+                self.running = False
+            return
+
+        self.close_all_menus()
+        self._exit_confirm_was_paused = self.paused
+        self._exit_confirm_quit_app = quit_app
+        self.paused = True
+        self.exit_confirm_active = True
+
+    def confirm_exit_save(self):
+        """Кнопка 'Да' в диалоге 'Сохранить игру?'."""
+        self.exit_confirm_active = False
+        self.world_manager.close_world(save=True)
+        if self._exit_confirm_quit_app:
+            self.running = False
+
+    def confirm_exit_discard(self):
+        """Кнопка 'Нет' в диалоге 'Сохранить игру?'."""
+        self.exit_confirm_active = False
+        self.world_manager.close_world(save=False)
+        if self._exit_confirm_quit_app:
+            self.running = False
+
+    def cancel_exit(self):
+        """Кнопка 'Назад' в диалоге 'Сохранить игру?'."""
+        self.exit_confirm_active = False
+        self.paused = self._exit_confirm_was_paused

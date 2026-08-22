@@ -431,15 +431,17 @@ class WorldManager:
         game.last_manual_save_time = time.time()
         game.show_game_menu = False
 
-    def close_world(self):
+    def close_world(self, save=None):
         game = self.game
         game.simulation.invalidate_nav_cache()
         if game.world_loaded and game.world_path:
-            suppress_autosave = (
-                    game.last_manual_save_time is not None and
-                    time.time() - game.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
-            )
-            if not suppress_autosave:
+            if save is None:
+                suppress_autosave = (
+                        game.last_manual_save_time is not None and
+                        time.time() - game.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
+                )
+                save = not suppress_autosave
+            if save:
                 self.save_world()
 
         game.world.reset()

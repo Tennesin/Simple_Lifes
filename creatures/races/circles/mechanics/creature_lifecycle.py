@@ -36,7 +36,6 @@ class CircleSpawnManager:
         game.world.creatures.append(creature)
         creature.age = AGE_CHILD_END
         creature.life_stage = LIFE_STAGE_ADULT
-        creature.save(os.path.join(game.world_path, "creatures"))
 
     def create_child_creature(self, mother, father_id):
         game = self.game
@@ -76,8 +75,6 @@ class CircleSpawnManager:
                 child.home_id = house.id
 
         game.world.creatures.append(child)
-        if game.world_path:
-            child.save(os.path.join(game.world_path, "creatures"))
 
     def _pick_child_spawn_point(self, mother, attempts=8):
         game = self.game

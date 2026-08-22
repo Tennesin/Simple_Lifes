@@ -987,10 +987,34 @@ class _SettingsScreenEventMixin:
                     return
 
 # =========================================================================
+# Домен: диалог "Сохранить игру?" при выходе (X окна / кнопка "Выйти")
+# =========================================================================
+
+class _ExitConfirmEventMixin:
+
+    def _handle_exit_confirm_event(self, event):
+        game = self.game
+        ui = game.ui
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            game.cancel_exit()
+            return
+
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+
+        if ui.exit_confirm_yes_btn_rect.collidepoint(event.pos):
+            game.confirm_exit_save()
+        elif ui.exit_confirm_no_btn_rect.collidepoint(event.pos):
+            game.confirm_exit_discard()
+        elif ui.exit_confirm_back_btn_rect.collidepoint(event.pos):
+            game.cancel_exit()
+
+# =========================================================================
 # Итоговый класс
 # =========================================================================
 
-class InputHandler(_KeyboardMixin, _CrashScreenMixin, _BiomePaintingMixin, _MenuMixin,
+class InputHandler(_KeyboardMixin, _CrashScreenMixin, _ExitConfirmEventMixin, _BiomePaintingMixin, _MenuMixin,
                     _MouseDownMixin, _MouseUpMixin, _MouseMotionMixin,
                     _WorldScreenEventMixin, _ScrollMixin, _SettingsScreenEventMixin):
 
@@ -1002,7 +1026,9 @@ class InputHandler(_KeyboardMixin, _CrashScreenMixin, _BiomePaintingMixin, _Menu
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.game.running = False
+                self.game.request_exit(quit_app=True)
+            elif self.game.exit_confirm_active:
+                self._handle_exit_confirm_event(event)
             elif self.game.crashed:
                 self._handle_crash_event(event)
             elif self.game.create_world_screen is not None:

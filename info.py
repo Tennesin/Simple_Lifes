@@ -127,6 +127,12 @@ INFO_BTN_LW_DELETE = "Удалить"
 INFO_LW_CONFIRM_DELETE = "Точно? Ещё раз для удаления"
 INFO_LW_SELECT_HINT = "Выберите мир слева"
 
+# --------------------- Диалог выхода без сохранения ---------------------
+INFO_EXIT_CONFIRM_TITLE = "Сохранить игру?"
+INFO_EXIT_CONFIRM_YES = "Да"
+INFO_EXIT_CONFIRM_NO = "Нет"
+INFO_EXIT_CONFIRM_BACK = "Назад"
+
 # --------------------- Диета (общее понятие, расы лишь выбирают значение) ---------------------
 INFO_INFO_DIET = "Диета: {diet}"
 INFO_INFO_GENDER = "Пол: {gender}"
