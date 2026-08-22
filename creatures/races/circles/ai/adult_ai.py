@@ -3,7 +3,7 @@ import random
 
 from ..ci_settings import *
 from ..ci_info import *
-from .circles_adult_patterns import (
+from .patterns import (
     GoalComponent, ResourceActions, Roads, SurvivalNeeds, CorpseHandling,
     EmpathyHelp, Feeding, SocialResponse, PartnerBond,
     ChildRoadVerification, Curiosity, CuriosityStrategy,

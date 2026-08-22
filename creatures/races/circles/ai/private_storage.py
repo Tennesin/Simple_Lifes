@@ -5,7 +5,7 @@ import random
 
 from ..ci_settings import *
 from ..circle_objects import ConstructionSite
-from .circles_adult_patterns import Storage, Construction
+from .patterns import Storage, Construction
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration
 

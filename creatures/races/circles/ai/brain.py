@@ -13,7 +13,7 @@ from .circles_instincts import UniversalInstincts
 from .adult_ai import AdultAI
 from .child_ai import ChildAI
 from .older_ai import OlderAI
-from .circles_adult_patterns import DecisionContext
+from .patterns import DecisionContext
 
 if TYPE_CHECKING:
     from ..creature import Creature
