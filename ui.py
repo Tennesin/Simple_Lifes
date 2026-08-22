@@ -14,7 +14,7 @@ from game.race_registry import (
 from game.animal_registry import (
     all_animals, all_animal_object_panel_extensions, animal_classes,
 )
-from game.display_settings import all_display_checkbox_specs
+from game.display_settings import all_display_checkbox_specs, all_technical_checkbox_specs
 from game.animal_panel import AnimalPanel
 
 BIOME_PREVIEW_COLOR = {
@@ -905,6 +905,7 @@ class WorldScreensPanel:
 # =====================================================================
 
 SETTINGS_TABS = (
+    ("technical", INFO_SETTINGS_TAB_TECHNICAL),
     ("display", INFO_SETTINGS_TAB_DISPLAY),
 )
 
@@ -922,8 +923,10 @@ class SettingsPanel:
         self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
 
         self._checkboxes = all_display_checkbox_specs()
+        self._technical_checkboxes = all_technical_checkbox_specs()
 
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
+        self.settings_tab_technical_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_tab_display_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_save_btn_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_back_btn_rect = pygame.Rect(0, 0, 0, 0)
@@ -978,6 +981,8 @@ class SettingsPanel:
             rect = pygame.Rect(sidebar_rect.x + 6, y, sidebar_rect.width - 12, BUTTON_HEIGHT)
             if tab_key == "display":
                 self.settings_tab_display_rect = rect
+            elif tab_key == "technical":
+                self.settings_tab_technical_rect = rect
 
             if state.active_tab == tab_key:
                 color = SETTINGS_TAB_SELECTED
@@ -993,11 +998,15 @@ class SettingsPanel:
 
     def _draw_body(self, screen, state, body_rect, mouse_pos):
         self.settings_checkbox_rows = {}
-        if state.active_tab != "display":
+        if state.active_tab == "display":
+            checkboxes = self._checkboxes
+        elif state.active_tab == "technical":
+            checkboxes = self._technical_checkboxes
+        else:
             return
 
         y = body_rect.y
-        for key, label in self._checkboxes:
+        for key, label in checkboxes:
             row_rect = pygame.Rect(body_rect.x, y, body_rect.width, self.ROW_HEIGHT)
             self.settings_checkbox_rows[key] = row_rect
 

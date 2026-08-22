@@ -6,12 +6,21 @@ from info import (
     INFO_SETTINGS_MINIMAP_FRUITS, INFO_SETTINGS_MINIMAP_BUSHES,
     INFO_SETTINGS_MINIMAP_SPIKES, INFO_SETTINGS_MINIMAP_WATER,
     INFO_SETTINGS_MINIMAP_TREES, INFO_SETTINGS_MINIMAP_STONES,
-    INFO_SETTINGS_MINIMAP_ROADS,
+    INFO_SETTINGS_MINIMAP_ROADS, INFO_SETTINGS_AUTOSAVE,
 )
 from game.race_registry import all_display_checkboxes
 from game.animal_registry import all_animal_display_checkboxes
 
-# ---------- Core-чекбоксы (не завязаны ни на одну конкретную расу/животное) ----------
+# ---------- Core-чекбоксы вкладки "Техническое" ----------
+CORE_TECHNICAL_CHECKBOXES = (
+    ("autosave_enabled", INFO_SETTINGS_AUTOSAVE),
+)
+
+def all_technical_checkbox_specs():
+    """(ключ, подпись) для чекбоксов вкладки 'Техническое'."""
+    return CORE_TECHNICAL_CHECKBOXES
+
+# ---------- Core-чекбоксы вкладки "Отображение" ----------
 CORE_DISPLAY_CHECKBOXES = (
     ("show_creature_names", INFO_SETTINGS_SHOW_NAMES),
     ("show_status_rings", INFO_SETTINGS_SHOW_STATUS_RINGS),

@@ -282,7 +282,7 @@ BIOME_BRUSH_MIN_RADIUS = 20
 BIOME_BRUSH_MAX_RADIUS = 300
 BIOME_BRUSH_SENSITIVITY = 1.5
 
-# ---------- Настройки отображения (панель "Настройки" -> "Отображение") ----------
+# ---------- Настройки по умолчанию ----------
 DEFAULT_DISPLAY_SETTINGS = {
     "show_creature_names": False,
     "show_status_rings": True,
@@ -293,6 +293,7 @@ DEFAULT_DISPLAY_SETTINGS = {
     "minimap_show_trees": True,
     "minimap_show_stones": True,
     "minimap_show_roads": True,
+    "autosave_enabled": True,
 }
 
 # ---------- Экран "Настройки" (модальная панель поверх игры с затемнением фона) ----------

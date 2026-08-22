@@ -310,7 +310,7 @@ class WorldManager:
     def open_world(self, world_path, is_new):
         game = self.game
         game.simulation.invalidate_nav_cache()
-        if game.world_loaded and game.world_path:
+        if game.world_loaded and game.world_path and game.display_settings.get("autosave_enabled", True):
             self.save_world()
 
         world_width, world_height = WORLD_DEFAULT_SIZE
@@ -351,6 +351,8 @@ class WorldManager:
         if is_new:
             game.biome_manager.generate(world_width, world_height, world_seed)
             game.object_manager.generate_initial_resources(world_seed)
+            if game.display_settings.get("autosave_enabled", True):
+                self.save_world()
         else:
             self.load_world_data()
             game.biome_manager.ensure_grid(world_width, world_height)
@@ -440,7 +442,7 @@ class WorldManager:
                         game.last_manual_save_time is not None and
                         time.time() - game.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
                 )
-                save = not suppress_autosave
+                save = not suppress_autosave and game.display_settings.get("autosave_enabled", True)
             if save:
                 self.save_world()
 

@@ -979,8 +979,11 @@ class _SettingsScreenEventMixin:
         if ui.settings_tab_display_rect.collidepoint(event.pos):
             state.active_tab = "display"
             return
+        if ui.settings_tab_technical_rect.collidepoint(event.pos):
+            state.active_tab = "technical"
+            return
 
-        if state.active_tab == "display":
+        if state.active_tab in ("display", "technical"):
             for key, row_rect in ui.settings_checkbox_rows.items():
                 if row_rect.collidepoint(event.pos):
                     state.toggle(key)

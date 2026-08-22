@@ -340,10 +340,10 @@ class Game:
 
         if self.world_loaded:
             suppress_autosave = (
-                self.last_manual_save_time is not None and
-                time.time() - self.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
+                    self.last_manual_save_time is not None and
+                    time.time() - self.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
             )
-            if not suppress_autosave:
+            if not suppress_autosave and self.display_settings.get("autosave_enabled", True):
                 self.world_manager.save_world()
         pygame.quit()
         sys.exit()
