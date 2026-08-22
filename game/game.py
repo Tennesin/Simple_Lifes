@@ -428,8 +428,13 @@ class Game:
                 time.time() - self.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
         )
         if recently_saved_manually:
-            # ---------- Недавно уже сохранялись вручную - повторное сохранение не нужно ----------
             self.world_manager.close_world(save=False)
+            if quit_app:
+                self.running = False
+            return
+
+        if self.display_settings.get("autosave_enabled", True):
+            self.world_manager.close_world(save=True)
             if quit_app:
                 self.running = False
             return
