@@ -241,7 +241,8 @@ class WorldRenderer:
         screen.fill((0, 0, 0))
 
         if not game.world_loaded:
-            self.draw_empty_state(screen)
+            if game.create_world_screen is None and game.load_world_screen is None:
+                self.draw_empty_state(screen)
             return
 
         self.draw_grid(screen)

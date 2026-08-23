@@ -49,7 +49,7 @@ _CORE_TOOL_HINTS = {
 
 class TopBarPanel:
     _MENU_COLORS = {
-        "normal": BUTTON_COLOR, "hover": MENU_HOVER,
+        "normal": BUTTON_COLOR, "hover": BUTTON_HOVER,
         "disabled": BUTTON_DISABLED, "text": TEXT_COLOR,
     }
     BUTTON_GAP = 10
@@ -686,63 +686,64 @@ class WorldScreensPanel:
         self.lw_info_content_height = 0
         self.world_screen_back_btn_rect = pygame.Rect(0, 0, 0, 0)
 
-    def draw_create_world_screen(self, screen, state):
-        screen.fill(WORLD_SCREEN_BG)
+    def draw_create_world_screen(self, screen, state, content_rect):
+        pygame.draw.rect(screen, WORLD_SCREEN_BG, content_rect)
         margin = WORLD_SCREEN_MARGIN
+        base_x = content_rect.x + margin
+        base_y = content_rect.y + margin
 
         title_txt = self.title_font.render(INFO_WS_SCREEN_TITLE, True, WORLD_SCREEN_TEXT)
-        screen.blit(title_txt, (margin, margin))
+        screen.blit(title_txt, (base_x, base_y))
 
-        row1_y = margin + 60
+        row1_y = base_y + 60
         name_label = self.label_font.render(INFO_WS_TITLE_NAME, True, WORLD_SCREEN_TEXT)
-        screen.blit(name_label, (margin, row1_y + 6))
-        state.name_input.rect = pygame.Rect(margin + 220, row1_y, 320, 34)
+        screen.blit(name_label, (base_x, row1_y + 6))
+        state.name_input.rect = pygame.Rect(base_x + 220, row1_y, 320, 34)
         state.name_input.draw(screen, self.label_font)
 
         row2_y = row1_y + 60
         size_label = self.label_font.render(INFO_WS_TITLE_SIZE, True, WORLD_SCREEN_TEXT)
-        screen.blit(size_label, (margin, row2_y + 6))
+        screen.blit(size_label, (base_x, row2_y + 6))
 
         length_label = self.label_font.render(INFO_WS_LENGTH, True, WORLD_SCREEN_TEXT)
-        screen.blit(length_label, (margin + 220, row2_y + 6))
-        state.width_input.rect = pygame.Rect(margin + 300, row2_y, 100, 34)
+        screen.blit(length_label, (base_x + 220, row2_y + 6))
+        state.width_input.rect = pygame.Rect(base_x + 300, row2_y, 100, 34)
         state.width_input.draw(screen, self.label_font)
 
         width_label = self.label_font.render(INFO_WS_WIDTH, True, WORLD_SCREEN_TEXT)
-        screen.blit(width_label, (margin + 430, row2_y + 6))
-        state.height_input.rect = pygame.Rect(margin + 500, row2_y, 100, 34)
+        screen.blit(width_label, (base_x + 430, row2_y + 6))
+        state.height_input.rect = pygame.Rect(base_x + 500, row2_y, 100, 34)
         state.height_input.draw(screen, self.label_font)
 
         row3_y = row2_y + 60
         seed_label = self.label_font.render(INFO_WS_TITLE_SEED, True, WORLD_SCREEN_TEXT)
-        screen.blit(seed_label, (margin, row3_y + 6))
-        state.seed_input.rect = pygame.Rect(margin + 220, row3_y, 220, 34)
+        screen.blit(seed_label, (base_x, row3_y + 6))
+        state.seed_input.rect = pygame.Rect(base_x + 220, row3_y, 220, 34)
         state.seed_input.draw(screen, self.label_font)
 
         if state.error_text:
             err_txt = self.small_font.render(state.error_text, True, WORLD_SCREEN_ERROR_COLOR)
-            screen.blit(err_txt, (margin, screen.get_height() - margin - 36 - 26))
+            screen.blit(err_txt, (base_x, content_rect.bottom - margin - 36 - 26))
 
-        self.ws_create_btn_rect = pygame.Rect(margin, screen.get_height() - margin - 36, 150, 36)
+        self.ws_create_btn_rect = pygame.Rect(base_x, content_rect.bottom - margin - 36, 150, 36)
         mouse_pos = pygame.mouse.get_pos()
         btn_color = BUTTON_HOVER if self.ws_create_btn_rect.collidepoint(mouse_pos) else BUTTON_COLOR
         pygame.draw.rect(screen, btn_color, self.ws_create_btn_rect, border_radius=4)
         btn_txt = self.label_font.render(INFO_BTN_WS_CREATE, True, TEXT_COLOR)
         screen.blit(btn_txt, btn_txt.get_rect(center=self.ws_create_btn_rect.center))
-        self._draw_back_button(screen, self.label_font)
+        self._draw_back_button(screen, self.label_font, content_rect)
 
-    def draw_load_world_screen(self, screen, state):
-        screen.fill(WORLD_SCREEN_BG)
+    def draw_load_world_screen(self, screen, state, content_rect):
+        pygame.draw.rect(screen, WORLD_SCREEN_BG, content_rect)
         margin = WORLD_SCREEN_MARGIN
-        screen_w, screen_h = screen.get_width(), screen.get_height()
 
         title_txt = self.lw_title_font.render(INFO_LW_SCREEN_TITLE, True, WORLD_SCREEN_TEXT)
-        screen.blit(title_txt, (margin, margin))
+        screen.blit(title_txt, (content_rect.x + margin, content_rect.y + margin))
 
-        list_top = margin + 60
-        list_width = screen_w // 2 - margin - 15
-        list_height = screen_h - list_top - margin
-        self.lw_list_rect = pygame.Rect(margin, list_top, list_width, list_height)
+        list_top = content_rect.y + margin + 60
+        list_width = content_rect.width // 2 - margin - 15
+        list_height = content_rect.bottom - list_top - margin
+        self.lw_list_rect = pygame.Rect(content_rect.x + margin, list_top, list_width, list_height)
         pygame.draw.rect(screen, WORLD_SCREEN_PANEL_BG, self.lw_list_rect)
         pygame.draw.rect(screen, WORLD_SCREEN_PANEL_BORDER, self.lw_list_rect, 2)
 
@@ -753,15 +754,15 @@ class WorldScreensPanel:
         self.lw_delete_btn_rect = None
         self.lw_info_content_height = 0
 
-        info_x = screen_w // 2 + 15
+        info_x = content_rect.x + content_rect.width // 2 + 15
         if state.selected_index is not None and 0 <= state.selected_index < len(state.entries):
             entry = state.entries[state.selected_index]
-            self._draw_world_info_panel(screen, state, entry, self.lw_label_font, self.lw_small_font)
+            self._draw_world_info_panel(screen, state, entry, self.lw_label_font, self.lw_small_font, content_rect)
         else:
             hint_txt = self.lw_label_font.render(INFO_LW_SELECT_HINT, True, WORLD_SCREEN_HINT_COLOR)
             screen.blit(hint_txt, (info_x + 10, list_top + 10))
 
-        self._draw_back_button(screen, self.lw_label_font)
+        self._draw_back_button(screen, self.lw_label_font, content_rect)
 
     def _draw_world_list(self, screen, state, font):
         rect = self.lw_list_rect
@@ -799,10 +800,10 @@ class WorldScreensPanel:
         screen.set_clip(prev_clip)
         state.list_scroll.draw_scrollbar(screen, rect)
 
-    def _draw_back_button(self, screen, font):
+    def _draw_back_button(self, screen, font, content_rect):
         margin = WORLD_SCREEN_MARGIN
         width, height = 110, 34
-        rect = pygame.Rect(screen.get_width() - margin - width, margin, width, height)
+        rect = pygame.Rect(content_rect.right - margin - width, content_rect.y + margin, width, height)
         self.world_screen_back_btn_rect = rect
 
         mouse_pos = pygame.mouse.get_pos()
@@ -838,13 +839,12 @@ class WorldScreensPanel:
         lines.append(INFO_LW_INFO_ROADS.format(count=counts.get("roads", 0)))
         return lines
 
-    def _draw_world_info_panel(self, screen, state, entry, label_font, small_font):
+    def _draw_world_info_panel(self, screen, state, entry, label_font, small_font, content_rect):
         margin = WORLD_SCREEN_MARGIN
-        screen_w, screen_h = screen.get_width(), screen.get_height()
-        info_x = screen_w // 2 + 15
-        info_width = screen_w - margin - info_x
-        info_top = margin + 60
-        max_height = screen_h - info_top - margin
+        info_x = content_rect.x + content_rect.width // 2 + 15
+        info_width = content_rect.right - margin - info_x
+        info_top = content_rect.y + margin + 60
+        max_height = content_rect.bottom - info_top - margin
 
         lines = self._build_world_info_lines(entry)
         line_height = 22
@@ -1195,9 +1195,22 @@ class UIManager:
 
     # ---------- Оркестрация отрисовки ----------
 
+    def _content_rect(self, screen):
+        return pygame.Rect(0, UI_HEIGHT, screen.get_width(), screen.get_height() - UI_HEIGHT)
+
     def draw(self, screen):
         game = self.game
         self.top_bar.draw(screen)
+
+        if game.create_world_screen is not None:
+            self.world_screens.draw_create_world_screen(
+                screen, game.create_world_screen, self._content_rect(screen))
+            return
+        if game.load_world_screen is not None:
+            self.world_screens.draw_load_world_screen(
+                screen, game.load_world_screen, self._content_rect(screen))
+            return
+
         if game.placement_mode:
             self.draw_placement_overlay(screen)
         elif (game.player.tool is not None or game.player.grabbed_creature is not None
@@ -1338,12 +1351,6 @@ class UIManager:
             surf.fill((*color, 110))
             self._biome_preview_surfaces[key] = surf
         return surf
-
-    def draw_create_world_screen(self, screen, state):
-        self.world_screens.draw_create_world_screen(screen, state)
-
-    def draw_load_world_screen(self, screen, state):
-        self.world_screens.draw_load_world_screen(screen, state)
 
     def draw_settings_screen(self, screen, state):
         self.settings_panel.draw(screen, state)

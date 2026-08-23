@@ -252,13 +252,8 @@ class Game:
             pygame.display.flip()
             return
 
-        if self.create_world_screen is not None:
-            self.ui.draw_create_world_screen(self.screen, self.create_world_screen)
-        elif self.load_world_screen is not None:
-            self.ui.draw_load_world_screen(self.screen, self.load_world_screen)
-        else:
-            self.renderer.draw(self.screen)
-            self.ui.draw(self.screen)
+        self.renderer.draw(self.screen)
+        self.ui.draw(self.screen)
 
         if self.settings_screen is not None:
             self.ui.draw_settings_screen(self.screen, self.settings_screen)
