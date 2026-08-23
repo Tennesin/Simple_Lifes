@@ -110,6 +110,8 @@ INFO_WS_ERROR_EMPTY_NAME = "Введите название мира"
 INFO_WS_TITLE_SEED = "Сид мира:"
 INFO_WS_SEED_PLACEHOLDER = "случайный"
 INFO_LW_INFO_SEED = "Сид: {seed}"
+INFO_WS_GENERATE_ANIMALS = "Автоматическая генерация животных"
+INFO_WS_TITLE_BIOME_RATIOS = "Соотношение биомов:"
 INFO_WS_ERROR_SIZE = "Размер должен быть числом от {min} до {max}"
 
 INFO_LW_SCREEN_TITLE = "Загрузка мира"

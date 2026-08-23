@@ -23,6 +23,12 @@ BIOME_PREVIEW_COLOR = {
     "biome_river": BIOME_BASE_COLOR[BIOME_RIVER],
     "biome_sea": BIOME_BASE_COLOR[BIOME_SEA],
 }
+BIOME_LABELS = {
+    BIOME_PLAINS: INFO_BTN_BIOME_PLAINS,
+    BIOME_DESERT: INFO_BTN_BIOME_DESERT,
+    BIOME_RIVER: INFO_BTN_BIOME_RIVER,
+    BIOME_SEA: INFO_BTN_BIOME_SEA,
+}
 _CORE_OBJECT_MENU_ITEMS = (
     ("spike", INFO_BTN_SPIKE),
 )
@@ -685,6 +691,8 @@ class WorldScreensPanel:
         self.lw_delete_btn_rect = None
         self.lw_info_content_height = 0
         self.world_screen_back_btn_rect = pygame.Rect(0, 0, 0, 0)
+        self.ws_animals_checkbox_rect = pygame.Rect(0, 0, 0, 0)
+        self.ws_biome_slider_rects = {}
 
     def draw_create_world_screen(self, screen, state, content_rect):
         pygame.draw.rect(screen, WORLD_SCREEN_BG, content_rect)
@@ -695,31 +703,70 @@ class WorldScreensPanel:
         title_txt = self.title_font.render(INFO_WS_SCREEN_TITLE, True, WORLD_SCREEN_TEXT)
         screen.blit(title_txt, (base_x, base_y))
 
+        # ---------- Строка 1: название мира + сид (в одной строке) ----------
         row1_y = base_y + 60
         name_label = self.label_font.render(INFO_WS_TITLE_NAME, True, WORLD_SCREEN_TEXT)
         screen.blit(name_label, (base_x, row1_y + 6))
-        state.name_input.rect = pygame.Rect(base_x + 220, row1_y, 320, 34)
+        state.name_input.rect = pygame.Rect(base_x + 150, row1_y, 230, 34)
         state.name_input.draw(screen, self.label_font)
 
+        seed_x = base_x + 150 + 230 + 30
+        seed_label = self.label_font.render(INFO_WS_TITLE_SEED, True, WORLD_SCREEN_TEXT)
+        screen.blit(seed_label, (seed_x, row1_y + 6))
+        state.seed_input.rect = pygame.Rect(seed_x + 110, row1_y, 160, 34)
+        state.seed_input.draw(screen, self.label_font)
+
+        # ---------- Строка 2: размер мира ----------
         row2_y = row1_y + 60
         size_label = self.label_font.render(INFO_WS_TITLE_SIZE, True, WORLD_SCREEN_TEXT)
         screen.blit(size_label, (base_x, row2_y + 6))
 
         length_label = self.label_font.render(INFO_WS_LENGTH, True, WORLD_SCREEN_TEXT)
-        screen.blit(length_label, (base_x + 220, row2_y + 6))
-        state.width_input.rect = pygame.Rect(base_x + 300, row2_y, 100, 34)
+        screen.blit(length_label, (base_x + 150, row2_y + 6))
+        state.width_input.rect = pygame.Rect(base_x + 230, row2_y, 100, 34)
         state.width_input.draw(screen, self.label_font)
 
         width_label = self.label_font.render(INFO_WS_WIDTH, True, WORLD_SCREEN_TEXT)
-        screen.blit(width_label, (base_x + 430, row2_y + 6))
-        state.height_input.rect = pygame.Rect(base_x + 530, row2_y, 100, 34)
+        screen.blit(width_label, (base_x + 360, row2_y + 6))
+        state.height_input.rect = pygame.Rect(base_x + 430, row2_y, 100, 34)
         state.height_input.draw(screen, self.label_font)
 
+        # ---------- Строка 3: автогенерация животных ----------
         row3_y = row2_y + 60
-        seed_label = self.label_font.render(INFO_WS_TITLE_SEED, True, WORLD_SCREEN_TEXT)
-        screen.blit(seed_label, (base_x, row3_y + 6))
-        state.seed_input.rect = pygame.Rect(base_x + 220, row3_y, 220, 34)
-        state.seed_input.draw(screen, self.label_font)
+        self.ws_animals_checkbox_rect = pygame.Rect(base_x, row3_y, 20, 20)
+        self._draw_checkbox(screen, self.ws_animals_checkbox_rect, state.generate_animals)
+        animals_label = self.label_font.render(INFO_WS_GENERATE_ANIMALS, True, WORLD_SCREEN_TEXT)
+        screen.blit(animals_label, (self.ws_animals_checkbox_rect.right + 10, row3_y - 1))
+
+        # ---------- Строка 4+: соотношение биомов ----------
+        row4_y = row3_y + 40
+        biome_title = self.label_font.render(INFO_WS_TITLE_BIOME_RATIOS, True, WORLD_SCREEN_TEXT)
+        screen.blit(biome_title, (base_x, row4_y))
+
+        self.ws_biome_slider_rects = {}
+        slider_y = row4_y + 34
+        name_col_w = 130
+        percent_col_w = 55
+        available_width = content_rect.right - margin - (base_x + name_col_w + percent_col_w)
+        slider_w = max(120, min(360, available_width))
+
+        for biome, slider in state.biome_sliders.items():
+            biome_label = self.small_font.render(BIOME_LABELS.get(biome, biome), True, WORLD_SCREEN_TEXT)
+            screen.blit(biome_label, (base_x, slider_y + 6))
+
+            percent_txt = self.small_font.render(f"{int(round(slider.value * 100))}%", True, WORLD_SCREEN_TEXT)
+            screen.blit(percent_txt, (base_x + name_col_w, slider_y + 6))
+
+            slider.rect = pygame.Rect(base_x + name_col_w + percent_col_w, slider_y, slider_w, 18)
+            slider.draw(screen, MINIMAP_BIOME_COLOR.get(biome, (150, 150, 150)))
+            self.ws_biome_slider_rects[biome] = slider.rect
+
+            slider_y += 30
+
+        total_ratio = sum(s.value for s in state.biome_sliders.values())
+        total_color = WORLD_SCREEN_ERROR_COLOR if total_ratio > 1.001 else WORLD_SCREEN_HINT_COLOR
+        total_txt = self.small_font.render(f"Сумма: {int(round(total_ratio * 100))}%", True, total_color)
+        screen.blit(total_txt, (base_x, slider_y + 4))
 
         if state.error_text:
             err_txt = self.small_font.render(state.error_text, True, WORLD_SCREEN_ERROR_COLOR)
@@ -732,6 +779,15 @@ class WorldScreensPanel:
         btn_txt = self.label_font.render(INFO_BTN_WS_CREATE, True, TEXT_COLOR)
         screen.blit(btn_txt, btn_txt.get_rect(center=self.ws_create_btn_rect.center))
         self._draw_back_button(screen, self.label_font, content_rect)
+
+    def _draw_checkbox(self, screen, rect, checked):
+        mouse_pos = pygame.mouse.get_pos()
+        bg = (55, 55, 55) if rect.collidepoint(mouse_pos) else (40, 40, 40)
+        pygame.draw.rect(screen, bg, rect)
+        pygame.draw.rect(screen, WORLD_SCREEN_TEXT, rect, 1)
+        if checked:
+            pygame.draw.line(screen, (120, 230, 120), (rect.x + 3, rect.y + 10), (rect.x + 8, rect.y + 15), 2)
+            pygame.draw.line(screen, (120, 230, 120), (rect.x + 8, rect.y + 15), (rect.x + 17, rect.y + 3), 2)
 
     def draw_load_world_screen(self, screen, state, content_rect):
         pygame.draw.rect(screen, WORLD_SCREEN_BG, content_rect)

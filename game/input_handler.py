@@ -869,8 +869,30 @@ class _WorldScreenEventMixin:
             for box in screen.all_inputs():
                 box.try_focus(event.pos)
 
+            if ui.ws_animals_checkbox_rect.collidepoint(event.pos):
+                screen.generate_animals = not screen.generate_animals
+                return
+
+            for biome, slider in screen.biome_sliders.items():
+                if slider.rect.collidepoint(event.pos):
+                    slider.dragging = True
+                    slider.set_from_mouse(event.pos[0])
+                    screen.apply_biome_slider_change(biome, slider.value)
+                    return
+
             if ui.ws_create_btn_rect.collidepoint(event.pos):
                 game.world_manager.confirm_create_screen()
+
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            for slider in screen.biome_sliders.values():
+                slider.dragging = False
+
+        elif event.type == pygame.MOUSEMOTION:
+            for biome, slider in screen.biome_sliders.items():
+                if slider.dragging:
+                    slider.set_from_mouse(event.pos[0])
+                    screen.apply_biome_slider_change(biome, slider.value)
+                    break
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:

@@ -2,6 +2,67 @@ import math
 import random
 from settings import *
 
+BIOME_RATIO_MIN = 0.05
+BIOME_RATIO_MAX = 0.85
+BIOME_RATIO_STEP = 0.05
+
+DEFAULT_BIOME_RATIOS = {
+    BIOME_PLAINS: 0.55,
+    BIOME_DESERT: 0.15,
+    BIOME_RIVER: 0.15,
+    BIOME_SEA: 0.15,
+}
+
+def adjust_biome_ratio(ratios, changed_biome, new_value):
+    """Меняет долю одного биома, пропорционально забирая разницу у остальных
+    (не опуская их ниже BIOME_RATIO_MIN)."""
+    ratios = dict(ratios)
+    new_value = round(max(BIOME_RATIO_MIN, min(BIOME_RATIO_MAX, new_value)), 2)
+    ratios[changed_biome] = new_value
+
+    others = [b for b in ratios if b != changed_biome]
+
+    for _ in range(20):
+        overflow = round(sum(ratios.values()) - 1.0, 4)
+        if overflow <= 1e-6:
+            break
+        reducible = [b for b in others if ratios[b] > BIOME_RATIO_MIN + 1e-6]
+        if not reducible:
+            ratios[changed_biome] = round(max(BIOME_RATIO_MIN, ratios[changed_biome] - overflow), 2)
+            break
+        reducible_total = sum(ratios[b] for b in reducible)
+        for b in reducible:
+            share = ratios[b] / reducible_total
+            reduction = min(overflow * share, ratios[b] - BIOME_RATIO_MIN)
+            ratios[b] = round(ratios[b] - reduction, 4)
+
+    for b in ratios:
+        ratios[b] = round(max(BIOME_RATIO_MIN, min(BIOME_RATIO_MAX, ratios[b])), 2)
+    return ratios
+
+
+def finalize_biome_ratios(ratios):
+    """Вызывается прямо перед созданием мира: если сумма долей меньше 1.0,
+    недостающее случайно раздаётся по биомам (с учётом BIOME_RATIO_MAX)."""
+    ratios = dict(ratios)
+    total = sum(ratios.values())
+    remaining_steps = int(round((1.0 - total) / BIOME_RATIO_STEP))
+    if remaining_steps <= 0:
+        return ratios
+
+    biomes = list(ratios.keys())
+    guard = 0
+    while remaining_steps > 0 and guard < 1000:
+        guard += 1
+        candidates = [b for b in biomes if ratios[b] + BIOME_RATIO_STEP <= BIOME_RATIO_MAX + 1e-6]
+        if not candidates:
+            break
+        b = random.choice(candidates)
+        ratios[b] = round(ratios[b] + BIOME_RATIO_STEP, 2)
+        remaining_steps -= 1
+
+    return ratios
+
 class BiomeGrid:
     """Клеточная сетка биомов - хранение и запросы."""
 
@@ -164,21 +225,30 @@ class BiomeGenerator:
     def __init__(self, rng):
         self.rng = rng
 
-    def generate(self, world_w, world_h):
+    def generate(self, world_w, world_h, ratios=None):
         grid = BiomeGrid(world_w, world_h)
-        self._generate_sea(grid)
-        self._generate_rivers(grid)
-        self._generate_deserts(grid)
+        ratios = ratios or DEFAULT_BIOME_RATIOS
+        total_cells = grid.cols * grid.rows
+
+        sea_target = int(total_cells * ratios.get(BIOME_SEA, 0.0))
+        river_target = int(total_cells * ratios.get(BIOME_RIVER, 0.0))
+        desert_target = int(total_cells * ratios.get(BIOME_DESERT, 0.0))
+
+        self._generate_sea(grid, sea_target)
+        self._generate_rivers(grid, river_target)
+        self._generate_deserts(grid, desert_target)
         return grid
 
     # ---------- Море: зародыши у краёв + клеточный автомат ----------
 
-    def _generate_sea(self, grid):
-        seed_count = self.rng.randint(*SEA_GENERATION_SEED_COUNT)
+    def _generate_sea(self, grid, target_cells):
+        if target_cells <= 0:
+            return
+        seed_count = max(1, min(6, target_cells // max(1, (grid.cols + grid.rows))))
+        blob_radius = max(2, int(math.sqrt(target_cells / seed_count / math.pi)))
         for _ in range(seed_count):
             edge = self.rng.choice(("top", "bottom", "left", "right"))
             cx, cy = self._random_edge_cell(grid, edge)
-            blob_radius = self.rng.randint(3, max(4, min(grid.cols, grid.rows) // 6))
             for dy in range(-blob_radius, blob_radius + 1):
                 for dx in range(-blob_radius, blob_radius + 1):
                     if dx * dx + dy * dy <= blob_radius * blob_radius:
@@ -186,6 +256,7 @@ class BiomeGenerator:
 
         self._cellular_automaton_step(grid, BIOME_SEA, SEA_AUTOMATON_ITERATIONS,
                                       birth_threshold=4, death_threshold=3)
+        self._adjust_biome_to_target(grid, BIOME_SEA, target_cells)
 
     def _cellular_automaton_step(self, grid, biome_type, iterations, birth_threshold, death_threshold):
         for _ in range(iterations):
@@ -227,10 +298,14 @@ class BiomeGenerator:
 
     # ---------- Реки: блуждающая ломаная от края к противоположному краю ----------
 
-    def _generate_rivers(self, grid):
-        river_count = self.rng.randint(*RIVER_GENERATION_COUNT)
+    def _generate_rivers(self, grid, target_cells):
+        if target_cells <= 0:
+            return
+        approx_river_area = max(1, (grid.cols + grid.rows) // 2)
+        river_count = max(1, min(4, target_cells // approx_river_area + 1))
         for _ in range(river_count):
             self._generate_single_river(grid)
+        self._adjust_biome_to_target(grid, BIOME_RIVER, target_cells)
 
     def _generate_single_river(self, grid):
         start_edge = self.rng.choice(("top", "bottom", "left", "right"))
@@ -267,11 +342,13 @@ class BiomeGenerator:
 
     # ---------- Пустыня: зародыши на суше + компактный автомат, не трогающий воду ----------
 
-    def _generate_deserts(self, grid):
-        seed_count = self.rng.randint(*DESERT_GENERATION_SEED_COUNT)
+    def _generate_deserts(self, grid, target_cells):
+        if target_cells <= 0:
+            return
         attempts = 0
-        placed = 0
-        while placed < seed_count and attempts < seed_count * 20:
+        placed_cells = 0
+        attempts_limit = max(60, (target_cells // 10) * 20 + 60)
+        while placed_cells < target_cells and attempts < attempts_limit:
             attempts += 1
             cx = self.rng.randint(0, grid.cols - 1)
             cy = self.rng.randint(0, grid.rows - 1)
@@ -284,9 +361,10 @@ class BiomeGenerator:
                         ncx, ncy = cx + dx, cy + dy
                         if grid.in_bounds(ncx, ncy) and grid.cells[grid._index(ncx, ncy)] == BIOME_PLAINS:
                             grid.set_cell(ncx, ncy, BIOME_DESERT)
-            placed += 1
+                            placed_cells += 1
 
         self._desert_automaton_step(grid, DESERT_AUTOMATON_ITERATIONS)
+        self._adjust_biome_to_target(grid, BIOME_DESERT, target_cells)
 
     def _desert_automaton_step(self, grid, iterations):
         """Как обычный автомат, но никогда не отжимает территорию у реки/моря."""
@@ -306,6 +384,87 @@ class BiomeGenerator:
                             new_cells[idx] = BIOME_DESERT
             grid.cells = new_cells
 
+    # ---------- Точная подгонка площади биома под целевое число клеток ----------
+
+    def _cell_neighbors(self, grid, cx, cy):
+        result = []
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = cx + dx, cy + dy
+            if grid.in_bounds(nx, ny):
+                result.append(grid._index(nx, ny))
+        return result
+
+    def _adjust_biome_to_target(self, grid, biome_type, target_cells):
+        current = [i for i, c in enumerate(grid.cells) if c == biome_type]
+        count = len(current)
+
+        if count < target_cells:
+            self._grow_biome(grid, biome_type, current, target_cells - count)
+        elif count > target_cells:
+            self._shrink_biome(grid, biome_type, current, count - target_cells)
+
+    def _grow_biome(self, grid, biome_type, current_cells, cells_needed):
+        # Растёт ТОЛЬКО по клеткам-равнинам - соседние биомы (море/река/пустыня)
+        # никогда не перезаписываются
+        frontier = list(current_cells)
+        added = 0
+        guard = 0
+        max_guard = max(200, cells_needed * 8)
+
+        while added < cells_needed and guard < max_guard:
+            guard += 1
+            if not frontier:
+                frontier = [i for i, c in enumerate(grid.cells) if c == biome_type]
+                if not frontier:
+                    free_cells = [i for i, c in enumerate(grid.cells) if c == BIOME_PLAINS]
+                    if not free_cells:
+                        break
+                    seed_idx = self.rng.choice(free_cells)
+                    grid.cells[seed_idx] = biome_type
+                    frontier = [seed_idx]
+                    added += 1
+                    continue
+
+            idx = frontier[self.rng.randrange(len(frontier))]
+            cx, cy = idx % grid.cols, idx // grid.cols
+            neighbors = self._cell_neighbors(grid, cx, cy)
+            self.rng.shuffle(neighbors)
+
+            grew = False
+            for n_idx in neighbors:
+                if grid.cells[n_idx] == BIOME_PLAINS:
+                    grid.cells[n_idx] = biome_type
+                    frontier.append(n_idx)
+                    added += 1
+                    grew = True
+                    break
+            if not grew:
+                frontier.remove(idx)
+
+    def _shrink_biome(self, grid, biome_type, current_cells, cells_to_remove):
+        border = [i for i in current_cells
+                  if any(grid.cells[n] != biome_type
+                        for n in self._cell_neighbors(grid, i % grid.cols, i // grid.cols))]
+        if not border:
+            border = list(current_cells)
+
+        removed = 0
+        guard = 0
+        max_guard = max(200, cells_to_remove * 8)
+
+        while removed < cells_to_remove and guard < max_guard and border:
+            guard += 1
+            idx = border.pop(self.rng.randrange(len(border)))
+            if grid.cells[idx] != biome_type:
+                continue
+            grid.cells[idx] = BIOME_PLAINS
+            removed += 1
+
+            cx, cy = idx % grid.cols, idx // grid.cols
+            for n_idx in self._cell_neighbors(grid, cx, cy):
+                if grid.cells[n_idx] == biome_type:
+                    border.append(n_idx)
+
 # =========================================================================
 # Домен: игровая обёртка над сеткой биомов - создание/загрузка/покраска.
 # =========================================================================
@@ -315,9 +474,9 @@ class BiomeManager:
         self.game = game
         self.grid = None  # BiomeGrid | None
 
-    def generate(self, world_w, world_h, seed):
+    def generate(self, world_w, world_h, seed, ratios=None):
         rng = random.Random(seed)
-        self.grid = BiomeGenerator(rng).generate(world_w, world_h)
+        self.grid = BiomeGenerator(rng).generate(world_w, world_h, ratios=ratios)
 
     def ensure_grid(self, world_w, world_h):
         if self.grid is None:

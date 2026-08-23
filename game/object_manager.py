@@ -270,6 +270,37 @@ class _InitialResourceMixin(_PlacementMixin):
         if obj_type in _LANDSCAPE_VERSION_BUMP_TYPES and placed > 0:
             game.world.landscape_version += 1
 
+    def generate_initial_animals(self, seed):
+        game = self.game
+        rng = random.Random(seed ^ 0x27D4EB2F)
+
+        area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / INITIAL_RESOURCE_BASE_WORLD_AREA
+        area_ratio = max(0.1, area_ratio)
+
+        counts = {
+            "sheep": int(INITIAL_SHEEP_COUNT * area_ratio),
+            "cow": int(INITIAL_COW_COUNT * area_ratio),
+            "wolf": int(INITIAL_WOLF_COUNT * area_ratio),
+        }
+
+        for descriptor in all_animals():
+            count = counts.get(descriptor.animal_name)
+            if not count:
+                continue
+            self._scatter_initial_animals(rng, count, descriptor)
+
+    def _scatter_initial_animals(self, rng, count, descriptor):
+        placed = 0
+        attempts = 0
+        attempts_limit = max(50, count * 25)
+        while placed < count and attempts < attempts_limit:
+            attempts += 1
+            wx = rng.uniform(20, settings.WORLD_WIDTH - 20)
+            wy = rng.uniform(20, settings.WORLD_HEIGHT - 20)
+            if not self.check_creature_placement_valid(wx, wy):
+                continue
+            descriptor.spawn_fn(self, wx, wy, descriptor.placement_mode)
+            placed += 1
 
 # =========================================================================
 # Домен: естественный рост деревьев/кустов/камней и появление фруктов (core-only)

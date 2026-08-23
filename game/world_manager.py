@@ -17,7 +17,11 @@ from objects import (
 import settings
 from game.animal_registry import all_animals, all_animal_drop_persistence_entries
 from .world_context import WorldState
-from .widgets import TextInputBox, ScrollArea
+from .widgets import TextInputBox, ScrollArea, Slider
+from biome import (
+    DEFAULT_BIOME_RATIOS, adjust_biome_ratio, finalize_biome_ratios,
+    BIOME_RATIO_MIN, BIOME_RATIO_MAX, BIOME_RATIO_STEP,
+)
 
 INVALID_NAME_CHARS = '<>:"/\\|?*'
 
@@ -78,9 +82,22 @@ class CreateWorldScreen:
             digits_only=True, placeholder=INFO_WS_SEED_PLACEHOLDER)
         self.error_text = None
 
+        self.generate_animals = True
+
+        self.biome_ratios = dict(DEFAULT_BIOME_RATIOS)
+        self.biome_sliders = {
+            biome: Slider(pygame.Rect(0, 0, 10, 10), value=ratio,
+                         min_value=BIOME_RATIO_MIN, max_value=BIOME_RATIO_MAX, step=BIOME_RATIO_STEP)
+            for biome, ratio in self.biome_ratios.items()
+        }
+
     def all_inputs(self):
         return (self.name_input, self.width_input, self.height_input, self.seed_input)
 
+    def apply_biome_slider_change(self, biome, new_value):
+        self.biome_ratios = adjust_biome_ratio(self.biome_ratios, biome, new_value)
+        for b, slider in self.biome_sliders.items():
+            slider.value = self.biome_ratios[b]
 
 # ---------- Состояние экрана "Загрузка мира" ----------
 
@@ -182,8 +199,12 @@ class WorldManager:
         seed_text = screen.seed_input.text.strip()
         seed = int(seed_text) if seed_text.isdigit() else random.randint(0, 2 ** 31 - 1)
 
+        biome_ratios = dict(screen.biome_ratios)
+        generate_animals = screen.generate_animals
+
         game.create_world_screen = None
-        self.create_world(name, width, height, seed)
+        self.create_world(name, width, height, seed,
+                          biome_ratios=biome_ratios, generate_animals=generate_animals)
 
     @staticmethod
     def _parse_size(text):
@@ -282,7 +303,8 @@ class WorldManager:
 
     # ---------- Создание/открытие мира ----------
 
-    def create_world(self, name, width=None, height=None, seed=None):
+    def create_world(self, name, width=None, height=None, seed=None,
+                     biome_ratios=None, generate_animals=True):
         os.makedirs(BASE_WORLDS_DIR, exist_ok=True)
         folder_name = get_unique_world_folder_name(name)
         world_path = os.path.join(BASE_WORLDS_DIR, folder_name)
@@ -294,6 +316,8 @@ class WorldManager:
         if seed is None:
             seed = random.randint(0, 2 ** 31 - 1)
 
+        biome_ratios = finalize_biome_ratios(biome_ratios or DEFAULT_BIOME_RATIOS)
+
         meta = {
             "name": sanitize_world_name(name),
             "created": time.time(),
@@ -301,6 +325,8 @@ class WorldManager:
             "world_width": width,
             "world_height": height,
             "seed": seed,
+            "biome_ratios": biome_ratios,
+            "generate_animals": generate_animals,
         }
         with open(os.path.join(world_path, WORLD_META_FILENAME), "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
@@ -315,6 +341,8 @@ class WorldManager:
 
         world_width, world_height = WORLD_DEFAULT_SIZE
         world_seed = None
+        biome_ratios = None
+        generate_animals = True
         meta_path = os.path.join(world_path, WORLD_META_FILENAME)
         if os.path.exists(meta_path):
             try:
@@ -323,6 +351,8 @@ class WorldManager:
                 world_width = meta.get("world_width", world_width)
                 world_height = meta.get("world_height", world_height)
                 world_seed = meta.get("seed")
+                biome_ratios = meta.get("biome_ratios")
+                generate_animals = meta.get("generate_animals", True)
             except (OSError, json.JSONDecodeError):
                 pass
 
@@ -349,8 +379,10 @@ class WorldManager:
         game.close_all_menus()
 
         if is_new:
-            game.biome_manager.generate(world_width, world_height, world_seed)
+            game.biome_manager.generate(world_width, world_height, world_seed, ratios=biome_ratios)
             game.object_manager.generate_initial_resources(world_seed)
+            if generate_animals:
+                game.object_manager.generate_initial_animals(world_seed)
             if game.display_settings.get("autosave_enabled", True):
                 self.save_world()
         else:

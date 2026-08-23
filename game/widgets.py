@@ -118,3 +118,35 @@ class ScrollArea:
         thumb_h = max(20, int(rect.height * rect.height / content_height))
         thumb_y = rect.y + int((rect.height - thumb_h) * (self.offset / self.max_scroll))
         pygame.draw.rect(surface, (150, 150, 150), (track_rect.x, thumb_y, 4, thumb_h))
+
+class Slider:
+    def __init__(self, rect, value=0.5, min_value=0.0, max_value=1.0, step=0.05):
+        self.rect = pygame.Rect(rect)
+        self.min_value = min_value
+        self.max_value = max_value
+        self.step = step
+        self.value = max(min_value, min(max_value, value))
+        self.dragging = False
+
+    def set_from_mouse(self, mouse_x):
+        if self.rect.width <= 0:
+            return
+        ratio = (mouse_x - self.rect.x) / self.rect.width
+        ratio = max(0.0, min(1.0, ratio))
+        raw_value = self.min_value + ratio * (self.max_value - self.min_value)
+        steps = round((raw_value - self.min_value) / self.step)
+        value = self.min_value + steps * self.step
+        self.value = round(max(self.min_value, min(self.max_value, value)), 2)
+
+    def draw(self, surface, fill_color, bg_color=(25, 25, 25), border_color=(15, 15, 15)):
+        pygame.draw.rect(surface, bg_color, self.rect, border_radius=4)
+        span = self.max_value - self.min_value
+        ratio = (self.value - self.min_value) / span if span > 0 else 0.0
+        fill_w = max(4, int(self.rect.width * ratio))
+        fill_rect = pygame.Rect(self.rect.x, self.rect.y, fill_w, self.rect.height)
+        pygame.draw.rect(surface, fill_color, fill_rect, border_radius=4)
+        pygame.draw.rect(surface, border_color, self.rect, 1, border_radius=4)
+
+        handle_rect = pygame.Rect(0, 0, 4, self.rect.height + 6)
+        handle_rect.center = (self.rect.x + fill_w, self.rect.centery)
+        pygame.draw.rect(surface, (240, 240, 240), handle_rect, border_radius=2)
