@@ -712,7 +712,7 @@ class WorldScreensPanel:
 
         width_label = self.label_font.render(INFO_WS_WIDTH, True, WORLD_SCREEN_TEXT)
         screen.blit(width_label, (base_x + 430, row2_y + 6))
-        state.height_input.rect = pygame.Rect(base_x + 500, row2_y, 100, 34)
+        state.height_input.rect = pygame.Rect(base_x + 530, row2_y, 100, 34)
         state.height_input.draw(screen, self.label_font)
 
         row3_y = row2_y + 60

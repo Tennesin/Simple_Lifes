@@ -45,7 +45,7 @@ BUTTON_HEIGHT = 28        # стандартная высота кнопки —
 
 # ---------- Размер мира по умолчанию (используется, пока мир не создан/загружен) ----------
 WORLD_DEFAULT_SIZE = (WORLD_WIDTH, WORLD_HEIGHT)
-WORLD_MIN_SIZE = 750
+WORLD_MIN_SIZE = 1000
 WORLD_MAX_SIZE = 10000
 
 # ---------- Экраны создания/загрузки мира (без tkinter) ----------
