@@ -4,6 +4,7 @@ from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
 
 COW_DIET = DIET_HERBIVORE
 COW_FOOD_CATEGORY_MAP = {"grass": FOOD_CATEGORY_PLANT}
+COW_INITIAL_COUNT = 8
 
 # ---------- Базовые характеристики ----------
 COW_HP_MAX = 90

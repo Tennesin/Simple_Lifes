@@ -25,6 +25,7 @@ class AnimalDescriptor:
     name_pools: Optional[dict] = None
     tick_fn: Optional[Callable] = None
     object_panel_extra_fn: Optional[Callable] = None  # (obj, all_creatures) -> list[(text, color)]
+    initial_count: int = 0
 
     # ---------- Дроп-ресурсы животного - generic по образцу world_collections/persistence_registry расы ----------
     drop_collections: Tuple[str, ...] = ()

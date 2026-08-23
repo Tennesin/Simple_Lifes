@@ -4,6 +4,7 @@ from ...all_needed.diet import DIET_CARNIVORE, FOOD_CATEGORY_RAW_MEAT
 
 WOLF_DIET = DIET_CARNIVORE
 WOLF_FOOD_CATEGORY_MAP = {"meat": FOOD_CATEGORY_RAW_MEAT}
+WOLF_INITIAL_COUNT = 3
 
 # ---------- Базовые характеристики (хищник: быстрее и зорче овец/коров) ----------
 WOLF_HP_MAX = 70
