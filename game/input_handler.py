@@ -301,8 +301,8 @@ class _MouseDownMixin:
             rect = game.ui.minimap.rect
             rel_x = (mouse_x - rect.x) / rect.width
             rel_y = (mouse_y - rect.y) / rect.height
-            wx = rel_x * WORLD_WIDTH
-            wy = rel_y * WORLD_HEIGHT
+            wx = rel_x * game.camera.world_w
+            wy = rel_y * game.camera.world_h
             game.camera.center_on(wx, wy)
         return True
 

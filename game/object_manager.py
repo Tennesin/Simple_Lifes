@@ -178,11 +178,12 @@ class _PlacementMixin:
             return True
         return grid.get_at(wx, wy) in _biome_allowed_set(obj_type)
 
-    def _prepare_eligible_cells(self, biome_cache, allowed_biomes):
+    def _prepare_eligible_cells(self, biome_cache, allowed_biomes, rng):
         game = self.game
         if biome_cache is None or game.biome_manager.grid is None:
             return None, None
         cells = list(biome_cache.cells_for(allowed_biomes))
+        rng.shuffle(cells)
         return cells, game.biome_manager.grid.cell_size
 
     @staticmethod
@@ -351,14 +352,12 @@ class _InitialResourceMixin(_PlacementMixin):
         attr, cls = _OBJECT_TYPE_REGISTRY[obj_type]
         collection = getattr(game.world, attr)
 
-        eligible_cells, cell_size = self._prepare_eligible_cells(biome_cache, _biome_allowed_set(obj_type))
+        eligible_cells, cell_size = self._prepare_eligible_cells(biome_cache, _biome_allowed_set(obj_type), rng)
 
         placed = 0
         attempts = 0
         consecutive_failures = 0
         attempts_limit = max(50, count * 25)
-        # ---------- НОВОЕ (п.1): если место реально кончилось - не тратим оставшиеся
-        # тысячи попыток впустую, останавливаемся раньше по числу подряд неудач ----------
         max_consecutive_failures = max(300, count * 5)
         cell_cursor = 0
 
@@ -396,23 +395,12 @@ class _InitialResourceMixin(_PlacementMixin):
                 continue
             self._scatter_initial_animals(rng, count, descriptor, biome_cache=biome_cache, index=index)
 
-    def _scatter_initial_animals(self, rng, count, descriptor):
-        placed = 0
-        attempts = 0
-        attempts_limit = max(50, count * 25)
-        while placed < count and attempts < attempts_limit:
-            attempts += 1
-            wx = rng.uniform(20, settings.WORLD_WIDTH - 20)
-            wy = rng.uniform(20, settings.WORLD_HEIGHT - 20)
-            if not self.check_creature_placement_valid(wx, wy):
-                continue
-            descriptor.spawn_fn(self, wx, wy, descriptor.placement_mode)
-            placed += 1    def _scatter_initial_animals(self, rng, count, descriptor, biome_cache=None, index=None):
+    def _scatter_initial_animals(self, rng, count, descriptor, biome_cache=None, index=None):
         game = self.game
         if count <= 0:
             return
 
-        eligible_cells, cell_size = self._prepare_eligible_cells(biome_cache, _ANIMAL_ALLOWED_BIOMES)
+        eligible_cells, cell_size = self._prepare_eligible_cells(biome_cache, _ANIMAL_ALLOWED_BIOMES, rng)
 
         placed = 0
         attempts = 0

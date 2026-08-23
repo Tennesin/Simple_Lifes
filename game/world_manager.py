@@ -383,8 +383,7 @@ class WorldManager:
             game.object_manager.generate_initial_resources(world_seed)
             if generate_animals:
                 game.object_manager.generate_initial_animals(world_seed)
-            if game.display_settings.get("autosave_enabled", True):
-                self.save_world()
+            self.save_world()
         else:
             self.load_world_data()
             game.biome_manager.ensure_grid(world_width, world_height)
