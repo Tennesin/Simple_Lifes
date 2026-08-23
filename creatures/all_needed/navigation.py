@@ -352,6 +352,10 @@ class SpatialGrid:
         self.cell_size = cell_size
         self.buckets = {}
 
+    def add(self, obj):
+        key = self._cell(obj.x, obj.y)
+        self.buckets.setdefault(key, []).append(obj)
+
     def clear(self):
         self.buckets.clear()
 

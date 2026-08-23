@@ -2,7 +2,7 @@ from __future__ import annotations
 import math
 import random
 import settings
-from creatures.all_needed import geometry
+from creatures.all_needed import geometry, SpatialGrid
 from typing import TYPE_CHECKING
 from settings import *
 from game.race_registry import (
@@ -50,6 +50,58 @@ def distance_to_footprint(obj, px, py):
         return obj.distance_to_point(px, py)
     return max(0.0, math.hypot(px - obj.x, py - obj.y) - footprint_radius(obj))
 
+# =========================================================================
+# НОВОЕ: допустимые биомы по типу объекта - вынесено в чистую функцию,
+# чтобы ей одинаково пользовались и точечная проверка (check_object_placement_valid),
+# и кэш стратифицированной выборки (_BiomeEligibilityCache) ниже.
+# =========================================================================
+
+def _biome_allowed_set(obj_type):
+    if obj_type == "stone":
+        return (BIOME_PLAINS, BIOME_DESERT, BIOME_RIVER)
+    if obj_type in ("water", "bush", "grass", "tree"):
+        return (BIOME_PLAINS,)
+    return (BIOME_PLAINS, BIOME_DESERT)
+
+# ---------- Существа/животные (check_creature_placement_valid) не боятся ничего, кроме моря ----------
+_ANIMAL_ALLOWED_BIOMES = (BIOME_PLAINS, BIOME_DESERT, BIOME_RIVER)
+
+class _BiomeEligibilityCache:
+
+    def __init__(self, biome_grid):
+        self.grid = biome_grid
+        self._cache = {}
+
+    def cells_for(self, allowed_biomes):
+        key = frozenset(allowed_biomes)
+        cached = self._cache.get(key)
+        if cached is not None:
+            return cached
+        if self.grid is None:
+            return []
+        cells = [
+            (cx, cy)
+            for cy in range(self.grid.rows)
+            for cx in range(self.grid.cols)
+            if self.grid.cells[cy * self.grid.cols + cx] in key
+        ]
+        self._cache[key] = cells
+        return cells
+
+class _GenerationSpatialIndex:
+    CELL_SIZE = 150
+
+    def __init__(self, game):
+        self.game = game
+        self._grids = {}
+
+    def grid_for(self, attr):
+        grid = self._grids.get(attr)
+        if grid is None:
+            grid = SpatialGrid(cell_size=self.CELL_SIZE)
+            grid.build(getattr(self.game.world, attr))
+            self._grids[attr] = grid
+        return grid
 
 # =========================================================================
 # Аналог _WORLD_OBJECT_REGISTRY из game/world_manager.py.
@@ -86,7 +138,6 @@ def _build_placement_clearance_registry():
 
 _PLACEMENT_CLEARANCE_REGISTRY = _build_placement_clearance_registry()
 
-
 def _build_mutual_clearance_additive_attrs():
     registry = set()
     for descriptor in all_races():
@@ -110,6 +161,45 @@ _LANDSCAPE_VERSION_BUMP_TYPES = ("spike",)
 
 class _PlacementMixin:
     game: "Game"
+
+    # ---------- НОВОЕ: запас для приблизительного пространственного поиска -
+    # чуть больше самого крупного footprint'а в игре, чтобы точно не промахнуться ----------
+    GENERATION_QUERY_MARGIN = 120
+    CREATURE_CLEARANCE = 30
+
+    def _collection_candidates(self, attr, wx, wy, radius, index):
+        if index is not None:
+            return index.grid_for(attr).query_nearby(wx, wy, radius)
+        return getattr(self.game.world, attr)
+
+    def _biome_allows_object(self, wx, wy, obj_type):
+        grid = self.game.biome_manager.grid
+        if grid is None:
+            return True
+        return grid.get_at(wx, wy) in _biome_allowed_set(obj_type)
+
+    def _prepare_eligible_cells(self, biome_cache, allowed_biomes):
+        game = self.game
+        if biome_cache is None or game.biome_manager.grid is None:
+            return None, None
+        cells = list(biome_cache.cells_for(allowed_biomes))
+        return cells, game.biome_manager.grid.cell_size
+
+    @staticmethod
+    def _next_candidate_point(rng, eligible_cells, cell_size, cell_cursor):
+        if eligible_cells:
+            if cell_cursor >= len(eligible_cells):
+                cell_cursor = 0
+                rng.shuffle(eligible_cells)
+            cx, cy = eligible_cells[cell_cursor]
+            cell_cursor += 1
+            margin = min(4, cell_size / 4)
+            wx = cx * cell_size + rng.uniform(margin, cell_size - margin)
+            wy = cy * cell_size + rng.uniform(margin, cell_size - margin)
+            return wx, wy, cell_cursor
+        wx = rng.uniform(20, settings.WORLD_WIDTH - 20)
+        wy = rng.uniform(20, settings.WORLD_HEIGHT - 20)
+        return wx, wy, cell_cursor
 
     def start_placement(self, obj_type):
         game = self.game
@@ -145,81 +235,79 @@ class _PlacementMixin:
         if game.placement_mode in _LANDSCAPE_VERSION_BUMP_TYPES:
             game.world.landscape_version += 1
 
-    def check_creature_placement_valid(self, wx, wy):
+    def check_creature_placement_valid(self, wx, wy, index=None):
         game = self.game
         if wx < 20 or wx > settings.WORLD_WIDTH - 20 or wy < 20 or wy > settings.WORLD_HEIGHT - 20:
             return False
         if (game.biome_manager.grid is not None
                 and game.biome_manager.grid.get_at(wx, wy) == BIOME_SEA):
             return False
-        for c in game.world.creatures:
-            if math.hypot(wx - c.x, wy - c.y) < 30:
+
+        clearance = self.CREATURE_CLEARANCE
+
+        for c in self._collection_candidates("creatures", wx, wy, clearance, index):
+            if math.hypot(wx - c.x, wy - c.y) < clearance:
                 return False
+
         for descriptor in all_animals():
-            for animal in getattr(game.world, descriptor.world_collection):
-                if math.hypot(wx - animal.x, wy - animal.y) < 30:
+            for animal in self._collection_candidates(descriptor.world_collection, wx, wy, clearance, index):
+                if math.hypot(wx - animal.x, wy - animal.y) < clearance:
                     return False
-        for water in game.world.water_puddles:
+
+        for water in self._collection_candidates("water_puddles", wx, wy, self.GENERATION_QUERY_MARGIN, index):
             if math.hypot(wx - water.x, wy - water.y) < water.radius + 20:
                 return False
-        for bush in game.world.bushes:
+
+        for bush in self._collection_candidates("bushes", wx, wy, self.GENERATION_QUERY_MARGIN, index):
             if math.hypot(wx - bush.x, wy - bush.y) < bush.radius + 20:
                 return False
-        for fire in game.world.campfires:
+
+        for fire in self._collection_candidates("campfires", wx, wy, self.GENERATION_QUERY_MARGIN, index):
             if math.hypot(wx - fire.x, wy - fire.y) < fire.radius + 20:
                 return False
-        # ---------- Расовые объекты, помеченные как "мешают спавну существа" ----------
+
         for descriptor in all_races():
             for spec in descriptor.placeable_objects:
                 if not spec.blocks_creature_spawn:
                     continue
-                for obj in getattr(game.world, spec.attr):
+                for obj in self._collection_candidates(spec.attr, wx, wy, self.GENERATION_QUERY_MARGIN, index):
                     if distance_to_footprint(obj, wx, wy) < 20:
                         return False
         return True
 
-    def check_object_placement_valid(self, wx, wy, obj_type=None, exclude=None):
+    def check_object_placement_valid(self, wx, wy, obj_type=None, exclude=None, index=None):
         game = self.game
         obj_type = obj_type if obj_type is not None else game.placement_mode
 
         if wx < 10 or wx > settings.WORLD_WIDTH - 10 or wy < 10 or wy > settings.WORLD_HEIGHT - 10:
             return False
 
-        if game.biome_manager.grid is not None:
-            biome = game.biome_manager.grid.get_at(wx, wy)
-            if obj_type == "stone":
-                if biome == BIOME_SEA:
-                    return False
-            else:
-                if biome in (BIOME_RIVER, BIOME_SEA):
-                    return False
-                if obj_type in ("water", "bush", "grass") and biome == BIOME_DESERT:
-                    return False
-                if obj_type == "tree" and biome != BIOME_PLAINS:
-                    return False
+        if not self._biome_allows_object(wx, wy, obj_type):
+            return False
 
         clearance = _PLACEMENT_CLEARANCE_REGISTRY.get(obj_type, 0)
+        fixed_radius = max(20, clearance)
 
-        fixed_clearance_collections = [
-            [f for f in game.world.fruits if f.active],
-            game.world.spikes,
-            game.world.creatures,
-        ]
-        for descriptor in all_animals():
-            fixed_clearance_collections.append(getattr(game.world, descriptor.world_collection))
+        # ---------- Фиксированный клиренс: фрукты/шипы/существа/животные ----------
+        fixed_attrs = ["fruits", "spikes", "creatures"]
+        fixed_attrs.extend(descriptor.world_collection for descriptor in all_animals())
 
-        for collection in fixed_clearance_collections:
-            for obj in collection:
+        for attr in fixed_attrs:
+            for obj in self._collection_candidates(attr, wx, wy, fixed_radius, index):
                 if obj is exclude:
                     continue
-                if math.hypot(wx - obj.x, wy - obj.y) < max(20, clearance):
+                if attr == "fruits" and not obj.active:
+                    continue
+                if math.hypot(wx - obj.x, wy - obj.y) < fixed_radius:
                     return False
 
+        # ---------- Клиренс по footprint для остальных типов объектов ----------
         for other_attr, _other_cls in _OBJECT_TYPE_REGISTRY.values():
             if other_attr in _FIXED_CLEARANCE_ATTRS:
                 continue
             additive = other_attr in _MUTUAL_CLEARANCE_ADDITIVE_ATTRS
-            for obj in getattr(game.world, other_attr):
+            search_radius = clearance + self.GENERATION_QUERY_MARGIN
+            for obj in self._collection_candidates(other_attr, wx, wy, search_radius, index):
                 if obj is exclude:
                     continue
                 own_clearance = footprint_radius(obj) + 15
@@ -242,29 +330,51 @@ class _InitialResourceMixin(_PlacementMixin):
         area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / INITIAL_RESOURCE_BASE_WORLD_AREA
         area_ratio = max(0.1, area_ratio)
 
-        self._scatter_initial_objects(rng, int(INITIAL_TREE_COUNT * area_ratio), "tree")
-        self._scatter_initial_objects(rng, int(INITIAL_BUSH_COUNT * area_ratio), "bush")
-        self._scatter_initial_objects(rng, int(INITIAL_STONE_COUNT * area_ratio), "stone")
-        self._scatter_initial_objects(rng, int(INITIAL_SPIKE_COUNT * area_ratio), "spike")
-        self._scatter_initial_objects(rng, int(INITIAL_GRASS_COUNT * area_ratio), "grass")
+        biome_cache = _BiomeEligibilityCache(game.biome_manager.grid)
+        index = _GenerationSpatialIndex(game)
 
-    def _scatter_initial_objects(self, rng, count, obj_type):
+        self._scatter_initial_objects(rng, int(INITIAL_TREE_COUNT * area_ratio), "tree",
+                                      biome_cache=biome_cache, index=index)
+        self._scatter_initial_objects(rng, int(INITIAL_BUSH_COUNT * area_ratio), "bush",
+                                      biome_cache=biome_cache, index=index)
+        self._scatter_initial_objects(rng, int(INITIAL_STONE_COUNT * area_ratio), "stone",
+                                      biome_cache=biome_cache, index=index)
+        self._scatter_initial_objects(rng, int(INITIAL_SPIKE_COUNT * area_ratio), "spike",
+                                      biome_cache=biome_cache, index=index)
+        self._scatter_initial_objects(rng, int(INITIAL_GRASS_COUNT * area_ratio), "grass",
+                                      biome_cache=biome_cache, index=index)
+
+    def _scatter_initial_objects(self, rng, count, obj_type, biome_cache=None, index=None):
         game = self.game
         if count <= 0:
             return
         attr, cls = _OBJECT_TYPE_REGISTRY[obj_type]
         collection = getattr(game.world, attr)
 
+        eligible_cells, cell_size = self._prepare_eligible_cells(biome_cache, _biome_allowed_set(obj_type))
+
         placed = 0
         attempts = 0
+        consecutive_failures = 0
         attempts_limit = max(50, count * 25)
-        while placed < count and attempts < attempts_limit:
+        # ---------- НОВОЕ (п.1): если место реально кончилось - не тратим оставшиеся
+        # тысячи попыток впустую, останавливаемся раньше по числу подряд неудач ----------
+        max_consecutive_failures = max(300, count * 5)
+        cell_cursor = 0
+
+        while placed < count and attempts < attempts_limit and consecutive_failures < max_consecutive_failures:
             attempts += 1
-            wx = rng.uniform(20, settings.WORLD_WIDTH - 20)
-            wy = rng.uniform(20, settings.WORLD_HEIGHT - 20)
-            if not self.check_object_placement_valid(wx, wy, obj_type=obj_type):
+            wx, wy, cell_cursor = self._next_candidate_point(rng, eligible_cells, cell_size, cell_cursor)
+
+            if not self.check_object_placement_valid(wx, wy, obj_type=obj_type, index=index):
+                consecutive_failures += 1
                 continue
-            collection.append(cls(wx, wy))
+
+            consecutive_failures = 0
+            obj = cls(wx, wy)
+            collection.append(obj)
+            if index is not None:
+                index.grid_for(attr).add(obj)
             placed += 1
 
         if obj_type in _LANDSCAPE_VERSION_BUMP_TYPES and placed > 0:
@@ -277,30 +387,57 @@ class _InitialResourceMixin(_PlacementMixin):
         area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / INITIAL_RESOURCE_BASE_WORLD_AREA
         area_ratio = max(0.1, area_ratio)
 
-        counts = {
-            "sheep": int(INITIAL_SHEEP_COUNT * area_ratio),
-            "cow": int(INITIAL_COW_COUNT * area_ratio),
-            "wolf": int(INITIAL_WOLF_COUNT * area_ratio),
-        }
-
-        for descriptor in all_animals():
-            count = counts.get(descriptor.animal_name)
-            if not count:
-                continue
-            self._scatter_initial_animals(rng, count, descriptor)
-
-    def generate_initial_animals(self, seed):
-        game = self.game
-        rng = random.Random(seed ^ 0x27D4EB2F)
-
-        area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / INITIAL_RESOURCE_BASE_WORLD_AREA
-        area_ratio = max(0.1, area_ratio)
+        biome_cache = _BiomeEligibilityCache(game.biome_manager.grid)
+        index = _GenerationSpatialIndex(game)
 
         for descriptor in all_animals():
             count = int(descriptor.initial_count * area_ratio)
             if count <= 0:
                 continue
-            self._scatter_initial_animals(rng, count, descriptor)
+            self._scatter_initial_animals(rng, count, descriptor, biome_cache=biome_cache, index=index)
+
+    def _scatter_initial_animals(self, rng, count, descriptor):
+        placed = 0
+        attempts = 0
+        attempts_limit = max(50, count * 25)
+        while placed < count and attempts < attempts_limit:
+            attempts += 1
+            wx = rng.uniform(20, settings.WORLD_WIDTH - 20)
+            wy = rng.uniform(20, settings.WORLD_HEIGHT - 20)
+            if not self.check_creature_placement_valid(wx, wy):
+                continue
+            descriptor.spawn_fn(self, wx, wy, descriptor.placement_mode)
+            placed += 1    def _scatter_initial_animals(self, rng, count, descriptor, biome_cache=None, index=None):
+        game = self.game
+        if count <= 0:
+            return
+
+        eligible_cells, cell_size = self._prepare_eligible_cells(biome_cache, _ANIMAL_ALLOWED_BIOMES)
+
+        placed = 0
+        attempts = 0
+        consecutive_failures = 0
+        attempts_limit = max(50, count * 25)
+        max_consecutive_failures = max(300, count * 5)
+        cell_cursor = 0
+
+        while placed < count and attempts < attempts_limit and consecutive_failures < max_consecutive_failures:
+            attempts += 1
+            wx, wy, cell_cursor = self._next_candidate_point(rng, eligible_cells, cell_size, cell_cursor)
+
+            if not self.check_creature_placement_valid(wx, wy, index=index):
+                consecutive_failures += 1
+                continue
+
+            consecutive_failures = 0
+            descriptor.spawn_fn(self, wx, wy, descriptor.placement_mode)
+
+            if index is not None:
+                new_collection = getattr(game.world, descriptor.world_collection)
+                if new_collection:
+                    index.grid_for(descriptor.world_collection).add(new_collection[-1])
+
+            placed += 1
 
 # =========================================================================
 # Домен: естественный рост деревьев/кустов/камней и появление фруктов (core-only)
