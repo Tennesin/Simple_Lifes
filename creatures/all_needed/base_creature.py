@@ -53,6 +53,10 @@ class CreatureBase(LivingEntity):
         # ---------- Шипы: неуязвимость после удара (иначе урон "тикает" каждый кадр) ----------
         self.spike_invuln_timer = 0.0
 
+        # ---------- ДОС: заморозка вне активной области + пометка "игрок трогал" ----------
+        self.frozen_timer = 0.0
+        self.player_touched = False
+
         # ---------- Инфраструктура для BasePathfinder. ----------
         self.target = None
         self.speed_factor = 1.0

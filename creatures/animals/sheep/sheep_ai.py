@@ -1,6 +1,7 @@
 """Тик овцы: голод/жажда/энергия, блуждание, выпас, водопой, бегство от волков."""
 
 from ...all_needed.ai.grazer_ai import GrazerAI
+from ...all_needed.simulation_area import tick_frozen_state, should_be_removed
 from .sheep_settings import *
 from settings import BIOME_SEA
 
@@ -32,7 +33,7 @@ def _get_ai(sheep):
         sheep._grazer_ai = ai
     return ai
 
-def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None):
+def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
@@ -52,14 +53,23 @@ def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None):
 
     alive_wolves = [w for w in world.wolves if w.hp > 0]
 
+    # ---------- ДОС: вне активной области овца полностью замораживается ----------
+    frozen_to_remove = []
     for sheep in world.sheep:
         if sheep.hp <= 0:
             continue
+
+        is_grabbed = sheep is game.player.grabbed_object
+        if not is_grabbed and tick_frozen_state(sheep, dt, active_ids):
+            if should_be_removed(sheep):
+                frozen_to_remove.append(sheep)
+            continue
+
         ai = _get_ai(sheep)
         ai.update_needs(dt)
         if sheep.hp <= 0:
             continue
-        if sheep is not game.player.grabbed_object:
+        if not is_grabbed:
             target = ai.decide(dt, world.grass, world.water_puddles, alive_wolves, biome_grid,
                                spikes=world.spikes)
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
@@ -68,3 +78,6 @@ def tick_sheep(game, dt, nav_grid=None, fallback_nav_grid=None):
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines,
                             urgent=ai.is_urgent)
         ai.interact(dt, world.grass, world.water_puddles, biome_grid, spikes=world.spikes)
+
+    for sheep in frozen_to_remove:
+        game.object_manager.remove_animal_and_drop(sheep)

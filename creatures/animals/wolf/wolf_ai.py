@@ -5,6 +5,7 @@
 import math
 from ...all_needed.ai.roaming_ai import RoamingAnimalMixin
 from ...all_needed.ai.utility import Consideration, pick_best, scale
+from ...all_needed.simulation_area import tick_frozen_state, should_be_removed
 import settings
 from .wolf_settings import *
 
@@ -300,7 +301,7 @@ def _get_ai(wolf):
         wolf._wolf_ai = ai
     return ai
 
-def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
+def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     prey_lists = [world.cows, world.sheep]
@@ -319,14 +320,23 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
     for wolf in dead:
         game.object_manager.remove_animal_and_drop(wolf)
 
+    # ---------- ДОС: вне активной области волк полностью замораживается ----------
+    frozen_to_remove = []
     for wolf in world.wolves:
         if wolf.hp <= 0:
             continue
+
+        is_grabbed = wolf is game.player.grabbed_object
+        if not is_grabbed and tick_frozen_state(wolf, dt, active_ids):
+            if should_be_removed(wolf):
+                frozen_to_remove.append(wolf)
+            continue
+
         ai = _get_ai(wolf)
         ai.update_needs(dt)
         if wolf.hp <= 0:
             continue
-        if wolf is not game.player.grabbed_object:
+        if not is_grabbed:
             target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
                                spikes=world.spikes)
             chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
@@ -336,3 +346,6 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None):
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines,
                             urgent=ai.is_urgent)
         ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)
+
+    for wolf in frozen_to_remove:
+        game.object_manager.remove_animal_and_drop(wolf)

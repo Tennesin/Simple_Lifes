@@ -51,10 +51,14 @@ class Simulation:
         self._handle_natural_growth(dt)
         self._update_bushes(dt)
         self._tick_race_world_objects(dt)
-        self._tick_animals(dt)
+
+        simulation_bounds = self._compute_simulation_bounds(game)
+        active_ids = self._compute_active_ids(game, simulation_bounds)
+
+        self._tick_animals(dt, active_ids)
         self._tick_transient_drop_decay(dt)
 
-        ctx = self._prepare_frame_context(dt)
+        ctx = self._prepare_frame_context(dt, simulation_bounds=simulation_bounds, active_ids=active_ids)
 
         for processor in self._tick_processors:
             processor.process(ctx)
@@ -64,7 +68,7 @@ class Simulation:
     # Домен: подготовка контекста кадра - теперь единый WorldFrameContext
     # =====================================================================
 
-    def _prepare_frame_context(self, dt):
+    def _prepare_frame_context(self, dt, simulation_bounds=None, active_ids=None):
         game = self.game
         world = game.world
 
@@ -130,8 +134,10 @@ class Simulation:
         wall_bounds = [(w, *w.get_bounding_circle()) for w in world.walls if w.points]
         fence_bounds = [(f, *f.get_bounding_circle()) for f in world.fences if f.points]
 
-        simulation_bounds = self._compute_simulation_bounds(game)
-        active_ids = self._compute_active_ids(game, simulation_bounds)
+        if simulation_bounds is None:
+            simulation_bounds = self._compute_simulation_bounds(game)
+        if active_ids is None:
+            active_ids = self._compute_active_ids(game, simulation_bounds)
 
         return WorldFrameContext(
             dt=dt,
@@ -177,8 +183,6 @@ class Simulation:
                 a.id for a in getattr(world, descriptor.world_collection) if _in_bounds(a)
             )
 
-        # ---------- Избранное существо (механизм добавится отдельным шагом) - пока
-        # просто безопасно читаем атрибут, если его ещё нет на Game ----------
         favorite_id = getattr(game, "favorite_creature_id", None)
         if favorite_id is None:
             return active_ids
@@ -191,7 +195,12 @@ class Simulation:
         vision = (favorite.effective_vision_radius()
                   if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
 
-        active_ids.update(o.id for o in self._creature_grid.query_nearby(favorite.x, favorite.y, vision))
+        # ---------- НОВОЕ: прямой перебор вместо self._creature_grid ----------
+        for other in world.creatures:
+            if other.id == favorite.id or other.is_dead:
+                continue
+            if math.hypot(other.x - favorite.x, other.y - favorite.y) <= vision:
+                active_ids.add(other.id)
         for descriptor in all_animals():
             for animal in getattr(world, descriptor.world_collection):
                 if math.hypot(animal.x - favorite.x, animal.y - favorite.y) <= vision:
@@ -246,11 +255,11 @@ class Simulation:
             if descriptor.world_tick_fn is not None:
                 descriptor.world_tick_fn(game, dt)
 
-    def _tick_animals(self, dt):
+    def _tick_animals(self, dt, active_ids):
         nav_grid, nav_grid_fallback = self._prepare_animal_nav_grid()
         for descriptor in all_animals():
             if descriptor.tick_fn is not None:
-                descriptor.tick_fn(self.game, dt, nav_grid, nav_grid_fallback)
+                descriptor.tick_fn(self.game, dt, nav_grid, nav_grid_fallback, active_ids=active_ids)
 
     def _prepare_animal_nav_grid(self):
         game = self.game
