@@ -91,16 +91,24 @@ class Simulation:
             SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
 
-        self._fruit_grid.build(f for f in world.fruits if f.active)
-        self._spike_grid.build(world.spikes)
-        self._water_grid.build(w for w in world.water_puddles if w.has_water())
-        self._bush_grid.build(world.bushes)
-        self._campfire_grid.build(world.campfires)
+        self._static_grid_frame += 1
+        rebuild_static = (
+                self._static_grid_frame % self.STATIC_GRID_REBUILD_INTERVAL == 0
+                or not self._fruit_grid.buckets  # первый кадр после запуска/загрузки мира
+        )
+
+        if rebuild_static:
+            self._fruit_grid.build(f for f in world.fruits if f.active)
+            self._spike_grid.build(world.spikes)
+            self._water_grid.build(w for w in world.water_puddles if w.has_water())
+            self._bush_grid.build(world.bushes)
+            self._campfire_grid.build(world.campfires)
+            self._tree_grid.build(t for t in world.trees if t.has_wood())
+            self._stone_grid.build(s for s in world.stones if s.has_stone())
+
         self._creature_grid.build(
             c for c in world.creatures if not c.is_dead and not getattr(c, "at_home", False))
         self._corpse_grid.build(c for c in world.creatures if c.is_dead)
-        self._tree_grid.build(t for t in world.trees if t.has_wood())
-        self._stone_grid.build(s for s in world.stones if s.has_stone())
 
         spatial_grids = {
             "fruits": self._fruit_grid, "spikes": self._spike_grid,
