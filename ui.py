@@ -14,7 +14,9 @@ from game.race_registry import (
 from game.animal_registry import (
     all_animals, all_animal_object_panel_extensions, animal_classes,
 )
-from game.display_settings import all_display_checkbox_specs, all_technical_checkbox_specs
+from game.display_settings import (
+    all_display_checkbox_specs, all_technical_checkbox_specs, all_technical_slider_specs
+)
 from game.animal_panel import AnimalPanel
 
 BIOME_PREVIEW_COLOR = {
@@ -657,6 +659,21 @@ class MinimapPanel:
             draw_fn(self, screen, game, to_minimap, (scale_x, scale_y), display)
 
         cam = game.camera
+
+        # ---------- ДОС: жёлтый полупрозрачный прямоугольник вокруг камеры ----------
+        sim_units = display.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
+        sim_margin = sim_units * SIMULATION_AREA_PX_PER_UNIT
+        sim_x = rect.x + (cam.x - sim_margin) * scale_x
+        sim_y = rect.y + (cam.y - sim_margin) * scale_y
+        sim_w = (cam.camera.width + sim_margin * 2) * scale_x
+        sim_h = (cam.camera.height + sim_margin * 2) * scale_y
+        sim_rect = pygame.Rect(int(sim_x), int(sim_y), int(sim_w), int(sim_h)).clip(rect)
+        if sim_rect.width > 0 and sim_rect.height > 0:
+            sim_overlay = pygame.Surface((sim_rect.width, sim_rect.height), pygame.SRCALPHA)
+            sim_overlay.fill((*MINIMAP_SIMULATION_AREA_COLOR, MINIMAP_SIMULATION_AREA_ALPHA))
+            screen.blit(sim_overlay, sim_rect.topleft)
+            pygame.draw.rect(screen, MINIMAP_SIMULATION_AREA_COLOR, sim_rect, 1)
+
         view_x = rect.x + cam.x * scale_x
         view_y = rect.y + cam.y * scale_y
         view_w = max(2, cam.camera.width * scale_x)
@@ -980,6 +997,7 @@ class SettingsPanel:
 
         self._checkboxes = all_display_checkbox_specs()
         self._technical_checkboxes = all_technical_checkbox_specs()
+        self._technical_sliders = all_technical_slider_specs()
 
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_tab_technical_rect = pygame.Rect(0, 0, 0, 0)
@@ -987,6 +1005,8 @@ class SettingsPanel:
         self.settings_save_btn_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_back_btn_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_checkbox_rows = {}
+        self.settings_slider_rows = {}
+        self._slider_dragging_key = None
 
     def _layout_panel(self, screen):
         window_w, window_h = screen.get_width(), screen.get_height()
@@ -1054,10 +1074,13 @@ class SettingsPanel:
 
     def _draw_body(self, screen, state, body_rect, mouse_pos):
         self.settings_checkbox_rows = {}
+        self.settings_slider_rows = {}
         if state.active_tab == "display":
             checkboxes = self._checkboxes
+            sliders = ()
         elif state.active_tab == "technical":
             checkboxes = self._technical_checkboxes
+            sliders = self._technical_sliders
         else:
             return
 
@@ -1084,6 +1107,49 @@ class SettingsPanel:
                                     row_rect.y + (row_rect.height - label_txt.get_height()) // 2))
 
             y += self.ROW_HEIGHT
+
+        if sliders:
+            y += 12
+            for key, label_template, min_v, max_v, step in sliders:
+                y = self._draw_slider_row(screen, state, key, label_template, min_v, max_v, step,
+                                          body_rect.x, y, body_rect.width, mouse_pos)
+
+    def _draw_slider_row(self, screen, state, key, label_template, min_v, max_v, step, x, y, width, mouse_pos):
+        value = state.draft.get(key, min_v)
+        label_txt = self.font.render(label_template.format(value=value), True, TEXT_COLOR)
+        screen.blit(label_txt, (x, y))
+
+        bar_y = y + label_txt.get_height() + 6
+        bar_rect = pygame.Rect(x, bar_y, width, 10)
+        pygame.draw.rect(screen, (30, 30, 30), bar_rect)
+
+        ratio = (value - min_v) / (max_v - min_v) if max_v > min_v else 0.0
+        fill_w = max(4, int(bar_rect.width * max(0.0, min(1.0, ratio))))
+        fill_rect = pygame.Rect(bar_rect.x, bar_rect.y, fill_w, bar_rect.height)
+        fill_color = (100, 160, 210) if self._slider_dragging_key == key else BUTTON_COLOR
+        pygame.draw.rect(screen, fill_color, fill_rect)
+        pygame.draw.rect(screen, (15, 15, 15), bar_rect, 1)
+
+        handle_rect = pygame.Rect(0, 0, 4, bar_rect.height + 6)
+        handle_rect.center = (bar_rect.x + fill_w, bar_rect.centery)
+        pygame.draw.rect(screen, (240, 240, 240), handle_rect, border_radius=2)
+
+        self.settings_slider_rows[key] = bar_rect
+        return bar_rect.bottom + 16
+
+    def slider_value_from_mouse(self, key, mouse_x):
+        for spec_key, _label, min_v, max_v, step in self._technical_sliders:
+            if spec_key != key:
+                continue
+            rect = self.settings_slider_rows.get(key)
+            if rect is None or rect.width <= 0:
+                return None
+            ratio = (mouse_x - rect.x) / rect.width
+            ratio = max(0.0, min(1.0, ratio))
+            raw = min_v + ratio * (max_v - min_v)
+            stepped = round(raw / step) * step
+            return int(max(min_v, min(max_v, stepped)))
+        return None
 
     def _draw_buttons(self, screen, panel, mouse_pos):
         btn_w, btn_h = 130, 34

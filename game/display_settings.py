@@ -1,12 +1,14 @@
 """Единая точка сборки настроек отображения (панель 'Настройки' -> 'Отображение')."""
 
 from settings import DEFAULT_DISPLAY_SETTINGS as _CORE_DISPLAY_SETTINGS
+from settings import SIMULATION_AREA_MIN_UNITS, SIMULATION_AREA_MAX_UNITS
 from info import (
     INFO_SETTINGS_SHOW_NAMES, INFO_SETTINGS_SHOW_STATUS_RINGS,
     INFO_SETTINGS_MINIMAP_FRUITS, INFO_SETTINGS_MINIMAP_BUSHES,
     INFO_SETTINGS_MINIMAP_SPIKES, INFO_SETTINGS_MINIMAP_WATER,
     INFO_SETTINGS_MINIMAP_TREES, INFO_SETTINGS_MINIMAP_STONES,
     INFO_SETTINGS_MINIMAP_ROADS, INFO_SETTINGS_AUTOSAVE,
+    INFO_SETTINGS_SIMULATION_AREA,
 )
 from game.race_registry import all_display_checkboxes
 from game.animal_registry import all_animal_display_checkboxes
@@ -19,6 +21,16 @@ CORE_TECHNICAL_CHECKBOXES = (
 def all_technical_checkbox_specs():
     """(ключ, подпись) для чекбоксов вкладки 'Техническое'."""
     return CORE_TECHNICAL_CHECKBOXES
+
+# ---------- Core-числовые настройки (слайдеры) вкладки "Техническое" ----------
+CORE_TECHNICAL_SLIDERS = (
+    ("simulation_area_units", INFO_SETTINGS_SIMULATION_AREA,
+     SIMULATION_AREA_MIN_UNITS, SIMULATION_AREA_MAX_UNITS, 1),
+)
+
+def all_technical_slider_specs():
+    """(ключ, подпись, min, max, step) для числовых настроек вкладки 'Техническое'."""
+    return CORE_TECHNICAL_SLIDERS
 
 # ---------- Core-чекбоксы вкладки "Отображение" ----------
 CORE_DISPLAY_CHECKBOXES = (

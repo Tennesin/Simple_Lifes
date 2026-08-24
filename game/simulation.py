@@ -1,3 +1,4 @@
+import math
 import random
 
 from objects import Fruit, Tree, Stone, Grass
@@ -129,6 +130,9 @@ class Simulation:
         wall_bounds = [(w, *w.get_bounding_circle()) for w in world.walls if w.points]
         fence_bounds = [(f, *f.get_bounding_circle()) for f in world.fences if f.points]
 
+        simulation_bounds = self._compute_simulation_bounds(game)
+        active_ids = self._compute_active_ids(game, simulation_bounds)
+
         return WorldFrameContext(
             dt=dt,
             fruits=world.fruits, spikes=world.spikes, water_puddles=world.water_puddles,
@@ -141,7 +145,59 @@ class Simulation:
             nav_grid_no_fences_fallback=nav_grid_no_fences_fallback,
             nav_grid_with_fences_fallback=nav_grid_with_fences_fallback,
             spatial_grids=spatial_grids, biome_grid=game.biome_manager.grid,
+            simulation_bounds=simulation_bounds, active_ids=active_ids,
         )
+
+    # =====================================================================
+    # Домен: Область Симуляции (ДОС) - границы вокруг камеры + набор id,
+    # которые в неё попадают. Само использование (заморозка/упрощение)
+    # реализуется в тик-обработчиках рас и животных - здесь только подготовка.
+    # =====================================================================
+
+    def _compute_simulation_bounds(self, game):
+        units = game.display_settings.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
+        units = max(SIMULATION_AREA_MIN_UNITS, min(SIMULATION_AREA_MAX_UNITS, units))
+        margin = units * SIMULATION_AREA_PX_PER_UNIT
+        cam = game.camera
+        return (
+            cam.x - margin, cam.y - margin,
+            cam.x + cam.camera.width + margin, cam.y + cam.camera.height + margin,
+        )
+
+    def _compute_active_ids(self, game, bounds):
+        min_x, min_y, max_x, max_y = bounds
+        world = game.world
+
+        def _in_bounds(obj):
+            return min_x <= obj.x <= max_x and min_y <= obj.y <= max_y
+
+        active_ids = {c.id for c in world.creatures if _in_bounds(c)}
+        for descriptor in all_animals():
+            active_ids.update(
+                a.id for a in getattr(world, descriptor.world_collection) if _in_bounds(a)
+            )
+
+        # ---------- Избранное существо (механизм добавится отдельным шагом) - пока
+        # просто безопасно читаем атрибут, если его ещё нет на Game ----------
+        favorite_id = getattr(game, "favorite_creature_id", None)
+        if favorite_id is None:
+            return active_ids
+
+        favorite = next((c for c in world.creatures if c.id == favorite_id and not c.is_dead), None)
+        if favorite is None:
+            return active_ids
+
+        active_ids.add(favorite.id)
+        vision = (favorite.effective_vision_radius()
+                  if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
+
+        active_ids.update(o.id for o in self._creature_grid.query_nearby(favorite.x, favorite.y, vision))
+        for descriptor in all_animals():
+            for animal in getattr(world, descriptor.world_collection):
+                if math.hypot(animal.x - favorite.x, animal.y - favorite.y) <= vision:
+                    active_ids.add(animal.id)
+
+        return active_ids
 
     # =====================================================================
     # Домен: естественный рост деревьев/кустов/камней (таймеры мира)

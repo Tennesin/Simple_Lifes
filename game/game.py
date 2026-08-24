@@ -27,6 +27,10 @@ class SettingsScreen:
         if key in self.draft:
             self.draft[key] = not self.draft[key]
 
+    def set_value(self, key, value):
+        if key in self.draft:
+            self.draft[key] = value
+
 class Game:
     def __init__(self):
         pygame.init()

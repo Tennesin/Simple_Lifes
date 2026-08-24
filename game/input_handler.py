@@ -984,9 +984,21 @@ class _SettingsScreenEventMixin:
         game = self.game
         ui = game.ui
         state = game.settings_screen
+        panel = ui.settings_panel
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             game.close_settings_screen()
+            return
+
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            panel._slider_dragging_key = None
+            return
+
+        if event.type == pygame.MOUSEMOTION:
+            if panel._slider_dragging_key is not None:
+                value = panel.slider_value_from_mouse(panel._slider_dragging_key, event.pos[0])
+                if value is not None:
+                    state.set_value(panel._slider_dragging_key, value)
             return
 
         if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
@@ -1009,6 +1021,13 @@ class _SettingsScreenEventMixin:
             for key, row_rect in ui.settings_checkbox_rows.items():
                 if row_rect.collidepoint(event.pos):
                     state.toggle(key)
+                    return
+            for key, slider_rect in ui.settings_slider_rows.items():
+                if slider_rect.collidepoint(event.pos):
+                    panel._slider_dragging_key = key
+                    value = panel.slider_value_from_mouse(key, event.pos[0])
+                    if value is not None:
+                        state.set_value(key, value)
                     return
 
 # =========================================================================

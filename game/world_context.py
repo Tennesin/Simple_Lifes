@@ -69,6 +69,10 @@ class WorldFrameContext:
     spatial_grids: Optional[dict] = None
     biome_grid: object = None
 
+    # ---------- ДОС: границы области полноценной симуляции и набор id внутри неё ----------
+    simulation_bounds: Optional[tuple] = None
+    active_ids: Optional[set] = None
+
     def __getattr__(self, name):
         race_collections = object.__getattribute__(self, "race_collections")
         if name in race_collections:

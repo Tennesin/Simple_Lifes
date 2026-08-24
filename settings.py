@@ -11,6 +11,12 @@ DEFAULT_VISION_RADIUS = 900
 SPIKE_NAV_BLOCK_RADIUS = 35
 SPIKE_NAV_SOFT_MARGIN = 20
 
+# ---------- Дополнительная область симуляции (ДОС) ----------
+SIMULATION_AREA_MIN_UNITS = 1
+SIMULATION_AREA_MAX_UNITS = 100
+SIMULATION_AREA_DEFAULT_UNITS = 20
+SIMULATION_AREA_PX_PER_UNIT = 15
+
 # ---------- Адаптивное окно под размер мира ----------
 WINDOW_MIN_WIDTH = 1000
 WINDOW_MIN_HEIGHT = 520
@@ -192,6 +198,8 @@ MINIMAP_MARGIN = 10
 MINIMAP_BG_COLOR = (20, 20, 20)
 MINIMAP_BORDER_COLOR = (200, 200, 200)
 MINIMAP_VIEWPORT_COLOR = (60, 140, 255)
+MINIMAP_SIMULATION_AREA_COLOR = (255, 220, 40)
+MINIMAP_SIMULATION_AREA_ALPHA = 70
 
 # ---------- Ландшафт: стены и заборы ----------
 WALL_COLOR = (70, 70, 75)
@@ -294,6 +302,7 @@ DEFAULT_DISPLAY_SETTINGS = {
     "minimap_show_stones": True,
     "minimap_show_roads": True,
     "autosave_enabled": True,
+    "simulation_area_units": SIMULATION_AREA_DEFAULT_UNITS,
 }
 
 # ---------- Экран "Настройки" (модальная панель поверх игры с затемнением фона) ----------
