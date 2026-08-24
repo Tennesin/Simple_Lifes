@@ -10,6 +10,7 @@ from game.race_registry import all_races
 from game.animal_registry import all_animals, all_animal_drop_collections
 
 class Simulation:
+    STATIC_GRID_REBUILD_INTERVAL = 6
 
     def __init__(self, game):
         self.game = game
@@ -27,6 +28,7 @@ class Simulation:
         self._grass_spawn_timer = random.uniform(*NATURAL_GRASS_SPAWN_INTERVAL)
         self._tree_grid = SpatialGrid(cell_size=200)
         self._stone_grid = SpatialGrid(cell_size=200)
+        self._static_grid_frame = 0
 
         self._tick_processors = [
             descriptor.tick_processor_cls(game) for descriptor in all_races()

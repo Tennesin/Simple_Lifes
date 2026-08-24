@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 from settings import *
 from info import *
 import settings
@@ -221,6 +222,8 @@ class WorldRenderer:
         self.name_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_NAME)
         self.biome_tiles = BiomeTextureCache()
         self._render_pipeline = self._build_render_pipeline()
+        self._name_surface_cache = {}
+        self._vision_cache = {}
 
     @staticmethod
     def _build_render_pipeline():
@@ -275,13 +278,23 @@ class WorldRenderer:
 
     def draw_creature_name(self, screen, name, pos):
         sx, sy = pos
-        name_surf = self.name_font.render(name, True, (255, 255, 255))
-        text_rect = name_surf.get_rect(center=(int(sx), int(sy) - 22))
-        bg_rect = text_rect.inflate(8, 4)
-        bg = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
-        pygame.draw.rect(bg, (0, 0, 0, 130), bg.get_rect(), border_radius=4)
-        screen.blit(bg, bg_rect.topleft)
-        screen.blit(name_surf, text_rect.topleft)
+        cached = self._name_surface_cache.get(name)
+        if cached is None:
+            name_surf = self.name_font.render(name, True, (255, 255, 255))
+            bg_rect = name_surf.get_rect().inflate(8, 4)
+            bg = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+            pygame.draw.rect(bg, (0, 0, 0, 130), bg.get_rect(), border_radius=4)
+            offset = ((bg_rect.width - name_surf.get_width()) // 2,
+                      (bg_rect.height - name_surf.get_height()) // 2)
+            bg.blit(name_surf, offset)
+            cached = bg
+            self._name_surface_cache[name] = cached
+            # ---------- Предохранитель от разрастания кэша на очень долгих сессиях ----------
+            if len(self._name_surface_cache) > 500:
+                self._name_surface_cache.clear()
+
+        rect = cached.get_rect(center=(int(sx), int(sy) - 22))
+        screen.blit(cached, rect.topleft)
 
     def draw_grid(self, screen):
         game = self.game
@@ -324,12 +337,23 @@ class WorldRenderer:
         pos = game.camera.apply_pos((creature.x, creature.y))
         vision_radius = creature.effective_vision_radius()
 
-        welded_walls, welded_fences = game.welded_landscape_polylines()
-        blocking_polylines = list(welded_walls)
-        if not creature.can_jump_fences():
-            blocking_polylines += welded_fences
+        cached = self._vision_cache.get(creature.id)
+        needs_recalc = (
+                cached is None
+                or cached[2] != vision_radius
+                or math.hypot(creature.x - cached[0], creature.y - cached[1]) > 6
+        )
 
-        polygon_world = geometry.visibility_polygon(creature.x, creature.y, vision_radius, blocking_polylines)
+        if needs_recalc:
+            welded_walls, welded_fences = game.welded_landscape_polylines()
+            blocking_polylines = list(welded_walls)
+            if not creature.can_jump_fences():
+                blocking_polylines += welded_fences
+            polygon_world = geometry.visibility_polygon(creature.x, creature.y, vision_radius, blocking_polylines)
+            self._vision_cache = {creature.id: (creature.x, creature.y, vision_radius, polygon_world)}
+        else:
+            polygon_world = cached[3]
+
         polygon_screen = [game.camera.apply_pos(p) for p in polygon_world]
 
         self._draw_vision_shadow(screen, pos, vision_radius, polygon_screen)
