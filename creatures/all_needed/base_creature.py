@@ -73,6 +73,10 @@ class CreatureBase(LivingEntity):
     def effective_vision_radius(self):
         return self.vision_radius
 
+    # ---------- Клик игрока: захват мышью ----------
+    def on_grab_start(self, world):
+        self.player_touched = True
+
     # ---------- Клик игрока по полоске показателя на панели: -10%/+10% от максимума ----------
     STAT_ADJUST_STEP_FACTOR = 0.10
     _STAT_MAX_ATTR = {
@@ -86,6 +90,7 @@ class CreatureBase(LivingEntity):
         max_attr = self._STAT_MAX_ATTR.get(stat_key)
         if max_attr is None or self.hp <= 0:
             return
+        self.player_touched = True
         max_value = getattr(self, max_attr)
         current = getattr(self, stat_key)
         delta = direction * max_value * self.STAT_ADJUST_STEP_FACTOR

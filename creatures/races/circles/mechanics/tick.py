@@ -338,10 +338,10 @@ class CircleTickProcessor:
                 ready_for_interact.append(creature)
                 continue
 
-            target = creature.decide(ctx)
+            if ctx.active_ids is not None and creature.id not in ctx.active_ids:
+                continue
 
-            # ---------- НОВОЕ: чистим зону в момент закладки - на случай невидимого
-            # существу природного объекта на выбранной точке ----------
+            target = creature.decide(ctx)
             if creature.pending_site_cleanup is not None:
                 new_site = creature.pending_site_cleanup
                 creature.pending_site_cleanup = None

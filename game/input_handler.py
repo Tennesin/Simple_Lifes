@@ -9,7 +9,7 @@ from game.race_registry import (
     creature_placement_lookup, all_secondary_panel_specs, all_road_networks,
     all_mouse_down_hooks, all_mouse_up_hooks, all_mouse_motion_hooks, all_mouse_wheel_hooks,
 )
-from game.animal_registry import animal_placement_lookup, animal_classes
+from game.animal_registry import animal_placement_lookup, animal_classes, get_animal
 from creatures.all_needed.base_creature import CreatureBase
 from creatures.all_needed.base_entity import LivingEntity
 
@@ -461,11 +461,18 @@ class _MouseDownMixin:
                     spawn_fn(game.object_manager, wx, wy, game.placement_mode)
             elif game.placement_mode in animal_lookup:
                 if game.object_manager.check_creature_placement_valid(wx, wy):
-                    _animal_name, spawn_fn = animal_lookup[game.placement_mode]
+                    animal_name, spawn_fn = animal_lookup[game.placement_mode]
                     spawn_fn(game.object_manager, wx, wy, game.placement_mode)
+                    self._mark_last_placed_animal_touched(animal_name)
             else:
                 if game.object_manager.check_object_placement_valid(wx, wy):
                     game.object_manager.place_object(wx, wy)
+
+    def _mark_last_placed_animal_touched(self, animal_name):
+        descriptor = get_animal(animal_name)
+        collection = getattr(self.game.world, descriptor.world_collection)
+        if collection:
+            collection[-1].player_touched = True
 
     def _handle_left_click(self, mouse_x, mouse_y):
         game = self.game
