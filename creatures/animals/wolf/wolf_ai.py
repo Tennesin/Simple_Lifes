@@ -229,24 +229,25 @@ class WolfAI(RoamingAnimalMixin):
             self.hunt_timer = 0.0
 
         best, best_dist = None, radius
-        for prey_list in prey_lists:
-            for prey in prey_list:
+        for prey_source in prey_lists:
+            candidates = (prey_source.query_nearby(w.x, w.y, radius)
+                          if hasattr(prey_source, "query_nearby") else prey_source)
+            for prey in candidates:
                 if prey.hp <= 0:
                     continue
                 d = math.hypot(w.x - prey.x, w.y - prey.y)
                 if d < best_dist:
                     best_dist = d
                     best = prey
-
         if best is not None:
             self.hunt_timer = 0.0
-
         return best
 
     @staticmethod
     def _find_prey_by_id(prey_lists, target_id):
-        for prey_list in prey_lists:
-            for prey in prey_list:
+        for prey_source in prey_lists:
+            iterable = prey_source.all_objects() if hasattr(prey_source, "all_objects") else prey_source
+            for prey in iterable:
                 if prey.id == target_id:
                     return prey
         return None
@@ -301,10 +302,15 @@ def _get_ai(wolf):
         wolf._wolf_ai = ai
     return ai
 
-def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
+def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, spatial_grids=None):
     world = game.world
     biome_grid = game.biome_manager.grid
-    prey_lists = [world.cows, world.sheep]
+
+    spatial_grids = spatial_grids or {}
+    prey_lists = [spatial_grids.get("cows", world.cows), spatial_grids.get("sheep", world.sheep)]
+    meats_source = spatial_grids.get("meats", world.meats)
+    water_source = spatial_grids.get("water", world.water_puddles)
+
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
     if biome_grid is not None:
@@ -337,7 +343,7 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
         if wolf.hp <= 0:
             continue
         if not is_grabbed:
-            target = ai.decide(dt, prey_lists, world.water_puddles, world.meats, biome_grid,
+            target = ai.decide(dt, prey_lists, water_source, meats_source, biome_grid,
                                spikes=world.spikes)
             chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
@@ -345,7 +351,7 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
                             speed_multiplier=chase_mult,
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines,
                             urgent=ai.is_urgent)
-        ai.interact(dt, prey_lists, world.water_puddles, world.meats, biome_grid, spikes=world.spikes)
+        ai.interact(dt, prey_lists, water_source, meats_source, biome_grid, spikes=world.spikes)
 
     for wolf in frozen_to_remove:
         game.object_manager.remove_animal_and_drop(wolf)

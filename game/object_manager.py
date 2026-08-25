@@ -448,12 +448,13 @@ class _NaturalGrowthMixin(_PlacementMixin):
         )
         if nearby_fruits >= BUSH_MAX_NEARBY_FRUITS:
             return
+        index = _GenerationSpatialIndex(game)
         for _ in range(BUSH_SPAWN_ATTEMPTS):
             angle = random.uniform(0, 2 * math.pi)
             dist = random.uniform(bush.radius + 10, BUSH_SPAWN_RADIUS)
             wx = bush.x + math.cos(angle) * dist
             wy = bush.y + math.sin(angle) * dist
-            if self.check_object_placement_valid(wx, wy, obj_type="fruit"):
+            if self.check_object_placement_valid(wx, wy, obj_type="fruit", index=index):
                 game.world.fruits.append(Fruit(wx, wy))
                 return
 
@@ -469,12 +470,13 @@ class _NaturalGrowthMixin(_PlacementMixin):
         if len(collection) >= max_total:
             return
 
+        index = _GenerationSpatialIndex(game)
         for _ in range(NATURAL_SPAWN_ATTEMPTS):
             wx = random.uniform(20, settings.WORLD_WIDTH - 20)
             wy = random.uniform(20, settings.WORLD_HEIGHT - 20)
             if not biome_allowed(grid.get_at(wx, wy)):
                 continue
-            if self.check_object_placement_valid(wx, wy, obj_type=obj_type):
+            if self.check_object_placement_valid(wx, wy, obj_type=obj_type, index=index):
                 collection.append(cls(wx, wy))
                 return
 

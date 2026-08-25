@@ -296,7 +296,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
 
     def _dispatch_life_stage(self, perception, ctx: "WorldFrameContext"):
         c = self.c
-        other_creatures = filter_same_race(c, ctx.creatures)
+        other_creatures = ctx.race_creatures if ctx.race_creatures is not None else filter_same_race(c, ctx.creatures)
         roads = ctx.roads
         storage_fields = ctx.race_collections.get("storage_fields", [])
         graveyards = ctx.race_collections.get("graveyards", [])

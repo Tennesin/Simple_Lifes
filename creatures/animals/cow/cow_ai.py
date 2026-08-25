@@ -33,10 +33,15 @@ def _get_ai(cow):
         cow._grazer_ai = ai
     return ai
 
-def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
+def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, spatial_grids=None):
     world = game.world
     biome_grid = game.biome_manager.grid
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
+
+    spatial_grids = spatial_grids or {}
+    grass_source = spatial_grids.get("grass", world.grass)
+    water_source = spatial_grids.get("water", world.water_puddles)
+    wolves_source = spatial_grids.get("wolves")
 
     if biome_grid is not None:
         max_search = max(game.camera.world_w, game.camera.world_h)
@@ -51,9 +56,8 @@ def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
     for cow in dead:
         game.object_manager.remove_animal_and_drop(cow)
 
-    alive_wolves = [w for w in world.wolves if w.hp > 0]
+    alive_wolves = wolves_source if wolves_source is not None else [w for w in world.wolves if w.hp > 0]
 
-    # ---------- ДОС: вне активной области корова полностью замораживается ----------
     frozen_to_remove = []
     for cow in world.cows:
         if cow.hp <= 0:
@@ -70,14 +74,14 @@ def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None):
         if cow.hp <= 0:
             continue
         if not is_grabbed:
-            target = ai.decide(dt, world.grass, world.water_puddles, alive_wolves, biome_grid,
+            target = ai.decide(dt, grass_source, water_source, alive_wolves, biome_grid,
                                spikes=world.spikes)
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
                             fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=(COW_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0),
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines,
                             urgent=ai.is_urgent)
-        ai.interact(dt, world.grass, world.water_puddles, biome_grid, spikes=world.spikes)
+        ai.interact(dt, grass_source, water_source, biome_grid, spikes=world.spikes)
 
     for cow in frozen_to_remove:
         game.object_manager.remove_animal_and_drop(cow)

@@ -83,10 +83,9 @@ class RoamingAnimalMixin:
         return point
 
     # =====================================================================
-    # НОВОЕ (п.4): "умный" побег - вместо одной прямой точки "от угрозы"
+    # Умный" побег - вместо одной прямой точки "от угрозы"
     # перебираем веер направлений и выбираем то, что реально уводит животное
-    # подальше, а не утыкает его в угол карты/стену. Плюс отдельная проверка
-    # "а мы вообще сдвинулись, убегая?" с аварийным рывком в сторону.
+    # подальше, а не утыкает его в угол карты/стену.
     # =====================================================================
 
     _FLEE_ANGLE_OFFSETS_DEG = (0, -30, 30, -60, 60, -90, 90, -130, 130, 180)
@@ -167,8 +166,12 @@ class RoamingAnimalMixin:
 
     def _nearest_within(self, objects, radius, predicate=None):
         e = self.entity
+        if hasattr(objects, "query_nearby"):
+            candidates = objects.query_nearby(e.x, e.y, radius)
+        else:
+            candidates = objects
         best, best_dist = None, radius
-        for obj in objects:
+        for obj in candidates:
             if predicate is not None and not predicate(obj):
                 continue
             d = math.hypot(e.x - obj.x, e.y - obj.y)

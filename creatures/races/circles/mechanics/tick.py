@@ -40,6 +40,7 @@ class CircleTickProcessor:
     def process(self, ctx):
         genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
         race_creatures = self._race_creatures()
+        ctx.race_creatures = race_creatures
 
         ctx.campfire_occupancy = self._compute_campfire_occupancy(ctx.campfires, race_creatures)
 

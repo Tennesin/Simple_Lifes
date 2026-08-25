@@ -205,7 +205,7 @@ class Bush(WorldObject):
     def __init__(self, x, y):
         super().__init__(x, y, gen_id=True)
         self.radius = 14
-        self.spawn_timer = 0.0
+        self.spawn_timer = random.uniform(0, BUSH_SPAWN_INTERVAL)
         self.claimed_by = None
 
     def update(self, dt):

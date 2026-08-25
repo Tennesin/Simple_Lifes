@@ -30,6 +30,11 @@ class Simulation:
         self._grass_spawn_timer = random.uniform(*NATURAL_GRASS_SPAWN_INTERVAL)
         self._tree_grid = SpatialGrid(cell_size=200)
         self._stone_grid = SpatialGrid(cell_size=200)
+        self._grass_grid = SpatialGrid(cell_size=200)
+        self._meat_grid = SpatialGrid(cell_size=200)
+        self._cow_grid = SpatialGrid(cell_size=200)
+        self._sheep_grid = SpatialGrid(cell_size=200)
+        self._wolf_grid = SpatialGrid(cell_size=200)
         self._static_grid_frame = 0
         self._dos_frame = 0
         self._cached_simulation_bounds = None
@@ -58,7 +63,11 @@ class Simulation:
 
         simulation_bounds, active_ids = self._get_dos_state(game)
 
-        self._tick_animals(dt, active_ids)
+        rebuild_static = self._tick_static_grid_frame()
+        self._rebuild_static_resource_grids(rebuild_static)
+        animal_spatial_grids = self._rebuild_animal_spatial_grids()
+
+        self._tick_animals(dt, active_ids, animal_spatial_grids)
         self._tick_transient_drop_decay(dt)
 
         ctx = self._prepare_frame_context(dt, simulation_bounds=simulation_bounds, active_ids=active_ids)
@@ -67,7 +76,6 @@ class Simulation:
             processor.process(ctx)
         self._cleanup_transient_objects()
 
-    # ---------- НОВОЕ: throttled доступ к границам ДОС/active_ids ----------
     def _get_dos_state(self, game):
         self._dos_frame += 1
         needs_recalc = (
@@ -78,6 +86,41 @@ class Simulation:
             self._cached_simulation_bounds = self._compute_simulation_bounds(game)
             self._cached_active_ids = self._compute_active_ids(game, self._cached_simulation_bounds)
         return self._cached_simulation_bounds, self._cached_active_ids
+
+    def _tick_static_grid_frame(self):
+        self._static_grid_frame += 1
+        return (self._static_grid_frame % self.STATIC_GRID_REBUILD_INTERVAL == 0
+                or not self._fruit_grid.buckets)
+
+    def _rebuild_static_resource_grids(self, rebuild_static):
+        if not rebuild_static:
+            return
+        world = self.game.world
+        self._fruit_grid.build(f for f in world.fruits if f.active)
+        self._spike_grid.build(world.spikes)
+        self._water_grid.build(w for w in world.water_puddles if w.has_water())
+        self._bush_grid.build(world.bushes)
+        self._campfire_grid.build(world.campfires)
+        self._tree_grid.build(t for t in world.trees if t.has_wood())
+        self._stone_grid.build(s for s in world.stones if s.has_stone())
+        self._grass_grid.build(g for g in world.grass if g.has_food())
+        self._meat_grid.build(world.meats)
+
+    def _rebuild_animal_spatial_grids(self):
+        """Позиции животных двигаются каждый кадр - строим заново каждый раз,
+        как и _creature_grid у существ."""
+        world = self.game.world
+        self._cow_grid.build(c for c in world.cows if c.hp > 0)
+        self._sheep_grid.build(s for s in world.sheep if s.hp > 0)
+        self._wolf_grid.build(w for w in world.wolves if w.hp > 0)
+        return {
+            "grass": self._grass_grid,
+            "water": self._water_grid,
+            "meats": self._meat_grid,
+            "cows": self._cow_grid,
+            "sheep": self._sheep_grid,
+            "wolves": self._wolf_grid,
+        }
 
     # =====================================================================
     # Домен: подготовка контекста кадра - теперь единый WorldFrameContext
@@ -110,21 +153,6 @@ class Simulation:
             world.walls, world.fences, world.spikes, True,
             SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
-
-        self._static_grid_frame += 1
-        rebuild_static = (
-                self._static_grid_frame % self.STATIC_GRID_REBUILD_INTERVAL == 0
-                or not self._fruit_grid.buckets  # первый кадр после запуска/загрузки мира
-        )
-
-        if rebuild_static:
-            self._fruit_grid.build(f for f in world.fruits if f.active)
-            self._spike_grid.build(world.spikes)
-            self._water_grid.build(w for w in world.water_puddles if w.has_water())
-            self._bush_grid.build(world.bushes)
-            self._campfire_grid.build(world.campfires)
-            self._tree_grid.build(t for t in world.trees if t.has_wood())
-            self._stone_grid.build(s for s in world.stones if s.has_stone())
 
         self._creature_grid.build(
             c for c in world.creatures if not c.is_dead and not getattr(c, "at_home", False))
@@ -277,11 +305,12 @@ class Simulation:
             if descriptor.world_tick_fn is not None:
                 descriptor.world_tick_fn(game, dt)
 
-    def _tick_animals(self, dt, active_ids):
+    def _tick_animals(self, dt, active_ids, spatial_grids=None):
         nav_grid, nav_grid_fallback = self._prepare_animal_nav_grid()
         for descriptor in all_animals():
             if descriptor.tick_fn is not None:
-                descriptor.tick_fn(self.game, dt, nav_grid, nav_grid_fallback, active_ids=active_ids)
+                descriptor.tick_fn(self.game, dt, nav_grid, nav_grid_fallback,
+                                   active_ids=active_ids, spatial_grids=spatial_grids)
 
     def _prepare_animal_nav_grid(self):
         game = self.game

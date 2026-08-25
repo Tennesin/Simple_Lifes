@@ -379,6 +379,9 @@ class SpatialGrid:
                     result.extend(bucket)
         return result
 
+    def all_objects(self):
+        for bucket in self.buckets.values():
+            yield from bucket
 
 class BasePathfinder:
     def __init__(self, entity):
