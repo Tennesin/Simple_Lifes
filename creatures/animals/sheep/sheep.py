@@ -63,6 +63,8 @@ class Sheep(CreatureBase):
             "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
             "energy": self.energy, "meat": self.meat,
             "wool": self.wool, "created": self.created,
+            "frozen_timer": self.frozen_timer,
+            "player_touched": self.player_touched,
         }
 
     @staticmethod
@@ -76,6 +78,8 @@ class Sheep(CreatureBase):
         sheep.meat = data.get("meat", sheep.meat)
         sheep.wool = data.get("wool", sheep.wool)
         sheep.created = data.get("created", sheep.created)
+        sheep.frozen_timer = data.get("frozen_timer", 0.0)
+        sheep.player_touched = data.get("player_touched", False)
         return sheep
 
     def get_drops(self):

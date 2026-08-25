@@ -80,6 +80,8 @@ class Cow(CreatureBase):
             "energy": self.energy, "meat": self.meat,
             "leather": self.leather, "milk_charges": self.milk_charges,
             "created": self.created,
+            "frozen_timer": self.frozen_timer,
+            "player_touched": self.player_touched,
         }
 
     @staticmethod
@@ -94,6 +96,8 @@ class Cow(CreatureBase):
         cow.leather = data.get("leather", cow.leather)
         cow.milk_charges = data.get("milk_charges", cow.milk_charges)
         cow.created = data.get("created", cow.created)
+        cow.frozen_timer = data.get("frozen_timer", 0.0)
+        cow.player_touched = data.get("player_touched", False)
         return cow
 
     def get_drops(self):

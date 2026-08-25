@@ -1003,8 +1003,19 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
                     game.selected_object = None
                 if game.player.grabbed_object is animal:
                     game.player.grabbed_object = None
+                if game.favorite_id == animal.id:
+                    game.favorite_id = None
+                self._release_animal_ai(animal)
                 return True
         return False
+
+    @staticmethod
+    def _release_animal_ai(animal):
+        for attr in ("_grazer_ai", "_wolf_ai"):
+            ai = getattr(animal, attr, None)
+            if ai is not None:
+                ai.entity = None
+                setattr(animal, attr, None)
 
     def _delete_animal(self, obj):
         return self.remove_animal_and_drop(obj)

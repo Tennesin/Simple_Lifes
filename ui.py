@@ -572,6 +572,9 @@ class MinimapPanel:
         self._biome_layer = None
         self._biome_layer_key = None
         self._pipeline = self._build_pipeline()
+        self._dos_overlay_surface = None
+        self._dos_cut_surface = None
+        self._dos_surfaces_size = None
         self.rebuild_layout(WINDOW_WIDTH, WINDOW_HEIGHT)
 
     @staticmethod
@@ -690,14 +693,20 @@ class MinimapPanel:
                     return animal
         return None
 
+    def _get_dos_surfaces(self, size):
+        if self._dos_surfaces_size != size:
+            self._dos_overlay_surface = pygame.Surface(size, pygame.SRCALPHA)
+            self._dos_cut_surface = pygame.Surface(size, pygame.SRCALPHA)
+            self._dos_surfaces_size = size
+        return self._dos_overlay_surface, self._dos_cut_surface
+
     def _draw_dos_overlay(self, screen, rect, scale, favorite):
         game = self.game
         scale_x, scale_y = scale
 
-        overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+        overlay, cut = self._get_dos_surfaces(rect.size)
         overlay.fill((0, 0, 0, MINIMAP_SIMULATION_AREA_ALPHA))
-
-        cut = pygame.Surface(rect.size, pygame.SRCALPHA)
+        cut.fill((0, 0, 0, 0))
 
         units = game.display_settings.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
         units = max(SIMULATION_AREA_MIN_UNITS, min(SIMULATION_AREA_MAX_UNITS, units))
@@ -716,7 +725,7 @@ class MinimapPanel:
                       if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
             local_x = favorite.x * scale_x
             local_y = favorite.y * scale_y
-            radius_px = vision * scale_x  # scale_x == scale_y - аспект мира сохраняется
+            radius_px = vision * scale_x
             pygame.draw.circle(cut, (255, 255, 255, 255), (int(local_x), int(local_y)), int(radius_px))
 
         overlay.blit(cut, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)

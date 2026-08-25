@@ -55,6 +55,8 @@ class Wolf(CreatureBase):
             "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
             "energy": self.energy, "hide": self.hide,
             "created": self.created,
+            "frozen_timer": self.frozen_timer,
+            "player_touched": self.player_touched,
         }
 
     @staticmethod
@@ -67,6 +69,8 @@ class Wolf(CreatureBase):
         wolf.energy = data.get("energy", wolf.energy)
         wolf.hide = data.get("hide", wolf.hide)
         wolf.created = data.get("created", wolf.created)
+        wolf.frozen_timer = data.get("frozen_timer", 0.0)
+        wolf.player_touched = data.get("player_touched", False)
         return wolf
 
     def get_drops(self):

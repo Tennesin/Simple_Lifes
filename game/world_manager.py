@@ -434,7 +434,20 @@ class WorldManager:
         for creature in game.world.creatures:
             creature.territory.sync_claims_count(game.world.bushes, game.world.water_puddles)
 
+        self._load_player_state()
         game.world.landscape_version += 1
+
+    def _load_player_state(self):
+        game = self.game
+        path = os.path.join(game.world_path, "player_state.json")
+        if not os.path.exists(path):
+            return
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return
+        game.favorite_id = data.get("favorite_id")
 
     # ---------- Сохранение ----------
 
@@ -454,8 +467,19 @@ class WorldManager:
         if game.biome_manager.grid is not None:
             with open(os.path.join(game.world_path, "biome.json"), "w", encoding="utf-8") as f:
                 json.dump(game.biome_manager.to_dict(), f)
+        self._save_player_state()
         for fn in all_extra_world_save_fns():
             fn(game)
+
+    # ---------- ДОС: избранное существо переживает перезапуск игры ----------
+    def _save_player_state(self):
+        game = self.game
+        path = os.path.join(game.world_path, "player_state.json")
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"favorite_id": game.favorite_id}, f, indent=2, ensure_ascii=False)
+        except OSError:
+            pass
 
     def save_world_manual(self):
         game = self.game

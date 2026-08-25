@@ -12,6 +12,7 @@ from game.animal_registry import all_animals, all_animal_drop_collections
 
 class Simulation:
     STATIC_GRID_REBUILD_INTERVAL = 6
+    DOS_RECALC_INTERVAL = 6
 
     def __init__(self, game):
         self.game = game
@@ -30,6 +31,9 @@ class Simulation:
         self._tree_grid = SpatialGrid(cell_size=200)
         self._stone_grid = SpatialGrid(cell_size=200)
         self._static_grid_frame = 0
+        self._dos_frame = 0
+        self._cached_simulation_bounds = None
+        self._cached_active_ids = None
 
         self._tick_processors = [
             descriptor.tick_processor_cls(game) for descriptor in all_races()
@@ -52,8 +56,7 @@ class Simulation:
         self._update_bushes(dt)
         self._tick_race_world_objects(dt)
 
-        simulation_bounds = self._compute_simulation_bounds(game)
-        active_ids = self._compute_active_ids(game, simulation_bounds)
+        simulation_bounds, active_ids = self._get_dos_state(game)
 
         self._tick_animals(dt, active_ids)
         self._tick_transient_drop_decay(dt)
@@ -63,6 +66,18 @@ class Simulation:
         for processor in self._tick_processors:
             processor.process(ctx)
         self._cleanup_transient_objects()
+
+    # ---------- НОВОЕ: throttled доступ к границам ДОС/active_ids ----------
+    def _get_dos_state(self, game):
+        self._dos_frame += 1
+        needs_recalc = (
+                self._cached_simulation_bounds is None
+                or self._dos_frame % self.DOS_RECALC_INTERVAL == 0
+        )
+        if needs_recalc:
+            self._cached_simulation_bounds = self._compute_simulation_bounds(game)
+            self._cached_active_ids = self._compute_active_ids(game, self._cached_simulation_bounds)
+        return self._cached_simulation_bounds, self._cached_active_ids
 
     # =====================================================================
     # Домен: подготовка контекста кадра - теперь единый WorldFrameContext

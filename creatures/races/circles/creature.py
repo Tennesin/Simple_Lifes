@@ -542,3 +542,16 @@ class Creature(LivingEntity):
         with open(os.path.join(folder_path, "state.json"), 'w') as f:
             json.dump(state, f, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))
+
+    def release_references(self):
+        self.needs = None
+        self.social = None
+        self.communication = None
+        self.pathfinder = None
+        self.interactions = None
+        self.player_reactions = None
+        self.brain = None
+        self.psyche = None
+        self.aging = None
+        self.family = None
+        self.territory = None

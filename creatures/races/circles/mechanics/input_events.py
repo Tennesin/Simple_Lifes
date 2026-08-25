@@ -51,10 +51,14 @@ def handle_corpse_release(corpse, game):
 
     if game.selected_creature is corpse:
         game.selected_creature = None
+    if game.favorite_id == corpse.id:          # НОВОЕ
+        game.favorite_id = None
 
     if game.world_path:
         folder_path = os.path.join(game.world_path, "creatures", corpse.id)
         shutil.rmtree(folder_path, ignore_errors=True)
+
+    corpse.release_references()
 
     if corpse in game.world.creatures:
         game.world.creatures.remove(corpse)

@@ -428,9 +428,17 @@ class CircleTickProcessor:
             game.editing_name = False
             game.name_edit_buffer = ""
 
+        # ---------- НОВОЕ: избранное не должно указывать на удалённый труп ----------
+        if game.favorite_id is not None and any(c.id == game.favorite_id for c in corpses_to_remove):
+            game.favorite_id = None
+
         if game.world_path:
             for corpse in corpses_to_remove:
                 folder_path = os.path.join(game.world_path, "creatures", corpse.id)
                 shutil.rmtree(folder_path, ignore_errors=True)
+
+        # ---------- НОВОЕ: рвём циклические self.c у всех подсистем перед удалением ----------
+        for corpse in corpses_to_remove:
+            corpse.release_references()
 
         world.creatures = [c for c in world.creatures if c not in corpses_to_remove]
