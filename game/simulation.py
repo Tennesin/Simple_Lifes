@@ -183,11 +183,17 @@ class Simulation:
                 a.id for a in getattr(world, descriptor.world_collection) if _in_bounds(a)
             )
 
-        favorite_id = getattr(game, "favorite_creature_id", None)
+        favorite_id = getattr(game, "favorite_id", None)
         if favorite_id is None:
             return active_ids
 
         favorite = next((c for c in world.creatures if c.id == favorite_id and not c.is_dead), None)
+        if favorite is None:
+            favorite = next(
+                (a for descriptor in all_animals()
+                 for a in getattr(world, descriptor.world_collection) if a.id == favorite_id),
+                None
+            )
         if favorite is None:
             return active_ids
 
@@ -195,7 +201,6 @@ class Simulation:
         vision = (favorite.effective_vision_radius()
                   if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
 
-        # ---------- НОВОЕ: прямой перебор вместо self._creature_grid ----------
         for other in world.creatures:
             if other.id == favorite.id or other.is_dead:
                 continue
@@ -203,6 +208,8 @@ class Simulation:
                 active_ids.add(other.id)
         for descriptor in all_animals():
             for animal in getattr(world, descriptor.world_collection):
+                if animal.id == favorite.id:
+                    continue
                 if math.hypot(animal.x - favorite.x, animal.y - favorite.y) <= vision:
                     active_ids.add(animal.id)
 

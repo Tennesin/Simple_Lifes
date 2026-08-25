@@ -9,7 +9,7 @@ from objects import Bush, WaterPuddle
 from ..circle_objects import Campfire
 from settings import *
 from info import *
-from game.widgets import Button, ScrollArea
+from game.widgets import Button, ScrollArea, draw_favorite_star
 from ..ci_settings import *
 from ..ci_info import *
 from ....all_needed import geometry
@@ -53,8 +53,14 @@ class CreaturePanel:
 
         id_row_y = self.info_panel_rect.y + 8
         btn_width, btn_height, btn_gap = 85, BUTTON_HEIGHT - 4, 6
+
+        # ---------- Звезда "Избранное" - смещает кнопки Гладить/Ударить левее ----------
+        star_size = btn_height
+        self.favorite_star_rect = pygame.Rect(
+            self.info_panel_rect.right - 10 - star_size, id_row_y, star_size, star_size)
+
         self.btn_creature_hit = Button(
-            pygame.Rect(self.info_panel_rect.right - 10 - btn_width, id_row_y, btn_width, btn_height),
+            pygame.Rect(self.favorite_star_rect.x - btn_gap - btn_width, id_row_y, btn_width, btn_height),
             INFO_BTN_HIT)
         self.btn_creature_pet = Button(
             pygame.Rect(self.btn_creature_hit.rect.x - btn_gap - btn_width, id_row_y, btn_width, btn_height),
@@ -168,6 +174,7 @@ class CreaturePanel:
             mouse_pos = pygame.mouse.get_pos()
             self.btn_creature_pet.draw(screen, mouse_pos)
             self.btn_creature_hit.draw(screen, mouse_pos)
+            draw_favorite_star(screen, self.favorite_star_rect, game.favorite_id == creature.id, mouse_pos)
 
         field = self.name_field_rect
         field_color = NAME_FIELD_EDIT_COLOR if game.editing_name else NAME_FIELD_COLOR

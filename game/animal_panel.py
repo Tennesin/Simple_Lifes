@@ -7,6 +7,7 @@ from game.animal_registry import all_animal_object_panel_extensions
 from creatures.all_needed.base_creature import GENDER_FEMALE
 from creatures.all_needed.diet import DIET_DISPLAY_MAP
 from info import INFO_INFO_GENDER, INFO_GENDER_MALE, INFO_GENDER_FEMALE, INFO_INFO_DIET
+from game.widgets import draw_favorite_star
 
 class AnimalPanel:
 
@@ -16,12 +17,15 @@ class AnimalPanel:
     ROW_HEIGHT = 30
     EXTRA_LINE_HEIGHT = 22
     TITLE_HEIGHT = 30
+    FAVORITE_STAR_SIZE = 22
+    FAVORITE_STAR_GAP = 10
 
     def __init__(self, game, font):
         self.game = game
         self.font = font
         self.info_panel_rect = pygame.Rect(0, 0, 0, 0)
         self.stat_bar_rects = {}
+        self.favorite_star_rect = pygame.Rect(0, 0, 0, 0)
         self.rebuild_layout(WINDOW_WIDTH, WINDOW_HEIGHT)
 
     def rebuild_layout(self, window_w, window_h):
@@ -53,7 +57,9 @@ class AnimalPanel:
         diet_label = DIET_DISPLAY_MAP.get(animal.diet, animal.diet)
         diet_text = INFO_INFO_DIET.format(diet=diet_label)
 
-        widths = [self.font.size(title_text)[0], self.font.size(gender_text)[0], self.font.size(diet_text)[0]]
+        # ---------- Резервируем место под звезду справа от заголовка ----------
+        title_reserved_width = self.font.size(title_text)[0] + self.FAVORITE_STAR_SIZE + self.FAVORITE_STAR_GAP
+        widths = [title_reserved_width, self.font.size(gender_text)[0], self.font.size(diet_text)[0]]
         for label in ("Здоровье", "Голод", "Жажда", "Энергия"):
             widths.append(self.font.size(f"{label}: 000.0/000")[0])
         for text, _color in extra_lines:
@@ -89,6 +95,11 @@ class AnimalPanel:
 
         title_txt = self.font.render(f"{animal.get_type_name()}: {name}", True, TEXT_COLOR)
         screen.blit(title_txt, (panel.x + 10, panel.y + 8))
+
+        star_size = self.FAVORITE_STAR_SIZE
+        self.favorite_star_rect = pygame.Rect(
+            panel.right - 8 - star_size, panel.y + 6, star_size, star_size)
+        draw_favorite_star(screen, self.favorite_star_rect, game.favorite_id == animal.id, pygame.mouse.get_pos())
 
         y = panel.y + self.TITLE_HEIGHT
 

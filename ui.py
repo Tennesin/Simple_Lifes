@@ -5,7 +5,7 @@ import pygame
 from settings import *
 from info import *
 from player import Player
-from game.widgets import Button
+from game.widgets import Button, star_points
 from game.race_registry import (
     all_races, all_player_tools,
     all_minimap_layers, all_object_panel_extensions,
@@ -40,6 +40,7 @@ _CORE_PLAYER_TOOLS = (
     PlayerToolSpec(Player.TOOL_PET, INFO_BTN_PET, INFO_TOOL_PET_HINT),
     PlayerToolSpec(Player.TOOL_HIT, INFO_BTN_HIT, INFO_TOOL_HIT_HINT),
     PlayerToolSpec(Player.TOOL_GRAB, INFO_BTN_GRAB, INFO_TOOL_GRAB_HINT),
+    PlayerToolSpec(Player.TOOL_FAVORITE, INFO_BTN_FAVORITE, INFO_TOOL_FAVORITE_HINT),
 )
 
 _CORE_TOOL_HINTS = {
@@ -658,22 +659,12 @@ class MinimapPanel:
         for draw_fn in self._pipeline:
             draw_fn(self, screen, game, to_minimap, (scale_x, scale_y), display)
 
+        favorite = self._find_favorite_entity(game.favorite_id)
+        self._draw_dos_overlay(screen, rect, (scale_x, scale_y), favorite)
+        if favorite is not None:
+            self._draw_favorite_marker(screen, to_minimap, favorite)
+
         cam = game.camera
-
-        # ---------- ДОС: жёлтый полупрозрачный прямоугольник вокруг камеры ----------
-        sim_units = display.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
-        sim_margin = sim_units * SIMULATION_AREA_PX_PER_UNIT
-        sim_x = rect.x + (cam.x - sim_margin) * scale_x
-        sim_y = rect.y + (cam.y - sim_margin) * scale_y
-        sim_w = (cam.camera.width + sim_margin * 2) * scale_x
-        sim_h = (cam.camera.height + sim_margin * 2) * scale_y
-        sim_rect = pygame.Rect(int(sim_x), int(sim_y), int(sim_w), int(sim_h)).clip(rect)
-        if sim_rect.width > 0 and sim_rect.height > 0:
-            sim_overlay = pygame.Surface((sim_rect.width, sim_rect.height), pygame.SRCALPHA)
-            sim_overlay.fill((*MINIMAP_SIMULATION_AREA_COLOR, MINIMAP_SIMULATION_AREA_ALPHA))
-            screen.blit(sim_overlay, sim_rect.topleft)
-            pygame.draw.rect(screen, MINIMAP_SIMULATION_AREA_COLOR, sim_rect, 1)
-
         view_x = rect.x + cam.x * scale_x
         view_y = rect.y + cam.y * scale_y
         view_w = max(2, cam.camera.width * scale_x)
@@ -685,6 +676,58 @@ class MinimapPanel:
 
         hint_txt = self.font.render("Tab", True, (170, 170, 170))
         screen.blit(hint_txt, (rect.right - hint_txt.get_width() - 4, rect.y - 20))
+
+    def _find_favorite_entity(self, favorite_id):
+        if favorite_id is None:
+            return None
+        game = self.game
+        for c in game.world.creatures:
+            if c.id == favorite_id and not c.is_dead:
+                return c
+        for descriptor in all_animals():
+            for animal in getattr(game.world, descriptor.world_collection):
+                if animal.id == favorite_id:
+                    return animal
+        return None
+
+    def _draw_dos_overlay(self, screen, rect, scale, favorite):
+        game = self.game
+        scale_x, scale_y = scale
+
+        overlay = pygame.Surface(rect.size, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, MINIMAP_SIMULATION_AREA_ALPHA))
+
+        cut = pygame.Surface(rect.size, pygame.SRCALPHA)
+
+        units = game.display_settings.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
+        units = max(SIMULATION_AREA_MIN_UNITS, min(SIMULATION_AREA_MAX_UNITS, units))
+        margin = units * SIMULATION_AREA_PX_PER_UNIT
+        cam = game.camera
+
+        sim_x = (cam.x - margin) * scale_x
+        sim_y = (cam.y - margin) * scale_y
+        sim_w = (cam.camera.width + margin * 2) * scale_x
+        sim_h = (cam.camera.height + margin * 2) * scale_y
+        pygame.draw.rect(cut, (255, 255, 255, 255),
+                         pygame.Rect(int(sim_x), int(sim_y), int(sim_w), int(sim_h)))
+
+        if favorite is not None:
+            vision = (favorite.effective_vision_radius()
+                      if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
+            local_x = favorite.x * scale_x
+            local_y = favorite.y * scale_y
+            radius_px = vision * scale_x  # scale_x == scale_y - аспект мира сохраняется
+            pygame.draw.circle(cut, (255, 255, 255, 255), (int(local_x), int(local_y)), int(radius_px))
+
+        overlay.blit(cut, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
+        screen.blit(overlay, rect.topleft)
+
+    def _draw_favorite_marker(self, screen, to_minimap, favorite):
+        fx, fy = to_minimap(favorite.x, favorite.y)
+        size = MINIMAP_FAVORITE_STAR_SIZE
+        points = star_points(fx, fy, size, size * 0.45)
+        pygame.draw.polygon(screen, FAVORITE_STAR_COLOR, points)
+        pygame.draw.polygon(screen, FAVORITE_STAR_BORDER, points, 1)
 
 # =====================================================================
 # Экраны "Создание мира" / "Загрузка мира" — без изменений (core)

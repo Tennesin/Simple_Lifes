@@ -376,6 +376,7 @@ class WorldManager:
         game.editing_name = False
         game.name_edit_buffer = ""
         game.player = Player()
+        game.favorite_id = None
         game.close_all_menus()
 
         if is_new:
@@ -486,6 +487,7 @@ class WorldManager:
         game.editing_name = False
         game.name_edit_buffer = ""
         game.player = Player()
+        game.favorite_id = None
         game.close_all_menus()
         game.last_manual_save_time = None
         game.world_loaded = False

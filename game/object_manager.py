@@ -833,6 +833,22 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
                 best_dist = dist
         return best
 
+    def find_favorite_target_at(self, wx, wy):
+        creature = self.find_creature_at(wx, wy)
+        if creature is not None:
+            return creature
+
+        best, best_dist = None, 14
+        for descriptor in all_animals():
+            for animal in getattr(self.game.world, descriptor.world_collection):
+                if animal.hp <= 0:
+                    continue
+                dist = math.hypot(wx - animal.x, wy - animal.y)
+                if dist <= best_dist:
+                    best = animal
+                    best_dist = dist
+        return best
+
     def find_object_at(self, wx, wy):
         game = self.game
 

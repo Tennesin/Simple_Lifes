@@ -47,6 +47,21 @@ def handle_pet_hit_grab_click(game, ui, mouse_x, mouse_y):
                 game.player.grabbed_creature = creature_hit
     return True
 
+def handle_favorite_click(game, ui, mouse_x, mouse_y):
+    if game.player.tool != Player.TOOL_FAVORITE:
+        return False
+
+    if ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
+        game.player.reset_tool()
+        return True
+
+    if mouse_y > UI_HEIGHT:
+        wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
+        entity_hit = game.object_manager.find_favorite_target_at(wx, wy)
+        if entity_hit is not None:
+            game.toggle_favorite(entity_hit.id)
+    return True
+
 # =========================================================================
 # Домен: клавиатура - редактирование имён (существо/кладбище) и общие
 # горячие клавиши (пауза, миникарта, удаление объекта, Escape-стек)
@@ -344,6 +359,10 @@ class _MouseDownMixin:
                 game.player.landscape_type = landscape_type
             return True
 
+        if event.button == 1 and game.world_loaded and handle_favorite_click(
+                game, game.ui, mouse_x, mouse_y):
+            return True
+
         if event.button == 1 and game.world_loaded and handle_pet_hit_grab_click(
                 game, game.ui, mouse_x, mouse_y):
             return True
@@ -547,6 +566,10 @@ class _MouseDownMixin:
             game.selected_creature.player_reactions.hit()
 
         elif (game.world_loaded and not game.right_panel_collapsed and game.selected_creature
+              and not game.selected_creature.is_dead and ui.favorite_star_rect.collidepoint(mouse_x, mouse_y)):
+            game.toggle_favorite(game.selected_creature.id)
+
+        elif (game.world_loaded and not game.right_panel_collapsed and game.selected_creature
               and not game.selected_creature.is_dead and self._handle_stat_bar_click(mouse_x, mouse_y)):
             pass
 
@@ -563,6 +586,11 @@ class _MouseDownMixin:
         elif (game.world_loaded and not game.right_panel_collapsed and
               self._handle_secondary_panel_click(mouse_x, mouse_y)):
             pass
+
+        elif (game.world_loaded and game.selected_object is not None
+              and isinstance(game.selected_object, animal_classes())
+              and game.ui.animal_panel.favorite_star_rect.collidepoint(mouse_x, mouse_y)):
+            game.toggle_favorite(game.selected_object.id)
 
         elif (game.world_loaded and game.selected_object is not None
               and isinstance(game.selected_object, animal_classes())

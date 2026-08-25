@@ -1,4 +1,5 @@
 import time
+import math
 import pygame
 from settings import *
 
@@ -150,3 +151,34 @@ class Slider:
         handle_rect = pygame.Rect(0, 0, 4, self.rect.height + 6)
         handle_rect.center = (self.rect.x + fill_w, self.rect.centery)
         pygame.draw.rect(surface, (240, 240, 240), handle_rect, border_radius=2)
+
+# =====================================================================
+# Кнопка "Избранное" (звезда)
+# =====================================================================
+
+def star_points(cx, cy, outer_r, inner_r, points=5, rotation=-math.pi / 2):
+    result = []
+    angle_step = math.pi / points
+    angle = rotation
+    for i in range(points * 2):
+        r = outer_r if i % 2 == 0 else inner_r
+        result.append((cx + math.cos(angle) * r, cy + math.sin(angle) * r))
+        angle += angle_step
+    return result
+
+def draw_favorite_star(screen, rect, is_favorite, mouse_pos):
+    cx, cy = rect.center
+    outer_r = min(rect.width, rect.height) / 2
+    inner_r = outer_r * 0.45
+    points = star_points(cx, cy, outer_r, inner_r)
+    hovered = rect.collidepoint(mouse_pos)
+
+    if is_favorite:
+        fill_color = FAVORITE_STAR_COLOR_HOVER if hovered else FAVORITE_STAR_COLOR
+        pygame.draw.polygon(screen, fill_color, points)
+        pygame.draw.polygon(screen, FAVORITE_STAR_BORDER, points, 2)
+    else:
+        border_color = FAVORITE_STAR_HOLLOW_HOVER if hovered else FAVORITE_STAR_HOLLOW_BORDER
+        pygame.draw.polygon(screen, border_color, points, 2)
+
+    return hovered

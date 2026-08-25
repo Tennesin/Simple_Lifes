@@ -90,6 +90,7 @@ class Game:
         self._exit_confirm_quit_app = False
 
         self.player = Player()
+        self.favorite_id = None  # ДОС: id избранного существа/животного
         self.display_settings = self._load_display_settings()
         self.show_minimap = True
         self.right_panel_collapsed = False
@@ -175,6 +176,11 @@ class Game:
     def activate_player_tool(self, tool):
         self.object_manager.stop_placement()
         self.player.tool = tool
+
+    def toggle_favorite(self, entity_id):
+        if entity_id is None:
+            return
+        self.favorite_id = None if self.favorite_id == entity_id else entity_id
 
     def welded_landscape_polylines(self):
         version = self.world.landscape_version

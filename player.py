@@ -6,6 +6,7 @@ class Player:
     TOOL_PET = "pet"
     TOOL_HIT = "hit"
     TOOL_GRAB = "grab"
+    TOOL_FAVORITE = "favorite"
     TOOL_ROAD = "road"
     TOOL_WALL = "wall"
     TOOL_FENCE = "fence"
