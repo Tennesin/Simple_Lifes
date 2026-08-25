@@ -32,9 +32,10 @@ class Simulation:
         self._stone_grid = SpatialGrid(cell_size=200)
         self._grass_grid = SpatialGrid(cell_size=200)
         self._meat_grid = SpatialGrid(cell_size=200)
-        self._cow_grid = SpatialGrid(cell_size=200)
-        self._sheep_grid = SpatialGrid(cell_size=200)
-        self._wolf_grid = SpatialGrid(cell_size=200)
+        self._animal_grids = {
+            descriptor.world_collection: SpatialGrid(cell_size=200)
+            for descriptor in all_animals()
+        }
         self._static_grid_frame = 0
         self._dos_frame = 0
         self._cached_simulation_bounds = None
@@ -110,17 +111,12 @@ class Simulation:
         """Позиции животных двигаются каждый кадр - строим заново каждый раз,
         как и _creature_grid у существ."""
         world = self.game.world
-        self._cow_grid.build(c for c in world.cows if c.hp > 0)
-        self._sheep_grid.build(s for s in world.sheep if s.hp > 0)
-        self._wolf_grid.build(w for w in world.wolves if w.hp > 0)
-        return {
-            "grass": self._grass_grid,
-            "water": self._water_grid,
-            "meats": self._meat_grid,
-            "cows": self._cow_grid,
-            "sheep": self._sheep_grid,
-            "wolves": self._wolf_grid,
-        }
+        grids = {"grass": self._grass_grid, "water": self._water_grid, "meats": self._meat_grid}
+        for descriptor in all_animals():
+            grid = self._animal_grids[descriptor.world_collection]
+            grid.build(a for a in getattr(world, descriptor.world_collection) if a.hp > 0)
+            grids[descriptor.world_collection] = grid
+        return grids
 
     # =====================================================================
     # Домен: подготовка контекста кадра - теперь единый WorldFrameContext

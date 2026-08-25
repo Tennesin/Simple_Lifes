@@ -81,7 +81,7 @@ class Storage(GoalComponent):
                         and candidate.life_stage == LIFE_STAGE_CHILD
                         and candidate.parent_ids and c.id in candidate.parent_ids):
                     urgent_child = candidate
-            needy = urgent_child if urgent_child is not None else self.actions.find_needy_friend(other_creatures)
+            needy = urgent_child if urgent_child is not None else self.actions.find_needy_friend(ctx.visible_companions)
             if needy:
                 c.storage_supply_mode = False
                 c.feed_target_id = needy.id

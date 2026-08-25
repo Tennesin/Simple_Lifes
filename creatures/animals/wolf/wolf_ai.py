@@ -5,7 +5,7 @@
 import math
 from ...all_needed.ai.roaming_ai import RoamingAnimalMixin
 from ...all_needed.ai.utility import Consideration, pick_best, scale
-from ...all_needed.simulation_area import tick_frozen_state, should_be_removed
+from ...all_needed.simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
 import settings
 from .wolf_settings import *
 
@@ -313,14 +313,8 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, 
 
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
-    if biome_grid is not None:
-        max_search = max(game.camera.world_w, game.camera.world_h)
-        for wolf in world.wolves:
-            if wolf.hp > 0 and biome_grid.get_at(wolf.x, wolf.y) == settings.BIOME_SEA:
-                land = biome_grid.find_nearest_land(wolf.x, wolf.y, max_search)
-                if land is not None:
-                    wolf.x, wolf.y = land
-                wolf.hp = 0
+    for wolf in world.wolves:
+        rescue_from_sea_or_kill(wolf, biome_grid, settings.ANIMAL_LAND_RESCUE_RADIUS)
 
     dead = [w for w in world.wolves if w.hp <= 0]
     for wolf in dead:

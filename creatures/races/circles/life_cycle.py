@@ -1,6 +1,7 @@
 import random
 import math
 from .ci_settings import *
+from ...all_needed.base_entity import same_race
 
 def _shares_parent(ids_a, ids_b):
     if not ids_a or not ids_b:
@@ -155,7 +156,8 @@ class CreatureFamily:
         self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
         self.birth_cooldown = 0.0
 
-    def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None, houses=None):
+    def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None, houses=None,
+               nearby_creatures_grid=None):
         c = self.c
         if c.is_dead or c.is_grabbed:
             return None
@@ -170,7 +172,7 @@ class CreatureFamily:
         if (c.partner_id is None and c.life_stage == LIFE_STAGE_ADULT
                 and self.pair_check_timer <= 0):
             self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
-            self._try_form_pair(other_creatures, storage_fields, houses)
+            self._try_form_pair(other_creatures, storage_fields, houses, nearby_creatures_grid)
             if c.partner_id is not None and (partner is None or partner.id != c.partner_id):
                 partner = self._find_partner(other_creatures, c.partner_id, creatures_by_id)
 
@@ -238,7 +240,6 @@ class CreatureFamily:
 
     @staticmethod
     def _family_house_has_space(c, partner, houses):
-        # ---------- Совместимость со старыми мирами / семьями без дома: не блокируем ----------
         if not houses:
             return True
         owner_id = c.id if c.gender == GENDER_MALE else partner.id
@@ -249,7 +250,7 @@ class CreatureFamily:
 
     # ---------- Образование пары ----------
 
-    def _try_form_pair(self, other_creatures, storage_fields=None, houses=None):
+    def _try_form_pair(self, other_creatures, storage_fields=None, houses=None, nearby_creatures_grid=None):
         c = self.c
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return
@@ -259,9 +260,16 @@ class CreatureFamily:
         my_threshold = FAMILY_MIN_RELATIONSHIP - (PUBERTY_PAIR_RELATIONSHIP_DISCOUNT if c.puberty_active else 0.0)
         my_threshold -= c.psyche.pairing_relationship_discount()
 
+        candidate_pool = (
+            nearby_creatures_grid.query_nearby(c.x, c.y, FAMILY_BOND_DISTANCE)
+            if nearby_creatures_grid is not None else other_creatures
+        )
+
         candidates = []
-        for other in other_creatures:
+        for other in candidate_pool:
             if other is c or other.is_dead or other.is_grabbed:
+                continue
+            if not same_race(c, other):
                 continue
             if self._is_blood_relative(other):
                 continue

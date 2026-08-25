@@ -1,9 +1,9 @@
 """Тик коровы: голод/жажда/энергия, блуждание, выпас, водопой, бегство от волков."""
 
 from ...all_needed.ai.grazer_ai import GrazerAI
-from ...all_needed.simulation_area import tick_frozen_state, should_be_removed
+from ...all_needed.simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
 from .cow_settings import *
-from settings import BIOME_SEA
+from settings import ANIMAL_LAND_RESCUE_RADIUS
 
 _COW_AI_CFG = {
     "speed": COW_SPEED,
@@ -43,14 +43,8 @@ def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, s
     water_source = spatial_grids.get("water", world.water_puddles)
     wolves_source = spatial_grids.get("wolves")
 
-    if biome_grid is not None:
-        max_search = max(game.camera.world_w, game.camera.world_h)
-        for cow in world.cows:
-            if cow.hp > 0 and biome_grid.get_at(cow.x, cow.y) == BIOME_SEA:
-                land = biome_grid.find_nearest_land(cow.x, cow.y, max_search)
-                if land is not None:
-                    cow.x, cow.y = land
-                cow.hp = 0
+    for cow in world.cows:
+        rescue_from_sea_or_kill(cow, biome_grid, ANIMAL_LAND_RESCUE_RADIUS)
 
     dead = [c for c in world.cows if c.hp <= 0]
     for cow in dead:

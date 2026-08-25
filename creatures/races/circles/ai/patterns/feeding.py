@@ -246,7 +246,7 @@ class Feeding(GoalComponent):
                 c.parent_feed_check_timer -= dt
                 return None
             c.parent_feed_check_timer = random.uniform(*PARENT_FEED_CHECK_INTERVAL)
-            needy = self.actions.find_needy_friend(other_creatures)
+            needy = self.actions.find_needy_friend(ctx.visible_companions)
             if needy is None:
                 return None
 

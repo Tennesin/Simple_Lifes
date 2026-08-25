@@ -33,16 +33,19 @@ class CircleTickProcessor:
     """Единственная точка входа - process(ctx). Всё остальное - детали."""
 
     race_name = "circle"
+    CAMPFIRE_OCCUPANCY_REBUILD_INTERVAL = 30
 
     def __init__(self, game):
         self.game = game
+        self._campfire_occupancy_frame = 0
+        self._cached_campfire_occupancy = None
 
     def process(self, ctx):
         genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
         race_creatures = self._race_creatures()
         ctx.race_creatures = race_creatures
 
-        ctx.campfire_occupancy = self._compute_campfire_occupancy(ctx.campfires, race_creatures)
+        ctx.campfire_occupancy = self._get_campfire_occupancy(ctx.campfires, race_creatures)
 
         self._reconcile_storage_ownership(ctx)
         self._reconcile_house_ownership(ctx)
@@ -66,6 +69,16 @@ class CircleTickProcessor:
     # =====================================================================
     # Домен: занятость костров - сколько существ считают его "домом"
     # =====================================================================
+
+    def _get_campfire_occupancy(self, campfires, race_creatures):
+        self._campfire_occupancy_frame += 1
+        needs_recalc = (
+                self._cached_campfire_occupancy is None
+                or self._campfire_occupancy_frame % self.CAMPFIRE_OCCUPANCY_REBUILD_INTERVAL == 0
+        )
+        if needs_recalc:
+            self._cached_campfire_occupancy = self._compute_campfire_occupancy(campfires, race_creatures)
+        return self._cached_campfire_occupancy
 
     def _compute_campfire_occupancy(self, campfires, race_creatures):
         occupancy = {fire.id: 0 for fire in campfires}
@@ -331,7 +344,8 @@ class CircleTickProcessor:
                 continue
 
             birth_request = creature.family.update(
-                ctx.dt, race_creatures, ctx.creatures_by_id, world.storage_fields, world.houses)
+                ctx.dt, race_creatures, ctx.creatures_by_id, world.storage_fields, world.houses,
+                nearby_creatures_grid=(ctx.spatial_grids or {}).get("creatures"))
             if birth_request is not None:
                 game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
 
