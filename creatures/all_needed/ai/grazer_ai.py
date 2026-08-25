@@ -4,6 +4,7 @@
 
 from .roaming_ai import RoamingAnimalMixin
 from .utility import Consideration, pick_best, scale
+from ..weak_owner import WeakEntityMixin
 import settings
 
 # ---------- Веса принятия решений ----------
@@ -16,19 +17,17 @@ SCORE_WATER_BASE = 40.0
 SCORE_WATER_MAX_BONUS = 30.0
 SCORE_WANDER = 8.0
 
-class GrazerAI(RoamingAnimalMixin):
-
+class GrazerAI(WeakEntityMixin, RoamingAnimalMixin):
     def __init__(self, animal, cfg):
-        self.entity = animal
+        WeakEntityMixin.__init__(self, animal)
         self.cfg = cfg
         self.target = None
         self.decision_timer = 0.0
         self.fleeing = False
         self.seeking_food = False
         self.seeking_water = False
-        self.is_urgent = False  # НОВОЕ (п.3): включает "прокачанный" A* в move_towards
+        self.is_urgent = False
 
-        # ---------- НОВОЕ (п.2): гистерезис страха перед шипом ----------
         self._spike_flee_commit_timer = 0.0
         self._last_spike_threat = None
 

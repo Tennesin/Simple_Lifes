@@ -6,6 +6,7 @@ import math
 from ...all_needed.ai.roaming_ai import RoamingAnimalMixin
 from ...all_needed.ai.utility import Consideration, pick_best, scale
 from ...all_needed.simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
+from ...all_needed.weak_owner import WeakEntityMixin
 import settings
 from .wolf_settings import *
 
@@ -43,10 +44,9 @@ SCORE_WATER_BASE = 40.0
 SCORE_WATER_MAX_BONUS = 30.0
 SCORE_WANDER = 8.0
 
-class WolfAI(RoamingAnimalMixin):
-
+class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
     def __init__(self, wolf, cfg):
-        self.entity = wolf
+        WeakEntityMixin.__init__(self, wolf)
         self.cfg = cfg
         self.target = None
         self.decision_timer = 0.0
@@ -55,9 +55,8 @@ class WolfAI(RoamingAnimalMixin):
         self.bite_cooldown = 0.0
         self.seeking_food = False
         self.seeking_water = False
-        self.is_urgent = False  # НОВОЕ (п.3): включает "прокачанный" A* в move_towards
+        self.is_urgent = False
 
-        # ---------- НОВОЕ (п.2): тот же гистерезис страха перед шипом, что у травоядных ----------
         self._spike_flee_commit_timer = 0.0
         self._last_spike_threat = None
 

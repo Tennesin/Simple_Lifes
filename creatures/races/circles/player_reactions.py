@@ -2,6 +2,7 @@ import time
 from .ci_settings import *
 from .ci_info import *
 from ...all_needed import geometry
+from ...all_needed.weak_owner import WeakOwnerMixin
 
 GRAB_EVAL_MAX_HOLD_TIME = 5.0
 
@@ -14,10 +15,9 @@ _STAT_MAX_MAP = {
 }
 _STAT_NEUTRAL_KEYS = ("energy", "consciousness")
 
-class PlayerReactionHandler:
-
+class PlayerReactionHandler(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
 
     def add_memory(self, action, **extra):
         c = self.c

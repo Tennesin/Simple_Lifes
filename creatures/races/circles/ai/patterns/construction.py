@@ -5,7 +5,7 @@ from settings import *
 from ...ci_settings import *
 from ...ci_info import *
 from .....all_needed import geometry
-from .....all_needed.ai.utility import Consideration, GoalComponent
+from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 from ...circle_objects import StorageField, Graveyard, ConstructionSite, House, Campfire
 
 # =========================================================================
@@ -445,12 +445,13 @@ class Construction(GoalComponent):
             new_object = Campfire(site.x, site.y)
             ctx.campfires.append(new_object)
 
+
         elif site.build_type == "storage":
             new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos)
             primary_owner_id = getattr(site, "storage_owner_id", None) or c.id
             new_object.add_owner(primary_owner_id)
 
-            primary_owner = next((o for o in ctx.other_creatures if o.id == primary_owner_id), None)
+            primary_owner = lookup_creature(ctx.other_creatures, primary_owner_id, ctx.other_by_id)
             partner_id = primary_owner.partner_id if primary_owner is not None else None
             if partner_id is not None and partner_id in site.contributor_ids:
                 new_object.add_owner(partner_id)
@@ -478,7 +479,7 @@ class Construction(GoalComponent):
             new_object.resident_ids.add(primary_owner_id)
             c.home_id = new_object.id
 
-            primary_owner = next((o for o in ctx.other_creatures if o.id == primary_owner_id), None)
+            primary_owner = lookup_creature(ctx.other_creatures, primary_owner_id, ctx.other_by_id)
             partner_id = primary_owner.partner_id if primary_owner is not None else c.partner_id
             if partner_id is not None:
                 new_object.owner_ids.add(partner_id)
@@ -627,7 +628,7 @@ class Construction(GoalComponent):
         if owner_attr is not None:
             owner_id = getattr(site, owner_attr, None)
             if owner_id is not None:
-                owner = next((o for o in ctx.other_creatures if o.id == owner_id), None)
+                owner = lookup_creature(ctx.other_creatures, owner_id, ctx.other_by_id)
                 if owner is not None:
                     target = owner
 

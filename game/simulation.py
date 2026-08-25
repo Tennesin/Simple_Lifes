@@ -13,6 +13,7 @@ from game.animal_registry import all_animals, all_animal_drop_collections
 class Simulation:
     STATIC_GRID_REBUILD_INTERVAL = 6
     DOS_RECALC_INTERVAL = 6
+    DYNAMIC_GRID_REBUILD_INTERVAL = 2
 
     def __init__(self, game):
         self.game = game
@@ -37,6 +38,7 @@ class Simulation:
             for descriptor in all_animals()
         }
         self._static_grid_frame = 0
+        self._dynamic_grid_frame = 0
         self._dos_frame = 0
         self._cached_simulation_bounds = None
         self._cached_active_ids = None
@@ -92,6 +94,11 @@ class Simulation:
         self._static_grid_frame += 1
         return (self._static_grid_frame % self.STATIC_GRID_REBUILD_INTERVAL == 0
                 or not self._fruit_grid.buckets)
+
+    def _tick_dynamic_grid_frame(self):
+        self._dynamic_grid_frame += 1
+        return (self._dynamic_grid_frame % self.DYNAMIC_GRID_REBUILD_INTERVAL == 0
+                or not self._creature_grid.buckets)
 
     def _rebuild_static_resource_grids(self, rebuild_static):
         if not rebuild_static:
@@ -150,9 +157,10 @@ class Simulation:
             SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
 
-        self._creature_grid.build(
-            c for c in world.creatures if not c.is_dead and not getattr(c, "at_home", False))
-        self._corpse_grid.build(c for c in world.creatures if c.is_dead)
+        if self._tick_dynamic_grid_frame():
+            self._creature_grid.build(
+                c for c in world.creatures if not c.is_dead and not getattr(c, "at_home", False))
+            self._corpse_grid.build(c for c in world.creatures if c.is_dead)
 
         spatial_grids = {
             "fruits": self._fruit_grid, "spikes": self._spike_grid,

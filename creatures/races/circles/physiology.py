@@ -2,16 +2,16 @@
 
 from .ci_settings import *
 from settings import *
-
+from ...all_needed.weak_owner import WeakOwnerMixin
 from ...all_needed.navigation import BasePathfinder
 
 # =========================================================================
 # Домен: голод / жажда / сон / здоровье / рассудок
 # =========================================================================
 
-class CreatureNeeds:
+class CreatureNeeds(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
 
     def update(self, dt, other_creatures=None, biome_grid=None):
         c = self.c

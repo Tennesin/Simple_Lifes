@@ -3,7 +3,9 @@ import math
 import random
 import settings
 from settings import *
+
 from . import geometry
+from .weak_owner import WeakOwnerMixin
 
 DEFAULT_SPEED = 120
 
@@ -383,9 +385,9 @@ class SpatialGrid:
         for bucket in self.buckets.values():
             yield from bucket
 
-class BasePathfinder:
+class BasePathfinder(WeakOwnerMixin):
     def __init__(self, entity):
-        self.c = entity
+        super().__init__(entity)
 
     def resolve_path(self, goal, dt, nav_grid=None, wall_polylines=None, biome_grid=None,
                       fallback_nav_grid=None):

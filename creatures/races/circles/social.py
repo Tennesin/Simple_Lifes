@@ -1,9 +1,10 @@
 from .ci_settings import *
 from ...all_needed import geometry
+from ...all_needed.weak_owner import WeakOwnerMixin
 
-class CreatureSocial:
+class CreatureSocial(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
 
     def get_relationship(self, other):
         return self.c.relationships.get(other.id, 0.0)
@@ -52,9 +53,9 @@ class CreatureSocial:
         c.social_request_timer = SOCIAL_REQUEST_HOLD_TIME
         c.social_request_point = point
 
-class CreatureCommunication:
+class CreatureCommunication(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
 
     def share_information(self, other):
         c = self.c

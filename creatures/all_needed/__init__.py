@@ -2,6 +2,7 @@
 
 from . import geometry
 from . import diet
+from .weak_owner import WeakOwnerMixin, WeakEntityMixin
 from .base_entity import BaseEntity, LivingEntity, same_race, filter_same_race
 from .base_creature import CreatureBase, GENDER_MALE, GENDER_FEMALE, DEFAULT_GENDER_LIST
 from .ai import GoalComponent, lookup_creature
@@ -14,6 +15,7 @@ from .diet import (
 
 __all__ = [
     "geometry", "diet",
+    "WeakOwnerMixin", "WeakEntityMixin",
     "BaseEntity", "LivingEntity", "same_race", "filter_same_race",
     "GoalComponent", "lookup_creature",
     "NavGrid", "NavGridCache", "SpatialGrid", "BasePathfinder",

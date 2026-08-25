@@ -5,11 +5,12 @@ from settings import *
 from .ci_settings import *
 from .ci_info import *
 from ...all_needed import geometry
+from ...all_needed.weak_owner import WeakOwnerMixin
 
-class CreatureInteractions:
+class CreatureInteractions(WeakOwnerMixin):
 
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
 
     def process(self, fruits, spikes, water_puddles, bushes, campfires, other_creatures,
                 storage_fields, dt, walls=None, biome_grid=None):

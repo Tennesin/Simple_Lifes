@@ -2,6 +2,7 @@ import random
 import math
 from .ci_settings import *
 from ...all_needed.base_entity import same_race
+from ...all_needed.weak_owner import WeakOwnerMixin
 
 def _shares_parent(ids_a, ids_b):
     if not ids_a or not ids_b:
@@ -17,10 +18,9 @@ def is_blood_relative(a, b):
         return True
     return _shares_parent(a.parent_ids, b.parent_ids)
 
-class CreatureAging:
-
+class CreatureAging(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
         self._old_modifiers_applied = False
         self._puberty_synced = False
 
@@ -149,10 +149,9 @@ class CreatureAging:
             return VISION_RADIUS * OLD_VISION_RADIUS_MULTIPLIER
         return VISION_RADIUS
 
-class CreatureFamily:
-
+class CreatureFamily(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
         self.pair_check_timer = random.uniform(*FAMILY_PAIR_CHECK_INTERVAL)
         self.birth_cooldown = 0.0
 
@@ -375,10 +374,9 @@ class CreatureFamily:
                 return cr
         return None
 
-class CreatureTerritory:
-
+class CreatureTerritory(WeakOwnerMixin):
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
         self.usage_time = {}            # id(obj) -> накопленное время рядом с ресурсом
         self.claims_count = {"bush": 0, "water": 0}
         self.confront_cooldowns = {}    # other_id -> оставшееся время до следующей реакции

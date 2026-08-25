@@ -1,10 +1,11 @@
 from .ci_settings import *
 from ...all_needed import geometry
+from ...all_needed.weak_owner import WeakOwnerMixin
 
-class CreaturePsyche:
+class CreaturePsyche(WeakOwnerMixin):
 
     def __init__(self, creature):
-        self.c = creature
+        super().__init__(creature)
         self.joy = 0.0            # Грусть <-> Счастье
         self.satisfaction = 0.0   # Разочарование <-> Довольство
         self.calmness = 0.0       # Тревога <-> Спокойствие

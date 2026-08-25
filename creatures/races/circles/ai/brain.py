@@ -9,6 +9,7 @@ from settings import WALL_VISION_BLOCK_MARGIN
 from ..ci_settings import *
 from ..ci_info import *
 from ....all_needed import geometry, filter_same_race
+from ....all_needed.weak_owner import WeakOwnerMixin
 from .circles_instincts import UniversalInstincts
 from .adult_ai import AdultAI
 from .child_ai import ChildAI
@@ -362,10 +363,9 @@ class _DispatchMixin(_LifeStageDispatchBase):
 # Итоговый класс: композиция доменов + единственная точка входа decide()
 # =========================================================================
 
-class CreatureBrain(_TimerTickMixin, _PerceptionMixin, _ReflexMixin, _DispatchMixin):
-
+class CreatureBrain(WeakOwnerMixin, _TimerTickMixin, _PerceptionMixin, _ReflexMixin, _DispatchMixin):
     def __init__(self, creature):
-        self.c = creature
+        WeakOwnerMixin.__init__(self, creature)
         self.instincts = UniversalInstincts(creature)
         self.adult = AdultAI(creature, self.instincts)
         self.child = ChildAI(creature, self.instincts)
