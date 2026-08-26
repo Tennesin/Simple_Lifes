@@ -109,6 +109,7 @@ _CREATURE_SIMPLE_FIELDS = (
     ("death_timer", "death_timer", 0.0),
     ("death_cause", "death_cause", None),
     ("player_relationship", "player_relationship", 0.0),
+    ("favorite_bonus_applied", "favorite_bonus_applied", False),
     ("player_named", "player_named", False),
     ("known_roads", "known_roads", dict),
     ("known_road_links", "known_road_links", dict),

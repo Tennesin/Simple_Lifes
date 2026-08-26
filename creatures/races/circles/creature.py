@@ -9,6 +9,7 @@ from names import random_name
 
 from .ci_settings import *
 from .ci_info import *
+from ...all_needed import geometry
 from .life_cycle import CreatureAging, CreatureTerritory, CreatureFamily
 from .physiology import CreatureNeeds, CirclePathfinder
 from .social import CreatureSocial, CreatureCommunication
@@ -112,6 +113,7 @@ class Creature(LivingEntity):
         self.fear_timer = 0.0
         self.player_fear_timer = 0.0
         self.fear_source = None
+        self.favorite_bonus_applied = False
         self.is_grabbed = False
         self.grab_before_state = None
 
@@ -287,6 +289,9 @@ class Creature(LivingEntity):
 
     def receive_hit(self):
         self.player_reactions.hit()
+
+    def on_marked_favorite(self):
+        self.player_reactions.mark_favorite()
 
     def grab_by_player(self):
         self.player_reactions.start_grab()
@@ -498,6 +503,7 @@ class Creature(LivingEntity):
             "death_cause": self.death_cause,
             "knowledge": self.knowledge,
             "player_relationship": self.player_relationship,
+            "favorite_bonus_applied": self.favorite_bonus_applied,
             "known_roads": self.known_roads,
             "known_road_links": self.known_road_links,
             "relationships": self.relationships,

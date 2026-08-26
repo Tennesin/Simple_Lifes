@@ -59,7 +59,7 @@ def handle_favorite_click(game, ui, mouse_x, mouse_y):
         wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
         entity_hit = game.object_manager.find_favorite_target_at(wx, wy)
         if entity_hit is not None:
-            game.toggle_favorite(entity_hit.id)
+            game.toggle_favorite(entity_hit.id, entity=entity_hit)
     return True
 
 # =========================================================================
@@ -567,7 +567,7 @@ class _MouseDownMixin:
 
         elif (game.world_loaded and not game.right_panel_collapsed and game.selected_creature
               and not game.selected_creature.is_dead and ui.favorite_star_rect.collidepoint(mouse_x, mouse_y)):
-            game.toggle_favorite(game.selected_creature.id)
+            game.toggle_favorite(game.selected_creature.id, entity=game.selected_creature)
 
         elif (game.world_loaded and not game.right_panel_collapsed and game.selected_creature
               and not game.selected_creature.is_dead and self._handle_stat_bar_click(mouse_x, mouse_y)):
@@ -590,7 +590,7 @@ class _MouseDownMixin:
         elif (game.world_loaded and game.selected_object is not None
               and isinstance(game.selected_object, animal_classes())
               and game.ui.animal_panel.favorite_star_rect.collidepoint(mouse_x, mouse_y)):
-            game.toggle_favorite(game.selected_object.id)
+            game.toggle_favorite(game.selected_object.id, entity=game.selected_object)
 
         elif (game.world_loaded and game.selected_object is not None
               and isinstance(game.selected_object, animal_classes())

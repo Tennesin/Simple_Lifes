@@ -312,6 +312,10 @@ class CircleTickProcessor:
             if creature.partner_id is not None:
                 genealogy.register_pair(creature.id, creature.partner_id)
 
+            if (ctx.active_ids is not None and creature.id not in ctx.active_ids
+                    and not creature.is_grabbed):
+                continue
+
             creature.at_home = creature.is_in_own_house(world.houses)
             creature.update_needs(ctx.dt, world.creatures, biome_grid=game.biome_manager.grid)
             if creature.is_dead:
@@ -351,9 +355,6 @@ class CircleTickProcessor:
 
             if creature.is_grabbed:
                 ready_for_interact.append(creature)
-                continue
-
-            if ctx.active_ids is not None and creature.id not in ctx.active_ids:
                 continue
 
             target = creature.decide(ctx)

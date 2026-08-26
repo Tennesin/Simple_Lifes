@@ -83,6 +83,9 @@ class LivingEntity(BaseEntity):
     def release_by_player(self):
         raise NotImplementedError
 
+    def on_marked_favorite(self):
+        pass
+
     def draw(self, screen, screen_pos, show_status_rings=True):
         raise NotImplementedError
 

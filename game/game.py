@@ -177,10 +177,15 @@ class Game:
         self.object_manager.stop_placement()
         self.player.tool = tool
 
-    def toggle_favorite(self, entity_id):
+    def toggle_favorite(self, entity_id, entity=None):
         if entity_id is None:
             return
-        self.favorite_id = None if self.favorite_id == entity_id else entity_id
+        if self.favorite_id == entity_id:
+            self.favorite_id = None
+        else:
+            self.favorite_id = entity_id
+            if entity is not None:
+                entity.on_marked_favorite()
 
     def welded_landscape_polylines(self):
         version = self.world.landscape_version

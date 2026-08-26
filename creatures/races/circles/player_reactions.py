@@ -118,6 +118,15 @@ class PlayerReactionHandler(WeakOwnerMixin):
             self.add_memory("grab_release", outcome="neutral", relationship_after=c.player_relationship)
             c.goal_text = INFO_CREATURE_GOAL_GRAB_NEUTRAL
 
+    def mark_favorite(self):
+        c = self.c
+        if c.is_dead or c.favorite_bonus_applied:
+            return
+        c.favorite_bonus_applied = True
+        c.player_relationship = geometry.clamp(
+            c.player_relationship + FAVORITE_ASSIGN_RELATIONSHIP_BONUS, -100.0, 100.0)
+        self.add_memory("marked_favorite", relationship_after=c.player_relationship)
+
     def adjust_stat(self, stat_key, direction):
         c = self.c
         if c.is_dead:

@@ -962,6 +962,14 @@ class WorldScreensPanel:
         lines.append(INFO_LW_INFO_BUSHES.format(count=counts.get("bushes", 0)))
         lines.append(INFO_LW_INFO_CAMPFIRES.format(count=counts.get("campfires", 0)))
         lines.append(INFO_LW_INFO_ROADS.format(count=counts.get("roads", 0)))
+
+        lines.append(INFO_LW_INFO_ANIMALS_TOTAL.format(count=counts.get("animals_total", 0)))
+        animals_by_type = counts.get("animals_by_type", {})
+        for descriptor in all_animals():
+            lines.append(INFO_LW_INFO_ANIMAL_TYPE.format(
+                label=descriptor.placement_label,
+                count=animals_by_type.get(descriptor.animal_name, 0)))
+
         return lines
 
     def _draw_world_info_panel(self, screen, state, entry, label_font, small_font, content_rect):

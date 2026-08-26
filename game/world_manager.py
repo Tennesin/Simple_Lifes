@@ -280,6 +280,20 @@ class WorldManager:
                 except (OSError, json.JSONDecodeError):
                     pass
 
+        animals_by_type = {}
+        for descriptor in all_animals():
+            path = os.path.join(entry.folder_path, descriptor.save_filename)
+            count = 0
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        count = len(json.load(f))
+                except (OSError, json.JSONDecodeError):
+                    count = 0
+            animals_by_type[descriptor.animal_name] = count
+        counts["animals_total"] = sum(animals_by_type.values())
+        counts["animals_by_type"] = animals_by_type
+
         entry.counts = counts
 
     def load_selected(self, screen):
