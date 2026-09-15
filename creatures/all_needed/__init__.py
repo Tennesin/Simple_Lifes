@@ -2,6 +2,7 @@
 
 from . import geometry
 from . import diet
+from . import instruction
 from .weak_owner import WeakOwnerMixin, WeakEntityMixin
 from .base_entity import BaseEntity, LivingEntity, same_race, filter_same_race
 from .base_creature import CreatureBase, GENDER_MALE, GENDER_FEMALE, DEFAULT_GENDER_LIST
@@ -12,9 +13,16 @@ from .diet import (
     FOOD_CATEGORY_PLANT, FOOD_CATEGORY_RAW_MEAT, FOOD_CATEGORY_COOKED_MEAT,
     DIET_DISPLAY_MAP, diet_allows_category,
 )
+from .instruction import (
+    InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
+    InstructionEntry, InstructionCategory, wrap_instruction_text,
+    INSTRUCTION_COLOR_DEFAULT, INSTRUCTION_COLOR_MALE, INSTRUCTION_COLOR_FEMALE,
+    INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD,
+    INSTRUCTION_COLOR_NEUTRAL_ACCENT, INSTRUCTION_COLOR_HINT,
+)
 
 __all__ = [
-    "geometry", "diet",
+    "geometry", "diet", "instruction",
     "WeakOwnerMixin", "WeakEntityMixin",
     "BaseEntity", "LivingEntity", "same_race", "filter_same_race",
     "GoalComponent", "lookup_creature",
@@ -22,4 +30,9 @@ __all__ = [
     "DIET_HERBIVORE", "DIET_CARNIVORE", "DIET_OMNIVORE",
     "FOOD_CATEGORY_PLANT", "FOOD_CATEGORY_RAW_MEAT", "FOOD_CATEGORY_COOKED_MEAT",
     "DIET_DISPLAY_MAP", "diet_allows_category",
+    "InstructionHeader", "InstructionParagraph", "InstructionBullet", "InstructionCallout",
+    "InstructionEntry", "InstructionCategory", "wrap_instruction_text",
+    "INSTRUCTION_COLOR_DEFAULT", "INSTRUCTION_COLOR_MALE", "INSTRUCTION_COLOR_FEMALE",
+    "INSTRUCTION_COLOR_WARNING", "INSTRUCTION_COLOR_GOOD",
+    "INSTRUCTION_COLOR_NEUTRAL_ACCENT", "INSTRUCTION_COLOR_HINT",
 ]
