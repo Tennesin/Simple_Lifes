@@ -1464,7 +1464,7 @@ class InstructionPanel:
                 category.entries,
                 lambda e: measure_instruction_blocks(self.font, e.sections, content_width))
             scroll.update_bounds(accordion.total_height(category.entries), list_rect.height)
-            accordion.draw(screen, self.font, list_rect, scroll.offset, category.entries,
+            accordion.draw(screen, self.font, list_rect, int(scroll.offset), category.entries,
                            self._entry_row_icon, self._draw_entry_content)
         else:
             scroll.update_bounds(self._measure_flat(category, text_width), body_rect.height)
@@ -1473,7 +1473,7 @@ class InstructionPanel:
             screen.set_clip(clip_rect)
             draw_instruction_blocks(
                 screen, self.font, category.sections,
-                body_rect.x, body_rect.y - scroll.offset, text_width,
+                body_rect.x, body_rect.y - int(scroll.offset), text_width,
                 icon_provider=self._core_icon_provider,
                 header_font=self.header_font)
             screen.set_clip(prev_clip)

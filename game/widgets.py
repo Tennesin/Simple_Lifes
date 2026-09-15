@@ -103,27 +103,62 @@ class Button:
 
 class ScrollArea:
     THUMB_WIDTH = 4
-    HIT_PADDING = 6   # расширяем зону клика вбок - легче попасть по узкому бегунку
+    HIT_PADDING = 6
+    SMOOTH_SPEED = 14.0        # чем больше, тем быстрее догоняет цель
+    SMOOTH_SNAP_DISTANCE = 0.5 # ближе этого - просто прилипаем, хватит дрожать
 
-    def __init__(self):
-        self.offset = 0
+    def __init__(self, smooth=False):
+        self.offset = 0.0          # то, что реально рисуется
+        self.target_offset = 0.0   # то, куда стремимся
         self.max_scroll = 0
-        self.track_rect = None      # pygame.Rect | None - область трека после последней отрисовки
-        self.thumb_rect = None      # pygame.Rect | None - область бегунка после последней отрисовки
+        self.smooth = smooth
+        self.track_rect = None
+        self.thumb_rect = None
         self._dragging = False
+
+    # ---------- Тик сглаживания: звать раз в кадр перед отрисовкой ----------
+
+    def update(self, dt):
+        if not self.smooth or self._dragging:
+            self.offset = self.target_offset
+            return
+        delta = self.target_offset - self.offset
+        if abs(delta) <= self.SMOOTH_SNAP_DISTANCE:
+            self.offset = self.target_offset
+            return
+        # ---------- Кадронезависимое экспоненциальное сближение ----------
+        factor = 1.0 - math.exp(-self.SMOOTH_SPEED * dt)
+        self.offset += delta * factor
+
+    def _clamp_target(self):
+        self.target_offset = max(0.0, min(self.target_offset, self.max_scroll))
 
     def update_bounds(self, content_height, visible_height):
         self.max_scroll = max(0, content_height - visible_height)
-        self.offset = max(0, min(self.offset, self.max_scroll))
+        self._clamp_target()
+        self.offset = max(0.0, min(self.offset, self.max_scroll))
 
     def scroll_by_wheel(self, wheel_y, speed=DEFAULT_SCROLL_SPEED):
-        self.offset -= wheel_y * speed
-        self.offset = max(0, min(self.offset, self.max_scroll))
+        self.target_offset -= wheel_y * speed
+        self._clamp_target()
+        if not self.smooth:
+            self.offset = self.target_offset
 
     def scroll_by_step(self, direction, step=DEFAULT_SCROLL_SPEED):
-        """Для клавиш вверх/вниз. direction: -1 - вверх, +1 - вниз."""
-        self.offset += direction * step
-        self.offset = max(0, min(self.offset, self.max_scroll))
+        self.target_offset += direction * step
+        self._clamp_target()
+        if not self.smooth:
+            self.offset = self.target_offset
+
+    def drag_to(self, mouse_y):
+        if self.track_rect is None or self.max_scroll <= 0:
+            return
+        thumb_h = self.thumb_rect.height if self.thumb_rect is not None else 20
+        usable = max(1, self.track_rect.height - thumb_h)
+        ratio = (mouse_y - self.track_rect.y - thumb_h / 2) / usable
+        ratio = max(0.0, min(1.0, ratio))
+        self.target_offset = ratio * self.max_scroll
+        self.offset = self.target_offset   # перетаскивание должно быть 1:1, без запаздывания
 
     def draw_scrollbar(self, surface, rect):
         if self.max_scroll <= 0:
@@ -280,7 +315,6 @@ def measure_instruction_blocks(font, blocks, max_width,
 
         total += _INSTRUCTION_BLOCK_GAP
     return total
-
 
 def draw_instruction_blocks(screen, font, blocks, x, y, max_width,
                              icon_provider=None, header_font=None,
