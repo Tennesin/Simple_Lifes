@@ -3,7 +3,10 @@
 import uuid
 
 from game.animal_registry import AnimalDescriptor
-from .cow import Cow, cow_object_panel_extra_lines, cow_minimap_marker
+from .cow import (
+    Cow, cow_object_panel_extra_lines, cow_minimap_marker,
+    cow_instruction_icon, COW_INSTRUCTION_SECTIONS,
+)
 from .cow_objects import Leather
 from .cow_settings import COW_KIND_NAME, COW_MINIMAP_LABEL, COW_INITIAL_COUNT
 from .cow_ai import tick_cow
@@ -31,4 +34,7 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     drop_persistence_registry=(("leathers.json", "leathers", Leather),),
     tick_fn=tick_cow,
     initial_count=COW_INITIAL_COUNT,
+    instruction_sections=COW_INSTRUCTION_SECTIONS,
+    instruction_preview_icon="cow",
+    instruction_icon_factory=cow_instruction_icon,
 )

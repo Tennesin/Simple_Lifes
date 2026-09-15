@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional, Tuple, Type
 from info import INFO_BTN_DRAW_ROAD, INFO_TOOL_ROAD_HINT
 
+from creatures.all_needed.instruction import InstructionEntry
 import creatures.races as races_package
 from objects import Road
 
@@ -142,6 +143,12 @@ class RaceDescriptor:
     mouse_motion_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
     mouse_wheel_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
 
+    # ---------- Инструкция: раса документирует сама себя ----------
+    instruction_title: Optional[str] = None                  # имя в списке ("Круг"); None -> race_name
+    instruction_sections: Tuple = field(default_factory=tuple)
+    instruction_preview_icon: Optional[str] = None           # вариант иконки строки-заголовка
+    instruction_icon_factory: Optional[Callable] = None      # (variant_key, size) -> pygame.Surface|None
+
 _RACES_CACHE: Optional[dict] = None
 
 def _discover_races() -> dict:
@@ -242,6 +249,23 @@ def all_landmark_specs() -> Tuple[LandmarkSpec, ...]:
     for descriptor in all_races():
         result.extend(descriptor.landmark_specs)
     return tuple(result)
+
+def all_race_instruction_entries() -> Tuple[InstructionEntry, ...]:
+    """Готовые карточки-аккордеоны раздела 'Расы'."""
+    entries = []
+    for descriptor in all_races():
+        if not descriptor.instruction_sections:
+            continue
+        entries.append(InstructionEntry(
+            key=descriptor.race_name,
+            title=descriptor.instruction_title or descriptor.race_name,
+            sections=tuple(descriptor.instruction_sections),
+            preview_icon=descriptor.instruction_preview_icon,
+            icon_factory=descriptor.instruction_icon_factory,
+        ))
+    # ---------- Порядок pkgutil.iter_modules не гарантирован - сортируем сами ----------
+    entries.sort(key=lambda e: e.title.lower())
+    return tuple(entries)
 
 def all_extra_object_collections() -> Tuple[ExtraObjectCollectionSpec, ...]:
     result = []

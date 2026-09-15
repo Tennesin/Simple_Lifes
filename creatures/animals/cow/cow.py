@@ -4,6 +4,11 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
+from ...all_needed.instruction_icons import IconCache, render_scaled_icon
+from ...all_needed.instruction import (
+    InstructionHeader, InstructionParagraph, InstructionBullet,
+    INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_HINT,
+)
 from .cow_settings import *
 from .names import COW_NAME_POOLS
 from objects import Meat
@@ -124,3 +129,54 @@ def cow_object_panel_extra_lines(obj, all_creatures):
 def cow_minimap_marker(screen, pos):
     """Корова на мини-карте: тёмно-серый круг."""
     pygame.draw.circle(screen, COW_COLOR_BODY, (int(pos[0]), int(pos[1])), 2)
+
+# =========================================================================
+# Инструкция: иконка (настоящий draw() коровы, вписанный в квадрат)
+# и текстовое описание вида
+# =========================================================================
+
+_COW_ICON_CACHE = IconCache()
+_COW_ICON_SAMPLE = None
+
+def _icon_cow():
+    """Один общий манекен для иконки."""
+    global _COW_ICON_SAMPLE
+    if _COW_ICON_SAMPLE is None:
+        _COW_ICON_SAMPLE = Cow("icon", 0, 0)
+    return _COW_ICON_SAMPLE
+
+def cow_instruction_icon(variant_key=None, size=20):
+    def _build():
+        source = (COW_BODY_WIDTH + 12, COW_BODY_HEIGHT + COW_LEG_HEIGHT + 12)
+        return render_scaled_icon(
+            lambda surface, center: _icon_cow().draw(surface, center), source, size)
+
+    return _COW_ICON_CACHE.get(size, _build)
+
+COW_INSTRUCTION_SECTIONS = (
+    InstructionParagraph(
+        "Корова - крупное мирное травоядное. Тёмно-серое прямоугольное тело с белыми "
+        "пятнами на двух тонких ножках. Самое выносливое из домашних животных, но и "
+        "самое медлительное."),
+
+    InstructionHeader("Поведение"),
+    InstructionBullet("Бесцельно бродит по равнине, пока сыта и не напугана.", icon="cow"),
+    InstructionBullet("Голодная ищет траву и выедает её - поляна при этом заметно скудеет."),
+    InstructionBullet("Жажду утоляет из водоёмов и прямо из реки."),
+    InstructionBullet("Увидев волка, бросает всё и убегает, разгоняясь в полтора раза. "
+                      "Убегая, обходит углы и тупики, а не утыкается в них.",
+                      color=INSTRUCTION_COLOR_WARNING),
+
+    InstructionHeader("Что даёт"),
+    InstructionBullet("Мясо - падает после смерти.", color=INSTRUCTION_COLOR_GOOD),
+    InstructionBullet("Кожа - падает после смерти.", color=INSTRUCTION_COLOR_GOOD),
+
+    InstructionHeader("Опасности"),
+    InstructionBullet("Шипы ранят корову и отбрасывают её в сторону; она боится их и "
+                      "старается держаться подальше.", color=INSTRUCTION_COLOR_WARNING),
+    InstructionBullet("Море смертельно: оказавшуюся в воде корову выбрасывает на ближайший "
+                      "берег уже мёртвой.", color=INSTRUCTION_COLOR_WARNING),
+    InstructionParagraph(
+        "Животное вне области симуляции замирает и через некоторое время исчезает - "
+        "если только игрок ни разу его не трогал.", color=INSTRUCTION_COLOR_HINT),
+)

@@ -20,6 +20,7 @@ from .instruction import (
     INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD,
     INSTRUCTION_COLOR_NEUTRAL_ACCENT, INSTRUCTION_COLOR_HINT,
 )
+from .instruction_icons import IconCache, render_scaled_icon
 
 __all__ = [
     "geometry", "diet", "instruction",

@@ -5,6 +5,7 @@ import pkgutil
 from dataclasses import dataclass
 from typing import Callable, Optional, Tuple, Type
 
+from creatures.all_needed.instruction import InstructionEntry
 import creatures.animals as animals_package
 
 @dataclass(frozen=True)
@@ -34,6 +35,11 @@ class AnimalDescriptor:
     # ---------- Индивидуальная настройка отображения на мини-карте ----------
     minimap_checkbox_label: Optional[str] = None  # текст чекбокса; если None - чекбокса не будет
     minimap_marker_fn: Optional[Callable] = None  # (screen, pos) -> None; свой маркер вида на мини-карте
+
+    # ---------- Инструкция ----------
+    instruction_sections: Tuple = ()
+    instruction_preview_icon: Optional[str] = None
+    instruction_icon_factory: Optional[Callable] = None
 
 _ANIMALS_CACHE: Optional[dict] = None
 
@@ -118,6 +124,21 @@ def all_animal_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
         if d.minimap_checkbox_label:
             result.append((f"minimap_show_animal_{d.animal_name}", d.minimap_checkbox_label))
     return tuple(result)
+
+def all_animal_instruction_entries() -> Tuple[InstructionEntry, ...]:
+    entries = []
+    for descriptor in all_animals():
+        if not descriptor.instruction_sections:
+            continue
+        entries.append(InstructionEntry(
+            key=descriptor.animal_name,
+            title=descriptor.placement_label,
+            sections=tuple(descriptor.instruction_sections),
+            preview_icon=descriptor.instruction_preview_icon,
+            icon_factory=descriptor.instruction_icon_factory,
+        ))
+    entries.sort(key=lambda e: e.title.lower())
+    return tuple(entries)
 
 def all_animal_persistence_entries() -> Tuple[Tuple[str, str], ...]:
     """(save_filename, world_collection) - аналог _WORLD_OBJECT_REGISTRY."""

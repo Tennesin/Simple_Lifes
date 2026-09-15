@@ -14,6 +14,10 @@ from .mechanics.input_events import (
     circle_handle_relationships_scrollbar_motion,
 )
 
+from .race_instruction import (
+    CIRCLE_INSTRUCTION_SECTIONS, CIRCLE_INSTRUCTION_TITLE,
+    CIRCLE_INSTRUCTION_PREVIEW_ICON, circle_instruction_icon,
+)
 from .creature import Creature
 from .ci_info import *
 from .ci_settings import GRAVEYARD_DEFAULT_SIZE, CHILD_ROAD_COLOR_PENDING, HOUSE_DEFAULT_SIZE
@@ -142,4 +146,8 @@ RACE_DESCRIPTOR = RaceDescriptor(
     mouse_up_hooks=(circle_handle_relationships_scrollbar_up,),
     mouse_motion_hooks=(circle_handle_relationships_scrollbar_motion,),
     mouse_wheel_hooks=(circle_handle_relationships_wheel,),
+    instruction_title=CIRCLE_INSTRUCTION_TITLE,
+    instruction_sections=CIRCLE_INSTRUCTION_SECTIONS,
+    instruction_preview_icon=CIRCLE_INSTRUCTION_PREVIEW_ICON,
+    instruction_icon_factory=circle_instruction_icon,
 )

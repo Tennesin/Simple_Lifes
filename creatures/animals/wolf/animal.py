@@ -3,7 +3,10 @@
 import uuid
 
 from game.animal_registry import AnimalDescriptor
-from .wolf import Wolf, wolf_object_panel_extra_lines, wolf_minimap_marker
+from .wolf import (
+    Wolf, wolf_object_panel_extra_lines, wolf_minimap_marker,
+    wolf_instruction_icon, WOLF_INSTRUCTION_SECTIONS,
+)
 from .wolf_objects import Hide
 from .wolf_settings import WOLF_KIND_NAME, WOLF_MINIMAP_LABEL, WOLF_INITIAL_COUNT
 from .wolf_ai import tick_wolf
@@ -31,4 +34,7 @@ ANIMAL_DESCRIPTOR = AnimalDescriptor(
     drop_persistence_registry=(("hides.json", "hides", Hide),),
     tick_fn=tick_wolf,
     initial_count=WOLF_INITIAL_COUNT,
+    instruction_sections=WOLF_INSTRUCTION_SECTIONS,
+    instruction_preview_icon="wolf",
+    instruction_icon_factory=wolf_instruction_icon,
 )

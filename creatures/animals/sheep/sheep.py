@@ -5,6 +5,11 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
+from ...all_needed.instruction_icons import IconCache, render_scaled_icon
+from ...all_needed.instruction import (
+    InstructionHeader, InstructionParagraph, InstructionBullet,
+    INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_HINT,
+)
 from .sheep_settings import *
 from .names import SHEEP_NAME_POOLS
 from objects import Meat
@@ -104,3 +109,44 @@ def sheep_minimap_marker(screen, pos):
     rect = pygame.Rect(0, 0, 6, 4)
     rect.center = (x, y)
     pygame.draw.ellipse(screen, SHEEP_COLOR_BODY, rect)
+
+_SHEEP_ICON_CACHE = IconCache()
+_SHEEP_ICON_SAMPLE = None
+
+def _icon_sheep():
+    global _SHEEP_ICON_SAMPLE
+    if _SHEEP_ICON_SAMPLE is None:
+        _SHEEP_ICON_SAMPLE = Sheep("icon", 0, 0)
+    return _SHEEP_ICON_SAMPLE
+
+def sheep_instruction_icon(variant_key=None, size=20):
+    def _build():
+        source = (SHEEP_BODY_WIDTH + 12, SHEEP_BODY_HEIGHT + SHEEP_LEG_HEIGHT + 12)
+        return render_scaled_icon(
+            lambda surface, center: _icon_sheep().draw(surface, center), source, size)
+
+    return _SHEEP_ICON_CACHE.get(size, _build)
+
+SHEEP_INSTRUCTION_SECTIONS = (
+    InstructionParagraph(
+        "Овца - мелкое пугливое травоядное. Белое овальное тело на двух тонких чёрных "
+        "ножках. Слабее коровы и хуже видит, зато заметно шустрее и удирает от опасности "
+        "быстрее всех домашних животных."),
+
+    InstructionHeader("Поведение"),
+    InstructionBullet("Пасётся на траве и пьёт из водоёмов и рек.", icon="sheep"),
+    InstructionBullet("От волка убегает почти вдвое быстрее обычного шага.",
+                      color=INSTRUCTION_COLOR_WARNING),
+    InstructionBullet("Из-за небольшого запаса сил истощается быстрее коровы."),
+
+    InstructionHeader("Что даёт"),
+    InstructionBullet("Мясо - падает после смерти.", color=INSTRUCTION_COLOR_GOOD),
+    InstructionBullet("Шерсть - падает после смерти. Практического применения пока нет, "
+                      "но лежит она дольше прочих ресурсов.", color=INSTRUCTION_COLOR_HINT),
+
+    InstructionHeader("Опасности"),
+    InstructionBullet("Волки выбирают овец как самую доступную добычу.",
+                      color=INSTRUCTION_COLOR_WARNING),
+    InstructionBullet("Шипы и море опасны так же, как и для остальных животных.",
+                      color=INSTRUCTION_COLOR_WARNING),
+)

@@ -4,6 +4,11 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
+from ...all_needed.instruction_icons import IconCache, render_scaled_icon
+from ...all_needed.instruction import (
+    InstructionHeader, InstructionParagraph, InstructionBullet,
+    INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_HINT,
+)
 from .wolf_settings import *
 from .wolf_objects import Hide
 from .names import WOLF_NAME_POOLS
@@ -92,3 +97,48 @@ def wolf_minimap_marker(screen, pos):
     size = 3
     points = [(x, y - size), (x - size, y + size), (x + size, y + size)]
     pygame.draw.polygon(screen, WOLF_COLOR_BODY, points)
+
+_WOLF_ICON_CACHE = IconCache()
+_WOLF_ICON_SAMPLE = None
+
+def _icon_wolf():
+    global _WOLF_ICON_SAMPLE
+    if _WOLF_ICON_SAMPLE is None:
+        _WOLF_ICON_SAMPLE = Wolf("icon", 0, 0)
+    return _WOLF_ICON_SAMPLE
+
+def wolf_instruction_icon(variant_key=None, size=20):
+    def _build():
+        source = (WOLF_BODY_WIDTH + 12, WOLF_BODY_HEIGHT + WOLF_LEG_HEIGHT + 12)
+        return render_scaled_icon(
+            lambda surface, center: _icon_wolf().draw(surface, center), source, size)
+
+    return _WOLF_ICON_CACHE.get(size, _build)
+
+WOLF_INSTRUCTION_SECTIONS = (
+    InstructionParagraph(
+        "Волк - единственный хищник мира. Светло-серое прямоугольное тело на маленьких "
+        "треугольных лапах. Быстрее и зорче любого домашнего животного, ест исключительно "
+        "сырое мясо - траву он не тронет даже умирая от голода."),
+
+    InstructionHeader("Охота"),
+    InstructionBullet("Проголодавшись, выбирает ближайшую корову или овцу и преследует её, "
+                      "ускоряясь на погоне.", icon="wolf"),
+    InstructionBullet("Догнав, кусает жертву с небольшой паузой между укусами, пока та не падёт.",
+                      color=INSTRUCTION_COLOR_WARNING),
+    InstructionBullet("Погоня не бесконечна: если жертва слишком долго уходит или отрывается "
+                      "слишком далеко, волк бросает её и ищет другую."),
+    InstructionBullet("Готовую падаль (мясо на земле) волк съест охотнее, чем начнёт новую охоту.",
+                      color=INSTRUCTION_COLOR_HINT),
+
+    InstructionHeader("Что даёт"),
+    InstructionBullet("Шкура - падает после смерти.", color=INSTRUCTION_COLOR_GOOD),
+
+    InstructionHeader("Особенности"),
+    InstructionBullet("Шипов волк боится и обходит их - но только пока не охотится. "
+                      "В разгар погони он их полностью игнорирует и может погибнуть.",
+                      color=INSTRUCTION_COLOR_WARNING),
+    InstructionBullet("Охота дорого стоит: во время преследования силы тратятся заметно быстрее."),
+    InstructionParagraph(
+        "Волки не нападают на Кругов - их добыча только скот.", color=INSTRUCTION_COLOR_HINT),
+)
