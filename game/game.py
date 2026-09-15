@@ -17,6 +17,8 @@ from .object_manager import ObjectManager
 from .input_handler import InputHandler
 from .simulation import Simulation
 from .world_context import WorldState
+from .widgets import ScrollArea, AccordionList
+from .instruction_content import build_instruction_categories
 
 class SettingsScreen:
     def __init__(self, base_settings):
@@ -30,6 +32,29 @@ class SettingsScreen:
     def set_value(self, key, value):
         if key in self.draft:
             self.draft[key] = value
+
+class InstructionScreen:
+    """Состояние открытой Инструкции: активная категория + собственный скролл
+    и (для списковых категорий) собственный аккордеон у каждой из них."""
+
+    def __init__(self, categories):
+        self.categories = categories
+        self.active_key = categories[0].key if categories else None
+        self.scrolls = {c.key: ScrollArea() for c in categories}
+        self.accordions = {c.key: AccordionList() for c in categories if c.is_list}
+
+    def active_category(self):
+        return next((c for c in self.categories if c.key == self.active_key), None)
+
+    def active_scroll(self):
+        return self.scrolls.get(self.active_key)
+
+    def active_accordion(self):
+        return self.accordions.get(self.active_key)
+
+    def set_active(self, key):
+        if key in self.scrolls:
+            self.active_key = key
 
 class Game:
     def __init__(self):
@@ -84,6 +109,7 @@ class Game:
         self.create_world_screen = None
         self.load_world_screen = None
         self.settings_screen = None
+        self.instruction_screen = None
         # ---------- Диалог "Сохранить игру?" при выходе ----------
         self.exit_confirm_active = False
         self._exit_confirm_was_paused = False
@@ -172,6 +198,16 @@ class Game:
 
     def close_settings_screen(self):
         self.settings_screen = None
+
+    def open_instruction_screen(self):
+        self.close_all_menus()
+        self.settings_screen = None
+        self.instruction_screen = InstructionScreen(build_instruction_categories())
+        pygame.key.set_repeat(300, 50)
+
+    def close_instruction_screen(self):
+        self.instruction_screen = None
+        pygame.key.set_repeat()
 
     def activate_player_tool(self, tool):
         self.object_manager.stop_placement()
@@ -272,6 +308,9 @@ class Game:
 
         if self.settings_screen is not None:
             self.ui.draw_settings_screen(self.screen, self.settings_screen)
+
+        if self.instruction_screen is not None:
+            self.ui.draw_instruction_screen(self.screen, self.instruction_screen)
 
         if self.exit_confirm_active:
             self.ui.draw_exit_confirm_dialog(self.screen)
@@ -385,6 +424,7 @@ class Game:
         self.create_world_screen = None
         self.load_world_screen = None
         self.settings_screen = None
+        self.close_instruction_screen()
         self.placement_mode = None
         self.selected_creature = None
         self.selected_object = None

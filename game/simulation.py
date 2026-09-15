@@ -59,6 +59,8 @@ class Simulation:
             return
         if game.settings_screen is not None:
             return
+        if game.instruction_screen is not None:
+            return
 
         self._handle_natural_growth(dt)
         self._update_bushes(dt)

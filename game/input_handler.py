@@ -535,6 +535,9 @@ class _MouseDownMixin:
         elif game.world_loaded and game.show_game_menu and ui.btn_save_world.collidepoint(mouse_x, mouse_y):
             game.world_manager.save_world_manual()
 
+        elif game.show_game_menu and ui.btn_instruction.collidepoint(mouse_x, mouse_y):
+            game.open_instruction_screen()
+
         elif game.show_game_menu and ui.btn_exit.collidepoint(mouse_x, mouse_y):
             game.request_exit()
             game.show_game_menu = False
@@ -1066,6 +1069,62 @@ class _SettingsScreenEventMixin:
                     return
 
 # =========================================================================
+# Домен: "Инструкция" - модальная панель, блокирующая весь остальной ввод.
+# =========================================================================
+
+class _InstructionScreenEventMixin:
+
+    def _handle_instruction_event(self, event):
+        game = self.game
+        state = game.instruction_screen
+        panel = game.ui.instruction_panel
+        scroll = state.active_scroll()
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                game.close_instruction_screen()
+            elif scroll is not None and event.key == pygame.K_UP:
+                scroll.scroll_by_step(-1)
+            elif scroll is not None and event.key == pygame.K_DOWN:
+                scroll.scroll_by_step(1)
+            return
+
+        if event.type == pygame.MOUSEWHEEL:
+            if scroll is not None:
+                scroll.scroll_by_wheel(event.y)
+            return
+
+        if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            if scroll is not None:
+                scroll.end_drag()
+            return
+
+        if event.type == pygame.MOUSEMOTION:
+            if scroll is not None and scroll.is_dragging():
+                scroll.drag_to(event.pos[1])
+            return
+
+        if event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return
+
+        if panel.close_btn_rect.collidepoint(event.pos):
+            game.close_instruction_screen()
+            return
+
+        for key, rect in panel.tab_rects.items():
+            if rect.collidepoint(event.pos):
+                state.set_active(key)
+                return
+
+        if scroll is not None and scroll.hit_test_scrollbar(event.pos):
+            scroll.begin_drag(event.pos[1])
+            return
+
+        accordion = state.active_accordion()
+        if accordion is not None and panel.body_rect.collidepoint(event.pos):
+            accordion.handle_click(event.pos)
+
+# =========================================================================
 # Домен: диалог "Сохранить игру?" при выходе (X окна / кнопка "Выйти")
 # =========================================================================
 
@@ -1095,7 +1154,8 @@ class _ExitConfirmEventMixin:
 
 class InputHandler(_KeyboardMixin, _CrashScreenMixin, _ExitConfirmEventMixin, _BiomePaintingMixin, _MenuMixin,
                     _MouseDownMixin, _MouseUpMixin, _MouseMotionMixin,
-                    _WorldScreenEventMixin, _ScrollMixin, _SettingsScreenEventMixin):
+                    _WorldScreenEventMixin, _ScrollMixin, _SettingsScreenEventMixin,
+                    _InstructionScreenEventMixin):
 
     def __init__(self, game):
         self.game = game
@@ -1116,6 +1176,8 @@ class InputHandler(_KeyboardMixin, _CrashScreenMixin, _ExitConfirmEventMixin, _B
                 self._handle_load_world_event(event)
             elif self.game.settings_screen is not None:
                 self._handle_settings_event(event)
+            elif self.game.instruction_screen is not None:
+                self._handle_instruction_event(event)
             elif self.game.ui.active_modal_panel() is not None:
                 self.game.ui.active_modal_panel().handle_event(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
