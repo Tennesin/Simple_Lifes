@@ -197,17 +197,15 @@ class _LandmarkLookupMixin:
             return c.known_campfire
         campfire_memories = c.memory.get_campfire_memories()
         if campfire_memories:
-            return min(campfire_memories, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
-        return None
-
-    def nearest_known_campfire(self):
-        c = self.c
-        if c.known_campfire:
-            return c.known_campfire
-        campfire_memories = c.memory.get_campfire_memories()
-        if campfire_memories:
             return geometry.nearest_point(c.x, c.y, campfire_memories)
         return None
+
+    def is_near_known_campfire(self):
+        c = self.c
+        pos = self.nearest_known_campfire()
+        if pos is None:
+            return False
+        return math.hypot(c.x - pos[0], c.y - pos[1]) < CAMPFIRE_RADIUS
 
     def nearest_known_graveyard(self):
         c = self.c
