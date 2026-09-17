@@ -127,7 +127,7 @@ class RaceDescriptor:
     extra_world_save_fn: Optional[Callable] = None  # (game) -> None
     extra_world_load_fn: Optional[Callable] = None  # (game) -> None
 
-    # ---------- Новое: генерализация ui.py ----------
+    # ---------- Новое: генерализация ui ----------
     player_tools: Tuple[PlayerToolSpec, ...] = field(default_factory=tuple)
     display_checkboxes: Tuple[Tuple[str, str], ...] = field(default_factory=tuple)
     minimap_layers: Tuple[MinimapLayer, ...] = field(default_factory=tuple)
