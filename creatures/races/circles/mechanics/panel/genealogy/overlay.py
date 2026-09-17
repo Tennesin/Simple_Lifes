@@ -8,7 +8,6 @@ from ....ci_settings import *
 from ....ci_info import *
 from .layout import GenealogyLayoutBuilder
 
-
 class GenealogyTreeOverlay:
 
     def __init__(self, game, font):

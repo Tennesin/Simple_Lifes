@@ -70,6 +70,7 @@ class Creature(LivingEntity):
 
         self.comfort_point = (self.x, self.y)
         self.known_campfire = None
+        self.known_campfire_id = None
         self.sleep_spot = None
         self.sleep_spot_campfire = None
         self.target = None
@@ -191,6 +192,7 @@ class Creature(LivingEntity):
         self.graveyard_target_id = None  # (для живых) id кладбища-цели
         self.is_dragging_corpse = False  # True, только пока реально тащит труп (не просто идёт к нему)
         self.known_graveyard = None  # (x, y) - как known_campfire
+        self.known_graveyard_id = None
         self.graveyard_alert_pos = None  # координаты трупа, о котором сообщили старику
         self.graveyard_alert_timer = 0.0
 
@@ -420,8 +422,9 @@ class Creature(LivingEntity):
 
     def on_landmark_removed(self, landmark_type, landmark_id, position):
         if landmark_type == "campfire":
-            if self.known_campfire == position:
+            if self.known_campfire_id == landmark_id or self.known_campfire == position:
                 self.known_campfire = None
+                self.known_campfire_id = None
             if self.sleep_spot_campfire == position:
                 self.sleep_spot_campfire = None
                 self.sleep_spot = None
@@ -429,8 +432,9 @@ class Creature(LivingEntity):
         elif landmark_type == "graveyard":
             if self.graveyard_target_id == landmark_id:
                 self.graveyard_target_id = None
-            if self.known_graveyard == position:
+            if self.known_graveyard_id == landmark_id or self.known_graveyard == position:
                 self.known_graveyard = None
+                self.known_graveyard_id = None
             if self.graveyard_alert_pos == position:
                 self.graveyard_alert_pos = None
                 self.graveyard_alert_timer = 0.0
@@ -496,7 +500,9 @@ class Creature(LivingEntity):
             "temperament": self.temperament,
             "comfort_point": list(self.comfort_point),
             "known_campfire": list(self.known_campfire) if self.known_campfire else None,
+            "known_campfire_id": self.known_campfire_id,
             "known_graveyard": list(self.known_graveyard) if self.known_graveyard else None,
+            "known_graveyard_id": self.known_graveyard_id,
             "player_memory": self.player_memory,
             "is_dead": self.is_dead,
             "death_timer": self.death_timer,

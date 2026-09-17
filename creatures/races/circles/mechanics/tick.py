@@ -82,8 +82,13 @@ class CircleTickProcessor:
 
     def _compute_campfire_occupancy(self, campfires, race_creatures):
         occupancy = {fire.id: 0 for fire in campfires}
+        fires_by_id = {fire.id: fire for fire in campfires}
         for creature in race_creatures:
             if creature.is_dead or creature.known_campfire is None:
+                continue
+            if creature.known_campfire_id is not None:
+                if creature.known_campfire_id in occupancy:
+                    occupancy[creature.known_campfire_id] += 1
                 continue
             kx, ky = creature.known_campfire
             for fire in campfires:

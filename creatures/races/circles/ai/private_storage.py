@@ -253,26 +253,3 @@ class PrivateConstruction(Construction):
                 setattr(site, owner_attr, c.id)
             return site
         return super()._find_orphaned_site(ctx, type_filter=self._PUBLIC_ORPHAN_TYPES)
-
-_original_site_to_dict = ConstructionSite.to_dict
-_original_site_from_dict = ConstructionSite.from_dict
-
-_OWNER_ATTR_BY_TYPE = PrivateConstruction._OWNER_ATTR_BY_TYPE
-
-def _site_to_dict(site):
-    data = _original_site_to_dict(site)
-    owner_attr = _OWNER_ATTR_BY_TYPE.get(site.build_type)
-    if owner_attr is not None:
-        data[owner_attr] = getattr(site, owner_attr, None)
-    return data
-
-@staticmethod
-def _site_from_dict(data):
-    site = _original_site_from_dict(data)
-    owner_attr = _OWNER_ATTR_BY_TYPE.get(site.build_type)
-    if owner_attr is not None:
-        setattr(site, owner_attr, data.get(owner_attr))
-    return site
-
-ConstructionSite.to_dict = _site_to_dict
-ConstructionSite.from_dict = _site_from_dict

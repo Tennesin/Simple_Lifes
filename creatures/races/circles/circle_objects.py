@@ -259,9 +259,12 @@ class ConstructionSite:
         self.id = site_id if site_id else str(uuid.uuid4())[:8]
         self.x = x
         self.y = y
-        self.build_type = build_type  # "campfire" | "storage" | "graveyard"
+        self.build_type = build_type
         self.width, self.height = CONSTRUCTION_SITE_SIZE.get(build_type, (40, 40))
         self.linked_house_id = None
+
+        self.storage_owner_id = None
+        self.house_owner_id = None
 
         req = BUILDING_REQUIREMENTS[build_type]
         self.required_wood = req["wood"]
@@ -321,6 +324,8 @@ class ConstructionSite:
             "player_deposited_wood": self.player_deposited_wood,
             "player_deposited_stone": self.player_deposited_stone,
             "player_build_progress": self.player_build_progress,
+            "storage_owner_id": self.storage_owner_id,
+            "house_owner_id": self.house_owner_id,
         }
 
     @staticmethod
@@ -338,6 +343,8 @@ class ConstructionSite:
         site.player_deposited_wood = data.get("player_deposited_wood", 0.0)
         site.player_deposited_stone = data.get("player_deposited_stone", 0.0)
         site.player_build_progress = data.get("player_build_progress", 0.0)
+        site.storage_owner_id = data.get("storage_owner_id")
+        site.house_owner_id = data.get("house_owner_id")
         return site
 
 class ChildRoad(PolylineRoad):

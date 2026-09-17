@@ -62,6 +62,7 @@ class CircleSpawnManager:
 
         if mother.known_campfire is not None:
             child.known_campfire = mother.known_campfire
+            child.known_campfire_id = mother.known_campfire_id
 
         child.relationships[mother.id] = FAMILY_PARENT_START_RELATIONSHIP
         mother.relationships[child.id] = FAMILY_PARENT_START_RELATIONSHIP
@@ -137,6 +138,8 @@ _CREATURE_SIMPLE_FIELDS = (
     ("gather_type", "gather_type", None),
     ("gather_progress", "gather_progress", 0.0),
     ("gather_needed_amount", "gather_needed_amount", None),
+    ("known_campfire_id", "known_campfire_id", None),
+    ("known_graveyard_id", "known_graveyard_id", None),
 )
 
 _CREATURE_TUPLE_FIELDS = (
