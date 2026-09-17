@@ -3,6 +3,7 @@ import math
 from .ci_settings import *
 from ...all_needed.base_entity import same_race
 from ...all_needed.weak_owner import WeakOwnerMixin
+from ...all_needed import lookup_creature
 
 def _shares_parent(ids_a, ids_b):
     if not ids_a or not ids_b:
@@ -182,11 +183,7 @@ class CreatureFamily(WeakOwnerMixin):
         return None
 
     def _find_partner(self, other_creatures, partner_id, creatures_by_id):
-        if partner_id is None:
-            return None
-        if creatures_by_id is not None:
-            return creatures_by_id.get(partner_id)
-        return self._find_creature(other_creatures, partner_id)
+        return lookup_creature(other_creatures, partner_id, creatures_by_id)
 
     # ---------- Проверка актуальности партнёра ----------
 
@@ -354,7 +351,7 @@ class CreatureFamily(WeakOwnerMixin):
         for pid in c.parent_ids:
             if pid is None:
                 continue
-            parent = self._find_creature(other_creatures, pid)
+            parent = lookup_creature(other_creatures, pid)
             if parent is not None and not parent.is_dead:
                 return True
         return False
@@ -364,15 +361,6 @@ class CreatureFamily(WeakOwnerMixin):
         if c.partner_id is not None:
             return True
         return any(o.parent_ids and c.id in o.parent_ids and not o.is_dead for o in other_creatures)
-
-    # ---------- Утилита ----------
-
-    @staticmethod
-    def _find_creature(creatures, creature_id):
-        for cr in creatures:
-            if cr.id == creature_id:
-                return cr
-        return None
 
 class CreatureTerritory(WeakOwnerMixin):
     def __init__(self, creature):

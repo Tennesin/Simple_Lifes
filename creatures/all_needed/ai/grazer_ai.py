@@ -2,6 +2,7 @@
 (Consideration + pick_best, по образцу расы 'Круг') - бродит, ест траву,
 пьёт воду, убегает от волков и от шипов."""
 
+from ..simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
 from .roaming_ai import RoamingAnimalMixin
 from .utility import Consideration, pick_best, scale
 from ..weak_owner import WeakEntityMixin
@@ -193,3 +194,67 @@ class GrazerAI(WeakEntityMixin, RoamingAnimalMixin):
                 a.thirst = min(a.thirst_max, a.thirst + gained)
             elif biome_grid is not None and biome_grid.get_at(a.x, a.y) == settings.BIOME_RIVER:
                 a.thirst = min(a.thirst_max, a.thirst + cfg["drink_rate"] * dt)
+
+# =========================================================================
+# Обобщённый тик травоядного животного (корова/овца) - вся обвязка
+# (спасение из моря, удаление трупов, заморозка ДОС, decide/move/interact)
+# одна на всех; вид животного передаётся параметрами.
+# =========================================================================
+
+def tick_grazer_species(game, dt, nav_grid, fallback_nav_grid, active_ids, spatial_grids,
+                         world_attr, ai_cache_attr, cfg, flee_speed_multiplier,
+                         wolves_grid_key="wolves"):
+    world = game.world
+    biome_grid = game.biome_manager.grid
+    wall_polylines, fence_polylines = game.welded_landscape_polylines()
+
+    spatial_grids = spatial_grids or {}
+    grass_source = spatial_grids.get("grass", world.grass)
+    water_source = spatial_grids.get("water", world.water_puddles)
+    wolves_source = spatial_grids.get(wolves_grid_key)
+
+    collection = getattr(world, world_attr)
+
+    for animal in collection:
+        rescue_from_sea_or_kill(animal, biome_grid, settings.ANIMAL_LAND_RESCUE_RADIUS)
+
+    dead = [a for a in collection if a.hp <= 0]
+    for animal in dead:
+        game.object_manager.remove_animal_and_drop(animal)
+
+    alive_wolves = wolves_source if wolves_source is not None else [w for w in world.wolves if w.hp > 0]
+
+    def _get_ai(animal):
+        ai = getattr(animal, ai_cache_attr, None)
+        if ai is None:
+            ai = GrazerAI(animal, cfg)
+            setattr(animal, ai_cache_attr, ai)
+        return ai
+
+    frozen_to_remove = []
+    for animal in collection:
+        if animal.hp <= 0:
+            continue
+
+        is_grabbed = animal is game.player.grabbed_object
+        if not is_grabbed and tick_frozen_state(animal, dt, active_ids):
+            if should_be_removed(animal):
+                frozen_to_remove.append(animal)
+            continue
+
+        ai = _get_ai(animal)
+        ai.update_needs(dt)
+        if animal.hp <= 0:
+            continue
+        if not is_grabbed:
+            target = ai.decide(dt, grass_source, water_source, alive_wolves, biome_grid,
+                               spikes=world.spikes)
+            ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
+                            fallback_nav_grid=fallback_nav_grid,
+                            speed_multiplier=(flee_speed_multiplier if ai.fleeing else 1.0),
+                            wall_polylines=wall_polylines, fence_polylines=fence_polylines,
+                            urgent=ai.is_urgent)
+        ai.interact(dt, grass_source, water_source, biome_grid, spikes=world.spikes)
+
+    for animal in frozen_to_remove:
+        game.object_manager.remove_animal_and_drop(animal)

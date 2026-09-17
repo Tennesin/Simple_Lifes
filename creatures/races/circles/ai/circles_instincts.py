@@ -200,18 +200,20 @@ class _LandmarkLookupMixin:
             return min(campfire_memories, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
         return None
 
-    def is_near_known_campfire(self):
+    def nearest_known_campfire(self):
         c = self.c
-        pos = self.nearest_known_campfire()
-        if pos is None:
-            return False
-        return math.hypot(c.x - pos[0], c.y - pos[1]) < CAMPFIRE_RADIUS
+        if c.known_campfire:
+            return c.known_campfire
+        campfire_memories = c.memory.get_campfire_memories()
+        if campfire_memories:
+            return geometry.nearest_point(c.x, c.y, campfire_memories)
+        return None
 
     def nearest_known_graveyard(self):
         c = self.c
         memories = c.memory.get_graveyard_memories()
         if memories:
-            return min(memories, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
+            return geometry.nearest_point(c.x, c.y, memories)
         return c.known_graveyard
 
     def find_storage_field(self, storage_fields, houses=None):
@@ -328,8 +330,8 @@ class _ResourceMemoryMixin:
         if extra_visible_positions:
             visible_positions = visible_positions + list(extra_visible_positions)
         candidates = visible_positions + memory_positions
-        if candidates:
-            target = min(candidates, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
+        target = geometry.nearest_point(c.x, c.y, candidates)
+        if target is not None:
             setattr(c, target_attr, target if target not in visible_positions else None)
             return target
         setattr(c, target_attr, None)
@@ -385,10 +387,7 @@ class _ResourceMemoryMixin:
     def nearest_danger_position(self, known_threats):
         c = self.c
         candidates = [(t.x, t.y) for t in known_threats] + c.memory.get_danger_memories()
-        if not candidates:
-            return None
-        return min(candidates, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
-
+        return geometry.nearest_point(c.x, c.y, candidates)
 
 # =========================================================================
 # Домен: исследование мира (в т.ч. обход моря)

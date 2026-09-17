@@ -37,3 +37,26 @@ def render_scaled_icon(draw_fn, source_size, icon_size):
     out = pygame.Surface((icon_size, icon_size), pygame.SRCALPHA)
     out.blit(scaled, scaled.get_rect(center=(icon_size // 2, icon_size // 2)))
     return out
+
+def make_singleton_icon_factory(cls, size_attrs, icon_cache=None):
+    """Общая фабрика 'манекен + реальный draw() существа, вписанный в
+    квадрат' для иконок Инструкции. size_attrs = (width, height, leg_height|None)."""
+    cache = icon_cache if icon_cache is not None else IconCache()
+    _sample = []
+
+    def _get_sample():
+        if not _sample:
+            _sample.append(cls("icon", 0, 0))
+        return _sample[0]
+
+    width, height, leg_height = size_attrs
+
+    def factory(variant_key=None, size=20):
+        def _build():
+            extra = leg_height if leg_height is not None else 0
+            source = (width + 12, height + extra + 12)
+            return render_scaled_icon(
+                lambda surface, center: _get_sample().draw(surface, center), source, size)
+        return cache.get(size, _build)
+
+    return factory

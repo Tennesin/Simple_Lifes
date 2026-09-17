@@ -1,9 +1,7 @@
 """Тик коровы: голод/жажда/энергия, блуждание, выпас, водопой, бегство от волков."""
 
-from ...all_needed.ai.grazer_ai import GrazerAI
-from ...all_needed.simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
+from ...all_needed.ai.grazer_ai import tick_grazer_species
 from .cow_settings import *
-from settings import ANIMAL_LAND_RESCUE_RADIUS
 
 _COW_AI_CFG = {
     "speed": COW_SPEED,
@@ -26,56 +24,9 @@ _COW_AI_CFG = {
     "flee_run_distance": COW_FLEE_RUN_DISTANCE,
 }
 
-def _get_ai(cow):
-    ai = getattr(cow, "_grazer_ai", None)
-    if ai is None:
-        ai = GrazerAI(cow, _COW_AI_CFG)
-        cow._grazer_ai = ai
-    return ai
-
 def tick_cow(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, spatial_grids=None):
-    world = game.world
-    biome_grid = game.biome_manager.grid
-    wall_polylines, fence_polylines = game.welded_landscape_polylines()
-
-    spatial_grids = spatial_grids or {}
-    grass_source = spatial_grids.get("grass", world.grass)
-    water_source = spatial_grids.get("water", world.water_puddles)
-    wolves_source = spatial_grids.get("wolves")
-
-    for cow in world.cows:
-        rescue_from_sea_or_kill(cow, biome_grid, ANIMAL_LAND_RESCUE_RADIUS)
-
-    dead = [c for c in world.cows if c.hp <= 0]
-    for cow in dead:
-        game.object_manager.remove_animal_and_drop(cow)
-
-    alive_wolves = wolves_source if wolves_source is not None else [w for w in world.wolves if w.hp > 0]
-
-    frozen_to_remove = []
-    for cow in world.cows:
-        if cow.hp <= 0:
-            continue
-
-        is_grabbed = cow is game.player.grabbed_object
-        if not is_grabbed and tick_frozen_state(cow, dt, active_ids):
-            if should_be_removed(cow):
-                frozen_to_remove.append(cow)
-            continue
-
-        ai = _get_ai(cow)
-        ai.update_needs(dt)
-        if cow.hp <= 0:
-            continue
-        if not is_grabbed:
-            target = ai.decide(dt, grass_source, water_source, alive_wolves, biome_grid,
-                               spikes=world.spikes)
-            ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
-                            fallback_nav_grid=fallback_nav_grid,
-                            speed_multiplier=(COW_FLEE_SPEED_MULTIPLIER if ai.fleeing else 1.0),
-                            wall_polylines=wall_polylines, fence_polylines=fence_polylines,
-                            urgent=ai.is_urgent)
-        ai.interact(dt, grass_source, water_source, biome_grid, spikes=world.spikes)
-
-    for cow in frozen_to_remove:
-        game.object_manager.remove_animal_and_drop(cow)
+    tick_grazer_species(
+        game, dt, nav_grid, fallback_nav_grid, active_ids, spatial_grids,
+        world_attr="cows", ai_cache_attr="_grazer_ai", cfg=_COW_AI_CFG,
+        flee_speed_multiplier=COW_FLEE_SPEED_MULTIPLIER,
+    )

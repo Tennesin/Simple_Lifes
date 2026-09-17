@@ -5,6 +5,7 @@ from settings import *
 from ...ci_settings import *
 from ...ci_info import *
 from .....all_needed.ai.utility import Consideration, GoalComponent
+from .....all_needed.path_walker import PathProgressTracker
 
 # =========================================================================
 # Дороги, нарисованные игроком, и перекрёстки
@@ -86,14 +87,8 @@ class Roads(GoalComponent):
     def _start_following(self, road, target_index=None, entry_already_reached=False):
         c = self.c
         c.following_road = road
-        c.road_progress = min(range(len(road.points)),
-                              key=lambda i: math.hypot(c.x - road.points[i][0], c.y - road.points[i][1]))
-        if target_index is None:
-            dist_to_start = math.hypot(c.x - road.points[0][0], c.y - road.points[0][1])
-            dist_to_end = math.hypot(c.x - road.points[-1][0], c.y - road.points[-1][1])
-            c.road_direction = 1 if dist_to_start <= dist_to_end else -1
-        else:
-            c.road_direction = 1 if target_index >= c.road_progress else -1
+        c.road_progress, c.road_direction = PathProgressTracker.start(
+            road.points, c.x, c.y, target_index=target_index)
         c.road_entry_reached = entry_already_reached
         c.state = STATE_SEEKING
         c.following_road_active = entry_already_reached
@@ -111,18 +106,19 @@ class Roads(GoalComponent):
             self._evaluate_end(road, ctx)
             return None
 
-        target_point = road.points[c.road_progress]
-        if math.hypot(c.x - target_point[0], c.y - target_point[1]) < 14:
+        target_point = PathProgressTracker.target_point(road.points, c.road_progress)
+        if PathProgressTracker.has_arrived(road.points, c.road_progress, c.x, c.y):
             c.road_entry_reached = True
             switched = self._maybe_switch_at_crossing(road, target_point, ctx)
             if switched:
                 road = c.following_road
             else:
-                c.road_progress += c.road_direction
-                if c.road_progress < 0 or c.road_progress >= len(road.points):
+                c.road_progress, finished = PathProgressTracker.advance(
+                    road.points, c.road_progress, c.road_direction)
+                if finished:
                     self._evaluate_end(road, ctx)
                     return None
-            target_point = road.points[c.road_progress]
+            target_point = PathProgressTracker.target_point(road.points, c.road_progress)
 
         c.state = STATE_SEEKING
         c.target = target_point
@@ -294,13 +290,8 @@ class ChildRoadVerification(GoalComponent):
         c.child_road_verify_target_id = road.id
         c.child_road_verify_found_danger = False
         c.child_road_verify_entry_reached = False
-        c.child_road_verify_progress = min(
-            range(len(road.points)),
-            key=lambda i: math.hypot(c.x - road.points[i][0], c.y - road.points[i][1])
-        )
-        dist_to_start = math.hypot(c.x - road.points[0][0], c.y - road.points[0][1])
-        dist_to_end = math.hypot(c.x - road.points[-1][0], c.y - road.points[-1][1])
-        c.child_road_verify_direction = 1 if dist_to_start <= dist_to_end else -1
+        c.child_road_verify_progress, c.child_road_verify_direction = PathProgressTracker.start(
+            road.points, c.x, c.y)
 
         c.state = STATE_SEEKING
         c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
@@ -321,14 +312,15 @@ class ChildRoadVerification(GoalComponent):
             self._finish(road)
             return None
 
-        target_point = road.points[c.child_road_verify_progress]
-        if math.hypot(c.x - target_point[0], c.y - target_point[1]) < 14:
+        target_point = PathProgressTracker.target_point(road.points, c.child_road_verify_progress)
+        if PathProgressTracker.has_arrived(road.points, c.child_road_verify_progress, c.x, c.y):
             c.child_road_verify_entry_reached = True
-            c.child_road_verify_progress += c.child_road_verify_direction
-            if c.child_road_verify_progress < 0 or c.child_road_verify_progress >= len(road.points):
+            c.child_road_verify_progress, finished = PathProgressTracker.advance(
+                road.points, c.child_road_verify_progress, c.child_road_verify_direction)
+            if finished:
                 self._finish(road)
                 return None
-            target_point = road.points[c.child_road_verify_progress]
+            target_point = PathProgressTracker.target_point(road.points, c.child_road_verify_progress)
 
         c.state = STATE_SEEKING
         c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY

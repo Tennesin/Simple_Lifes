@@ -1,6 +1,6 @@
 """Каталог имён коров."""
 
-import random
+from ...all_needed.animal_names import make_animal_name_pools
 
 COW_MALE_NAMES = [
     "Бурёнок", "Мычун", "Рогач", "Бык", "Тяжеловес",
@@ -12,11 +12,4 @@ COW_FEMALE_NAMES = [
     "Ромашка", "Пятнашка", "Милка", "Красотка", "Дочка",
 ]
 
-COW_NAME_POOLS = {
-    "male": COW_MALE_NAMES,
-    "female": COW_FEMALE_NAMES,
-}
-
-def random_cow_name(gender_key):
-    pool = COW_NAME_POOLS.get(gender_key) or COW_MALE_NAMES
-    return random.choice(pool)
+COW_NAME_POOLS, random_cow_name = make_animal_name_pools(COW_MALE_NAMES, COW_FEMALE_NAMES)

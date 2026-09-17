@@ -206,3 +206,8 @@ def weld_polyline_endpoints(polylines, tolerance=18):
                 points[end_index] = best_point
 
     return welded
+
+def nearest_point(origin_x, origin_y, points):
+    if not points:
+        return None
+    return min(points, key=lambda p: math.hypot(origin_x - p[0], origin_y - p[1]))

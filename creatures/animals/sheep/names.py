@@ -1,6 +1,6 @@
 """Каталог имён овец - отдельный от общего names.py (используется людьми/Кругами)."""
 
-import random
+from ...all_needed.animal_names import make_animal_name_pools
 
 SHEEP_MALE_NAMES = [
     "Барашек", "Пушок", "Кучерявый", "Снежок", "Курчавый",
@@ -12,11 +12,4 @@ SHEEP_FEMALE_NAMES = [
     "Овечка", "Мохнатка", "Пуховка", "Кучеряшка", "Облачка",
 ]
 
-SHEEP_NAME_POOLS = {
-    "male": SHEEP_MALE_NAMES,
-    "female": SHEEP_FEMALE_NAMES,
-}
-
-def random_sheep_name(gender_key):
-    pool = SHEEP_NAME_POOLS.get(gender_key) or SHEEP_MALE_NAMES
-    return random.choice(pool)
+SHEEP_NAME_POOLS, random_sheep_name = make_animal_name_pools(SHEEP_MALE_NAMES, SHEEP_FEMALE_NAMES)

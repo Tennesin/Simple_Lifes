@@ -1,6 +1,6 @@
 """Каталог имён волков."""
 
-import random
+from ...all_needed.animal_names import make_animal_name_pools
 
 WOLF_MALE_NAMES = [
     "Серый", "Клык", "Хмурый", "Лютый", "Тень",
@@ -12,11 +12,4 @@ WOLF_FEMALE_NAMES = [
     "Быстрая", "Одинокая", "Хищница", "Метель", "Ночь",
 ]
 
-WOLF_NAME_POOLS = {
-    "male": WOLF_MALE_NAMES,
-    "female": WOLF_FEMALE_NAMES,
-}
-
-def random_wolf_name(gender_key):
-    pool = WOLF_NAME_POOLS.get(gender_key) or WOLF_MALE_NAMES
-    return random.choice(pool)
+WOLF_NAME_POOLS, random_wolf_name = make_animal_name_pools(WOLF_MALE_NAMES, WOLF_FEMALE_NAMES)

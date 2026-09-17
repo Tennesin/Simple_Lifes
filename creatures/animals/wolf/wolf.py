@@ -4,11 +4,11 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
-from ...all_needed.instruction_icons import IconCache, render_scaled_icon
 from ...all_needed.instruction import (
     InstructionHeader, InstructionParagraph, InstructionBullet,
     INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_HINT,
 )
+from ...all_needed.instruction_icons import make_singleton_icon_factory
 from .wolf_settings import *
 from .wolf_objects import Hide
 from .names import WOLF_NAME_POOLS
@@ -55,27 +55,15 @@ class Wolf(CreatureBase):
         pygame.draw.rect(screen, WOLF_COLOR_BODY_BORDER, body_rect, 2, border_radius=3)
 
     def to_dict(self):
-        return {
-            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
-            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
-            "energy": self.energy, "hide": self.hide,
-            "created": self.created,
-            "frozen_timer": self.frozen_timer,
-            "player_touched": self.player_touched,
-        }
+        d = self.base_to_dict()
+        d["hide"] = self.hide
+        return d
 
     @staticmethod
     def from_dict(data):
         wolf = Wolf(data["id"], data["x"], data["y"], gender=data.get("gender"))
-        wolf.name = data.get("name", wolf.name)
-        wolf.hp = data.get("hp", wolf.hp)
-        wolf.hunger = data.get("hunger", wolf.hunger)
-        wolf.thirst = data.get("thirst", wolf.thirst)
-        wolf.energy = data.get("energy", wolf.energy)
+        wolf.apply_base_dict(data)
         wolf.hide = data.get("hide", wolf.hide)
-        wolf.created = data.get("created", wolf.created)
-        wolf.frozen_timer = data.get("frozen_timer", 0.0)
-        wolf.player_touched = data.get("player_touched", False)
         return wolf
 
     def get_drops(self):
@@ -98,22 +86,8 @@ def wolf_minimap_marker(screen, pos):
     points = [(x, y - size), (x - size, y + size), (x + size, y + size)]
     pygame.draw.polygon(screen, WOLF_COLOR_BODY, points)
 
-_WOLF_ICON_CACHE = IconCache()
-_WOLF_ICON_SAMPLE = None
-
-def _icon_wolf():
-    global _WOLF_ICON_SAMPLE
-    if _WOLF_ICON_SAMPLE is None:
-        _WOLF_ICON_SAMPLE = Wolf("icon", 0, 0)
-    return _WOLF_ICON_SAMPLE
-
-def wolf_instruction_icon(variant_key=None, size=20):
-    def _build():
-        source = (WOLF_BODY_WIDTH + 12, WOLF_BODY_HEIGHT + WOLF_LEG_HEIGHT + 12)
-        return render_scaled_icon(
-            lambda surface, center: _icon_wolf().draw(surface, center), source, size)
-
-    return _WOLF_ICON_CACHE.get(size, _build)
+wolf_instruction_icon = make_singleton_icon_factory(
+    Wolf, (WOLF_BODY_WIDTH, WOLF_BODY_HEIGHT, WOLF_LEG_HEIGHT))
 
 WOLF_INSTRUCTION_SECTIONS = (
     InstructionParagraph(

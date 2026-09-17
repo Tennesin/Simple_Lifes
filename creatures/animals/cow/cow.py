@@ -4,11 +4,11 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
-from ...all_needed.instruction_icons import IconCache, render_scaled_icon
 from ...all_needed.instruction import (
     InstructionHeader, InstructionParagraph, InstructionBullet,
     INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_HINT,
 )
+from ...all_needed.instruction_icons import make_singleton_icon_factory
 from .cow_settings import *
 from .names import COW_NAME_POOLS
 from objects import Meat
@@ -79,30 +79,19 @@ class Cow(CreatureBase):
             pygame.draw.circle(screen, COW_COLOR_SPOTS, (sx + ox, sy + oy), COW_SPOT_RADIUS)
 
     def to_dict(self):
-        return {
-            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
-            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
-            "energy": self.energy, "meat": self.meat,
-            "leather": self.leather, "milk_charges": self.milk_charges,
-            "created": self.created,
-            "frozen_timer": self.frozen_timer,
-            "player_touched": self.player_touched,
-        }
+        d = self.base_to_dict()
+        d["meat"] = self.meat
+        d["leather"] = self.leather
+        d["milk_charges"] = self.milk_charges
+        return d
 
     @staticmethod
     def from_dict(data):
         cow = Cow(data["id"], data["x"], data["y"], gender=data.get("gender"))
-        cow.name = data.get("name", cow.name)
-        cow.hp = data.get("hp", cow.hp)
-        cow.hunger = data.get("hunger", cow.hunger)
-        cow.thirst = data.get("thirst", cow.thirst)
-        cow.energy = data.get("energy", cow.energy)
+        cow.apply_base_dict(data)
         cow.meat = data.get("meat", cow.meat)
         cow.leather = data.get("leather", cow.leather)
         cow.milk_charges = data.get("milk_charges", cow.milk_charges)
-        cow.created = data.get("created", cow.created)
-        cow.frozen_timer = data.get("frozen_timer", 0.0)
-        cow.player_touched = data.get("player_touched", False)
         return cow
 
     def get_drops(self):
@@ -135,23 +124,8 @@ def cow_minimap_marker(screen, pos):
 # и текстовое описание вида
 # =========================================================================
 
-_COW_ICON_CACHE = IconCache()
-_COW_ICON_SAMPLE = None
-
-def _icon_cow():
-    """Один общий манекен для иконки."""
-    global _COW_ICON_SAMPLE
-    if _COW_ICON_SAMPLE is None:
-        _COW_ICON_SAMPLE = Cow("icon", 0, 0)
-    return _COW_ICON_SAMPLE
-
-def cow_instruction_icon(variant_key=None, size=20):
-    def _build():
-        source = (COW_BODY_WIDTH + 12, COW_BODY_HEIGHT + COW_LEG_HEIGHT + 12)
-        return render_scaled_icon(
-            lambda surface, center: _icon_cow().draw(surface, center), source, size)
-
-    return _COW_ICON_CACHE.get(size, _build)
+cow_instruction_icon = make_singleton_icon_factory(
+    Cow, (COW_BODY_WIDTH, COW_BODY_HEIGHT, COW_LEG_HEIGHT))
 
 COW_INSTRUCTION_SECTIONS = (
     InstructionParagraph(

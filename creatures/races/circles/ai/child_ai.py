@@ -12,7 +12,8 @@ from ..ci_settings import *
 from ..ci_info import *
 from .private_storage import field_belongs_to
 from ....all_needed import geometry
-from ....all_needed.ai.utility import Consideration, pick_best, scale
+from ....all_needed.ai.utility import Consideration, pick_best, scale, lookup_creature
+from ....all_needed.path_walker import PathProgressTracker
 
 # ---------- Веса принятия решений для детей ----------
 SCORE_CHILD_DISTRESS_BASE = 90.0
@@ -56,7 +57,7 @@ class _ChildSharedUtilsMixin:
         for pid in parent_ids:
             if pid is None:
                 continue
-            parent = next((o for o in visible_companions if o.id == pid), None)
+            parent = lookup_creature(visible_companions, pid)
             if parent is not None:
                 return parent
         return None
@@ -526,13 +527,7 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
             math.hypot(c.x - r.points[-1][0], c.y - r.points[-1][1])
         ))
         c.following_child_road = road
-        c.child_road_progress = min(
-            range(len(road.points)),
-            key=lambda i: math.hypot(c.x - road.points[i][0], c.y - road.points[i][1])
-        )
-        dist_to_start = math.hypot(c.x - road.points[0][0], c.y - road.points[0][1])
-        dist_to_end = math.hypot(c.x - road.points[-1][0], c.y - road.points[-1][1])
-        c.child_road_direction = 1 if dist_to_start <= dist_to_end else -1
+        c.child_road_progress, c.child_road_direction = PathProgressTracker.start(road.points, c.x, c.y)
         c.child_road_entry_reached = False
         c.state = STATE_SEEKING
         c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH
@@ -550,20 +545,20 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
             self._end_child_road_play()
             return None
 
-        target_point = road.points[c.child_road_progress]
-        if math.hypot(c.x - target_point[0], c.y - target_point[1]) < 14:
+        target_point = PathProgressTracker.target_point(road.points, c.child_road_progress)
+        if PathProgressTracker.has_arrived(road.points, c.child_road_progress, c.x, c.y):
             c.child_road_entry_reached = True
-            c.child_road_progress += c.child_road_direction
-            if c.child_road_progress < 0 or c.child_road_progress >= len(road.points):
+            c.child_road_progress, finished = PathProgressTracker.advance(
+                road.points, c.child_road_progress, c.child_road_direction)
+            if finished:
                 self._end_child_road_play()
                 return None
-            target_point = road.points[c.child_road_progress]
+            target_point = PathProgressTracker.target_point(road.points, c.child_road_progress)
 
         c.state = STATE_SEEKING
         c.target = target_point
         c.goal_text = (INFO_CREATURE_GOAL_CHILD_ROAD_PLAY if c.child_road_entry_reached
                        else INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH)
-        # ---------- Как только "зашёл" на дорогу - идём прямо по точкам, без пересчёта A* ----------
         c.following_road_active = c.child_road_entry_reached
 
         if c.child_road_entry_reached:

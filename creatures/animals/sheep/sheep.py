@@ -5,11 +5,11 @@ import random
 import pygame
 
 from ...all_needed.base_creature import CreatureBase
-from ...all_needed.instruction_icons import IconCache, render_scaled_icon
 from ...all_needed.instruction import (
     InstructionHeader, InstructionParagraph, InstructionBullet,
     INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_HINT,
 )
+from ...all_needed.instruction_icons import make_singleton_icon_factory
 from .sheep_settings import *
 from .names import SHEEP_NAME_POOLS
 from objects import Meat
@@ -63,28 +63,17 @@ class Sheep(CreatureBase):
         pygame.draw.ellipse(screen, SHEEP_COLOR_BODY_BORDER, body_rect, 2)
 
     def to_dict(self):
-        return {
-            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
-            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
-            "energy": self.energy, "meat": self.meat,
-            "wool": self.wool, "created": self.created,
-            "frozen_timer": self.frozen_timer,
-            "player_touched": self.player_touched,
-        }
+        d = self.base_to_dict()
+        d["meat"] = self.meat
+        d["wool"] = self.wool
+        return d
 
     @staticmethod
     def from_dict(data):
         sheep = Sheep(data["id"], data["x"], data["y"], gender=data.get("gender"))
-        sheep.name = data.get("name", sheep.name)
-        sheep.hp = data.get("hp", sheep.hp)
-        sheep.hunger = data.get("hunger", sheep.hunger)
-        sheep.thirst = data.get("thirst", sheep.thirst)
-        sheep.energy = data.get("energy", sheep.energy)
+        sheep.apply_base_dict(data)
         sheep.meat = data.get("meat", sheep.meat)
         sheep.wool = data.get("wool", sheep.wool)
-        sheep.created = data.get("created", sheep.created)
-        sheep.frozen_timer = data.get("frozen_timer", 0.0)
-        sheep.player_touched = data.get("player_touched", False)
         return sheep
 
     def get_drops(self):
@@ -110,22 +99,8 @@ def sheep_minimap_marker(screen, pos):
     rect.center = (x, y)
     pygame.draw.ellipse(screen, SHEEP_COLOR_BODY, rect)
 
-_SHEEP_ICON_CACHE = IconCache()
-_SHEEP_ICON_SAMPLE = None
-
-def _icon_sheep():
-    global _SHEEP_ICON_SAMPLE
-    if _SHEEP_ICON_SAMPLE is None:
-        _SHEEP_ICON_SAMPLE = Sheep("icon", 0, 0)
-    return _SHEEP_ICON_SAMPLE
-
-def sheep_instruction_icon(variant_key=None, size=20):
-    def _build():
-        source = (SHEEP_BODY_WIDTH + 12, SHEEP_BODY_HEIGHT + SHEEP_LEG_HEIGHT + 12)
-        return render_scaled_icon(
-            lambda surface, center: _icon_sheep().draw(surface, center), source, size)
-
-    return _SHEEP_ICON_CACHE.get(size, _build)
+sheep_instruction_icon = make_singleton_icon_factory(
+    Sheep, (SHEEP_BODY_WIDTH, SHEEP_BODY_HEIGHT, SHEEP_LEG_HEIGHT))
 
 SHEEP_INSTRUCTION_SECTIONS = (
     InstructionParagraph(

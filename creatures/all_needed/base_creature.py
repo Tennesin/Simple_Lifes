@@ -96,3 +96,23 @@ class CreatureBase(LivingEntity):
         delta = direction * max_value * self.STAT_ADJUST_STEP_FACTOR
         new_value = max(0.0, min(current + delta, max_value))
         setattr(self, stat_key, new_value)
+
+    # ---------- Общий набор полей сохранения, единый для всех животных ----------
+    def base_to_dict(self):
+        return {
+            "id": self.id, "x": self.x, "y": self.y, "gender": self.gender,
+            "name": self.name, "hp": self.hp, "hunger": self.hunger, "thirst": self.thirst,
+            "energy": self.energy, "created": self.created,
+            "frozen_timer": self.frozen_timer,
+            "player_touched": self.player_touched,
+        }
+
+    def apply_base_dict(self, data):
+        self.name = data.get("name", self.name)
+        self.hp = data.get("hp", self.hp)
+        self.hunger = data.get("hunger", self.hunger)
+        self.thirst = data.get("thirst", self.thirst)
+        self.energy = data.get("energy", self.energy)
+        self.created = data.get("created", self.created)
+        self.frozen_timer = data.get("frozen_timer", 0.0)
+        self.player_touched = data.get("player_touched", False)
