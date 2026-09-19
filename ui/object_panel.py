@@ -3,12 +3,8 @@
 import time
 import pygame
 
-from settings import UI_HEIGHT, TEXT_COLOR, INFO_PANEL_COLOR, INFO_PANEL_BORDER
-from info import (
-    INFO_INFO_CREATED, INFO_INFO_DELETE_HINT,
-    INFO_INFO_TREE_WOOD, INFO_INFO_STONE_AMOUNT, INFO_INFO_WATER_CHARGES,
-    INFO_INFO_FOOD_AMOUNT, INFO_INFO_RESOURCE_AMOUNT,
-)
+import settings
+import info
 from game.race_registry import all_object_panel_extensions
 from game.animal_registry import all_animal_object_panel_extensions
 from creatures.all_needed.instruction import wrap_instruction_text
@@ -34,15 +30,15 @@ class ObjectPanel:
 
     def _get_resource_label(self, obj):
         if hasattr(obj, "wood"):
-            return INFO_INFO_TREE_WOOD.format(count=int(obj.wood))
+            return info.INFO_INFO_TREE_WOOD.format(count=int(obj.wood))
         if hasattr(obj, "stone") and not hasattr(obj, "fruits") and not hasattr(obj, "build_type"):
-            return INFO_INFO_STONE_AMOUNT.format(count=int(obj.stone))
+            return info.INFO_INFO_STONE_AMOUNT.format(count=int(obj.stone))
         if hasattr(obj, "charges") and hasattr(obj, "max_charges"):
-            return INFO_INFO_WATER_CHARGES.format(count=int(obj.charges))
+            return info.INFO_INFO_WATER_CHARGES.format(count=int(obj.charges))
         if hasattr(obj, "food"):
-            return INFO_INFO_FOOD_AMOUNT.format(count=int(obj.food))
+            return info.INFO_INFO_FOOD_AMOUNT.format(count=int(obj.food))
         if hasattr(obj, "amount"):
-            return INFO_INFO_RESOURCE_AMOUNT.format(count=int(obj.amount))
+            return info.INFO_INFO_RESOURCE_AMOUNT.format(count=int(obj.amount))
         return None
 
     def _collect_extra_lines(self, obj):
@@ -64,8 +60,8 @@ class ObjectPanel:
 
         type_name = obj.get_type_name()
         created_str = time.strftime("%H:%M:%S %d.%m", time.localtime(obj.created))
-        created_label = INFO_INFO_CREATED.format(created=created_str)
-        hint_label = INFO_INFO_DELETE_HINT
+        created_label = info.INFO_INFO_CREATED.format(created=created_str)
+        hint_label = info.INFO_INFO_DELETE_HINT
 
         # ---------- Ширина подгоняется под самый длинный текст, но с потолком под размер окна ----------
         screen_w, screen_h = screen.get_width(), screen.get_height()
@@ -101,16 +97,16 @@ class ObjectPanel:
         box_x = screen_pos[0] + 20
         box_y = screen_pos[1] - 15
         box_x = max(5, min(box_x, screen_w - box_width - 5))
-        box_y = max(UI_HEIGHT + 5, min(box_y, screen_h - box_height - 5))
+        box_y = max(settings.UI_HEIGHT + 5, min(box_y, screen_h - box_height - 5))
 
         rect = pygame.Rect(int(box_x), int(box_y), box_width, box_height)
-        pygame.draw.rect(screen, INFO_PANEL_COLOR, rect)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, rect, 2)
+        pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, rect)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, rect, 2)
 
-        type_txt = self.font.render(type_name, True, TEXT_COLOR)
+        type_txt = self.font.render(type_name, True, settings.TEXT_COLOR)
         screen.blit(type_txt, (rect.x + 10, rect.y + 8))
 
-        created_txt = self.font.render(created_label, True, TEXT_COLOR)
+        created_txt = self.font.render(created_label, True, settings.TEXT_COLOR)
         screen.blit(created_txt, (rect.x + 10, rect.y + 34))
 
         next_y = rect.y + 56

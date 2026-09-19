@@ -4,19 +4,7 @@
 import math
 import pygame
 
-from settings import (
-    WINDOW_WIDTH, WINDOW_HEIGHT,
-    WALL_COLOR, FENCE_COLOR,
-    BUSH_COLOR, TREE_COLOR_LEAVES, STONE_COLOR, FRUIT_COLOR,
-    BIOME_PLAINS, MINIMAP_BIOME_COLOR,
-    MINIMAP_MAX_WIDTH, MINIMAP_MAX_HEIGHT, MINIMAP_MIN_WIDTH, MINIMAP_MIN_HEIGHT,
-    MINIMAP_MARGIN, MINIMAP_BG_COLOR, MINIMAP_BORDER_COLOR, MINIMAP_VIEWPORT_COLOR,
-    MINIMAP_SIMULATION_AREA_ALPHA, MINIMAP_FAVORITE_STAR_SIZE,
-    SIMULATION_AREA_MIN_UNITS, SIMULATION_AREA_MAX_UNITS,
-    SIMULATION_AREA_DEFAULT_UNITS, SIMULATION_AREA_PX_PER_UNIT,
-    DEFAULT_VISION_RADIUS,
-    FAVORITE_STAR_COLOR, FAVORITE_STAR_BORDER,
-)
+import settings
 from game.race_registry import all_minimap_layers
 from game.animal_registry import all_animals
 
@@ -31,11 +19,11 @@ def _mm_draw_landscape(panel, screen, game, to_minimap, scale, display):
     for wall in game.world.walls:
         if len(wall.points) >= 2:
             pts = [to_minimap(px, py) for px, py in wall.points]
-            pygame.draw.lines(screen, WALL_COLOR, False, pts, 2)
+            pygame.draw.lines(screen, settings.WALL_COLOR, False, pts, 2)
     for fence in game.world.fences:
         if len(fence.points) >= 2:
             pts = [to_minimap(px, py) for px, py in fence.points]
-            pygame.draw.lines(screen, FENCE_COLOR, False, pts, 1)
+            pygame.draw.lines(screen, settings.FENCE_COLOR, False, pts, 1)
 
 def _mm_draw_water(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_water"]:
@@ -47,26 +35,26 @@ def _mm_draw_bushes(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_bushes"]:
         for bush in game.world.bushes:
             pos = to_minimap(bush.x, bush.y)
-            pygame.draw.circle(screen, BUSH_COLOR, (int(pos[0]), int(pos[1])), 2)
+            pygame.draw.circle(screen, settings.BUSH_COLOR, (int(pos[0]), int(pos[1])), 2)
 
 def _mm_draw_trees(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_trees"]:
         for tree in game.world.trees:
             pos = to_minimap(tree.x, tree.y)
-            pygame.draw.circle(screen, TREE_COLOR_LEAVES, (int(pos[0]), int(pos[1])), 2)
+            pygame.draw.circle(screen, settings.TREE_COLOR_LEAVES, (int(pos[0]), int(pos[1])), 2)
 
 def _mm_draw_stones(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_stones"]:
         for stone in game.world.stones:
             pos = to_minimap(stone.x, stone.y)
-            pygame.draw.circle(screen, STONE_COLOR, (int(pos[0]), int(pos[1])), 2)
+            pygame.draw.circle(screen, settings.STONE_COLOR, (int(pos[0]), int(pos[1])), 2)
 
 def _mm_draw_fruits(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_fruits"]:
         for fruit in game.world.fruits:
             if fruit.active:
                 pos = to_minimap(fruit.x, fruit.y)
-                pygame.draw.circle(screen, FRUIT_COLOR, (int(pos[0]), int(pos[1])), 2)
+                pygame.draw.circle(screen, settings.FRUIT_COLOR, (int(pos[0]), int(pos[1])), 2)
 
 def _mm_draw_spikes(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_spikes"]:
@@ -111,14 +99,14 @@ class MinimapPanel:
     def __init__(self, game, font):
         self.game = game
         self.font = font
-        self.rect = pygame.Rect(0, 0, MINIMAP_MAX_WIDTH, MINIMAP_MAX_HEIGHT)
+        self.rect = pygame.Rect(0, 0, settings.MINIMAP_MAX_WIDTH, settings.MINIMAP_MAX_HEIGHT)
         self._biome_layer = None
         self._biome_layer_key = None
         self._pipeline = self._build_pipeline()
         self._dos_overlay_surface = None
         self._dos_cut_surface = None
         self._dos_surfaces_size = None
-        self.rebuild_layout(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     @staticmethod
     def _build_pipeline():
@@ -139,23 +127,23 @@ class MinimapPanel:
         ratio = world_w / world_h
 
         if ratio >= 1:
-            mm_w = MINIMAP_MAX_WIDTH
+            mm_w = settings.MINIMAP_MAX_WIDTH
             mm_h = int(mm_w / ratio)
-            if mm_h < MINIMAP_MIN_HEIGHT:
-                mm_h = MINIMAP_MIN_HEIGHT
+            if mm_h < settings.MINIMAP_MIN_HEIGHT:
+                mm_h = settings.MINIMAP_MIN_HEIGHT
                 mm_w = int(mm_h * ratio)
         else:
-            mm_h = MINIMAP_MAX_HEIGHT
+            mm_h = settings.MINIMAP_MAX_HEIGHT
             mm_w = int(mm_h * ratio)
-            if mm_w < MINIMAP_MIN_WIDTH:
-                mm_w = MINIMAP_MIN_WIDTH
+            if mm_w < settings.MINIMAP_MIN_WIDTH:
+                mm_w = settings.MINIMAP_MIN_WIDTH
                 mm_h = int(mm_w / ratio)
 
-        mm_w = min(mm_w, MINIMAP_MAX_WIDTH)
-        mm_h = min(mm_h, MINIMAP_MAX_HEIGHT)
+        mm_w = min(mm_w, settings.MINIMAP_MAX_WIDTH)
+        mm_h = min(mm_h, settings.MINIMAP_MAX_HEIGHT)
 
         self.rect = pygame.Rect(
-            MINIMAP_MARGIN, window_h - mm_h - MINIMAP_MARGIN,
+            settings.MINIMAP_MARGIN, window_h - mm_h - settings.MINIMAP_MARGIN,
             mm_w, mm_h
         )
 
@@ -183,7 +171,7 @@ class MinimapPanel:
             py = int(row * grid.cell_size * scale_y)
             for col in range(grid.cols):
                 biome = grid.cells[row * grid.cols + col]
-                color = MINIMAP_BIOME_COLOR.get(biome, MINIMAP_BIOME_COLOR[BIOME_PLAINS])
+                color = settings.MINIMAP_BIOME_COLOR.get(biome, settings.MINIMAP_BIOME_COLOR[settings.BIOME_PLAINS])
                 px = int(col * grid.cell_size * scale_x)
                 pygame.draw.rect(layer, color, (px, py, cell_w, cell_h))
         return layer
@@ -192,7 +180,7 @@ class MinimapPanel:
         game = self.game
         display = game.display_settings
         rect = self.rect
-        pygame.draw.rect(screen, MINIMAP_BG_COLOR, rect)
+        pygame.draw.rect(screen, settings.MINIMAP_BG_COLOR, rect)
 
         self._draw_biomes(screen, rect)
 
@@ -216,9 +204,9 @@ class MinimapPanel:
         view_w = max(2, cam.camera.width * scale_x)
         view_h = max(2, cam.camera.height * scale_y)
         view_rect = pygame.Rect(int(view_x), int(view_y), int(view_w), int(view_h))
-        pygame.draw.rect(screen, MINIMAP_VIEWPORT_COLOR, view_rect, 2)
+        pygame.draw.rect(screen, settings.MINIMAP_VIEWPORT_COLOR, view_rect, 2)
 
-        pygame.draw.rect(screen, MINIMAP_BORDER_COLOR, rect, 2)
+        pygame.draw.rect(screen, settings.MINIMAP_BORDER_COLOR, rect, 2)
 
         hint_txt = self.font.render("Tab", True, (170, 170, 170))
         screen.blit(hint_txt, (rect.right - hint_txt.get_width() - 4, rect.y - 20))
@@ -248,12 +236,12 @@ class MinimapPanel:
         scale_x, scale_y = scale
 
         overlay, cut = self._get_dos_surfaces(rect.size)
-        overlay.fill((0, 0, 0, MINIMAP_SIMULATION_AREA_ALPHA))
+        overlay.fill((0, 0, 0, settings.MINIMAP_SIMULATION_AREA_ALPHA))
         cut.fill((0, 0, 0, 0))
 
-        units = game.display_settings.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
-        units = max(SIMULATION_AREA_MIN_UNITS, min(SIMULATION_AREA_MAX_UNITS, units))
-        margin = units * SIMULATION_AREA_PX_PER_UNIT
+        units = game.display_settings.get("simulation_area_units", settings.SIMULATION_AREA_DEFAULT_UNITS)
+        units = max(settings.SIMULATION_AREA_MIN_UNITS, min(settings.SIMULATION_AREA_MAX_UNITS, units))
+        margin = units * settings.SIMULATION_AREA_PX_PER_UNIT
         cam = game.camera
 
         sim_x = (cam.x - margin) * scale_x
@@ -265,7 +253,7 @@ class MinimapPanel:
 
         if favorite is not None:
             vision = (favorite.effective_vision_radius()
-                      if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
+                      if hasattr(favorite, "effective_vision_radius") else settings.DEFAULT_VISION_RADIUS)
             local_x = favorite.x * scale_x
             local_y = favorite.y * scale_y
             radius_px = vision * scale_x
@@ -277,7 +265,7 @@ class MinimapPanel:
     def _draw_favorite_marker(self, screen, to_minimap, favorite):
         from game.widgets import star_points
         fx, fy = to_minimap(favorite.x, favorite.y)
-        size = MINIMAP_FAVORITE_STAR_SIZE
+        size = settings.MINIMAP_FAVORITE_STAR_SIZE
         points = star_points(fx, fy, size, size * 0.45)
-        pygame.draw.polygon(screen, FAVORITE_STAR_COLOR, points)
-        pygame.draw.polygon(screen, FAVORITE_STAR_BORDER, points, 1)
+        pygame.draw.polygon(screen, settings.FAVORITE_STAR_COLOR, points)
+        pygame.draw.polygon(screen, settings.FAVORITE_STAR_BORDER, points, 1)

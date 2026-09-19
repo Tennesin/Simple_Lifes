@@ -2,24 +2,15 @@
 
 import pygame
 
-from settings import (
-    FONT_NAME, FONT_SIZE_TITLE,
-    SETTINGS_OVERLAY_ALPHA, SETTINGS_PANEL_BG, SETTINGS_PANEL_BORDER,
-    SETTINGS_SIDEBAR_BG, SETTINGS_TAB_COLOR, SETTINGS_TAB_HOVER, SETTINGS_TAB_SELECTED,
-    WORLD_SCREEN_TEXT, TEXT_COLOR, BUTTON_HEIGHT,
-    BUTTON_COLOR, BUTTON_HOVER, CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
-)
-from info import (
-    INFO_SETTINGS_TITLE, INFO_SETTINGS_TAB_TECHNICAL, INFO_SETTINGS_TAB_DISPLAY,
-    INFO_BTN_SETTINGS_SAVE, INFO_BTN_BACK,
-)
+import settings
+import info
 from game.display_settings import (
     all_display_checkbox_specs, all_technical_checkbox_specs, all_technical_slider_specs
 )
 
 SETTINGS_TABS = (
-    ("technical", INFO_SETTINGS_TAB_TECHNICAL),
-    ("display", INFO_SETTINGS_TAB_DISPLAY),
+    ("technical", info.INFO_SETTINGS_TAB_TECHNICAL),
+    ("display", info.INFO_SETTINGS_TAB_DISPLAY),
 )
 
 class SettingsPanel:
@@ -33,7 +24,7 @@ class SettingsPanel:
     def __init__(self, game, font):
         self.game = game
         self.font = font
-        self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
+        self.title_font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_TITLE)
 
         self._checkboxes = all_display_checkbox_specs()
         self._technical_checkboxes = all_technical_checkbox_specs()
@@ -61,14 +52,14 @@ class SettingsPanel:
         mouse_pos = pygame.mouse.get_pos()
 
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, SETTINGS_OVERLAY_ALPHA))
+        overlay.fill((0, 0, 0, settings.SETTINGS_OVERLAY_ALPHA))
         screen.blit(overlay, (0, 0))
 
         panel = self.panel_rect
-        pygame.draw.rect(screen, SETTINGS_PANEL_BG, panel)
-        pygame.draw.rect(screen, SETTINGS_PANEL_BORDER, panel, 2)
+        pygame.draw.rect(screen, settings.SETTINGS_PANEL_BG, panel)
+        pygame.draw.rect(screen, settings.SETTINGS_PANEL_BORDER, panel, 2)
 
-        title_txt = self.title_font.render(INFO_SETTINGS_TITLE, True, WORLD_SCREEN_TEXT)
+        title_txt = self.title_font.render(info.INFO_SETTINGS_TITLE, True, settings.WORLD_SCREEN_TEXT)
         screen.blit(title_txt, (panel.x + 16, panel.y + 14))
 
         content_top = panel.y + 14 + title_txt.get_height() + 14
@@ -85,7 +76,7 @@ class SettingsPanel:
             content_rect.width - sidebar_width - 12, content_rect.height
         )
 
-        pygame.draw.rect(screen, SETTINGS_SIDEBAR_BG, sidebar_rect)
+        pygame.draw.rect(screen, settings.SETTINGS_SIDEBAR_BG, sidebar_rect)
 
         self._draw_tabs(screen, state, sidebar_rect, mouse_pos)
         self._draw_body(screen, state, body_rect, mouse_pos)
@@ -94,23 +85,23 @@ class SettingsPanel:
     def _draw_tabs(self, screen, state, sidebar_rect, mouse_pos):
         y = sidebar_rect.y + 8
         for tab_key, tab_label in SETTINGS_TABS:
-            rect = pygame.Rect(sidebar_rect.x + 6, y, sidebar_rect.width - 12, BUTTON_HEIGHT)
+            rect = pygame.Rect(sidebar_rect.x + 6, y, sidebar_rect.width - 12, settings.BUTTON_HEIGHT)
             if tab_key == "display":
                 self.settings_tab_display_rect = rect
             elif tab_key == "technical":
                 self.settings_tab_technical_rect = rect
 
             if state.active_tab == tab_key:
-                color = SETTINGS_TAB_SELECTED
+                color = settings.SETTINGS_TAB_SELECTED
             elif rect.collidepoint(mouse_pos):
-                color = SETTINGS_TAB_HOVER
+                color = settings.SETTINGS_TAB_HOVER
             else:
-                color = SETTINGS_TAB_COLOR
+                color = settings.SETTINGS_TAB_COLOR
             pygame.draw.rect(screen, color, rect, border_radius=4)
 
-            label_txt = self.font.render(tab_label, True, TEXT_COLOR)
+            label_txt = self.font.render(tab_label, True, settings.TEXT_COLOR)
             screen.blit(label_txt, label_txt.get_rect(center=rect.center))
-            y += BUTTON_HEIGHT + 6
+            y += settings.BUTTON_HEIGHT + 6
 
     def _draw_body(self, screen, state, body_rect, mouse_pos):
         self.settings_checkbox_rows = {}
@@ -135,14 +126,14 @@ class SettingsPanel:
             hovered = row_rect.collidepoint(mouse_pos)
             box_bg = (55, 55, 55) if hovered else (40, 40, 40)
             pygame.draw.rect(screen, box_bg, cb_rect)
-            pygame.draw.rect(screen, WORLD_SCREEN_TEXT, cb_rect, 1)
+            pygame.draw.rect(screen, settings.WORLD_SCREEN_TEXT, cb_rect, 1)
             if state.draft.get(key):
                 pygame.draw.line(screen, (120, 230, 120),
                                  (cb_rect.x + 3, cb_rect.y + 9), (cb_rect.x + 7, cb_rect.y + 13), 2)
                 pygame.draw.line(screen, (120, 230, 120),
                                  (cb_rect.x + 7, cb_rect.y + 13), (cb_rect.x + 15, cb_rect.y + 3), 2)
 
-            label_txt = self.font.render(label, True, TEXT_COLOR)
+            label_txt = self.font.render(label, True, settings.TEXT_COLOR)
             screen.blit(label_txt, (cb_rect.right + 10,
                                     row_rect.y + (row_rect.height - label_txt.get_height()) // 2))
 
@@ -156,7 +147,7 @@ class SettingsPanel:
 
     def _draw_slider_row(self, screen, state, key, label_template, min_v, max_v, step, x, y, width, mouse_pos):
         value = state.draft.get(key, min_v)
-        label_txt = self.font.render(label_template.format(value=value), True, TEXT_COLOR)
+        label_txt = self.font.render(label_template.format(value=value), True, settings.TEXT_COLOR)
         screen.blit(label_txt, (x, y))
 
         bar_y = y + label_txt.get_height() + 6
@@ -166,7 +157,7 @@ class SettingsPanel:
         ratio = (value - min_v) / (max_v - min_v) if max_v > min_v else 0.0
         fill_w = max(4, int(bar_rect.width * max(0.0, min(1.0, ratio))))
         fill_rect = pygame.Rect(bar_rect.x, bar_rect.y, fill_w, bar_rect.height)
-        fill_color = (100, 160, 210) if self._slider_dragging_key == key else BUTTON_COLOR
+        fill_color = (100, 160, 210) if self._slider_dragging_key == key else settings.BUTTON_COLOR
         pygame.draw.rect(screen, fill_color, fill_rect)
         pygame.draw.rect(screen, (15, 15, 15), bar_rect, 1)
 
@@ -199,12 +190,12 @@ class SettingsPanel:
         self.settings_back_btn_rect = pygame.Rect(
             self.settings_save_btn_rect.x - gap - btn_w, panel.bottom - 12 - btn_h, btn_w, btn_h)
 
-        save_color = BUTTON_HOVER if self.settings_save_btn_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+        save_color = settings.BUTTON_HOVER if self.settings_save_btn_rect.collidepoint(mouse_pos) else settings.BUTTON_COLOR
         pygame.draw.rect(screen, save_color, self.settings_save_btn_rect, border_radius=4)
-        save_txt = self.font.render(INFO_BTN_SETTINGS_SAVE, True, TEXT_COLOR)
+        save_txt = self.font.render(info.INFO_BTN_SETTINGS_SAVE, True, settings.TEXT_COLOR)
         screen.blit(save_txt, save_txt.get_rect(center=self.settings_save_btn_rect.center))
 
-        back_color = CLOSE_BUTTON_HOVER if self.settings_back_btn_rect.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        back_color = settings.CLOSE_BUTTON_HOVER if self.settings_back_btn_rect.collidepoint(mouse_pos) else settings.CLOSE_BUTTON_COLOR
         pygame.draw.rect(screen, back_color, self.settings_back_btn_rect, border_radius=4)
-        back_txt = self.font.render(INFO_BTN_BACK, True, TEXT_COLOR)
+        back_txt = self.font.render(info.INFO_BTN_BACK, True, settings.TEXT_COLOR)
         screen.blit(back_txt, back_txt.get_rect(center=self.settings_back_btn_rect.center))

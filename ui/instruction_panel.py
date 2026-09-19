@@ -3,14 +3,8 @@
 
 import pygame
 
-from settings import (
-    FONT_NAME, FONT_SIZE_TITLE, FONT_SIZE_LABEL,
-    SETTINGS_OVERLAY_ALPHA, SETTINGS_PANEL_BG, SETTINGS_PANEL_BORDER,
-    SETTINGS_SIDEBAR_BG, SETTINGS_TAB_COLOR, SETTINGS_TAB_HOVER, SETTINGS_TAB_SELECTED,
-    WORLD_SCREEN_TEXT, TEXT_COLOR, BUTTON_HEIGHT,
-    CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
-)
-from info import INFO_INSTRUCTION_TITLE, INFO_INSTRUCTION_CLOSE
+import settings
+import info
 from game.widgets import AccordionList, measure_instruction_blocks, draw_instruction_blocks
 from game.instruction_content import core_instruction_icon
 
@@ -27,8 +21,8 @@ class InstructionPanel:
     def __init__(self, game, font):
         self.game = game
         self.font = font
-        self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
-        self.header_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_LABEL)
+        self.title_font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_TITLE)
+        self.header_font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_LABEL)
 
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
         self.body_rect = pygame.Rect(0, 0, 0, 0)
@@ -87,14 +81,14 @@ class InstructionPanel:
         mouse_pos = pygame.mouse.get_pos()
 
         overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, SETTINGS_OVERLAY_ALPHA))
+        overlay.fill((0, 0, 0, settings.SETTINGS_OVERLAY_ALPHA))
         screen.blit(overlay, (0, 0))
 
         panel = self.panel_rect
-        pygame.draw.rect(screen, SETTINGS_PANEL_BG, panel)
-        pygame.draw.rect(screen, SETTINGS_PANEL_BORDER, panel, 2)
+        pygame.draw.rect(screen, settings.SETTINGS_PANEL_BG, panel)
+        pygame.draw.rect(screen, settings.SETTINGS_PANEL_BORDER, panel, 2)
 
-        title_txt = self.title_font.render(INFO_INSTRUCTION_TITLE, True, WORLD_SCREEN_TEXT)
+        title_txt = self.title_font.render(info.INFO_INSTRUCTION_TITLE, True, settings.WORLD_SCREEN_TEXT)
         screen.blit(title_txt, (panel.x + 16, panel.y + 14))
 
         content_top = panel.y + 14 + title_txt.get_height() + 14
@@ -111,7 +105,7 @@ class InstructionPanel:
             content_rect.width - sidebar_width - 12, content_rect.height
         )
 
-        pygame.draw.rect(screen, SETTINGS_SIDEBAR_BG, sidebar_rect)
+        pygame.draw.rect(screen, settings.SETTINGS_SIDEBAR_BG, sidebar_rect)
 
         self._draw_tabs(screen, state, sidebar_rect, mouse_pos)
         self._draw_body(screen, state, body_rect)
@@ -121,20 +115,20 @@ class InstructionPanel:
         self.tab_rects = {}
         y = sidebar_rect.y + 8
         for category in state.categories:
-            rect = pygame.Rect(sidebar_rect.x + 6, y, sidebar_rect.width - 12, BUTTON_HEIGHT)
+            rect = pygame.Rect(sidebar_rect.x + 6, y, sidebar_rect.width - 12, settings.BUTTON_HEIGHT)
             self.tab_rects[category.key] = rect
 
             if state.active_key == category.key:
-                color = SETTINGS_TAB_SELECTED
+                color = settings.SETTINGS_TAB_SELECTED
             elif rect.collidepoint(mouse_pos):
-                color = SETTINGS_TAB_HOVER
+                color = settings.SETTINGS_TAB_HOVER
             else:
-                color = SETTINGS_TAB_COLOR
+                color = settings.SETTINGS_TAB_COLOR
             pygame.draw.rect(screen, color, rect, border_radius=4)
 
-            label_txt = self.font.render(category.label, True, TEXT_COLOR)
+            label_txt = self.font.render(category.label, True, settings.TEXT_COLOR)
             screen.blit(label_txt, label_txt.get_rect(center=rect.center))
-            y += BUTTON_HEIGHT + self.TAB_GAP
+            y += settings.BUTTON_HEIGHT + self.TAB_GAP
 
     def _measure_flat(self, category, width):
         key = (category.key, width)
@@ -195,7 +189,7 @@ class InstructionPanel:
         btn_w, btn_h = 130, 34
         self.close_btn_rect = pygame.Rect(
             panel.right - 12 - btn_w, panel.bottom - 12 - btn_h, btn_w, btn_h)
-        color = CLOSE_BUTTON_HOVER if self.close_btn_rect.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        color = settings.CLOSE_BUTTON_HOVER if self.close_btn_rect.collidepoint(mouse_pos) else settings.CLOSE_BUTTON_COLOR
         pygame.draw.rect(screen, color, self.close_btn_rect, border_radius=4)
-        txt = self.font.render(INFO_INSTRUCTION_CLOSE, True, TEXT_COLOR)
+        txt = self.font.render(info.INFO_INSTRUCTION_CLOSE, True, settings.TEXT_COLOR)
         screen.blit(txt, txt.get_rect(center=self.close_btn_rect.center))

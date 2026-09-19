@@ -2,17 +2,8 @@
 
 import pygame
 
-from settings import (
-    FONT_NAME, FONT_SIZE_PANEL, UI_HEIGHT,
-    TEXT_COLOR, CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
-    COLLAPSE_HANDLE_WIDTH, COLLAPSE_HANDLE_HEIGHT,
-    COLLAPSE_HANDLE_COLOR, COLLAPSE_HANDLE_BORDER,
-    COLLAPSE_HANDLE_ARROW_COLOR, COLLAPSE_HANDLE_ARROW_HOVER_COLOR,
-)
-from info import (
-    INFO_PLACEMENT_HINT, INFO_BRUSH_RADIUS,
-    INFO_TOOL_GRAB_RELEASE_HINT, INFO_TOOL_GRAB_OBJECT_HINT,
-)
+import settings
+import info
 from game.race_registry import (
     all_races, all_player_tools, all_secondary_panel_specs, all_road_networks,
 )
@@ -32,7 +23,7 @@ class UIManager:
 
     def __init__(self, game):
         self.game = game
-        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_PANEL)
+        self.font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_PANEL)
 
         self.top_bar = TopBarPanel(game, self.font)
 
@@ -56,7 +47,7 @@ class UIManager:
         self.instruction_panel = InstructionPanel(game, self.font)
         self.exit_confirm_panel = ExitConfirmPanel(game, self.font)
 
-        self.exit_placement_btn = pygame.Rect(10, UI_HEIGHT + 10, 30, 30)
+        self.exit_placement_btn = pygame.Rect(10, settings.UI_HEIGHT + 10, 30, 30)
         self._biome_preview_surfaces = {}
         self.collapse_handle_rect = pygame.Rect(0, 0, 0, 0)
 
@@ -113,7 +104,7 @@ class UIManager:
     # ---------- Оркестрация отрисовки ----------
 
     def _content_rect(self, screen):
-        return pygame.Rect(0, UI_HEIGHT, screen.get_width(), screen.get_height() - UI_HEIGHT)
+        return pygame.Rect(0, settings.UI_HEIGHT, screen.get_width(), screen.get_height() - settings.UI_HEIGHT)
 
     def draw(self, screen):
         game = self.game
@@ -166,14 +157,14 @@ class UIManager:
 
     def _compute_collapse_handle_rect(self, screen_width):
         panel_rect = self.creature_panel.info_panel_rect
-        handle_y = panel_rect.y + (panel_rect.height - COLLAPSE_HANDLE_HEIGHT) // 2
+        handle_y = panel_rect.y + (panel_rect.height - settings.COLLAPSE_HANDLE_HEIGHT) // 2
 
         if self.game.right_panel_collapsed:
-            handle_x = screen_width - COLLAPSE_HANDLE_WIDTH
+            handle_x = screen_width - settings.COLLAPSE_HANDLE_WIDTH
         else:
-            handle_x = panel_rect.x - COLLAPSE_HANDLE_WIDTH
+            handle_x = panel_rect.x - settings.COLLAPSE_HANDLE_WIDTH
 
-        return pygame.Rect(handle_x, handle_y, COLLAPSE_HANDLE_WIDTH, COLLAPSE_HANDLE_HEIGHT)
+        return pygame.Rect(handle_x, handle_y, settings.COLLAPSE_HANDLE_WIDTH, settings.COLLAPSE_HANDLE_HEIGHT)
 
     def _draw_collapse_handle(self, screen):
         game = self.game
@@ -183,10 +174,10 @@ class UIManager:
         mouse_pos = pygame.mouse.get_pos()
         hovered = handle_rect.collidepoint(mouse_pos)
 
-        pygame.draw.rect(screen, COLLAPSE_HANDLE_COLOR, handle_rect, border_radius=3)
-        pygame.draw.rect(screen, COLLAPSE_HANDLE_BORDER, handle_rect, 1, border_radius=3)
+        pygame.draw.rect(screen, settings.COLLAPSE_HANDLE_COLOR, handle_rect, border_radius=3)
+        pygame.draw.rect(screen, settings.COLLAPSE_HANDLE_BORDER, handle_rect, 1, border_radius=3)
 
-        arrow_color = COLLAPSE_HANDLE_ARROW_HOVER_COLOR if hovered else COLLAPSE_HANDLE_ARROW_COLOR
+        arrow_color = settings.COLLAPSE_HANDLE_ARROW_HOVER_COLOR if hovered else settings.COLLAPSE_HANDLE_ARROW_COLOR
         cx, cy = handle_rect.center
         half_h = handle_rect.height * 0.30
         half_w = handle_rect.width * 0.34
@@ -200,26 +191,26 @@ class UIManager:
     def draw_placement_overlay(self, screen):
         game = self.game
         mouse_pos = pygame.mouse.get_pos()
-        cross_color = CLOSE_BUTTON_HOVER if self.exit_placement_btn.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        cross_color = settings.CLOSE_BUTTON_HOVER if self.exit_placement_btn.collidepoint(mouse_pos) else settings.CLOSE_BUTTON_COLOR
         pygame.draw.rect(screen, cross_color, self.exit_placement_btn)
         cx, cy = self.exit_placement_btn.center
-        pygame.draw.line(screen, TEXT_COLOR, (cx - 6, cy - 6), (cx + 6, cy + 6), 2)
-        pygame.draw.line(screen, TEXT_COLOR, (cx + 6, cy - 6), (cx - 6, cy + 6), 2)
+        pygame.draw.line(screen, settings.TEXT_COLOR, (cx - 6, cy - 6), (cx + 6, cy + 6), 2)
+        pygame.draw.line(screen, settings.TEXT_COLOR, (cx + 6, cy - 6), (cx - 6, cy + 6), 2)
 
         if game.placement_pos:
             screen_pos = game.camera.apply_pos(game.placement_pos)
             color = (0, 255, 0) if game.placement_valid else (255, 0, 0)
             pygame.draw.circle(screen, color, (int(screen_pos[0]), int(screen_pos[1])), 12, 2)
-            screen.blit(self.font.render(INFO_PLACEMENT_HINT, True, TEXT_COLOR), (10, UI_HEIGHT + 50))
+            screen.blit(self.font.render(info.INFO_PLACEMENT_HINT, True, settings.TEXT_COLOR), (10, settings.UI_HEIGHT + 50))
 
     def draw_player_tool_overlay(self, screen):
         game = self.game
         mouse_pos = pygame.mouse.get_pos()
-        cross_color = CLOSE_BUTTON_HOVER if self.exit_placement_btn.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        cross_color = settings.CLOSE_BUTTON_HOVER if self.exit_placement_btn.collidepoint(mouse_pos) else settings.CLOSE_BUTTON_COLOR
         pygame.draw.rect(screen, cross_color, self.exit_placement_btn)
         cx, cy = self.exit_placement_btn.center
-        pygame.draw.line(screen, TEXT_COLOR, (cx - 6, cy - 6), (cx + 6, cy + 6), 2)
-        pygame.draw.line(screen, TEXT_COLOR, (cx + 6, cy - 6), (cx - 6, cy + 6), 2)
+        pygame.draw.line(screen, settings.TEXT_COLOR, (cx - 6, cy - 6), (cx + 6, cy + 6), 2)
+        pygame.draw.line(screen, settings.TEXT_COLOR, (cx + 6, cy - 6), (cx - 6, cy + 6), 2)
 
         hint_map = dict(_CORE_TOOL_HINTS)
         for spec in _CORE_PLAYER_TOOLS + all_player_tools():
@@ -229,13 +220,13 @@ class UIManager:
                 hint_map[spec.obj_type] = spec.menu_hint
 
         if game.player.grabbed_creature is not None:
-            hint = INFO_TOOL_GRAB_RELEASE_HINT
+            hint = info.INFO_TOOL_GRAB_RELEASE_HINT
         elif game.player.grabbed_object is not None:
-            hint = INFO_TOOL_GRAB_OBJECT_HINT
+            hint = info.INFO_TOOL_GRAB_OBJECT_HINT
         else:
             hint = hint_map.get(game.player.tool, "")
         if hint:
-            screen.blit(self.font.render(hint, True, TEXT_COLOR), (10, UI_HEIGHT + 50))
+            screen.blit(self.font.render(hint, True, settings.TEXT_COLOR), (10, settings.UI_HEIGHT + 50))
 
         # ---------- Предпросмотр рисуемой дороги (любого зарегистрированного типа) ----------
         for spec in all_road_networks():
@@ -247,7 +238,7 @@ class UIManager:
 
         if game.player.tool in ("biome_plains", "biome_desert", "biome_river", "biome_sea"):
             grid = game.biome_manager.grid
-            if (mouse_pos[1] > UI_HEIGHT and not self.exit_placement_btn.collidepoint(mouse_pos)
+            if (mouse_pos[1] > settings.UI_HEIGHT and not self.exit_placement_btn.collidepoint(mouse_pos)
                     and grid is not None):
                 wx, wy = game.camera.world_from_screen(*mouse_pos)
                 color = BIOME_PREVIEW_COLOR.get(game.player.tool, (255, 255, 255))
@@ -257,8 +248,8 @@ class UIManager:
                     screen.blit(preview_surf, screen_pos)
                 pygame.draw.circle(screen, (255, 255, 255), mouse_pos, int(game.player.brush_radius), 1)
             radius_txt = self.font.render(
-                INFO_BRUSH_RADIUS.format(radius=int(game.player.brush_radius)), True, TEXT_COLOR)
-            screen.blit(radius_txt, (10, UI_HEIGHT + 70))
+                info.INFO_BRUSH_RADIUS.format(radius=int(game.player.brush_radius)), True, settings.TEXT_COLOR)
+            screen.blit(radius_txt, (10, settings.UI_HEIGHT + 70))
 
     def _get_biome_preview_surface(self, color, cell_size):
         key = (color, cell_size)
