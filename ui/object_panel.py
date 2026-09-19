@@ -7,7 +7,7 @@ from settings import *
 from info import *
 from game.race_registry import all_object_panel_extensions
 from game.animal_registry import all_animal_object_panel_extensions
-
+from creatures.all_needed.instruction import wrap_instruction_text
 
 class ObjectPanel:
 
@@ -18,22 +18,6 @@ class ObjectPanel:
     def __init__(self, game, font):
         self.game = game
         self.font = font
-
-    def _wrap_text(self, text, max_width):
-        words = text.split(' ')
-        lines = []
-        current = ""
-        for word in words:
-            test = f"{current} {word}".strip()
-            if self.font.size(test)[0] <= max_width:
-                current = test
-            else:
-                if current:
-                    lines.append(current)
-                current = word
-        if current:
-            lines.append(current)
-        return lines if lines else [""]
 
     def _get_object_anchor_pos(self, obj):
         if hasattr(obj, "x"):
@@ -98,10 +82,10 @@ class ObjectPanel:
         text_max_width = box_width - 20
 
         # ---------- То, что не влезло даже на максимальной ширине, переносим на несколько строк ----------
-        resource_sub_lines = self._wrap_text(resource_label, text_max_width) if resource_label else []
+        resource_sub_lines = wrap_instruction_text(self.font, resource_label, text_max_width) if resource_label else []
         extra_sub_lines = []
         for text, color in extra_lines:
-            for sub in self._wrap_text(text, text_max_width):
+            for sub in wrap_instruction_text(self.font, text, text_max_width):
                 extra_sub_lines.append((sub, color))
 
         body_line_count = len(resource_sub_lines) + len(extra_sub_lines)

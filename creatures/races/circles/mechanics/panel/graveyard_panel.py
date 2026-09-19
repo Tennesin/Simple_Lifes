@@ -8,7 +8,7 @@ from info import *
 from game.widgets import ScrollArea
 from ...ci_settings import *
 from ...ci_info import *
-
+from .....all_needed.instruction import truncate_text
 
 class GraveyardPanel:
 
@@ -41,13 +41,6 @@ class GraveyardPanel:
             self.panel_rect.x + 10, self.panel_rect.y + 40,
             INFO_PANEL_WIDTH - 20, 26
         )
-
-    def _truncate(self, text, max_width):
-        if self.font.size(text)[0] <= max_width:
-            return text
-        while text and self.font.size(text + "…")[0] > max_width:
-            text = text[:-1]
-        return (text + "…") if text else "…"
 
     # =====================================================================
     # Протокол SecondaryPanelSpec
@@ -199,7 +192,7 @@ class GraveyardPanel:
             fresh_record = gy.get_fresh_record(entry["id"])
             label = INFO_GRAVEYARD_ARCHIVE_ENTRY.format(name=entry["name"], id=entry["id"])
             max_name_width = list_rect.width - (134 if fresh_record else 0)
-            name_txt = self.font.render(self._truncate(label, max_name_width), True, TEXT_COLOR)
+            name_txt = self.font.render(truncate_text(self.font, label, max_name_width), True, TEXT_COLOR)
             screen.blit(name_txt, (list_rect.x, row_y + 4))
 
             if fresh_record:

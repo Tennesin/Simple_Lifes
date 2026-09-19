@@ -52,9 +52,9 @@ class CreatureNeeds(WeakOwnerMixin):
             c.psyche.on_desert_exposure(dt)
 
         if c.hp <= 0:
-            c.die("истощение")
+            c.die(DEATH_CAUSE_STARVATION)
         elif c.consciousness <= 0:
-            c.die("помутнение сознания")
+            c.die(DEATH_CAUSE_SANITY)
 
         self._update_energy(dt, biome)
 

@@ -63,7 +63,7 @@ class PrivateStorage(Storage):
 
 class PrivateConstruction(Construction):
     _OWNER_ATTR_BY_TYPE = {"storage": "storage_owner_id", "house": "house_owner_id"}
-    CAMPFIRE_ANCHOR_MERGE_RADIUS = 5
+    CAMPFIRE_ANCHOR_MERGE_RADIUS = LANDMARK_POSITION_MATCH_TOLERANCE
 
     def _site_belongs_to(self, site, ctx):
         owner_attr = self._OWNER_ATTR_BY_TYPE.get(site.build_type)

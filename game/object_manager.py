@@ -18,7 +18,6 @@ from objects import (
     RoadCrossing, Tree, Stone, Grass, Meat,
 )
 
-
 def _segment_intersection(p1, p2, p3, p4):
     x1, y1 = p1
     x2, y2 = p2
@@ -150,6 +149,10 @@ _MUTUAL_CLEARANCE_ADDITIVE_ATTRS = _build_mutual_clearance_additive_attrs()
 
 # ---------- Коллекции, у которых клиренс всегда фиксированный (не по footprint) ----------
 _FIXED_CLEARANCE_ATTRS = {"fruits", "spikes", "creatures"}
+
+_FIXED_CLEARANCE_ATTRS_FULL = ["fruits", "spikes", "creatures"] + [
+    descriptor.world_collection for descriptor in all_animals()
+]
 
 # ---------- Типы, при появлении/исчезновении которых нужно бампать landscape_version (влияет на nav-сетку) ----------
 _LANDSCAPE_VERSION_BUMP_TYPES = ("spike",)
@@ -289,11 +292,7 @@ class _PlacementMixin:
         clearance = _PLACEMENT_CLEARANCE_REGISTRY.get(obj_type, 0)
         fixed_radius = max(20, clearance)
 
-        # ---------- Фиксированный клиренс: фрукты/шипы/существа/животные ----------
-        fixed_attrs = ["fruits", "spikes", "creatures"]
-        fixed_attrs.extend(descriptor.world_collection for descriptor in all_animals())
-
-        for attr in fixed_attrs:
+        for attr in _FIXED_CLEARANCE_ATTRS_FULL:
             for obj in self._collection_candidates(attr, wx, wy, fixed_radius, index):
                 if obj is exclude:
                     continue

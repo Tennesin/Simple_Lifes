@@ -10,7 +10,7 @@ from game.widgets import Button, ScrollArea, draw_favorite_star
 from ...ci_settings import *
 from ...ci_info import *
 from .....all_needed.diet import DIET_DISPLAY_MAP
-
+from .....all_needed.instruction import wrap_instruction_text, truncate_text, draw_wrapped_text
 
 class CreaturePanel:
 
@@ -69,36 +69,6 @@ class CreaturePanel:
         )
 
     # ---------- Текстовые утилиты ----------
-
-    def _wrap_text(self, text, max_width):
-        words = text.split(' ')
-        lines = []
-        current = ""
-        for word in words:
-            test = f"{current} {word}".strip()
-            if self.font.size(test)[0] <= max_width:
-                current = test
-            else:
-                if current:
-                    lines.append(current)
-                current = word
-        if current:
-            lines.append(current)
-        return lines if lines else [""]
-
-    def _draw_wrapped_text(self, screen, text, x, y, max_width, color, line_height=22):
-        for line in self._wrap_text(text, max_width):
-            txt = self.font.render(line, True, color)
-            screen.blit(txt, (x, y))
-            y += line_height
-        return y
-
-    def _truncate_text(self, text, max_width):
-        if self.font.size(text)[0] <= max_width:
-            return text
-        while text and self.font.size(text + "…")[0] > max_width:
-            text = text[:-1]
-        return (text + "…") if text else "…"
 
     def _check_creature_changed(self, creature):
         if creature.id != self._last_creature_id:
@@ -210,8 +180,9 @@ class CreaturePanel:
         screen.blit(gender_txt, (panel.x + 10, y))
 
         if not creature.is_dead:
-            temp_end_y = self._draw_wrapped_text(
-                screen, INFO_INFO_TEMPERAMENT.format(temperament=gendered_text(creature.temperament, creature.gender)),
+            temp_end_y = draw_wrapped_text(
+                screen, self.font,
+                INFO_INFO_TEMPERAMENT.format(temperament=gendered_text(creature.temperament, creature.gender)),
                 col2_x, y, col2_width, TEXT_COLOR)
             row2_bottom = max(row2_bottom, temp_end_y)
 
@@ -232,8 +203,9 @@ class CreaturePanel:
 
             if creature.death_cause:
                 max_text_width = panel.width - 20
-                y = self._draw_wrapped_text(
-                    screen, gendered_text(DEATH_CAUSE_DISPLAY_MAP.get(creature.death_cause, ""), creature.gender),
+                y = draw_wrapped_text(
+                    screen, self.font,
+                    gendered_text(DEATH_CAUSE_DISPLAY_MAP.get(creature.death_cause, ""), creature.gender),
                     panel.x + 10, y, max_text_width, TEXT_COLOR)
                 y += 8
 
@@ -289,8 +261,8 @@ class CreaturePanel:
             y += 24
 
         max_text_width = panel.width - 20
-        y = self._draw_wrapped_text(
-            screen, INFO_INFO_GOAL.format(goal=gendered_text(creature.goal_text, creature.gender)),
+        y = draw_wrapped_text(
+            screen, self.font, INFO_INFO_GOAL.format(goal=gendered_text(creature.goal_text, creature.gender)),
             panel.x + 10, y, max_text_width, TEXT_COLOR)
         y += 12
         self._draw_relationships_section(screen, creature, panel.x + 10, y, panel.width - 20)
@@ -354,9 +326,10 @@ class CreaturePanel:
             sons_names = ", ".join(c.name if c.name else c.id for c in sons) if sons else INFO_INFO_CHILDREN_NONE
             daughters_names = ", ".join(
                 c.name if c.name else c.id for c in daughters) if daughters else INFO_INFO_CHILDREN_NONE
-            y = self._draw_wrapped_text(screen, INFO_INFO_SONS.format(names=sons_names), x, y, max_width, TEXT_COLOR)
-            y = self._draw_wrapped_text(screen, INFO_INFO_DAUGHTERS.format(names=daughters_names), x, y, max_width,
-                                        TEXT_COLOR)
+            y = draw_wrapped_text(screen, self.font, INFO_INFO_SONS.format(names=sons_names), x, y, max_width,
+                                  TEXT_COLOR)
+            y = draw_wrapped_text(screen, self.font, INFO_INFO_DAUGHTERS.format(names=daughters_names), x, y, max_width,
+                                  TEXT_COLOR)
 
         y += 10
         return y
@@ -504,7 +477,7 @@ class CreaturePanel:
                 name = other.name if other.name else other.id
                 value_txt = self.font.render(f"{value:+.0f}", True, color)
                 name_max_width = col_width - value_txt.get_width() - 8
-                name_txt = self.font.render(self._truncate_text(name, name_max_width), True, color)
+                name_txt = self.font.render(truncate_text(self.font, name, name_max_width), True, color)
                 screen.blit(name_txt, (col_x, row_y))
                 screen.blit(value_txt, (col_x + col_width - value_txt.get_width(), row_y))
 

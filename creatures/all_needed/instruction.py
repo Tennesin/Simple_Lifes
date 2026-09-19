@@ -94,3 +94,21 @@ def wrap_instruction_text(font, text, max_width):
     if current:
         lines.append(current)
     return lines if lines else [""]
+
+def truncate_text(font, text, max_width):
+    """Обрезает text до ширины max_width пикселей, добавляя многоточие,
+    если он не влезает целиком."""
+    if not text or font.size(text)[0] <= max_width:
+        return text
+    while text and font.size(text + "…")[0] > max_width:
+        text = text[:-1]
+    return (text + "…") if text else "…"
+
+
+def draw_wrapped_text(screen, font, text, x, y, max_width, color, line_height=22):
+    """Переносит text по словам под max_width и рисует построчно, начиная с (x, y)."""
+    for line in wrap_instruction_text(font, text, max_width):
+        line_surf = font.render(line, True, color)
+        screen.blit(line_surf, (x, y))
+        y += line_height
+    return y

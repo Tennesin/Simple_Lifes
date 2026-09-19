@@ -64,7 +64,7 @@ class PlayerReactionHandler(WeakOwnerMixin):
         self.add_memory("hit", relationship_after=c.player_relationship)
         c.goal_text = INFO_CREATURE_GOAL_HIT_FLEE
         if c.hp <= 0:
-            c.die("получил травму от игрока")
+            c.die(DEATH_CAUSE_PLAYER_HIT)
 
     def start_grab(self):
         c = self.c
@@ -141,7 +141,7 @@ class PlayerReactionHandler(WeakOwnerMixin):
         setattr(c, stat_key, new_value)
 
         if stat_key == "hp" and new_value <= 0:
-            c.die("получил травму от игрока")
+            c.die(DEATH_CAUSE_PLAYER_HIT)
             return
 
         if stat_key in _STAT_NEUTRAL_KEYS:

@@ -252,7 +252,7 @@ class _LandmarkLookupMixin:
                     c.known_campfire_id = fire.id
                     c.comfort_point = c.known_campfire
             elif c.known_campfire_id is None and math.hypot(
-                    c.known_campfire[0] - fire.x, c.known_campfire[1] - fire.y) < 5:
+                    c.known_campfire[0] - fire.x, c.known_campfire[1] - fire.y) < LANDMARK_POSITION_MATCH_TOLERANCE:
                 c.known_campfire_id = fire.id
         for gy in (visible_graveyards or []):
             c.memory.add_intuitive_memory("graveyard", *c.comfort_point, gy.x, gy.y, importance=1.2)
@@ -261,7 +261,7 @@ class _LandmarkLookupMixin:
                 c.known_graveyard = (gy.x, gy.y)
                 c.known_graveyard_id = gy.id
             elif c.known_graveyard_id is None and math.hypot(
-                    c.known_graveyard[0] - gy.x, c.known_graveyard[1] - gy.y) < 5:
+                    c.known_graveyard[0] - gy.x, c.known_graveyard[1] - gy.y) < LANDMARK_POSITION_MATCH_TOLERANCE:
                 c.known_graveyard_id = gy.id
 
 # =========================================================================

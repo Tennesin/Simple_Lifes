@@ -92,7 +92,7 @@ class CircleTickProcessor:
                 continue
             kx, ky = creature.known_campfire
             for fire in campfires:
-                if math.hypot(kx - fire.x, ky - fire.y) < 5:
+                if math.hypot(kx - fire.x, ky - fire.y) < LANDMARK_POSITION_MATCH_TOLERANCE:
                     occupancy[fire.id] = occupancy.get(fire.id, 0) + 1
                     break
         return occupancy
@@ -347,7 +347,7 @@ class CircleTickProcessor:
 
             if (game.biome_manager.grid is not None
                     and game.biome_manager.grid.get_at(creature.x, creature.y) == BIOME_SEA):
-                creature.die("утонул в море")
+                creature.die(DEATH_CAUSE_DROWNING)
                 if game.player.grabbed_creature is creature:
                     game.player.grabbed_creature = None
                 continue

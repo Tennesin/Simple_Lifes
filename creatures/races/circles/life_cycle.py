@@ -79,12 +79,12 @@ class CreatureAging(WeakOwnerMixin):
     def _check_natural_death(self, dt):
         c = self.c
         if c.age >= AGE_NATURAL_DEATH_MAX:
-            c.die("старость")
+            c.die(DEATH_CAUSE_OLD_AGE)
             return
         progress = (c.age - AGE_NATURAL_DEATH_START) / (AGE_NATURAL_DEATH_MAX - AGE_NATURAL_DEATH_START)
         chance_per_sec = AGE_NATURAL_DEATH_CHANCE_PER_SEC * (1.0 + progress * 4.0)
         if random.random() < chance_per_sec * dt:
-            c.die("старость")
+            c.die(DEATH_CAUSE_OLD_AGE)
 
     def _update_puberty(self, dt):
         c = self.c
