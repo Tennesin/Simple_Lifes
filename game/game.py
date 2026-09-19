@@ -409,6 +409,8 @@ class Game:
         try:
             if self.world_loaded and self.world_path:
                 self.world_manager.close_world(save=True)
+            elif self.world_path:
+                self.world_manager.close_world(save=False)
             else:
                 self.world_loaded = False
         except Exception:

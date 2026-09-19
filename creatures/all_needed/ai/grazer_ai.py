@@ -257,4 +257,4 @@ def tick_grazer_species(game, dt, nav_grid, fallback_nav_grid, active_ids, spati
         ai.interact(dt, grass_source, water_source, biome_grid, spikes=world.spikes)
 
     for animal in frozen_to_remove:
-        game.object_manager.remove_animal_and_drop(animal)
+        game.object_manager.remove_animal_silently(animal)

@@ -464,7 +464,7 @@ class CreatureTerritory(WeakOwnerMixin):
 # =========================================================================
 
 def _grief_death_shock_multiplier(cause, deceased_age):
-    if cause == "старость":
+    if cause == DEATH_CAUSE_OLD_AGE:
         return GRIEF_NATURAL_OLD_AGE_MULTIPLIER
     youth_ratio = 1.0 - max(0.0, min(1.0, deceased_age / AGE_NATURAL_DEATH_START))
     return GRIEF_UNNATURAL_DEATH_MULTIPLIER + youth_ratio * GRIEF_YOUTH_SHOCK_BONUS

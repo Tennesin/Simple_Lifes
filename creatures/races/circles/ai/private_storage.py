@@ -3,8 +3,12 @@
 import math
 import random
 
-from ..ci_settings import *
-from ..circle_objects import ConstructionSite
+from ..ci_settings import (
+    LIFE_STAGE_CHILD, LANDMARK_POSITION_MATCH_TOLERANCE,
+    NEW_CAMPFIRE_JOIN_SEARCH_RADIUS, CONSTRUCTION_SITE_SEARCH_RADIUS,
+    HOUSE_SITE_SCORE_ATTEMPTS, HOUSE_BUILD_OFFSET_RANGE, HOUSE_DEFAULT_SIZE,
+    STORAGE_HOUSE_GAP,
+)
 from .patterns import Storage, Construction
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration
@@ -172,42 +176,6 @@ class PrivateConstruction(Construction):
             if best_score is None or score > best_score:
                 best_score, best_point = score, point
         return best_point
-
-    def _find_or_create_site(self, build_type, campfire_pos, ctx):
-        owner_attr = self._OWNER_ATTR_BY_TYPE.get(build_type)
-        if owner_attr is None:
-            return super()._find_or_create_site(build_type, campfire_pos, ctx)
-
-        c = self.c
-        for site in ctx.construction_sites:
-            if site.build_type != build_type:
-                continue
-            if math.hypot(c.x - site.x, c.y - site.y) >= CONSTRUCTION_SITE_SEARCH_RADIUS:
-                continue
-            if self._site_belongs_to(site, ctx):
-                if getattr(site, owner_attr, None) is None:
-                    setattr(site, owner_attr, c.id)
-                return site
-
-        site = super()._find_or_create_site(build_type, campfire_pos, ctx)
-        if site is None:
-            return None
-
-        setattr(site, owner_attr, c.id)
-        if build_type == "storage":
-            house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
-            if house is not None:
-                site.linked_house_id = house.id
-        return site
-
-    def _pick_house_point_near_storage(self, storage, ctx):
-        half_house_w = HOUSE_DEFAULT_SIZE[0] / 2
-        for side_sign in (1, -1):
-            px = storage.x + side_sign * (storage.radius + STORAGE_HOUSE_GAP + half_house_w)
-            point = (px, storage.y)
-            if self._point_clear(point, "house", ctx.biome_grid, ctx):
-                return point
-        return None
 
     _PUBLIC_ORPHAN_TYPES = frozenset(("campfire", "graveyard"))
 

@@ -303,7 +303,7 @@ class Creature(LivingEntity):
 
     # ---------- Жизненный цикл ----------
 
-    def die(self, cause="неизвестно"):
+    def die(self, cause):
         self.is_dead = True
         self._pending_grief = True
         self.hp = 0

@@ -1,9 +1,35 @@
 import math
 import random
 
-from settings import *
-from ...ci_settings import *
-from ...ci_info import *
+from settings import BIOME_SEA, BIOME_RIVER, BIOME_PLAINS, BIOME_DESERT
+from ...ci_settings import (
+    STATE_SEEKING, GENDER_MALE, LIFE_STAGE_ADULT,
+    PARENT_FEED_MIN_WELLBEING,
+    STORAGE_FIELD_WIDTH, STORAGE_FIELD_HEIGHT, STORAGE_HOUSE_GAP,
+    GRAVEYARD_DEFAULT_SIZE, GRAVEYARD_BUILD_OFFSET_RANGE, GRAVEYARD_CAMPFIRE_LINK_RADIUS,
+    HOUSE_DEFAULT_SIZE, HOUSE_BUILD_OFFSET_RANGE, HOUSE_CAPACITY_RANGE,
+    HOUSE_SITE_SCORE_ATTEMPTS, HOUSE_DESERT_PENALTY, HOUSE_STORAGE_ROOM_BONUS,
+    HOUSE_CAMPFIRE_DISTANCE_IDEAL,
+    NEW_CAMPFIRE_DISTANCE_RANGE, NEW_CAMPFIRE_JOIN_SEARCH_RADIUS,
+    CAMPFIRE_BUILD_OFFSET_RANGE, FIRST_CAMPFIRE_SITE_ATTEMPTS, CAMPFIRE_COMFORT_RADIUS,
+    CAMPFIRE_DESERT_PENALTY, CAMPFIRE_WATER_BONUS, CAMPFIRE_BUSH_BONUS,
+    CAMPFIRE_RESOURCE_BONUS, CAMPFIRE_SPIKE_PENALTY, CAMPFIRE_SPIKE_PENALTY_MAX_COUNT,
+    CAMPFIRE_DISTANCE_PENALTY,
+    CONSTRUCTION_CHECK_INTERVAL, CONSTRUCTION_SITE_SEARCH_RADIUS, CONSTRUCTION_APPROACH_DISTANCE,
+    CONSTRUCTION_CLEARANCE_MARGIN, CONSTRUCTION_PUBERTY_DRIVE_BONUS,
+    ORPHAN_SITE_SEARCH_RADIUS_FACTOR,
+    GATHER_APPROACH_DISTANCE, RESOURCE_GATHER_RATE,
+    BUILD_HELP_MIN_RELATIONSHIP, BUILD_HELP_JOIN_CHANCE, BUILD_HELP_CHECK_INTERVAL,
+    BUILD_HELP_RELATIONSHIP_BONUS, BUILD_HELP_SPEED_BONUS_PER_HELPER,
+    PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX,
+)
+from ...ci_info import (
+    INFO_CREATURE_GOAL_GATHER_WOOD, INFO_CREATURE_GOAL_GATHER_STONE,
+    INFO_CREATURE_GOAL_GATHERING_WOOD, INFO_CREATURE_GOAL_GATHERING_STONE,
+    INFO_CREATURE_GOAL_CONSTRUCTION_GO, INFO_CREATURE_GOAL_CONSTRUCTION_DEPOSIT,
+    INFO_CREATURE_GOAL_CONSTRUCTION_BUILD, INFO_CREATURE_GOAL_CONSTRUCTION_HELP,
+    INFO_CREATURE_GOAL_CONSTRUCTION_DONE,
+)
 from .....all_needed import geometry
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 from ...circle_objects import StorageField, Graveyard, ConstructionSite, House, Campfire
@@ -335,6 +361,10 @@ class Construction(GoalComponent):
         existing_fires = list(ctx.campfires)
         pending_sites = [s for s in ctx.construction_sites if s.build_type == "campfire"]
 
+        # ---------- Общин ещё нет: первый костёр ищем рядом, в пределах видимости ----------
+        if not existing_fires and not pending_sites:
+            return self._pick_first_campfire_point(ctx)
+
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
             dist = random.uniform(*NEW_CAMPFIRE_DISTANCE_RANGE)
@@ -353,6 +383,50 @@ class Construction(GoalComponent):
                 return point
 
         return None
+
+    # ---------- Первый костёр мира: комфортное место рядом с существом ----------
+
+    def _pick_first_campfire_point(self, ctx, attempts=FIRST_CAMPFIRE_SITE_ATTEMPTS):
+        c = self.c
+        best_point, best_score = None, None
+        for _ in range(attempts):
+            angle = random.uniform(0, 2 * math.pi)
+            dist = random.uniform(*CAMPFIRE_BUILD_OFFSET_RANGE)
+            point = geometry.clamped_point(c.x, c.y, angle, dist)
+            if not self._point_clear(point, "campfire", ctx.biome_grid, ctx):
+                continue
+            score = self._score_campfire_site(point, ctx)
+            if best_score is None or score > best_score:
+                best_score, best_point = score, point
+        return best_point
+
+    def _score_campfire_site(self, point, ctx):
+        c = self.c
+        px, py = point
+        grid = ctx.biome_grid
+        radius = CAMPFIRE_COMFORT_RADIUS
+        score = 0.0
+
+        if grid is not None and grid.get_at(px, py) == BIOME_DESERT:
+            score -= CAMPFIRE_DESERT_PENALTY
+
+        def _near(objects):
+            return [o for o in objects if math.hypot(px - o.x, py - o.y) < radius]
+
+        has_water = bool(_near(ctx.visible_water)) or (
+                grid is not None and grid.find_nearest_of_type(px, py, BIOME_RIVER, radius) is not None)
+        if has_water:
+            score += CAMPFIRE_WATER_BONUS
+        if _near(ctx.visible_bushes):
+            score += CAMPFIRE_BUSH_BONUS
+        if _near(ctx.visible_trees):
+            score += CAMPFIRE_RESOURCE_BONUS
+        if _near(ctx.visible_stones):
+            score += CAMPFIRE_RESOURCE_BONUS
+
+        score -= CAMPFIRE_SPIKE_PENALTY * min(len(_near(ctx.visible_spikes)), CAMPFIRE_SPIKE_PENALTY_MAX_COUNT)
+        score -= math.hypot(px - c.x, py - c.y) * CAMPFIRE_DISTANCE_PENALTY
+        return score
 
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
         c = self.c

@@ -127,6 +127,11 @@ class Simulation:
             grids[descriptor.world_collection] = grid
         return grids
 
+    def register_dropped_object(self, attr, obj):
+        """Свежий дроп сразу виден ИИ."""
+        if attr == "meats":
+            self._meat_grid.add(obj)
+
     # =====================================================================
     # Домен: подготовка контекста кадра - теперь единый WorldFrameContext
     # =====================================================================
@@ -312,11 +317,20 @@ class Simulation:
                 descriptor.world_tick_fn(game, dt)
 
     def _tick_animals(self, dt, active_ids, spatial_grids=None):
+        self._remove_dead_animals()
+
         nav_grid, nav_grid_fallback = self._prepare_animal_nav_grid()
         for descriptor in all_animals():
             if descriptor.tick_fn is not None:
                 descriptor.tick_fn(self.game, dt, nav_grid, nav_grid_fallback,
                                    active_ids=active_ids, spatial_grids=spatial_grids)
+
+    def _remove_dead_animals(self):
+        world = self.game.world
+        for descriptor in all_animals():
+            dead = [a for a in getattr(world, descriptor.world_collection) if a.hp <= 0]
+            for animal in dead:
+                self.game.object_manager.remove_animal_and_drop(animal)
 
     def _prepare_animal_nav_grid(self):
         game = self.game

@@ -994,12 +994,21 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
     # =====================================================================
 
     def remove_animal_and_drop(self, animal):
+        """Гибель животного: вместо трупа выпадает набор generic-ресурсов."""
+        return self._remove_animal(animal, spawn_drops=True)
+
+    def remove_animal_silently(self, animal):
+        """Исчезновение замороженного вне ДОС животного: без дропа и без следов."""
+        return self._remove_animal(animal, spawn_drops=False)
+
+    def _remove_animal(self, animal, spawn_drops):
         game = self.game
         for descriptor in all_animals():
             collection = getattr(game.world, descriptor.world_collection)
             if animal in collection:
                 collection.remove(animal)
-                self._spawn_animal_drops(animal)
+                if spawn_drops:
+                    self._spawn_animal_drops(animal)
                 if game.selected_object is animal:
                     game.selected_object = None
                 if game.player.grabbed_object is animal:
@@ -1030,6 +1039,7 @@ class _LookupMixin(_RoadNetworkMixin, _BiomeCascadeMixin):
             target_attr = getattr(drop, "drop_collection_attr", None)
             if target_attr is not None and hasattr(game.world, target_attr):
                 getattr(game.world, target_attr).append(drop)
+                game.simulation.register_dropped_object(target_attr, drop)
 
 # =========================================================================
 # Итоговый класс: композиция доменов

@@ -6,11 +6,11 @@ import pygame
 
 from settings import *
 from info import *
-from game.widgets import Button, ScrollArea, draw_favorite_star
+from game.widgets import Button, draw_favorite_star
 from ...ci_settings import *
 from ...ci_info import *
 from .....all_needed.diet import DIET_DISPLAY_MAP
-from .....all_needed.instruction import wrap_instruction_text, truncate_text, draw_wrapped_text
+from .....all_needed.instruction import truncate_text, draw_wrapped_text
 
 class CreaturePanel:
 

@@ -140,7 +140,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
     # Домен: охота на скот
     # =====================================================================
 
-    def _consider_hunt(self, dt, prey_lists):
+    def _consider_hunt(self, prey_lists):
         if not (self.seeking_food or self.hunting_target_id is not None):
             return None
         w = self.entity
@@ -149,7 +149,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
         score = SCORE_HUNT_COMMITTED if self.hunting_target_id is not None else SCORE_HUNT_NEW
 
         def execute():
-            prey = self._resolve_hunt_target(prey_lists, w.vision_radius, dt)
+            prey = self._resolve_hunt_target(prey_lists, w.vision_radius)
             if prey is None:
                 self.hunting_target_id = None
                 return None
@@ -193,37 +193,57 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
         self._update_seek_state(cfg["hunt_hunger_ratio"], cfg["hunger_satisfy_ratio"],
                                 cfg["thirst_seek_ratio"], cfg["thirst_satisfy_ratio"])
 
+        # ---------- Актуальность цели охоты - ДО сбора considerations ----------
+        self._refresh_hunt_target(prey_lists, dt)
+
         considerations = [
             self._consider_flee_spike(dt, spikes, biome_grid),
             self._consider_eat_meat(meats),
-            self._consider_hunt(dt, prey_lists),
+            self._consider_hunt(prey_lists),
             self._consider_water(water_puddles, biome_grid),
             self._consider_wander(dt, biome_grid),
         ]
         goal = pick_best(considerations)
 
-        # ---------- НОВОЕ (п.3): "вопрос выживания" - включаем усиленный A* ----------
         self.is_urgent = self.seeking_food or self.hunting_target_id is not None or self.seeking_water
 
         return goal if goal is not None else self._wander(dt, biome_grid)
 
-    def _resolve_hunt_target(self, prey_lists, radius, dt=0.0):
+    # =====================================================================
+    # Домен: актуальность текущей цели охоты. Проверяется ДО сбора considerations -
+    # иначе в тик гибели жертвы волк ещё считается "охотящимся", _consider_eat_meat
+    # молчит, и он сразу выбирает новую жертву, хотя рядом уже лежит мясо.
+    # =====================================================================
+
+    def _refresh_hunt_target(self, prey_lists, dt):
+        if self.hunting_target_id is None:
+            return
         w, cfg = self.entity, self.cfg
 
+        current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+        if current is not None and current.hp > 0:
+            dist = math.hypot(w.x - current.x, w.y - current.y)
+            if dist > cfg["bite_distance"]:
+                self.hunt_timer += dt
+            else:
+                self.hunt_timer = 0.0
+            too_long = self.hunt_timer > cfg["hunt_max_duration"]
+            too_far = dist > cfg["hunt_giveup_distance"]
+            if not too_long and not too_far:
+                return
+
+        # ---------- Жертва убита/исчезла/оторвалась - цель снимается ----------
+        self.hunting_target_id = None
+        self.hunt_timer = 0.0
+
+    def _resolve_hunt_target(self, prey_lists, radius):
+        w = self.entity
+
+        # ---------- Актуальность уже проверена в _refresh_hunt_target ----------
         if self.hunting_target_id is not None:
             current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
-
             if current is not None and current.hp > 0:
-                dist = math.hypot(w.x - current.x, w.y - current.y)
-                if dist > cfg["bite_distance"]:
-                    self.hunt_timer += dt
-                else:
-                    self.hunt_timer = 0.0
-                too_long = self.hunt_timer > cfg["hunt_max_duration"]
-                too_far = dist > cfg["hunt_giveup_distance"]
-                if not too_long and not too_far:
-                    return current
-
+                return current
             self.hunting_target_id = None
             self.hunt_timer = 0.0
 
@@ -346,4 +366,4 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, 
         ai.interact(dt, prey_lists, water_source, meats_source, biome_grid, spikes=world.spikes)
 
     for wolf in frozen_to_remove:
-        game.object_manager.remove_animal_and_drop(wolf)
+        game.object_manager.remove_animal_silently(wolf)

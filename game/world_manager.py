@@ -387,6 +387,8 @@ class WorldManager:
         if game.world_loaded and game.world_path and game.display_settings.get("autosave_enabled", True):
             self.save_world()
 
+        game.world_loaded = False
+
         world_width = meta["world_width"]
         world_height = meta["world_height"]
         world_seed = meta["seed"]
