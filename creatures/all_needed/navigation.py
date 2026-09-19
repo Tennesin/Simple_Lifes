@@ -2,7 +2,6 @@ import heapq
 import math
 import random
 import settings
-from settings import *
 
 from . import geometry
 from .weak_owner import WeakOwnerMixin
@@ -52,14 +51,14 @@ class NavGridCache:
             for f in fences:
                 grid.mark_polyline(f.points, inflate, soft_margin=soft_margin)
         for s in spikes:
-            grid.mark_circle(s.x, s.y, spike_block_radius, soft_margin=SPIKE_NAV_SOFT_MARGIN)
+            grid.mark_circle(s.x, s.y, spike_block_radius, soft_margin=settings.SPIKE_NAV_SOFT_MARGIN)
         if biome_grid is not None:
-            grid.mark_biome(biome_grid, BIOME_SEA)
+            grid.mark_biome(biome_grid, settings.BIOME_SEA)
         return grid
 
     def get(self, world_w, world_h, cell_size, walls, fences, spikes,
             include_fences, inflate, spike_block_radius, biome_grid=None, version=None,
-            soft_margin=NAV_WALL_SOFT_MARGIN):
+            soft_margin=settings.NAV_WALL_SOFT_MARGIN):
         key = (world_w, world_h, cell_size, include_fences, inflate, spike_block_radius, soft_margin)
 
         if version is None:
@@ -86,7 +85,7 @@ class NavGridCache:
             return cached[1]
 
         grid = self._build_grid(world_w, world_h, cell_size, walls, fences, spikes,
-                                include_fences, NAV_OBSTACLE_INFLATE_FALLBACK, spike_block_radius,
+                                include_fences, settings.NAV_OBSTACLE_INFLATE_FALLBACK, spike_block_radius,
                                 biome_grid, soft_margin=0)
         self._fallback_cache[key] = (version, grid)
         return grid
@@ -235,7 +234,7 @@ class NavGrid:
 
                 step_cost = cost
                 if self.near_obstacle[self._index(nx, ny)]:
-                    step_cost *= NAV_WALL_CLEARANCE_PENALTY  # НОВОЕ: путь предпочитает держаться подальше от стен
+                    step_cost *= settings.NAV_WALL_CLEARANCE_PENALTY  # НОВОЕ: путь предпочитает держаться подальше от стен
 
                 tentative_g = g_score[current] + step_cost
                 if tentative_g < g_score.get(neighbor, float('inf')):
@@ -397,13 +396,13 @@ class BasePathfinder(WeakOwnerMixin):
             return None
 
         if c.following_road_active:
-            clearance = NAV_OBSTACLE_INFLATE
+            clearance = settings.NAV_OBSTACLE_INFLATE
             keeps_clearance = (not wall_polylines) or geometry.segment_keeps_clearance(
                 c.x, c.y, goal[0], goal[1], wall_polylines, clearance)
             blocked_by_sea = (
                     biome_grid is not None
-                    and (biome_grid.get_at(goal[0], goal[1]) == BIOME_SEA
-                         or biome_grid.get_at(c.x, c.y) == BIOME_SEA)
+                    and (biome_grid.get_at(goal[0], goal[1]) == settings.BIOME_SEA
+                         or biome_grid.get_at(c.x, c.y) == settings.BIOME_SEA)
             )
             if not keeps_clearance or blocked_by_sea:
                 return self._update_navigation(goal, nav_grid, dt, fallback_nav_grid=fallback_nav_grid)
@@ -420,17 +419,17 @@ class BasePathfinder(WeakOwnerMixin):
 
         goal_changed = (
             c.nav_goal is None or
-            math.hypot(c.nav_goal[0] - goal[0], c.nav_goal[1] - goal[1]) > NAV_GOAL_CHANGE_THRESHOLD
+            math.hypot(c.nav_goal[0] - goal[0], c.nav_goal[1] - goal[1]) > settings.NAV_GOAL_CHANGE_THRESHOLD
         )
         path_exhausted = not c.nav_path or c.nav_path_index >= len(c.nav_path)
         needs_recalc = nav_grid is not None and (goal_changed or path_exhausted or c.nav_recalc_timer <= 0)
 
         if needs_recalc:
-            path = nav_grid.find_path((c.x, c.y), goal, max_nodes=NAV_MAX_ASTAR_NODES)
+            path = nav_grid.find_path((c.x, c.y), goal, max_nodes=settings.NAV_MAX_ASTAR_NODES)
             if not path and fallback_nav_grid is not None:
-                path = fallback_nav_grid.find_path((c.x, c.y), goal, max_nodes=NAV_MAX_ASTAR_NODES)
+                path = fallback_nav_grid.find_path((c.x, c.y), goal, max_nodes=settings.NAV_MAX_ASTAR_NODES)
             c.nav_goal = goal
-            c.nav_recalc_timer = random.uniform(*NAV_PATH_RECALC_INTERVAL)
+            c.nav_recalc_timer = random.uniform(*settings.NAV_PATH_RECALC_INTERVAL)
             if path:
                 c.nav_path = path
             else:
@@ -442,7 +441,7 @@ class BasePathfinder(WeakOwnerMixin):
 
         while (c.nav_path_index < len(c.nav_path) - 1 and
                math.hypot(c.x - c.nav_path[c.nav_path_index][0],
-                          c.y - c.nav_path[c.nav_path_index][1]) < NAV_WAYPOINT_REACHED_DISTANCE):
+                          c.y - c.nav_path[c.nav_path_index][1]) < settings.NAV_WAYPOINT_REACHED_DISTANCE):
             c.nav_path_index += 1
 
         return c.nav_path[c.nav_path_index]
@@ -481,7 +480,7 @@ class BasePathfinder(WeakOwnerMixin):
     def _resolve_wall_collision(self, x, y, wall_polylines):
         c = self.c
         radius = getattr(c, "radius", 10)
-        return geometry.resolve_circle_vs_polylines(x, y, radius, wall_polylines, WALL_THICKNESS)
+        return geometry.resolve_circle_vs_polylines(x, y, radius, wall_polylines, settings.WALL_THICKNESS)
 
     # ---------- Точка расширения для конкретной расы ----------
 

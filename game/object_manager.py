@@ -4,7 +4,6 @@ import random
 import settings
 from creatures.all_needed import geometry, SpatialGrid
 from typing import TYPE_CHECKING
-from settings import *
 from game.race_registry import (
     all_races, all_road_networks, all_landmark_specs,
     all_extra_object_collections, all_biome_cascade_specs,
@@ -32,7 +31,6 @@ def _segment_intersection(p1, p2, p3, p4):
         return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
     return None
 
-
 # =========================================================================
 # Универсальная геометрия "занимаемого места" объекта.
 # =========================================================================
@@ -57,13 +55,13 @@ def distance_to_footprint(obj, px, py):
 
 def _biome_allowed_set(obj_type):
     if obj_type == "stone":
-        return (BIOME_PLAINS, BIOME_DESERT, BIOME_RIVER)
+        return (settings.BIOME_PLAINS, settings.BIOME_DESERT, settings.BIOME_RIVER)
     if obj_type in ("water", "bush", "grass", "tree"):
-        return (BIOME_PLAINS,)
-    return (BIOME_PLAINS, BIOME_DESERT)
+        return (settings.BIOME_PLAINS,)
+    return (settings.BIOME_PLAINS, settings.BIOME_DESERT)
 
 # ---------- Существа/животные (check_creature_placement_valid) не боятся ничего, кроме моря ----------
-_ANIMAL_ALLOWED_BIOMES = (BIOME_PLAINS, BIOME_DESERT, BIOME_RIVER)
+_ANIMAL_ALLOWED_BIOMES = (settings.BIOME_PLAINS, settings.BIOME_DESERT, settings.BIOME_RIVER)
 
 class _BiomeEligibilityCache:
 
@@ -165,8 +163,6 @@ _LANDSCAPE_VERSION_BUMP_TYPES = ("spike",)
 class _PlacementMixin:
     game: "Game"
 
-    # ---------- НОВОЕ: запас для приблизительного пространственного поиска -
-    # чуть больше самого крупного footprint'а в игре, чтобы точно не промахнуться ----------
     GENERATION_QUERY_MARGIN = 120
     CREATURE_CLEARANCE = 30
 
@@ -232,7 +228,7 @@ class _PlacementMixin:
         attr, cls = entry
         if game.placement_mode == "meat":
             obj = cls(wx, wy, food_amount=random.randint(
-                MEAT_PLACEMENT_AMOUNT_MIN, MEAT_PLACEMENT_AMOUNT_MAX))
+                settings.MEAT_PLACEMENT_AMOUNT_MIN, settings.MEAT_PLACEMENT_AMOUNT_MAX))
         else:
             obj = cls(wx, wy)
         getattr(game.world, attr).append(obj)
@@ -244,7 +240,7 @@ class _PlacementMixin:
         if wx < 20 or wx > settings.WORLD_WIDTH - 20 or wy < 20 or wy > settings.WORLD_HEIGHT - 20:
             return False
         if (game.biome_manager.grid is not None
-                and game.biome_manager.grid.get_at(wx, wy) == BIOME_SEA):
+                and game.biome_manager.grid.get_at(wx, wy) == settings.BIOME_SEA):
             return False
 
         clearance = self.CREATURE_CLEARANCE
@@ -327,21 +323,21 @@ class _InitialResourceMixin(_PlacementMixin):
         game = self.game
         rng = random.Random(seed ^ 0x5BD1E995)
 
-        area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / INITIAL_RESOURCE_BASE_WORLD_AREA
+        area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / settings.INITIAL_RESOURCE_BASE_WORLD_AREA
         area_ratio = max(0.1, area_ratio)
 
         biome_cache = _BiomeEligibilityCache(game.biome_manager.grid)
         index = _GenerationSpatialIndex(game)
 
-        self._scatter_initial_objects(rng, int(INITIAL_TREE_COUNT * area_ratio), "tree",
+        self._scatter_initial_objects(rng, int(settings.INITIAL_TREE_COUNT * area_ratio), "tree",
                                       biome_cache=biome_cache, index=index)
-        self._scatter_initial_objects(rng, int(INITIAL_BUSH_COUNT * area_ratio), "bush",
+        self._scatter_initial_objects(rng, int(settings.INITIAL_BUSH_COUNT * area_ratio), "bush",
                                       biome_cache=biome_cache, index=index)
-        self._scatter_initial_objects(rng, int(INITIAL_STONE_COUNT * area_ratio), "stone",
+        self._scatter_initial_objects(rng, int(settings.INITIAL_STONE_COUNT * area_ratio), "stone",
                                       biome_cache=biome_cache, index=index)
-        self._scatter_initial_objects(rng, int(INITIAL_SPIKE_COUNT * area_ratio), "spike",
+        self._scatter_initial_objects(rng, int(settings.INITIAL_SPIKE_COUNT * area_ratio), "spike",
                                       biome_cache=biome_cache, index=index)
-        self._scatter_initial_objects(rng, int(INITIAL_GRASS_COUNT * area_ratio), "grass",
+        self._scatter_initial_objects(rng, int(settings.INITIAL_GRASS_COUNT * area_ratio), "grass",
                                       biome_cache=biome_cache, index=index)
 
     def _scatter_initial_objects(self, rng, count, obj_type, biome_cache=None, index=None):
@@ -382,7 +378,7 @@ class _InitialResourceMixin(_PlacementMixin):
         game = self.game
         rng = random.Random(seed ^ 0x27D4EB2F)
 
-        area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / INITIAL_RESOURCE_BASE_WORLD_AREA
+        area_ratio = (settings.WORLD_WIDTH * settings.WORLD_HEIGHT) / settings.INITIAL_RESOURCE_BASE_WORLD_AREA
         area_ratio = max(0.1, area_ratio)
 
         biome_cache = _BiomeEligibilityCache(game.biome_manager.grid)
@@ -431,10 +427,10 @@ class _InitialResourceMixin(_PlacementMixin):
 # =========================================================================
 
 _GROWTH_RULES = {
-    "tree": (TREE_MAX_TOTAL, lambda biome: biome == BIOME_PLAINS),
-    "bush": (BUSH_MAX_TOTAL, lambda biome: biome == BIOME_PLAINS),
-    "stone": (STONE_MAX_TOTAL, lambda biome: biome != BIOME_SEA),
-    "grass": (GRASS_MAX_TOTAL, lambda biome: biome == BIOME_PLAINS),
+    "tree": (settings.TREE_MAX_TOTAL, lambda biome: biome == settings.BIOME_PLAINS),
+    "bush": (settings.BUSH_MAX_TOTAL, lambda biome: biome == settings.BIOME_PLAINS),
+    "stone": (settings.STONE_MAX_TOTAL, lambda biome: biome != settings.BIOME_SEA),
+    "grass": (settings.GRASS_MAX_TOTAL, lambda biome: biome == settings.BIOME_PLAINS),
 }
 
 class _NaturalGrowthMixin(_PlacementMixin):
@@ -443,14 +439,14 @@ class _NaturalGrowthMixin(_PlacementMixin):
         game = self.game
         nearby_fruits = sum(
             1 for f in game.world.fruits
-            if f.active and math.hypot(f.x - bush.x, f.y - bush.y) < BUSH_SPAWN_RADIUS
+            if f.active and math.hypot(f.x - bush.x, f.y - bush.y) < settings.BUSH_SPAWN_RADIUS
         )
-        if nearby_fruits >= BUSH_MAX_NEARBY_FRUITS:
+        if nearby_fruits >= settings.BUSH_MAX_NEARBY_FRUITS:
             return
         index = _GenerationSpatialIndex(game)
-        for _ in range(BUSH_SPAWN_ATTEMPTS):
+        for _ in range(settings.BUSH_SPAWN_ATTEMPTS):
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(bush.radius + 10, BUSH_SPAWN_RADIUS)
+            dist = random.uniform(bush.radius + 10, settings.BUSH_SPAWN_RADIUS)
             wx = bush.x + math.cos(angle) * dist
             wy = bush.y + math.sin(angle) * dist
             if self.check_object_placement_valid(wx, wy, obj_type="fruit", index=index):
@@ -470,7 +466,7 @@ class _NaturalGrowthMixin(_PlacementMixin):
             return
 
         index = _GenerationSpatialIndex(game)
-        for _ in range(NATURAL_SPAWN_ATTEMPTS):
+        for _ in range(settings.NATURAL_SPAWN_ATTEMPTS):
             wx = random.uniform(20, settings.WORLD_WIDTH - 20)
             wy = random.uniform(20, settings.WORLD_HEIGHT - 20)
             if not biome_allowed(grid.get_at(wx, wy)):
@@ -577,14 +573,14 @@ class _BiomeCascadeMixin:
         def _point_in_flood_zone(px, py):
             return math.hypot(px - wx, py - wy) <= radius
 
-        if biome_type == BIOME_SEA:
+        if biome_type == settings.BIOME_SEA:
             # ---------- Море смывает всё, включая траву ----------
             self.clear_core_objects_in_zone(_in_flood_zone, clear_stones=True, clear_grass=True)
             self._clear_race_cascade_objects(_in_flood_zone, flood=True)
             for spec in all_road_networks():
                 self._flood_road_network(spec, _point_in_flood_zone)
 
-        elif biome_type == BIOME_RIVER:
+        elif biome_type == settings.BIOME_RIVER:
             # ---------- ИЗМЕНЕНО: у реки трава на берегу - обычное дело, не трогаем её,
             # камни как и раньше тоже остаются (в отличие от моря) ----------
             self.clear_core_objects_in_zone(_in_flood_zone, clear_stones=False, clear_grass=False)
@@ -592,7 +588,7 @@ class _BiomeCascadeMixin:
             for spec in all_road_networks():
                 self._flood_road_network(spec, _point_in_flood_zone)
 
-        elif biome_type == BIOME_DESERT:
+        elif biome_type == settings.BIOME_DESERT:
             # ---------- ИЗМЕНЕНО: трава не может расти на песке - убираем вместе с кустами/деревьями ----------
             self.clear_core_objects_in_zone(
                 _in_flood_zone,
@@ -680,7 +676,7 @@ class _RoadNetworkMixin:
     def _find_or_create_crossing(self, crossing_collection_name, point):
         collection = getattr(self.game.world, crossing_collection_name)
         for crossing in collection:
-            if math.hypot(crossing.x - point[0], crossing.y - point[1]) < CROSSING_MERGE_RADIUS:
+            if math.hypot(crossing.x - point[0], crossing.y - point[1]) < settings.CROSSING_MERGE_RADIUS:
                 return crossing
         crossing = RoadCrossing(point[0], point[1])
         collection.append(crossing)
@@ -725,7 +721,7 @@ class _RoadNetworkMixin:
         is_safe = spec.verify_fn(road, game.world.spikes)
         road.rating = "safe" if is_safe else "dangerous"
 
-    def snap_to_existing(self, wx, wy, obj_type, tolerance=LANDSCAPE_SNAP_TOLERANCE, self_points=None):
+    def snap_to_existing(self, wx, wy, obj_type, tolerance=settings.LANDSCAPE_SNAP_TOLERANCE, self_points=None):
         game = self.game
         network_collections = {spec.obj_type: spec.road_collection for spec in all_road_networks()}
         if obj_type in network_collections:
@@ -778,7 +774,7 @@ class _RoadNetworkMixin:
         return entries
 
     def _find_landmark_endpoint(self, wx, wy):
-        margin = ROAD_ENDPOINT_LINK_MARGIN
+        margin = settings.ROAD_ENDPOINT_LINK_MARGIN
         for etype, collection in self._landmark_registry():
             for obj in collection:
                 if distance_to_footprint(obj, wx, wy) <= margin:

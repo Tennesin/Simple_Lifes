@@ -5,7 +5,6 @@ from . import diet
 from . import instruction
 from .weak_owner import WeakOwnerMixin, WeakEntityMixin
 from .base_entity import BaseEntity, LivingEntity, same_race, filter_same_race
-from .base_creature import CreatureBase, GENDER_MALE, GENDER_FEMALE, DEFAULT_GENDER_LIST
 from .ai import GoalComponent, lookup_creature
 from .navigation import NavGrid, NavGridCache, SpatialGrid, BasePathfinder
 from .diet import (
@@ -20,7 +19,6 @@ from .instruction import (
     INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD,
     INSTRUCTION_COLOR_NEUTRAL_ACCENT, INSTRUCTION_COLOR_HINT,
 )
-from .instruction_icons import IconCache, render_scaled_icon
 
 __all__ = [
     "geometry", "diet", "instruction",

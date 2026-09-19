@@ -7,10 +7,10 @@ BIOME_RATIO_MAX = 0.85
 BIOME_RATIO_STEP = 0.05
 
 DEFAULT_BIOME_RATIOS = {
-    BIOME_PLAINS: 0.55,
-    BIOME_DESERT: 0.15,
-    BIOME_RIVER: 0.15,
-    BIOME_SEA: 0.15,
+    settings.BIOME_PLAINS: 0.55,
+    settings.BIOME_DESERT: 0.15,
+    settings.BIOME_RIVER: 0.15,
+    settings.BIOME_SEA: 0.15,
 }
 
 def adjust_biome_ratio(ratios, changed_biome, new_value):

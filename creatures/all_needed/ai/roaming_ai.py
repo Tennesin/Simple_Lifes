@@ -6,7 +6,6 @@ import math
 import random
 import settings
 from creatures.all_needed import geometry
-from settings import BIOME_SEA, BIOME_RIVER
 
 class RoamingAnimalMixin:
     """Ожидает от наследника: self.entity (существо с .x/.y/.vision_radius),
@@ -38,7 +37,7 @@ class RoamingAnimalMixin:
                 if dist != 0:
                     new_x = e.x + dx / dist * 30
                     new_y = e.y + dy / dist * 30
-                    if biome_grid is None or biome_grid.get_at(new_x, new_y) != BIOME_SEA:
+                    if biome_grid is None or biome_grid.get_at(new_x, new_y) != settings.BIOME_SEA:
                         e.x = max(15, min(new_x, settings.WORLD_WIDTH - 15))
                         e.y = max(15, min(new_y, settings.WORLD_HEIGHT - 15))
                 self._reset_navigation()
@@ -74,7 +73,7 @@ class RoamingAnimalMixin:
             return point
         e, cfg = self.entity, self.cfg
         for _ in range(attempts):
-            if biome_grid.get_at(point[0], point[1]) != BIOME_SEA:
+            if biome_grid.get_at(point[0], point[1]) != settings.BIOME_SEA:
                 return point
             angle = random.uniform(0, 2 * math.pi)
             dist_range = cfg["wander_distance"]
@@ -185,7 +184,7 @@ class RoamingAnimalMixin:
         nearest_puddle = self._nearest_within(water_puddles, radius, predicate=lambda w: w.has_water())
         river_point = None
         if biome_grid is not None:
-            river_point = biome_grid.find_nearest_of_type(e.x, e.y, BIOME_RIVER, radius)
+            river_point = biome_grid.find_nearest_of_type(e.x, e.y, settings.BIOME_RIVER, radius)
         if nearest_puddle is not None and river_point is not None:
             d_puddle = math.hypot(e.x - nearest_puddle.x, e.y - nearest_puddle.y)
             d_river = math.hypot(e.x - river_point[0], e.y - river_point[1])
@@ -268,7 +267,7 @@ class RoamingAnimalMixin:
         if dist < 2:
             return
         speed = cfg["speed"] * speed_multiplier
-        if biome_grid is not None and biome_grid.get_at(e.x, e.y) == BIOME_RIVER:
+        if biome_grid is not None and biome_grid.get_at(e.x, e.y) == settings.BIOME_RIVER:
             speed *= settings.ANIMAL_RIVER_SWIM_SPEED_MULTIPLIER
         step = min(speed * dt, dist)
         new_x = max(15, min(e.x + dx / dist * step, settings.WORLD_WIDTH - 15))

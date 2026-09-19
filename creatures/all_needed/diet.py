@@ -13,11 +13,9 @@
 Типы диеты:
 - DIET_HERBIVORE - только растительная пища (трава - у травоядных животных)
 - DIET_CARNIVORE - только сырое мясо (волк)
-- DIET_OMNIVORE - растительная пища + жареное мясо (Круг). Именно поэтому
-  Круг ест фрукты, но не ест сырое мясо: сырое мясо не входит в разрешённые
-  категории всеядных."""
+- DIET_OMNIVORE - растительная пища + жареное мясо"""
 
-from info import INFO_DIET_HERBIVORE, INFO_DIET_CARNIVORE, INFO_DIET_OMNIVORE
+import info
 
 DIET_HERBIVORE = "herbivore"
 DIET_CARNIVORE = "carnivore"
@@ -34,9 +32,9 @@ DIET_ALLOWED_CATEGORIES = {
 }
 
 DIET_DISPLAY_MAP = {
-    DIET_HERBIVORE: INFO_DIET_HERBIVORE,
-    DIET_CARNIVORE: INFO_DIET_CARNIVORE,
-    DIET_OMNIVORE: INFO_DIET_OMNIVORE,
+    DIET_HERBIVORE: info.INFO_DIET_HERBIVORE,
+    DIET_CARNIVORE: info.INFO_DIET_CARNIVORE,
+    DIET_OMNIVORE: info.INFO_DIET_OMNIVORE,
 }
 
 def diet_allows_category(diet, category):
