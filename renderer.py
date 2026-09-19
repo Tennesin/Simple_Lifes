@@ -1,9 +1,8 @@
 import pygame
 import random
 import math
-from settings import *
-from info import *
 import settings
+import info
 from game.race_registry import all_races
 from game.animal_registry import all_animals, all_animal_drop_collections
 from creatures.all_needed import geometry
@@ -32,7 +31,7 @@ def _draw_landscape(renderer, screen, game, camera, in_view):
     if game.player.drawing_landscape is not None:
         mouse_x, mouse_y = pygame.mouse.get_pos()
         cursor_world = None
-        if mouse_y > UI_HEIGHT:
+        if mouse_y > settings.UI_HEIGHT:
             cursor_world = camera.world_from_screen(mouse_x, mouse_y)
         game.player.drawing_landscape.draw(screen, camera, extra_point=cursor_world)
 
@@ -131,7 +130,7 @@ CORE_RENDER_LAYERS = (
 class Camera:
     def __init__(self, world_w, world_h, viewport_w=None, viewport_h=None):
         viewport_w = viewport_w if viewport_w is not None else settings.WINDOW_WIDTH
-        viewport_h = viewport_h if viewport_h is not None else settings.WINDOW_HEIGHT - UI_HEIGHT
+        viewport_h = viewport_h if viewport_h is not None else settings.WINDOW_HEIGHT - settings.UI_HEIGHT
         viewport_w = min(viewport_w, world_w)
         viewport_h = min(viewport_h, world_h)
         self.camera = pygame.Rect(0, 0, viewport_w, viewport_h)
@@ -156,12 +155,12 @@ class Camera:
 
     def apply_pos(self, world_pos):
         screen_x = world_pos[0] - self.camera.x
-        screen_y = world_pos[1] - self.camera.y + UI_HEIGHT
+        screen_y = world_pos[1] - self.camera.y + settings.UI_HEIGHT
         return (screen_x, screen_y)
 
     def world_from_screen(self, screen_x, screen_y):
         wx = screen_x + self.camera.x
-        wy = screen_y - UI_HEIGHT + self.camera.y
+        wy = screen_y - settings.UI_HEIGHT + self.camera.y
         return (wx, wy)
 
     def move(self, dx, dy):
@@ -201,12 +200,12 @@ class BiomeTextureCache:
         surf = pygame.Surface((size, size))
         surf.fill(base_color)
 
-        seed_val = (BIOME_CODE.get(biome_type, 0) * 1000003) ^ (checker_flag * 7919) ^ (variant * 104729)
+        seed_val = (settings.BIOME_CODE.get(biome_type, 0) * 1000003) ^ (checker_flag * 7919) ^ (variant * 104729)
         rng = random.Random(seed_val & 0xffffffff)
 
-        detail_count = rng.randint(*BIOME_TEXTURE_DETAIL_COUNT)
+        detail_count = rng.randint(*settings.BIOME_TEXTURE_DETAIL_COUNT)
         for _ in range(detail_count):
-            shade = rng.randint(*BIOME_TEXTURE_SHADE_RANGE)
+            shade = rng.randint(*settings.BIOME_TEXTURE_SHADE_RANGE)
             color = tuple(max(0, min(255, c + shade)) for c in base_color)
             w = rng.randint(4, max(5, size // 3))
             h = rng.randint(4, max(5, size // 3))
@@ -218,8 +217,8 @@ class BiomeTextureCache:
 class WorldRenderer:
     def __init__(self, game):
         self.game = game
-        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_ONSCREEN)
-        self.name_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_NAME)
+        self.font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_ONSCREEN)
+        self.name_font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_NAME)
         self.biome_tiles = BiomeTextureCache()
         self._render_pipeline = self._build_render_pipeline()
         self._name_surface_cache = {}
@@ -303,31 +302,31 @@ class WorldRenderer:
 
         biome_grid = game.biome_manager.grid
         # ---------- Визуальную сетку рисуем ровно тем же размером клетки, что и реальный биом ----------
-        cell_size = biome_grid.cell_size if biome_grid is not None else BIOME_CELL_SIZE
+        cell_size = biome_grid.cell_size if biome_grid is not None else settings.BIOME_CELL_SIZE
 
         start_x = max(0, cam.x // cell_size)
         start_y = max(0, cam.y // cell_size)
         end_x = min(cam.world_w // cell_size, (cam.x + screen_w) // cell_size + 1)
-        end_y = min(cam.world_h // cell_size, (cam.y + (screen_h - UI_HEIGHT)) // cell_size + 1)
+        end_y = min(cam.world_h // cell_size, (cam.y + (screen_h - settings.UI_HEIGHT)) // cell_size + 1)
 
         for i in range(int(start_x), int(end_x) + 1):
             for j in range(int(start_y), int(end_y) + 1):
                 wx = i * cell_size + cell_size / 2
                 wy = j * cell_size + cell_size / 2
-                biome = biome_grid.get_at(wx, wy) if biome_grid is not None else BIOME_PLAINS
+                biome = biome_grid.get_at(wx, wy) if biome_grid is not None else settings.BIOME_PLAINS
                 checker_flag = (i + j) % 2
 
-                if biome == BIOME_PLAINS:
-                    base_color = COLOR_LIGHT if checker_flag == 0 else COLOR_DARK
+                if biome == settings.BIOME_PLAINS:
+                    base_color = settings.COLOR_LIGHT if checker_flag == 0 else settings.COLOR_DARK
                 else:
-                    base_color = BIOME_BASE_COLOR[biome]
+                    base_color = settings.BIOME_BASE_COLOR[biome]
 
-                variant = (i * 7919 + j * 104729) % BIOME_TEXTURE_VARIANTS
+                variant = (i * 7919 + j * 104729) % settings.BIOME_TEXTURE_VARIANTS
                 tile = self.biome_tiles.get_tile(biome, checker_flag, variant, base_color, int(cell_size))
 
                 rect = (
                     i * cell_size - cam.x,
-                    j * cell_size - cam.y + UI_HEIGHT,
+                    j * cell_size - cam.y + settings.UI_HEIGHT,
                     cell_size, cell_size
                 )
                 screen.blit(tile, rect)
@@ -359,7 +358,7 @@ class WorldRenderer:
         self._draw_vision_shadow(screen, pos, vision_radius, polygon_screen)
 
         if len(polygon_screen) >= 2:
-            pygame.draw.lines(screen, VISION_CIRCLE_COLOR, True, polygon_screen, 2)
+            pygame.draw.lines(screen, settings.VISION_CIRCLE_COLOR, True, polygon_screen, 2)
 
     def _draw_vision_shadow(self, screen, pos, radius, polygon_screen):
         diameter = int(radius * 2) + 4
@@ -369,7 +368,7 @@ class WorldRenderer:
         origin_y = pos[1] - radius - 2
 
         shade = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
-        pygame.draw.circle(shade, (0, 0, 0, VISION_SHADOW_ALPHA),
+        pygame.draw.circle(shade, (0, 0, 0, settings.VISION_SHADOW_ALPHA),
                            (diameter // 2, diameter // 2), int(radius))
 
         if len(polygon_screen) >= 3:
@@ -381,9 +380,9 @@ class WorldRenderer:
         screen.blit(shade, (origin_x, origin_y))
 
     def draw_empty_state(self, screen):
-        txt = self.font.render(INFO_EMPTY_STATE_HINT, True, TEXT_COLOR)
+        txt = self.font.render(info.INFO_EMPTY_STATE_HINT, True, settings.TEXT_COLOR)
         screen.blit(txt, (screen.get_width() // 2 - txt.get_width() // 2, screen.get_height() // 2))
 
     def draw_pause_overlay(self, screen):
-        txt = self.font.render(INFO_PAUSE_OVERLAY, True, (255, 220, 60))
-        screen.blit(txt, (screen.get_width() // 2 - txt.get_width() // 2, UI_HEIGHT + 10))
+        txt = self.font.render(info.INFO_PAUSE_OVERLAY, True, (255, 220, 60))
+        screen.blit(txt, (screen.get_width() // 2 - txt.get_width() // 2, settings.UI_HEIGHT + 10))

@@ -1,6 +1,6 @@
 import math
 import random
-from settings import *
+import settings
 
 BIOME_RATIO_MIN = 0.05
 BIOME_RATIO_MAX = 0.85
@@ -66,13 +66,13 @@ def finalize_biome_ratios(ratios):
 class BiomeGrid:
     """Клеточная сетка биомов - хранение и запросы."""
 
-    def __init__(self, world_w, world_h, cell_size=BIOME_CELL_SIZE):
+    def __init__(self, world_w, world_h, cell_size=settings.BIOME_CELL_SIZE):
         self.world_w = world_w
         self.world_h = world_h
         self.cell_size = cell_size
         self.cols = max(1, math.ceil(world_w / cell_size))
         self.rows = max(1, math.ceil(world_h / cell_size))
-        self.cells = [BIOME_PLAINS] * (self.cols * self.rows)
+        self.cells = [settings.BIOME_PLAINS] * (self.cols * self.rows)
 
     def _index(self, cx, cy):
         return cy * self.cols + cx
@@ -127,7 +127,7 @@ class BiomeGrid:
             self.cells[idx] = biome_type
 
     def is_water(self, x, y):
-        return self.get_at(x, y) in BIOME_WATER_TYPES
+        return self.get_at(x, y) in settings.BIOME_WATER_TYPES
 
     def find_nearest_of_type(self, x, y, biome_type, max_radius):
         cx0, cy0 = self.world_to_cell(x, y)
@@ -159,7 +159,7 @@ class BiomeGrid:
                 cx, cy = cx0 + dx, cy0 + dy
                 if not self.in_bounds(cx, cy):
                     continue
-                if self.cells[self._index(cx, cy)] in BIOME_WATER_TYPES:
+                if self.cells[self._index(cx, cy)] in settings.BIOME_WATER_TYPES:
                     continue
                 center_x = cx * self.cell_size + self.cell_size / 2
                 center_y = cy * self.cell_size + self.cell_size / 2
@@ -221,9 +221,9 @@ class BiomeGenerator:
         ratios = ratios or DEFAULT_BIOME_RATIOS
         total_cells = grid.cols * grid.rows
 
-        sea_target = int(total_cells * ratios.get(BIOME_SEA, 0.0))
-        river_target = int(total_cells * ratios.get(BIOME_RIVER, 0.0))
-        desert_target = int(total_cells * ratios.get(BIOME_DESERT, 0.0))
+        sea_target = int(total_cells * ratios.get(settings.BIOME_SEA, 0.0))
+        river_target = int(total_cells * ratios.get(settings.BIOME_RIVER, 0.0))
+        desert_target = int(total_cells * ratios.get(settings.BIOME_DESERT, 0.0))
 
         self._generate_sea(grid, sea_target)
         self._generate_rivers(grid, river_target)
@@ -245,9 +245,9 @@ class BiomeGenerator:
                     if dx * dx + dy * dy <= blob_radius * blob_radius:
                         grid.set_cell(cx + dx, cy + dy, BIOME_SEA)
 
-        self._cellular_automaton_step(grid, BIOME_SEA, SEA_AUTOMATON_ITERATIONS,
+        self._cellular_automaton_step(grid, settings.BIOME_SEA, settings.SEA_AUTOMATON_ITERATIONS,
                                       birth_threshold=4, death_threshold=3)
-        self._adjust_biome_to_target(grid, BIOME_SEA, target_cells)
+        self._adjust_biome_to_target(grid, settings.BIOME_SEA, target_cells)
 
     def _cellular_automaton_step(self, grid, biome_type, iterations, birth_threshold, death_threshold):
         for _ in range(iterations):
@@ -258,7 +258,7 @@ class BiomeGenerator:
                     idx = grid._index(cx, cy)
                     if grid.cells[idx] == biome_type:
                         if neighbors < death_threshold:
-                            new_cells[idx] = BIOME_PLAINS
+                            new_cells[idx] = settings.BIOME_PLAINS
                     else:
                         if neighbors >= birth_threshold:
                             new_cells[idx] = biome_type
@@ -296,7 +296,7 @@ class BiomeGenerator:
         river_count = max(1, min(4, target_cells // approx_river_area + 1))
         for _ in range(river_count):
             self._generate_single_river(grid)
-        self._adjust_biome_to_target(grid, BIOME_RIVER, target_cells)
+        self._adjust_biome_to_target(grid, settings.BIOME_RIVER, target_cells)
 
     def _generate_single_river(self, grid):
         start_edge = self.rng.choice(("top", "bottom", "left", "right"))
@@ -329,7 +329,7 @@ class BiomeGenerator:
         for pcx, pcy in path:
             wx = pcx * grid.cell_size + grid.cell_size / 2
             wy = pcy * grid.cell_size + grid.cell_size / 2
-            grid.paint_circle(wx, wy, river_width, BIOME_RIVER, skip_types=(BIOME_SEA,))
+            grid.paint_circle(wx, wy, river_width, settings.BIOME_RIVER, skip_types=(settings.BIOME_SEA,))
 
     # ---------- Пустыня: зародыши на суше + компактный автомат, не трогающий воду ----------
 
@@ -343,19 +343,19 @@ class BiomeGenerator:
             attempts += 1
             cx = self.rng.randint(0, grid.cols - 1)
             cy = self.rng.randint(0, grid.rows - 1)
-            if grid.cells[grid._index(cx, cy)] != BIOME_PLAINS:
+            if grid.cells[grid._index(cx, cy)] != settings.BIOME_PLAINS:
                 continue
             blob_radius = self.rng.randint(2, max(3, min(grid.cols, grid.rows) // 8))
             for dy in range(-blob_radius, blob_radius + 1):
                 for dx in range(-blob_radius, blob_radius + 1):
                     if dx * dx + dy * dy <= blob_radius * blob_radius:
                         ncx, ncy = cx + dx, cy + dy
-                        if grid.in_bounds(ncx, ncy) and grid.cells[grid._index(ncx, ncy)] == BIOME_PLAINS:
-                            grid.set_cell(ncx, ncy, BIOME_DESERT)
+                        if grid.in_bounds(ncx, ncy) and grid.cells[grid._index(ncx, ncy)] == settings.BIOME_PLAINS:
+                            grid.set_cell(ncx, ncy, settings.BIOME_DESERT)
                             placed_cells += 1
 
-        self._desert_automaton_step(grid, DESERT_AUTOMATON_ITERATIONS)
-        self._adjust_biome_to_target(grid, BIOME_DESERT, target_cells)
+        self._desert_automaton_step(grid, settings.DESERT_AUTOMATON_ITERATIONS)
+        self._adjust_biome_to_target(grid, settings.BIOME_DESERT, target_cells)
 
     def _desert_automaton_step(self, grid, iterations):
         """Как обычный автомат, но никогда не отжимает территорию у реки/моря."""
@@ -364,15 +364,15 @@ class BiomeGenerator:
             for cy in range(grid.rows):
                 for cx in range(grid.cols):
                     idx = grid._index(cx, cy)
-                    if grid.cells[idx] in BIOME_WATER_TYPES:
+                    if grid.cells[idx] in settings.BIOME_WATER_TYPES:
                         continue
-                    neighbors = self._count_neighbors_of_type(grid, cx, cy, BIOME_DESERT)
-                    if grid.cells[idx] == BIOME_DESERT:
+                    neighbors = self._count_neighbors_of_type(grid, cx, cy, settings.BIOME_DESERT)
+                    if grid.cells[idx] == settings.BIOME_DESERT:
                         if neighbors < 2:
-                            new_cells[idx] = BIOME_PLAINS
+                            new_cells[idx] = settings.BIOME_PLAINS
                     else:
                         if neighbors >= 5:
-                            new_cells[idx] = BIOME_DESERT
+                            new_cells[idx] = settings.BIOME_DESERT
             grid.cells = new_cells
 
     # ---------- Точная подгонка площади биома под целевое число клеток ----------
@@ -407,7 +407,7 @@ class BiomeGenerator:
             if not frontier:
                 frontier = [i for i, c in enumerate(grid.cells) if c == biome_type]
                 if not frontier:
-                    free_cells = [i for i, c in enumerate(grid.cells) if c == BIOME_PLAINS]
+                    free_cells = [i for i, c in enumerate(grid.cells) if c == settings.BIOME_PLAINS]
                     if not free_cells:
                         break
                     seed_idx = self.rng.choice(free_cells)
@@ -423,7 +423,7 @@ class BiomeGenerator:
 
             grew = False
             for n_idx in neighbors:
-                if grid.cells[n_idx] == BIOME_PLAINS:
+                if grid.cells[n_idx] == settings.BIOME_PLAINS:
                     grid.cells[n_idx] = biome_type
                     frontier.append(n_idx)
                     added += 1

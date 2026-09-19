@@ -3,7 +3,7 @@ import time
 import math
 import random
 
-from settings import INTUITIVE_DECAY_TIME
+import settings
 
 class Memory:
     _BUCKET_NEAR, _BUCKET_MEDIUM, _BUCKET_FAR = "near", "medium", "far"
@@ -15,7 +15,7 @@ class Memory:
         self.decay_time = 120
 
         self.intuitive_memories = []
-        self.intuitive_decay_time = INTUITIVE_DECAY_TIME
+        self.intuitive_decay_time = settings.INTUITIVE_DECAY_TIME
 
         self._prune_timer = 0.0
         self._prune_interval = 45.0

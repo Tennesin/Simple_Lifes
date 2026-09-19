@@ -1,6 +1,6 @@
 import pygame
-from settings import *
-from info import *
+import settings
+import info
 import time
 import uuid
 import math
@@ -95,7 +95,7 @@ class LineObstacle:
 # --------------- Объекты ---------------
 
 class Fruit(WorldObject):
-    type_name = INFO_OBJECT_FRUIT
+    type_name = info.INFO_OBJECT_FRUIT
 
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -105,8 +105,8 @@ class Fruit(WorldObject):
     def draw(self, screen, screen_pos):
         if self.active:
             sx, sy = int(screen_pos[0]), int(screen_pos[1])
-            pygame.draw.circle(screen, FRUIT_COLOR, (sx, sy), self.radius)
-            pygame.draw.circle(screen, FRUIT_COLOR_BORDER, (sx, sy), self.radius, 2)
+            pygame.draw.circle(screen, settings.FRUIT_COLOR, (sx, sy), self.radius)
+            pygame.draw.circle(screen, settings.FRUIT_COLOR_BORDER, (sx, sy), self.radius, 2)
 
     def to_dict(self):
         d = self._base_dict()
@@ -121,7 +121,7 @@ class Fruit(WorldObject):
         return fruit
 
 class Spike(WorldObject):
-    type_name = INFO_OBJECT_SPIKE
+    type_name = info.INFO_OBJECT_SPIKE
 
     def __init__(self, x, y):
         super().__init__(x, y)
@@ -143,14 +143,14 @@ class Spike(WorldObject):
         return spike
 
 class WaterPuddle(WorldObject):
-    type_name = INFO_OBJECT_WATER
+    type_name = info.INFO_OBJECT_WATER
 
     def __init__(self, x, y, max_charges=None):
         super().__init__(x, y, gen_id=True)
         self.radius = 14
         self.claimed_by = None
         self.max_charges = (max_charges if max_charges is not None
-                            else random.randint(WATER_PUDDLE_CHARGE_MIN, WATER_PUDDLE_CHARGE_MAX))
+                            else random.randint(settings.WATER_PUDDLE_CHARGE_MIN, settings.WATER_PUDDLE_CHARGE_MAX))
         self.charges = float(self.max_charges)
 
     def has_water(self):
@@ -159,9 +159,9 @@ class WaterPuddle(WorldObject):
     def consume(self, amount):
         if amount <= 0 or self.charges <= 0:
             return 0.0
-        available = self.charges * WATER_PUDDLE_CHARGE_VALUE
+        available = self.charges * settings.WATER_PUDDLE_CHARGE_VALUE
         actual = min(amount, available)
-        self.charges = max(0.0, self.charges - actual / WATER_PUDDLE_CHARGE_VALUE)
+        self.charges = max(0.0, self.charges - actual / settings.WATER_PUDDLE_CHARGE_VALUE)
         return actual
 
     def take_charge(self):
@@ -200,27 +200,27 @@ class WaterPuddle(WorldObject):
         return water
 
 class Bush(WorldObject):
-    type_name = INFO_OBJECT_BUSH
+    type_name = info.INFO_OBJECT_BUSH
 
     def __init__(self, x, y):
         super().__init__(x, y, gen_id=True)
         self.radius = 14
-        self.spawn_timer = random.uniform(0, BUSH_SPAWN_INTERVAL)
+        self.spawn_timer = random.uniform(0, settings.BUSH_SPAWN_INTERVAL)
         self.claimed_by = None
 
     def update(self, dt):
         self.spawn_timer += dt
-        if self.spawn_timer >= BUSH_SPAWN_INTERVAL:
-            self.spawn_timer -= BUSH_SPAWN_INTERVAL
+        if self.spawn_timer >= settings.BUSH_SPAWN_INTERVAL:
+            self.spawn_timer -= settings.BUSH_SPAWN_INTERVAL
             return True
         return False
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
-        pygame.draw.circle(screen, BUSH_COLOR, (sx, sy), self.radius)
-        pygame.draw.circle(screen, BUSH_COLOR_BORDER, (sx, sy), self.radius, 2)
-        pygame.draw.circle(screen, BUSH_COLOR, (sx - 8, sy + 4), self.radius - 5)
-        pygame.draw.circle(screen, BUSH_COLOR, (sx + 8, sy + 4), self.radius - 5)
+        pygame.draw.circle(screen, settings.BUSH_COLOR, (sx, sy), self.radius)
+        pygame.draw.circle(screen, settings.BUSH_COLOR_BORDER, (sx, sy), self.radius, 2)
+        pygame.draw.circle(screen, settings.BUSH_COLOR, (sx - 8, sy + 4), self.radius - 5)
+        pygame.draw.circle(screen, settings.BUSH_COLOR, (sx + 8, sy + 4), self.radius - 5)
 
     def to_dict(self):
         d = self._base_dict()
@@ -235,12 +235,12 @@ class Bush(WorldObject):
         return bush
 
 class Tree(WorldObject):
-    type_name = INFO_OBJECT_TREE
+    type_name = info.INFO_OBJECT_TREE
 
     def __init__(self, x, y, wood_amount=None):
         super().__init__(x, y, gen_id=True)
-        self.radius = TREE_RADIUS
-        self.wood = wood_amount if wood_amount is not None else random.randint(TREE_WOOD_MIN, TREE_WOOD_MAX)
+        self.radius = settings.TREE_RADIUS
+        self.wood = wood_amount if wood_amount is not None else random.randint(settings.TREE_WOOD_MIN, settings.TREE_WOOD_MAX)
 
     def has_wood(self):
         return self.wood > 0
@@ -249,12 +249,12 @@ class Tree(WorldObject):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         trunk_w, trunk_h = 8, self.radius + 6
         trunk_rect = (sx - trunk_w // 2, sy - 4, trunk_w, trunk_h)
-        pygame.draw.rect(screen, TREE_COLOR_TRUNK, trunk_rect)
-        pygame.draw.rect(screen, TREE_COLOR_TRUNK_BORDER, trunk_rect, 1)
+        pygame.draw.rect(screen, settings.TREE_COLOR_TRUNK, trunk_rect)
+        pygame.draw.rect(screen, settings.TREE_COLOR_TRUNK_BORDER, trunk_rect, 1)
 
         crown_center = (sx, sy - self.radius // 2)
-        pygame.draw.circle(screen, TREE_COLOR_LEAVES, crown_center, self.radius)
-        pygame.draw.circle(screen, TREE_COLOR_LEAVES_BORDER, crown_center, self.radius, 2)
+        pygame.draw.circle(screen, settings.TREE_COLOR_LEAVES, crown_center, self.radius)
+        pygame.draw.circle(screen, settings.TREE_COLOR_LEAVES_BORDER, crown_center, self.radius, 2)
 
     def to_dict(self):
         d = self._base_dict()
@@ -267,21 +267,21 @@ class Tree(WorldObject):
         return tree
 
 class Stone(WorldObject):
-    type_name = INFO_OBJECT_STONE
+    type_name = info.INFO_OBJECT_STONE
 
     def __init__(self, x, y, stone_amount=None):
         super().__init__(x, y, gen_id=True)
-        self.radius = STONE_RADIUS
-        self.stone = stone_amount if stone_amount is not None else random.randint(STONE_MIN_AMOUNT, STONE_MAX_AMOUNT)
+        self.radius = settings.STONE_RADIUS
+        self.stone = stone_amount if stone_amount is not None else random.randint(settings.STONE_MIN_AMOUNT, settings.STONE_MAX_AMOUNT)
 
     def has_stone(self):
         return self.stone > 0
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
-        pygame.draw.circle(screen, STONE_COLOR, (sx, sy), self.radius)
-        pygame.draw.circle(screen, STONE_COLOR_BORDER, (sx, sy), self.radius, 2)
-        pygame.draw.circle(screen, STONE_COLOR_LIGHT, (sx - 4, sy - 4), max(2, self.radius // 3))
+        pygame.draw.circle(screen, settings.STONE_COLOR, (sx, sy), self.radius)
+        pygame.draw.circle(screen, settings.STONE_COLOR_BORDER, (sx, sy), self.radius, 2)
+        pygame.draw.circle(screen, settings.STONE_COLOR_LIGHT, (sx - 4, sy - 4), max(2, self.radius // 3))
 
     def to_dict(self):
         d = self._base_dict()
@@ -295,11 +295,11 @@ class Stone(WorldObject):
         return stone
 
 class Grass(WorldObject):
-    type_name = INFO_OBJECT_GRASS
+    type_name = info.INFO_OBJECT_GRASS
 
     def __init__(self, x, y, food_amount=None):
         super().__init__(x, y)
-        self.food = food_amount if food_amount is not None else random.randint(GRASS_FOOD_MIN, GRASS_FOOD_MAX)
+        self.food = food_amount if food_amount is not None else random.randint(settings.GRASS_FOOD_MIN, settings.GRASS_FOOD_MAX)
         self._recompute_geometry()
 
     def has_food(self):
@@ -312,25 +312,26 @@ class Grass(WorldObject):
         self._recompute_geometry()
 
     def _recompute_geometry(self):
-        ratio = (self.food - GRASS_FOOD_MIN) / max(1, (GRASS_FOOD_MAX - GRASS_FOOD_MIN))
+        ratio = (self.food - settings.GRASS_FOOD_MIN) / max(1, (settings.GRASS_FOOD_MAX - settings.GRASS_FOOD_MIN))
         ratio = max(0.0, min(1.0, ratio))
-        self.width = GRASS_BASE_WIDTH + (GRASS_MAX_WIDTH - GRASS_BASE_WIDTH) * ratio
+        self.width = settings.GRASS_BASE_WIDTH + (settings.GRASS_MAX_WIDTH - settings.GRASS_BASE_WIDTH) * ratio
         self.radius = self.width / 2
-        self.blade_count = int(GRASS_BLADE_MIN_COUNT + (GRASS_BLADE_MAX_COUNT - GRASS_BLADE_MIN_COUNT) * ratio)
+        self.blade_count = int(settings.GRASS_BLADE_MIN_COUNT
+                               + (settings.GRASS_BLADE_MAX_COUNT - settings.GRASS_BLADE_MIN_COUNT) * ratio)
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         half_w = self.width / 2
-        base_y = sy + GRASS_HEIGHT // 3
+        base_y = sy + settings.GRASS_HEIGHT // 3
         step = self.width / max(1, self.blade_count - 1) if self.blade_count > 1 else 0
         start_x = sx - half_w
         for i in range(self.blade_count):
             blade_x = start_x + step * i
             sway = (i % 3 - 1) * 3
-            tip = (blade_x + sway, base_y - GRASS_HEIGHT)
+            tip = (blade_x + sway, base_y - settings.GRASS_HEIGHT)
             left = (blade_x - 3, base_y)
             right = (blade_x + 3, base_y)
-            color = GRASS_COLOR if i % 2 == 0 else GRASS_COLOR_DARK
+            color = settings.GRASS_COLOR if i % 2 == 0 else settings.GRASS_COLOR_DARK
             pygame.draw.polygon(screen, color, [left, right, tip])
 
     def to_dict(self):
@@ -345,14 +346,14 @@ class Grass(WorldObject):
         return grass
 
 class Meat(WorldObject):
-    type_name = INFO_OBJECT_MEAT
+    type_name = info.INFO_OBJECT_MEAT
     drop_collection_attr = "meats"
 
     def __init__(self, x, y, food_amount=0):
         super().__init__(x, y)
         self.food = food_amount
         self.radius = 12
-        self.lifetime = MEAT_LIFETIME
+        self.lifetime = settings.MEAT_LIFETIME
 
     def has_food(self):
         return self.food > 0
@@ -367,11 +368,11 @@ class Meat(WorldObject):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         rect = pygame.Rect(sx - self.radius, int(sy - self.radius * 0.7),
                            self.radius * 2, int(self.radius * 1.4))
-        pygame.draw.ellipse(screen, MEAT_COLOR, rect)
-        pygame.draw.ellipse(screen, MEAT_COLOR_BORDER, rect, 2)
+        pygame.draw.ellipse(screen, settings.MEAT_COLOR, rect)
+        pygame.draw.ellipse(screen, settings.MEAT_COLOR_BORDER, rect, 2)
         fat_rect = pygame.Rect(int(sx - self.radius * 0.6), int(sy - self.radius * 0.3),
                                int(self.radius * 1.2), int(self.radius * 0.5))
-        pygame.draw.ellipse(screen, MEAT_COLOR_FAT, fat_rect)
+        pygame.draw.ellipse(screen, settings.MEAT_COLOR_FAT, fat_rect)
 
     def to_dict(self):
         d = self._base_dict()
@@ -383,7 +384,7 @@ class Meat(WorldObject):
     def from_dict(data):
         meat = Meat(data["x"], data["y"], food_amount=data.get("food", 0))
         meat._apply_base(data)
-        meat.lifetime = data.get("lifetime", MEAT_LIFETIME)
+        meat.lifetime = data.get("lifetime", settings.MEAT_LIFETIME)
         return meat
 
 # --------------- Дороги ---------------
@@ -397,7 +398,7 @@ class Road(PolylineRoad):
         self.endpoint_b = None
 
     def get_type_name(self):
-        return INFO_OBJECT_ROAD
+        return info.INFO_OBJECT_ROAD
 
     def draw(self, screen, camera):
         if len(self.points) < 2:
@@ -440,36 +441,36 @@ class Road(PolylineRoad):
 class Wall(LineObstacle):
 
     def get_type_name(self):
-        return INFO_OBJECT_WALL
+        return info.INFO_OBJECT_WALL
 
     def draw(self, screen, camera, extra_point=None):
         points = self.points if extra_point is None else self.points + [extra_point]
         if len(points) < 2:
             return
         screen_points = [camera.apply_pos(p) for p in points]
-        pygame.draw.lines(screen, WALL_COLOR, False, screen_points, WALL_THICKNESS)
-        joint_radius = WALL_THICKNESS // 2 + 1
+        pygame.draw.lines(screen, settings.WALL_COLOR, False, screen_points, settings.WALL_THICKNESS)
+        joint_radius = settings.WALL_THICKNESS // 2 + 1
         for px, py in screen_points:
-            pygame.draw.circle(screen, WALL_COLOR, (int(px), int(py)), joint_radius)
+            pygame.draw.circle(screen, settings.WALL_COLOR, (int(px), int(py)), joint_radius)
 
 class Fence(LineObstacle):
 
     def get_type_name(self):
-        return INFO_OBJECT_FENCE
+        return info.INFO_OBJECT_FENCE
 
     def draw(self, screen, camera, extra_point=None):
         points = self.points if extra_point is None else self.points + [extra_point]
         if len(points) < 2:
             return
         screen_points = [camera.apply_pos(p) for p in points]
-        pygame.draw.lines(screen, FENCE_COLOR, False, screen_points, FENCE_THICKNESS)
-        joint_radius = FENCE_THICKNESS // 2 + 1
+        pygame.draw.lines(screen, settings.FENCE_COLOR, False, screen_points, settings.FENCE_THICKNESS)
+        joint_radius = settings.FENCE_THICKNESS // 2 + 1
         for px, py in screen_points:
-            pygame.draw.circle(screen, FENCE_COLOR, (int(px), int(py)), joint_radius)
+            pygame.draw.circle(screen, settings.FENCE_COLOR, (int(px), int(py)), joint_radius)
         self._draw_ticks(screen, screen_points)
 
     def _draw_ticks(self, screen, screen_points):
-        distance_since_tick = FENCE_TICK_INTERVAL / 2
+        distance_since_tick = settings.FENCE_TICK_INTERVAL / 2
         for i in range(len(screen_points) - 1):
             x1, y1 = screen_points[i]
             x2, y2 = screen_points[i + 1]
@@ -477,15 +478,15 @@ class Fence(LineObstacle):
             if seg_len == 0:
                 continue
             dx, dy = (x2 - x1) / seg_len, (y2 - y1) / seg_len
-            pos = FENCE_TICK_INTERVAL - distance_since_tick
+            pos = settings.FENCE_TICK_INTERVAL - distance_since_tick
             while pos < seg_len:
                 cx = x1 + dx * pos
                 cy = y1 + dy * pos
-                half = FENCE_TICK_LENGTH / 2
-                pygame.draw.line(screen, FENCE_TICK_COLOR,
+                half = settings.FENCE_TICK_LENGTH / 2
+                pygame.draw.line(screen, settings.FENCE_TICK_COLOR,
                                  (cx - half, cy + half), (cx + half, cy - half), 2)
-                pos += FENCE_TICK_INTERVAL
-            distance_since_tick = seg_len - (pos - FENCE_TICK_INTERVAL)
+                pos += settings.FENCE_TICK_INTERVAL
+            distance_since_tick = seg_len - (pos - settings.FENCE_TICK_INTERVAL)
 
 # --------------- Особые виды объектов ---------------
 
@@ -498,12 +499,12 @@ class RoadCrossing:
         self.road_ids = set()
 
     def get_type_name(self):
-        return INFO_OBJECT_ROAD_CROSSING
+        return info.INFO_OBJECT_ROAD_CROSSING
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
-        pygame.draw.circle(screen, ROAD_CROSSING_COLOR, (sx, sy), ROAD_CROSSING_RADIUS)
-        pygame.draw.circle(screen, ROAD_CROSSING_COLOR_BORDER, (sx, sy), ROAD_CROSSING_RADIUS, 2)
+        pygame.draw.circle(screen, settings.ROAD_CROSSING_COLOR, (sx, sy), settings.ROAD_CROSSING_RADIUS)
+        pygame.draw.circle(screen, settings.ROAD_CROSSING_COLOR_BORDER, (sx, sy), settings.ROAD_CROSSING_RADIUS, 2)
 
     def to_dict(self):
         return {"id": self.id, "x": self.x, "y": self.y, "road_ids": list(self.road_ids)}
