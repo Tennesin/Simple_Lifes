@@ -1,7 +1,7 @@
 import time
 import math
 import pygame
-from settings import *
+import settings
 from creatures.all_needed.instruction import (
     InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
     wrap_instruction_text, INSTRUCTION_COLOR_DEFAULT,
@@ -43,8 +43,8 @@ class TextInputBox:
             self._last_blink = now
             self._cursor_visible = not self._cursor_visible
 
-        bg = WORLD_SCREEN_INPUT_BG_FOCUS if self.focused else WORLD_SCREEN_INPUT_BG
-        border = WORLD_SCREEN_INPUT_BORDER_FOCUS if self.focused else WORLD_SCREEN_INPUT_BORDER
+        bg = settings.WORLD_SCREEN_INPUT_BG_FOCUS if self.focused else settings.WORLD_SCREEN_INPUT_BG
+        border = settings.WORLD_SCREEN_INPUT_BORDER_FOCUS if self.focused else settings.WORLD_SCREEN_INPUT_BORDER
         pygame.draw.rect(surface, bg, self.rect, border_radius=4)
         pygame.draw.rect(surface, border, self.rect, 1, border_radius=4)
 
@@ -52,17 +52,17 @@ class TextInputBox:
         cy = self.rect.centery
 
         if self.text:
-            txt_surf = font.render(self.text, True, WORLD_SCREEN_TEXT)
+            txt_surf = font.render(self.text, True, settings.WORLD_SCREEN_TEXT)
             surface.blit(txt_surf, txt_surf.get_rect(midleft=(text_x, cy)))
             cursor_x = text_x + txt_surf.get_width() + 2
         else:
             if self.placeholder:
-                ph_surf = font.render(self.placeholder, True, WORLD_SCREEN_HINT_COLOR)
+                ph_surf = font.render(self.placeholder, True, settings.WORLD_SCREEN_HINT_COLOR)
                 surface.blit(ph_surf, ph_surf.get_rect(midleft=(text_x, cy)))
             cursor_x = text_x
 
         if self.focused and self._cursor_visible:
-            pygame.draw.line(surface, WORLD_SCREEN_TEXT,
+            pygame.draw.line(surface, settings.WORLD_SCREEN_TEXT,
                              (cursor_x, self.rect.y + 6), (cursor_x, self.rect.bottom - 6), 1)
 
 class Button:
@@ -77,15 +77,15 @@ class Button:
     def _get_font(cls, size):
         font = cls._font_cache.get(size)
         if font is None:
-            font = pygame.font.SysFont(FONT_NAME, size)
+            font = pygame.font.SysFont(settings.FONT_NAME, size)
             cls._font_cache[size] = font
         return font
 
     def draw(self, surface, mouse_pos, font_size=None, colors=None):
-        font_size = font_size or FONT_SIZE_BUTTON
+        font_size = font_size or settings.FONT_SIZE_BUTTON
         colors = colors or {
-            "normal": BUTTON_COLOR, "hover": BUTTON_HOVER,
-            "disabled": BUTTON_DISABLED, "text": TEXT_COLOR,
+            "normal": settings.BUTTON_COLOR, "hover": settings.BUTTON_HOVER,
+            "disabled": settings.BUTTON_DISABLED, "text": settings.TEXT_COLOR,
         }
         if not self.enabled:
             bg = colors["disabled"]
@@ -138,13 +138,13 @@ class ScrollArea:
         self._clamp_target()
         self.offset = max(0.0, min(self.offset, self.max_scroll))
 
-    def scroll_by_wheel(self, wheel_y, speed=DEFAULT_SCROLL_SPEED):
+    def scroll_by_wheel(self, wheel_y, speed=settings.DEFAULT_SCROLL_SPEED):
         self.target_offset -= wheel_y * speed
         self._clamp_target()
         if not self.smooth:
             self.offset = self.target_offset
 
-    def scroll_by_step(self, direction, step=DEFAULT_SCROLL_SPEED):
+    def scroll_by_step(self, direction, step=settings.DEFAULT_SCROLL_SPEED):
         self.target_offset += direction * step
         self._clamp_target()
         if not self.smooth:
@@ -259,11 +259,11 @@ def draw_favorite_star(screen, rect, is_favorite, mouse_pos):
     hovered = rect.collidepoint(mouse_pos)
 
     if is_favorite:
-        fill_color = FAVORITE_STAR_COLOR_HOVER if hovered else FAVORITE_STAR_COLOR
+        fill_color = settings.FAVORITE_STAR_COLOR_HOVER if hovered else settings.FAVORITE_STAR_COLOR
         pygame.draw.polygon(screen, fill_color, points)
-        pygame.draw.polygon(screen, FAVORITE_STAR_BORDER, points, 2)
+        pygame.draw.polygon(screen, settings.FAVORITE_STAR_BORDER, points, 2)
     else:
-        border_color = FAVORITE_STAR_HOLLOW_HOVER if hovered else FAVORITE_STAR_HOLLOW_BORDER
+        border_color = settings.FAVORITE_STAR_HOLLOW_HOVER if hovered else settings.FAVORITE_STAR_HOLLOW_BORDER
         pygame.draw.polygon(screen, border_color, points, 2)
 
     return hovered
@@ -324,7 +324,7 @@ def draw_instruction_blocks(screen, font, blocks, x, y, max_width,
 
     for block in blocks:
         if isinstance(block, InstructionHeader):
-            txt = header_font.render(block.text, True, TEXT_COLOR)
+            txt = header_font.render(block.text, True, settings.TEXT_COLOR)
             screen.blit(txt, (x, y))
             y += line_height + _INSTRUCTION_HEADER_EXTRA
 
@@ -481,7 +481,7 @@ class AccordionList:
             screen.blit(icon_surf, icon_rect)
             text_x = icon_rect.right + self.ICON_MARGIN
 
-        title_txt = font.render(entry.title, True, TEXT_COLOR)
+        title_txt = font.render(entry.title, True, settings.TEXT_COLOR)
         screen.blit(title_txt, title_txt.get_rect(midleft=(text_x, row_rect.centery)))
 
         arrow = "v" if entry.key in self.expanded_keys else ">"

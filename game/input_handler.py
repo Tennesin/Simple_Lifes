@@ -2,9 +2,9 @@ import time
 import math
 import pygame
 
+import settings
 from player import Player
 from objects import Wall, Fence
-from settings import *
 from game.race_registry import (
     creature_placement_lookup, all_secondary_panel_specs, all_road_networks,
     all_mouse_down_hooks, all_mouse_up_hooks, all_mouse_motion_hooks, all_mouse_wheel_hooks,
@@ -20,10 +20,10 @@ def _dispatch_hooks(hooks, game, event, mouse_x, mouse_y):
     return False
 
 BIOME_TOOL_MAP = {
-    Player.TOOL_BIOME_PLAINS: BIOME_PLAINS,
-    Player.TOOL_BIOME_DESERT: BIOME_DESERT,
-    Player.TOOL_BIOME_RIVER: BIOME_RIVER,
-    Player.TOOL_BIOME_SEA: BIOME_SEA,
+    Player.TOOL_BIOME_PLAINS: settings.BIOME_PLAINS,
+    Player.TOOL_BIOME_DESERT: settings.BIOME_DESERT,
+    Player.TOOL_BIOME_RIVER: settings.BIOME_RIVER,
+    Player.TOOL_BIOME_SEA: settings.BIOME_SEA,
 }
 
 def handle_pet_hit_grab_click(game, ui, mouse_x, mouse_y):
@@ -34,7 +34,7 @@ def handle_pet_hit_grab_click(game, ui, mouse_x, mouse_y):
         game.player.reset_tool()
         return True
 
-    if mouse_y > UI_HEIGHT:
+    if mouse_y > settings.UI_HEIGHT:
         wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
         creature_hit = game.object_manager.find_creature_at(wx, wy)
         if creature_hit and not creature_hit.is_dead:
@@ -55,7 +55,7 @@ def handle_favorite_click(game, ui, mouse_x, mouse_y):
         game.player.reset_tool()
         return True
 
-    if mouse_y > UI_HEIGHT:
+    if mouse_y > settings.UI_HEIGHT:
         wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
         entity_hit = game.object_manager.find_favorite_target_at(wx, wy)
         if entity_hit is not None:
@@ -186,7 +186,6 @@ class _PlacementHoverState:
     def __init__(self):
         self.mode = None
         self.check_pos = None
-
 
 class _BiomePaintingMixin:
 
@@ -347,7 +346,7 @@ class _MouseDownMixin:
                 game.player.drawing_landscape = None
                 game.player.landscape_type = None
                 game.player.reset_tool()
-            elif mouse_y > UI_HEIGHT:
+            elif mouse_y > settings.UI_HEIGHT:
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 wx = max(0, min(wx, game.camera.world_w))
                 wy = max(0, min(wy, game.camera.world_h))
@@ -372,7 +371,7 @@ class _MouseDownMixin:
                 game.player.reset_tool()
                 return True
             mods = pygame.key.get_mods()
-            if mouse_y > UI_HEIGHT and not (mods & pygame.KMOD_SHIFT):
+            if mouse_y > settings.UI_HEIGHT and not (mods & pygame.KMOD_SHIFT):
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 biome_type = BIOME_TOOL_MAP[game.player.tool]
                 game.object_manager.paint_biome(wx, wy, biome_type, game.player.brush_radius)
@@ -390,7 +389,7 @@ class _MouseDownMixin:
             if game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
                 setattr(game.player, attr, None)
                 game.player.reset_tool()
-            elif mouse_y > UI_HEIGHT:
+            elif mouse_y > settings.UI_HEIGHT:
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 wx = max(0, min(wx, game.camera.world_w))
                 wy = max(0, min(wy, game.camera.world_h))
@@ -470,7 +469,7 @@ class _MouseDownMixin:
         if game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
             game.object_manager.stop_placement()
             return
-        if event.button == 1 and mouse_y > UI_HEIGHT:
+        if event.button == 1 and mouse_y > settings.UI_HEIGHT:
             wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
             placement_lookup = creature_placement_lookup()
             animal_lookup = animal_placement_lookup()
@@ -608,7 +607,7 @@ class _MouseDownMixin:
         if game.editing_name:
             game.finish_name_editing()
 
-        if (game.world_loaded and mouse_y > UI_HEIGHT and not game.show_game_menu
+        if (game.world_loaded and mouse_y > settings.UI_HEIGHT and not game.show_game_menu
                 and not game.show_lifes_menu and not game.show_objects_menu
                 and not game.show_player_menu):
             now = time.time()
@@ -643,7 +642,7 @@ class _MouseDownMixin:
                 game.player.last_click_pos = (mouse_x, mouse_y)
 
         game.close_all_menus()
-        if game.world_loaded and mouse_y > UI_HEIGHT:
+        if game.world_loaded and mouse_y > settings.UI_HEIGHT:
             wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
             mods = pygame.key.get_mods()
             ctrl_held = bool(mods & pygame.KMOD_CTRL)
@@ -782,22 +781,23 @@ class _MouseMotionMixin:
                     game.player.brush_adjust_start_radius = game.player.brush_radius
                 else:
                     delta = game.player.brush_adjust_start_y - mouse_y
-                    new_radius = game.player.brush_adjust_start_radius + delta * BIOME_BRUSH_SENSITIVITY
-                    game.player.brush_radius = max(BIOME_BRUSH_MIN_RADIUS,
-                                                   min(BIOME_BRUSH_MAX_RADIUS, new_radius))
+                    new_radius = (game.player.brush_adjust_start_radius
+                                  + delta * settings.BIOME_BRUSH_SENSITIVITY)
+                    game.player.brush_radius = max(settings.BIOME_BRUSH_MIN_RADIUS,
+                                                   min(settings.BIOME_BRUSH_MAX_RADIUS, new_radius))
                 return
             else:
                 game.player.brush_adjust_start_y = None
                 game.player.brush_adjust_start_radius = None
 
             if pygame.mouse.get_pressed()[0]:
-                if mouse_y > UI_HEIGHT and not game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
+                if mouse_y > settings.UI_HEIGHT and not game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
                     wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                     biome_type = BIOME_TOOL_MAP[game.player.tool]
                     game.object_manager.paint_biome(wx, wy, biome_type, game.player.brush_radius)
 
         if game.player.grabbed_creature is not None:
-            if mouse_y > UI_HEIGHT:
+            if mouse_y > settings.UI_HEIGHT:
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 creature = game.player.grabbed_creature
                 creature.x = max(15, min(wx, game.camera.world_w - 15))
@@ -805,7 +805,7 @@ class _MouseMotionMixin:
             return
 
         if game.player.grabbed_object is not None:
-            if mouse_y > UI_HEIGHT:
+            if mouse_y > settings.UI_HEIGHT:
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 obj = game.player.grabbed_object
                 wx = max(10, min(wx, game.camera.world_w - 10))
@@ -835,7 +835,7 @@ class _MouseMotionMixin:
             game.camera.move(-dx, -dy)
             game.drag_start = event.pos
 
-        if pygame.mouse.get_pressed()[0] and mouse_y > UI_HEIGHT:
+        if pygame.mouse.get_pressed()[0] and mouse_y > settings.UI_HEIGHT:
             wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
             wx = max(0, min(wx, game.camera.world_w))
             wy = max(0, min(wy, game.camera.world_h))
@@ -849,7 +849,7 @@ class _MouseMotionMixin:
                     drawing.add_point(wx, wy)
 
         if game.player.drawing_landscape is not None and pygame.mouse.get_pressed()[0]:
-            if mouse_y > UI_HEIGHT:
+            if mouse_y > settings.UI_HEIGHT:
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 wx = max(0, min(wx, game.camera.world_w))
                 wy = max(0, min(wy, game.camera.world_h))
@@ -864,18 +864,18 @@ class _MouseMotionMixin:
                 self.placement_hover.mode = game.placement_mode
                 self.placement_hover.check_pos = None
 
-            if mouse_y > UI_HEIGHT and not game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
+            if mouse_y > settings.UI_HEIGHT and not game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
                 last = self.placement_hover.check_pos
                 moved_enough = (
                         last is None or
-                        math.hypot(mouse_x - last[0], mouse_y - last[1]) >= PLACEMENT_CHECK_MIN_MOVE
+                        math.hypot(mouse_x - last[0], mouse_y - last[1]) >= settings.PLACEMENT_CHECK_MIN_MOVE
                 )
                 if moved_enough:
                     self.placement_hover.check_pos = (mouse_x, mouse_y)
                     wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                     game.placement_pos = (wx, wy)
                     is_creature_like = (
-                            game.placement_mode in ("creature_male", "creature_female")
+                            game.placement_mode in creature_placement_lookup()
                             or game.placement_mode in animal_placement_lookup()
                     )
                     if is_creature_like:
@@ -961,7 +961,7 @@ class _WorldScreenEventMixin:
 
             if ui.lw_list_rect and ui.lw_list_rect.collidepoint(mouse_pos):
                 local_y = mouse_pos[1] - ui.lw_list_rect.y + screen.list_scroll.offset
-                index = int(local_y // WORLD_LIST_ITEM_HEIGHT)
+                index = int(local_y // settings.WORLD_LIST_ITEM_HEIGHT)
                 if 0 <= index < len(screen.entries):
                     game.world_manager.select_entry(screen, index)
                 return
@@ -977,7 +977,7 @@ class _WorldScreenEventMixin:
         elif event.type == pygame.MOUSEWHEEL:
             mouse_pos = pygame.mouse.get_pos()
             if ui.lw_list_rect and ui.lw_list_rect.collidepoint(mouse_pos):
-                content_height = len(screen.entries) * WORLD_LIST_ITEM_HEIGHT
+                content_height = len(screen.entries) * settings.WORLD_LIST_ITEM_HEIGHT
                 screen.list_scroll.update_bounds(content_height, ui.lw_list_rect.height)
                 screen.list_scroll.scroll_by_wheel(event.y)
             elif ui.lw_info_rect and ui.lw_info_rect.collidepoint(mouse_pos):

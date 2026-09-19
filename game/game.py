@@ -8,7 +8,6 @@ import json
 from renderer import Camera, WorldRenderer
 from ui import UIManager
 from player import Player
-from settings import *
 import settings
 from creatures.all_needed import geometry
 
@@ -66,14 +65,14 @@ class Game:
             self.desktop_w = display_info.current_w
             self.desktop_h = display_info.current_h
         except pygame.error:
-            self.desktop_w, self.desktop_h = WINDOW_MAX_WIDTH, WINDOW_MAX_HEIGHT
+            self.desktop_w, self.desktop_h = settings.WINDOW_MAX_WIDTH, settings.WINDOW_MAX_HEIGHT
 
-        self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption(f"Simple_Lifes {GAME_VERSION}")
+        self.screen = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
+        pygame.display.set_caption(f"Simple_Lifes {settings.GAME_VERSION}")
         self.clock = pygame.time.Clock()
         self.running = True
 
-        self.camera = Camera(WORLD_WIDTH, WORLD_HEIGHT)
+        self.camera = Camera(settings.WORLD_WIDTH, settings.WORLD_HEIGHT)
 
         self.world_loaded = False
         self.world_path = None
@@ -130,7 +129,7 @@ class Game:
         self.input_handler = InputHandler(self)
         self.simulation = Simulation(self)
 
-        os.makedirs(BASE_WORLDS_DIR, exist_ok=True)
+        os.makedirs(settings.BASE_WORLDS_DIR, exist_ok=True)
 
         # ---------- Защита от критических ошибок ----------
         self.crashed = False
@@ -171,7 +170,7 @@ class Game:
     SETTINGS_FILENAME = "settings.json"
 
     def _settings_file_path(self):
-        return os.path.join(BASE_WORLDS_DIR, self.SETTINGS_FILENAME)
+        return os.path.join(settings.BASE_WORLDS_DIR, self.SETTINGS_FILENAME)
 
     def _load_display_settings(self):
         from game.display_settings import full_default_display_settings
@@ -191,7 +190,7 @@ class Game:
         return merged
 
     def _save_display_settings(self):
-        os.makedirs(BASE_WORLDS_DIR, exist_ok=True)
+        os.makedirs(settings.BASE_WORLDS_DIR, exist_ok=True)
         try:
             with open(self._settings_file_path(), "w", encoding="utf-8") as f:
                 json.dump(self.display_settings, f, indent=2, ensure_ascii=False)
@@ -234,32 +233,32 @@ class Game:
         wall_points = [w.points for w in self.world.walls if w.points]
         fence_points = [f.points for f in self.world.fences if f.points]
 
-        welded_walls = geometry.weld_polyline_endpoints(wall_points, tolerance=WALL_WELD_TOLERANCE)
-        welded_fences = geometry.weld_polyline_endpoints(fence_points, tolerance=WALL_WELD_TOLERANCE)
+        welded_walls = geometry.weld_polyline_endpoints(wall_points, tolerance=settings.WALL_WELD_TOLERANCE)
+        welded_fences = geometry.weld_polyline_endpoints(fence_points, tolerance=settings.WALL_WELD_TOLERANCE)
 
         self._wall_geometry_cache = (version, welded_walls, welded_fences)
         return welded_walls, welded_fences
 
     def resize_for_world(self, world_w, world_h):
-        screen_limit_w = self.desktop_w - WINDOW_SCREEN_MARGIN
-        screen_limit_h = self.desktop_h - WINDOW_SCREEN_MARGIN
+        screen_limit_w = self.desktop_w - settings.WINDOW_SCREEN_MARGIN
+        screen_limit_h = self.desktop_h - settings.WINDOW_SCREEN_MARGIN
 
-        min_w = max(WINDOW_MIN_WIDTH, self.ui.top_bar.min_required_width)
-        max_w = max(min_w, min(WINDOW_MAX_WIDTH, screen_limit_w))
-        max_h = max(WINDOW_MIN_HEIGHT, min(WINDOW_MAX_HEIGHT, screen_limit_h))
-        available_h = max_h - UI_HEIGHT
+        min_w = max(settings.WINDOW_MIN_WIDTH, self.ui.top_bar.min_required_width)
+        max_w = max(min_w, min(settings.WINDOW_MAX_WIDTH, screen_limit_w))
+        max_h = max(settings.WINDOW_MIN_HEIGHT, min(settings.WINDOW_MAX_HEIGHT, screen_limit_h))
+        available_h = max_h - settings.UI_HEIGHT
 
         new_w = min(world_w, max_w)
-        new_h = min(world_h, available_h) + UI_HEIGHT
+        new_h = min(world_h, available_h) + settings.UI_HEIGHT
 
         new_w = max(min_w, new_w)
-        new_h = max(WINDOW_MIN_HEIGHT, new_h)
+        new_h = max(settings.WINDOW_MIN_HEIGHT, new_h)
 
         settings.WINDOW_WIDTH = new_w
         settings.WINDOW_HEIGHT = new_h
 
         self.screen = pygame.display.set_mode((new_w, new_h))
-        self.camera = Camera(world_w, world_h, new_w, new_h - UI_HEIGHT)
+        self.camera = Camera(world_w, world_h, new_w, new_h - settings.UI_HEIGHT)
         self.ui.rebuild_layout(new_w, new_h)
 
     def restore_default_window(self):
@@ -270,7 +269,7 @@ class Game:
         self.screen = pygame.display.set_mode((settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
         self.camera = Camera(
             settings.WORLD_WIDTH, settings.WORLD_HEIGHT,
-            settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT - UI_HEIGHT
+            settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT - settings.UI_HEIGHT
         )
         self.ui.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
@@ -322,10 +321,9 @@ class Game:
     def draw_crash_screen(self):
         self.screen.fill((15, 15, 15))
         window_w, window_h = self.screen.get_width(), self.screen.get_height()
-
-        title_font = pygame.font.SysFont(FONT_NAME, 36, bold=True)
-        text_font = pygame.font.SysFont(FONT_NAME, 20)
-        btn_font = pygame.font.SysFont(FONT_NAME, 18)
+        title_font = pygame.font.SysFont(settings.FONT_NAME, 36, bold=True)
+        text_font = pygame.font.SysFont(settings.FONT_NAME, 20)
+        btn_font = pygame.font.SysFont(settings.FONT_NAME, 18)
 
         title_surf = title_font.render("UNEXPECTED CRITICAL ERROR!", True, (255, 40, 40))
         self.screen.blit(title_surf, (window_w // 2 - title_surf.get_width() // 2, 60))
@@ -380,7 +378,7 @@ class Game:
 
     def run(self):
         while self.running:
-            dt = self.clock.tick(FPS) / 1000.0
+            dt = self.clock.tick(settings.FPS) / 1000.0
             try:
                 self.input_handler.handle_events()
                 if not self.crashed:
@@ -392,7 +390,7 @@ class Game:
         if self.world_loaded:
             suppress_autosave = (
                     self.last_manual_save_time is not None and
-                    time.time() - self.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
+                    time.time() - self.last_manual_save_time < settings.MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
             )
             if not suppress_autosave and self.display_settings.get("autosave_enabled", True):
                 self.world_manager.save_world()
@@ -479,7 +477,7 @@ class Game:
 
         recently_saved_manually = (
                 self.last_manual_save_time is not None and
-                time.time() - self.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
+                time.time() - self.last_manual_save_time < settings.MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
         )
         if recently_saved_manually:
             self.world_manager.close_world(save=False)

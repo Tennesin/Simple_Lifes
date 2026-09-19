@@ -4,12 +4,7 @@
 
 import pygame
 
-from settings import (
-    FRUIT_COLOR, FRUIT_COLOR_BORDER, BUSH_COLOR, BUSH_COLOR_BORDER,
-    TREE_COLOR_LEAVES, TREE_COLOR_LEAVES_BORDER, STONE_COLOR, STONE_COLOR_BORDER,
-    GRASS_COLOR, GRASS_COLOR_DARK, MEAT_COLOR, MEAT_COLOR_BORDER,
-    COLOR_LIGHT, COLOR_DARK, BIOME_BASE_COLOR, BIOME_DESERT, BIOME_RIVER, BIOME_SEA,
-)
+import settings
 from creatures.all_needed.instruction_icons import IconCache
 from creatures.all_needed.instruction import (
     InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
@@ -27,18 +22,18 @@ _SHAPE_CIRCLE, _SHAPE_ELLIPSE, _SHAPE_SQUARE, _SHAPE_BLADE, _SHAPE_CROSS = (
     "circle", "ellipse", "square", "blade", "cross")
 
 _CORE_ICON_SPECS = {
-    "fruit": (_SHAPE_CIRCLE, FRUIT_COLOR, FRUIT_COLOR_BORDER),
-    "bush": (_SHAPE_CIRCLE, BUSH_COLOR, BUSH_COLOR_BORDER),
-    "tree": (_SHAPE_CIRCLE, TREE_COLOR_LEAVES, TREE_COLOR_LEAVES_BORDER),
-    "stone": (_SHAPE_CIRCLE, STONE_COLOR, STONE_COLOR_BORDER),
+    "fruit": (_SHAPE_CIRCLE, settings.FRUIT_COLOR, settings.FRUIT_COLOR_BORDER),
+    "bush": (_SHAPE_CIRCLE, settings.BUSH_COLOR, settings.BUSH_COLOR_BORDER),
+    "tree": (_SHAPE_CIRCLE, settings.TREE_COLOR_LEAVES, settings.TREE_COLOR_LEAVES_BORDER),
+    "stone": (_SHAPE_CIRCLE, settings.STONE_COLOR, settings.STONE_COLOR_BORDER),
     "water": (_SHAPE_ELLIPSE, (60, 140, 220), (30, 90, 170)),
-    "meat": (_SHAPE_ELLIPSE, MEAT_COLOR, MEAT_COLOR_BORDER),
-    "grass": (_SHAPE_BLADE, GRASS_COLOR, GRASS_COLOR_DARK),
+    "meat": (_SHAPE_ELLIPSE, settings.MEAT_COLOR, settings.MEAT_COLOR_BORDER),
+    "grass": (_SHAPE_BLADE, settings.GRASS_COLOR, settings.GRASS_COLOR_DARK),
     "spike": (_SHAPE_CROSS, (255, 165, 0), (0, 0, 0)),
-    "biome_plains": (_SHAPE_SQUARE, COLOR_LIGHT, COLOR_DARK),
-    "biome_desert": (_SHAPE_SQUARE, BIOME_BASE_COLOR[BIOME_DESERT], (150, 120, 60)),
-    "biome_river": (_SHAPE_SQUARE, BIOME_BASE_COLOR[BIOME_RIVER], (40, 100, 170)),
-    "biome_sea": (_SHAPE_SQUARE, BIOME_BASE_COLOR[BIOME_SEA], (10, 35, 100)),
+    "biome_plains": (_SHAPE_SQUARE, settings.COLOR_LIGHT, settings.COLOR_DARK),
+    "biome_desert": (_SHAPE_SQUARE, settings.BIOME_BASE_COLOR[settings.BIOME_DESERT], (150, 120, 60)),
+    "biome_river": (_SHAPE_SQUARE, settings.BIOME_BASE_COLOR[settings.BIOME_RIVER], (40, 100, 170)),
+    "biome_sea": (_SHAPE_SQUARE, settings.BIOME_BASE_COLOR[settings.BIOME_SEA], (10, 35, 100)),
 }
 
 _CORE_ICON_CACHE = IconCache()

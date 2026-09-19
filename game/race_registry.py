@@ -2,7 +2,7 @@ import importlib
 import pkgutil
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Tuple, Type
-from info import INFO_BTN_DRAW_ROAD, INFO_TOOL_ROAD_HINT
+import info
 
 from creatures.all_needed.instruction import InstructionEntry
 import creatures.races as races_package
@@ -51,7 +51,7 @@ class RoadNetworkSpec:
 CORE_ROAD_NETWORK = RoadNetworkSpec(
     obj_type="road", road_collection="roads", crossing_collection="road_crossings",
     road_cls=Road, preview_color=(255, 255, 255),
-    menu_label=INFO_BTN_DRAW_ROAD, menu_hint=INFO_TOOL_ROAD_HINT)
+    menu_label=info.INFO_BTN_DRAW_ROAD, menu_hint=info.INFO_TOOL_ROAD_HINT)
 
 @dataclass(frozen=True)
 class PlayerToolSpec:

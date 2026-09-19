@@ -1,21 +1,13 @@
 """Единая точка сборки настроек отображения (панель 'Настройки' -> 'Отображение')."""
 
-from settings import DEFAULT_DISPLAY_SETTINGS as _CORE_DISPLAY_SETTINGS
-from settings import SIMULATION_AREA_MIN_UNITS, SIMULATION_AREA_MAX_UNITS
-from info import (
-    INFO_SETTINGS_SHOW_NAMES, INFO_SETTINGS_SHOW_STATUS_RINGS,
-    INFO_SETTINGS_MINIMAP_FRUITS, INFO_SETTINGS_MINIMAP_BUSHES,
-    INFO_SETTINGS_MINIMAP_SPIKES, INFO_SETTINGS_MINIMAP_WATER,
-    INFO_SETTINGS_MINIMAP_TREES, INFO_SETTINGS_MINIMAP_STONES,
-    INFO_SETTINGS_MINIMAP_ROADS, INFO_SETTINGS_AUTOSAVE,
-    INFO_SETTINGS_SIMULATION_AREA,
-)
+import settings
+import info
 from game.race_registry import all_display_checkboxes
 from game.animal_registry import all_animal_display_checkboxes
 
 # ---------- Core-чекбоксы вкладки "Техническое" ----------
 CORE_TECHNICAL_CHECKBOXES = (
-    ("autosave_enabled", INFO_SETTINGS_AUTOSAVE),
+    ("autosave_enabled", info.INFO_SETTINGS_AUTOSAVE),
 )
 
 def all_technical_checkbox_specs():
@@ -24,8 +16,8 @@ def all_technical_checkbox_specs():
 
 # ---------- Core-числовые настройки (слайдеры) вкладки "Техническое" ----------
 CORE_TECHNICAL_SLIDERS = (
-    ("simulation_area_units", INFO_SETTINGS_SIMULATION_AREA,
-     SIMULATION_AREA_MIN_UNITS, SIMULATION_AREA_MAX_UNITS, 1),
+    ("simulation_area_units", info.INFO_SETTINGS_SIMULATION_AREA,
+     settings.SIMULATION_AREA_MIN_UNITS, settings.SIMULATION_AREA_MAX_UNITS, 1),
 )
 
 def all_technical_slider_specs():
@@ -34,15 +26,15 @@ def all_technical_slider_specs():
 
 # ---------- Core-чекбоксы вкладки "Отображение" ----------
 CORE_DISPLAY_CHECKBOXES = (
-    ("show_creature_names", INFO_SETTINGS_SHOW_NAMES),
-    ("show_status_rings", INFO_SETTINGS_SHOW_STATUS_RINGS),
-    ("minimap_show_fruits", INFO_SETTINGS_MINIMAP_FRUITS),
-    ("minimap_show_bushes", INFO_SETTINGS_MINIMAP_BUSHES),
-    ("minimap_show_spikes", INFO_SETTINGS_MINIMAP_SPIKES),
-    ("minimap_show_water", INFO_SETTINGS_MINIMAP_WATER),
-    ("minimap_show_trees", INFO_SETTINGS_MINIMAP_TREES),
-    ("minimap_show_stones", INFO_SETTINGS_MINIMAP_STONES),
-    ("minimap_show_roads", INFO_SETTINGS_MINIMAP_ROADS),
+    ("show_creature_names", info.INFO_SETTINGS_SHOW_NAMES),
+    ("show_status_rings", info.INFO_SETTINGS_SHOW_STATUS_RINGS),
+    ("minimap_show_fruits", info.INFO_SETTINGS_MINIMAP_FRUITS),
+    ("minimap_show_bushes", info.INFO_SETTINGS_MINIMAP_BUSHES),
+    ("minimap_show_spikes", info.INFO_SETTINGS_MINIMAP_SPIKES),
+    ("minimap_show_water", info.INFO_SETTINGS_MINIMAP_WATER),
+    ("minimap_show_trees", info.INFO_SETTINGS_MINIMAP_TREES),
+    ("minimap_show_stones", info.INFO_SETTINGS_MINIMAP_STONES),
+    ("minimap_show_roads", info.INFO_SETTINGS_MINIMAP_ROADS),
 )
 
 def all_display_checkbox_specs():
@@ -53,7 +45,7 @@ def all_display_checkbox_specs():
 def full_default_display_settings() -> dict:
     """Стартовые значения display_settings: core-дефолты (их фактические True/False
     заданы в settings.py) + все чекбоксы рас и животных включены по умолчанию."""
-    merged = dict(_CORE_DISPLAY_SETTINGS)
+    merged = dict(settings.DEFAULT_DISPLAY_SETTINGS)
     for key, _label in all_display_checkboxes():
         merged.setdefault(key, True)
     for key, _label in all_animal_display_checkboxes():

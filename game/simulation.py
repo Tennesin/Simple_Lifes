@@ -2,7 +2,6 @@ import math
 import random
 
 from objects import Fruit, Tree, Stone, Grass
-from settings import *
 import settings
 from creatures.all_needed import navigation
 from creatures.all_needed.navigation import SpatialGrid
@@ -25,10 +24,10 @@ class Simulation:
         self._campfire_grid = SpatialGrid(cell_size=300)
         self._creature_grid = SpatialGrid(cell_size=250)
         self._corpse_grid = SpatialGrid(cell_size=250)
-        self._tree_spawn_timer = random.uniform(*NATURAL_TREE_SPAWN_INTERVAL)
-        self._bush_spawn_timer = random.uniform(*NATURAL_BUSH_SPAWN_INTERVAL)
-        self._stone_spawn_timer = random.uniform(*NATURAL_STONE_SPAWN_INTERVAL)
-        self._grass_spawn_timer = random.uniform(*NATURAL_GRASS_SPAWN_INTERVAL)
+        self._tree_spawn_timer = random.uniform(*settings.NATURAL_TREE_SPAWN_INTERVAL)
+        self._bush_spawn_timer = random.uniform(*settings.NATURAL_BUSH_SPAWN_INTERVAL)
+        self._stone_spawn_timer = random.uniform(*settings.NATURAL_STONE_SPAWN_INTERVAL)
+        self._grass_spawn_timer = random.uniform(*settings.NATURAL_GRASS_SPAWN_INTERVAL)
         self._tree_grid = SpatialGrid(cell_size=200)
         self._stone_grid = SpatialGrid(cell_size=200)
         self._grass_grid = SpatialGrid(cell_size=200)
@@ -143,25 +142,25 @@ class Simulation:
         creatures_by_id = {c.id: c for c in world.creatures}
 
         nav_grid_no_fences = self._nav_cache.get(
-            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, settings.NAV_GRID_CELL_SIZE,
             world.walls, world.fences, world.spikes, False,
-            NAV_OBSTACLE_INFLATE, SPIKE_NAV_BLOCK_RADIUS,
+            settings.NAV_OBSTACLE_INFLATE, settings.SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
         nav_grid_with_fences = self._nav_cache.get(
-            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, settings.NAV_GRID_CELL_SIZE,
             world.walls, world.fences, world.spikes, True,
-            NAV_OBSTACLE_INFLATE, SPIKE_NAV_BLOCK_RADIUS,
+            settings.NAV_OBSTACLE_INFLATE, settings.SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
 
         nav_grid_no_fences_fallback = self._nav_cache.get_fallback(
-            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, settings.NAV_GRID_CELL_SIZE,
             world.walls, world.fences, world.spikes, False,
-            SPIKE_NAV_BLOCK_RADIUS,
+            settings.SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
         nav_grid_with_fences_fallback = self._nav_cache.get_fallback(
-            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, settings.NAV_GRID_CELL_SIZE,
             world.walls, world.fences, world.spikes, True,
-            SPIKE_NAV_BLOCK_RADIUS,
+            settings.SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=world.landscape_version)
 
         if self._tick_dynamic_grid_frame():
@@ -215,9 +214,9 @@ class Simulation:
     # =====================================================================
 
     def _compute_simulation_bounds(self, game):
-        units = game.display_settings.get("simulation_area_units", SIMULATION_AREA_DEFAULT_UNITS)
-        units = max(SIMULATION_AREA_MIN_UNITS, min(SIMULATION_AREA_MAX_UNITS, units))
-        margin = units * SIMULATION_AREA_PX_PER_UNIT
+        units = game.display_settings.get("simulation_area_units", settings.SIMULATION_AREA_DEFAULT_UNITS)
+        units = max(settings.SIMULATION_AREA_MIN_UNITS, min(settings.SIMULATION_AREA_MAX_UNITS, units))
+        margin = units * settings.SIMULATION_AREA_PX_PER_UNIT
         cam = game.camera
         return (
             cam.x - margin, cam.y - margin,
@@ -253,7 +252,7 @@ class Simulation:
 
         active_ids.add(favorite.id)
         vision = (favorite.effective_vision_radius()
-                  if hasattr(favorite, "effective_vision_radius") else DEFAULT_VISION_RADIUS)
+                  if hasattr(favorite, "effective_vision_radius") else settings.DEFAULT_VISION_RADIUS)
 
         for other in world.creatures:
             if other.id == favorite.id or other.is_dead:
@@ -278,26 +277,26 @@ class Simulation:
 
         self._tree_spawn_timer -= dt
         if self._tree_spawn_timer <= 0:
-            self._tree_spawn_timer = random.uniform(*NATURAL_TREE_SPAWN_INTERVAL)
-            if random.random() < NATURAL_TREE_SPAWN_CHANCE:
+            self._tree_spawn_timer = random.uniform(*settings.NATURAL_TREE_SPAWN_INTERVAL)
+            if random.random() < settings.NATURAL_TREE_SPAWN_CHANCE:
                 game.object_manager.try_natural_tree_growth()
 
         self._bush_spawn_timer -= dt
         if self._bush_spawn_timer <= 0:
-            self._bush_spawn_timer = random.uniform(*NATURAL_BUSH_SPAWN_INTERVAL)
-            if random.random() < NATURAL_BUSH_SPAWN_CHANCE:
+            self._bush_spawn_timer = random.uniform(*settings.NATURAL_BUSH_SPAWN_INTERVAL)
+            if random.random() < settings.NATURAL_BUSH_SPAWN_CHANCE:
                 game.object_manager.try_natural_bush_growth()
 
         self._stone_spawn_timer -= dt
         if self._stone_spawn_timer <= 0:
-            self._stone_spawn_timer = random.uniform(*NATURAL_STONE_SPAWN_INTERVAL)
-            if random.random() < NATURAL_STONE_SPAWN_CHANCE:
+            self._stone_spawn_timer = random.uniform(*settings.NATURAL_STONE_SPAWN_INTERVAL)
+            if random.random() < settings.NATURAL_STONE_SPAWN_CHANCE:
                 game.object_manager.try_natural_stone_growth()
 
         self._grass_spawn_timer -= dt
         if self._grass_spawn_timer <= 0:
-            self._grass_spawn_timer = random.uniform(*NATURAL_GRASS_SPAWN_INTERVAL)
-            if random.random() < NATURAL_GRASS_SPAWN_CHANCE:
+            self._grass_spawn_timer = random.uniform(*settings.NATURAL_GRASS_SPAWN_INTERVAL)
+            if random.random() < settings.NATURAL_GRASS_SPAWN_CHANCE:
                 game.object_manager.try_natural_grass_growth()
 
     # =====================================================================
@@ -335,15 +334,15 @@ class Simulation:
     def _prepare_animal_nav_grid(self):
         game = self.game
         nav_grid = self._nav_cache.get(
-            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, settings.NAV_GRID_CELL_SIZE,
             game.world.walls, game.world.fences, game.world.spikes,
-            True, NAV_OBSTACLE_INFLATE, SPIKE_NAV_BLOCK_RADIUS,
+            True, settings.NAV_OBSTACLE_INFLATE, settings.SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=game.world.landscape_version)
         # ---------- НОВОЕ: запасная сетка с минимальным отступом ----------
         nav_grid_fallback = self._nav_cache.get_fallback(
-            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, NAV_GRID_CELL_SIZE,
+            settings.WORLD_WIDTH, settings.WORLD_HEIGHT, settings.NAV_GRID_CELL_SIZE,
             game.world.walls, game.world.fences, game.world.spikes,
-            True, SPIKE_NAV_BLOCK_RADIUS,
+            True, settings.SPIKE_NAV_BLOCK_RADIUS,
             biome_grid=game.biome_manager.grid, version=game.world.landscape_version)
         return nav_grid, nav_grid_fallback
 

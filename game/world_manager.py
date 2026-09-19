@@ -5,17 +5,16 @@ import time
 import pygame
 import random
 
-from settings import *
+import settings
+import info
 from game.race_registry import (
     get_race, all_races, all_extra_world_save_fns, all_extra_world_load_fns,
 )
-from info import *
 from player import Player
 from objects import (
     Fruit, Spike, WaterPuddle, Bush, Road, RoadCrossing,
     Wall, Fence, Tree, Stone, Grass, Meat,
     )
-import settings
 from game.animal_registry import all_animals, all_animal_drop_persistence_entries
 from .world_context import WorldState
 from .widgets import TextInputBox, ScrollArea, Slider
@@ -30,37 +29,37 @@ _REQUIRED_META_KEYS = (
     "name", "world_width", "world_height", "seed",
     "biome_ratios", "generate_animals", "created_version", "game_version",
 )
-_REQUIRED_WORLD_FILES = (WORLD_BIOME_FILENAME,)
+_REQUIRED_WORLD_FILES = (settings.WORLD_BIOME_FILENAME,)
 
 class WorldLoadError(Exception):
     """Мир нельзя открыть. Текст сообщения предназначен для показа игроку."""
 
 def sanitize_world_name(name):
     if not name:
-        return DEFAULT_WORLD_NAME
+        return settings.DEFAULT_WORLD_NAME
     for ch in INVALID_NAME_CHARS:
         name = name.replace(ch, "_")
     name = name.strip()
-    return name if name else DEFAULT_WORLD_NAME
+    return name if name else settings.DEFAULT_WORLD_NAME
 
 def get_unique_world_folder_name(base_name):
     base_name = sanitize_world_name(base_name)
-    candidate = base_name + WORLD_EXTENSION
-    if not os.path.exists(os.path.join(BASE_WORLDS_DIR, candidate)):
+    candidate = base_name + settings.WORLD_EXTENSION
+    if not os.path.exists(os.path.join(settings.BASE_WORLDS_DIR, candidate)):
         return candidate
     n = 1
     while True:
-        candidate = f"{base_name} ({n}){WORLD_EXTENSION}"
-        if not os.path.exists(os.path.join(BASE_WORLDS_DIR, candidate)):
+        candidate = f"{base_name} ({n}){settings.WORLD_EXTENSION}"
+        if not os.path.exists(os.path.join(settings.BASE_WORLDS_DIR, candidate)):
             return candidate
         n += 1
 
 def is_valid_world(path):
     if not path or not os.path.isdir(path):
         return False
-    if not path.endswith(WORLD_EXTENSION):
+    if not path.endswith(settings.WORLD_EXTENSION):
         return False
-    return os.path.isfile(os.path.join(path, WORLD_META_FILENAME))
+    return os.path.isfile(os.path.join(path, settings.WORLD_META_FILENAME))
 
 # ---------- Состояние экрана "Создание мира" ----------
 
@@ -68,16 +67,16 @@ class CreateWorldScreen:
     def __init__(self):
         self.name_input = TextInputBox(
             pygame.Rect(0, 0, 10, 10), value="", max_len=24,
-            placeholder=INFO_WS_NAME_PLACEHOLDER)
+            placeholder=info.INFO_WS_NAME_PLACEHOLDER)
         self.width_input = TextInputBox(
-            pygame.Rect(0, 0, 10, 10), value=str(WORLD_DEFAULT_SIZE[0]),
-            max_len=5, digits_only=True, placeholder=INFO_WS_SIZE_PLACEHOLDER)
+            pygame.Rect(0, 0, 10, 10), value=str(settings.WORLD_DEFAULT_SIZE[0]),
+            max_len=5, digits_only=True, placeholder=info.INFO_WS_SIZE_PLACEHOLDER)
         self.height_input = TextInputBox(
-            pygame.Rect(0, 0, 10, 10), value=str(WORLD_DEFAULT_SIZE[1]),
-            max_len=5, digits_only=True, placeholder=INFO_WS_SIZE_PLACEHOLDER)
+            pygame.Rect(0, 0, 10, 10), value=str(settings.WORLD_DEFAULT_SIZE[1]),
+            max_len=5, digits_only=True, placeholder=info.INFO_WS_SIZE_PLACEHOLDER)
         self.seed_input = TextInputBox(
             pygame.Rect(0, 0, 10, 10), value="", max_len=12,
-            digits_only=True, placeholder=INFO_WS_SEED_PLACEHOLDER)
+            digits_only=True, placeholder=info.INFO_WS_SEED_PLACEHOLDER)
         self.error_text = None
 
         self.generate_animals = True
@@ -184,14 +183,14 @@ class WorldManager:
 
         name = screen.name_input.text.strip()
         if not name:
-            screen.error_text = INFO_WS_ERROR_EMPTY_NAME
+            screen.error_text = info.INFO_WS_ERROR_EMPTY_NAME
             return
 
         width = self._parse_size(screen.width_input.text)
         height = self._parse_size(screen.height_input.text)
         if width is None or height is None:
-            screen.error_text = INFO_WS_ERROR_SIZE.format(
-                min=WORLD_MIN_SIZE, max=WORLD_MAX_SIZE)
+            screen.error_text = info.INFO_WS_ERROR_SIZE.format(
+                min=settings.WORLD_MIN_SIZE, max=settings.WORLD_MAX_SIZE)
             return
 
         seed_text = screen.seed_input.text.strip()
@@ -209,7 +208,7 @@ class WorldManager:
         if not text or not text.isdigit():
             return None
         value = int(text)
-        if value < WORLD_MIN_SIZE or value > WORLD_MAX_SIZE:
+        if value < settings.WORLD_MIN_SIZE or value > settings.WORLD_MAX_SIZE:
             return None
         return value
 
@@ -227,13 +226,13 @@ class WorldManager:
         self.game.load_world_screen = None
 
     def _scan_worlds(self):
-        os.makedirs(BASE_WORLDS_DIR, exist_ok=True)
+        os.makedirs(settings.BASE_WORLDS_DIR, exist_ok=True)
         entries = []
-        for folder_name in sorted(os.listdir(BASE_WORLDS_DIR)):
-            folder_path = os.path.join(BASE_WORLDS_DIR, folder_name)
+        for folder_name in sorted(os.listdir(settings.BASE_WORLDS_DIR)):
+            folder_path = os.path.join(settings.BASE_WORLDS_DIR, folder_name)
             if not is_valid_world(folder_path):
                 continue
-            meta_path = os.path.join(folder_path, WORLD_META_FILENAME)
+            meta_path = os.path.join(folder_path, settings.WORLD_META_FILENAME)
             try:
                 with open(meta_path, "r", encoding="utf-8") as f:
                     meta = json.load(f)
@@ -322,14 +321,14 @@ class WorldManager:
 
     def create_world(self, name, width=None, height=None, seed=None,
                      biome_ratios=None, generate_animals=True):
-        os.makedirs(BASE_WORLDS_DIR, exist_ok=True)
+        os.makedirs(settings.BASE_WORLDS_DIR, exist_ok=True)
         folder_name = get_unique_world_folder_name(name)
-        world_path = os.path.join(BASE_WORLDS_DIR, folder_name)
+        world_path = os.path.join(settings.BASE_WORLDS_DIR, folder_name)
         os.makedirs(world_path, exist_ok=True)
         os.makedirs(os.path.join(world_path, "creatures"), exist_ok=True)
 
-        width = width or WORLD_DEFAULT_SIZE[0]
-        height = height or WORLD_DEFAULT_SIZE[1]
+        width = width or settings.WORLD_DEFAULT_SIZE[0]
+        height = height or settings.WORLD_DEFAULT_SIZE[1]
         if seed is None:
             seed = random.randint(0, 2 ** 31 - 1)
 
@@ -338,15 +337,15 @@ class WorldManager:
         meta = {
             "name": sanitize_world_name(name),
             "created": time.time(),
-            "created_version": GAME_VERSION,
-            "game_version": GAME_VERSION,
+            "created_version": settings.GAME_VERSION,
+            "game_version": settings.GAME_VERSION,
             "world_width": width,
             "world_height": height,
             "seed": seed,
             "biome_ratios": biome_ratios,
             "generate_animals": generate_animals,
         }
-        with open(os.path.join(world_path, WORLD_META_FILENAME), "w", encoding="utf-8") as f:
+        with open(os.path.join(world_path, settings.WORLD_META_FILENAME), "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2, ensure_ascii=False)
 
         self.open_world(world_path, is_new=True)
@@ -355,25 +354,25 @@ class WorldManager:
 
     @staticmethod
     def _read_world_meta(world_path):
-        meta_path = os.path.join(world_path, WORLD_META_FILENAME)
+        meta_path = os.path.join(world_path, settings.WORLD_META_FILENAME)
         if not os.path.exists(meta_path):
-            raise WorldLoadError(INFO_LW_ERROR_MISSING_FILE.format(file=WORLD_META_FILENAME))
+            raise WorldLoadError(info.INFO_LW_ERROR_MISSING_FILE.format(file=settings.WORLD_META_FILENAME))
         try:
             with open(meta_path, "r", encoding="utf-8") as f:
                 meta = json.load(f)
         except (OSError, json.JSONDecodeError):
-            raise WorldLoadError(INFO_LW_ERROR_META_BROKEN.format(file=WORLD_META_FILENAME))
+            raise WorldLoadError(info.INFO_LW_ERROR_META_BROKEN.format(file=settings.WORLD_META_FILENAME))
         for key in _REQUIRED_META_KEYS:
             if key not in meta:
                 raise WorldLoadError(
-                    INFO_LW_ERROR_META_KEY.format(file=WORLD_META_FILENAME, key=key))
+                    info.INFO_LW_ERROR_META_KEY.format(file=settings.WORLD_META_FILENAME, key=key))
         return meta
 
     @staticmethod
     def _check_world_files(world_path):
         for filename in _REQUIRED_WORLD_FILES:
             if not os.path.exists(os.path.join(world_path, filename)):
-                raise WorldLoadError(INFO_LW_ERROR_MISSING_FILE.format(file=filename))
+                raise WorldLoadError(info.INFO_LW_ERROR_MISSING_FILE.format(file=filename))
 
     def open_world(self, world_path, is_new):
         game = self.game
@@ -449,7 +448,7 @@ class WorldManager:
                     data = json.load(f)
                 setattr(game.world, attr, [cls.from_dict(d) for d in data])
 
-        biome_path = os.path.join(game.world_path, WORLD_BIOME_FILENAME)
+        biome_path = os.path.join(game.world_path, settings.WORLD_BIOME_FILENAME)
         with open(biome_path, "r", encoding="utf-8") as f:
             game.biome_manager.load_from_dict(json.load(f))
 
@@ -487,7 +486,7 @@ class WorldManager:
             with open(os.path.join(game.world_path, filename), "w", encoding="utf-8") as f:
                 json.dump([obj.to_dict() for obj in items], f, indent=2)
         if game.biome_manager.grid is not None:
-            with open(os.path.join(game.world_path, WORLD_BIOME_FILENAME), "w", encoding="utf-8") as f:
+            with open(os.path.join(game.world_path, settings.WORLD_BIOME_FILENAME), "w", encoding="utf-8") as f:
                 json.dump(game.biome_manager.to_dict(), f)
         self._save_player_state()
         for fn in all_extra_world_save_fns():
@@ -498,13 +497,13 @@ class WorldManager:
 
     def _stamp_world_version(self):
         game = self.game
-        meta_path = os.path.join(game.world_path, WORLD_META_FILENAME)
+        meta_path = os.path.join(game.world_path, settings.WORLD_META_FILENAME)
         # ---------- Папка без world.json миром не считается (см. is_valid_world) - штамповать нечего ----------
         if not os.path.exists(meta_path):
             return
         with open(meta_path, "r", encoding="utf-8") as f:
             meta = json.load(f)
-        meta["game_version"] = GAME_VERSION
+        meta["game_version"] = settings.GAME_VERSION
 
         # ---------- Через временный файл, чтобы обрыв записи не оставил битый world.json ----------
         tmp_path = meta_path + ".tmp"
@@ -537,7 +536,7 @@ class WorldManager:
             if save is None:
                 suppress_autosave = (
                         game.last_manual_save_time is not None and
-                        time.time() - game.last_manual_save_time < MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
+                        time.time() - game.last_manual_save_time < settings.MANUAL_SAVE_AUTOSAVE_SUPPRESS_TIME
                 )
                 save = not suppress_autosave and game.display_settings.get("autosave_enabled", True)
             if save:
@@ -559,7 +558,7 @@ class WorldManager:
         game.world_path = None
         game.world_version = None
 
-        settings.WORLD_WIDTH, settings.WORLD_HEIGHT = WORLD_DEFAULT_SIZE
+        settings.WORLD_WIDTH, settings.WORLD_HEIGHT = settings.WORLD_DEFAULT_SIZE
         game.restore_default_window()
 
 _registry_attrs = {attr for _, attr, _ in WorldManager._WORLD_OBJECT_REGISTRY}

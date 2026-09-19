@@ -2,11 +2,11 @@
 подстраивается под фактическое содержимое, в правом нижнем углу экрана."""
 
 import pygame
-from settings import *
+import settings
+import info
 from game.animal_registry import all_animal_object_panel_extensions
 from creatures.all_needed.base_creature import GENDER_FEMALE
 from creatures.all_needed.diet import DIET_DISPLAY_MAP
-from info import INFO_INFO_GENDER, INFO_GENDER_MALE, INFO_GENDER_FEMALE, INFO_INFO_DIET
 from game.widgets import draw_favorite_star
 
 class AnimalPanel:
@@ -26,7 +26,7 @@ class AnimalPanel:
         self.info_panel_rect = pygame.Rect(0, 0, 0, 0)
         self.stat_bar_rects = {}
         self.favorite_star_rect = pygame.Rect(0, 0, 0, 0)
-        self.rebuild_layout(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     def rebuild_layout(self, window_w, window_h):
         # ---------- Позиция зависит от контента и считается в draw(), тут просто фиксируем экран ----------
@@ -34,7 +34,7 @@ class AnimalPanel:
         self.window_h = window_h
 
     def _draw_bar(self, screen, label, value, max_value, color, x, y, width, stat_key=None):
-        label_txt = self.font.render(f"{label}: {value:.1f}/{max_value}", True, TEXT_COLOR)
+        label_txt = self.font.render(f"{label}: {value:.1f}/{max_value}", True, settings.TEXT_COLOR)
         screen.blit(label_txt, (x, y))
         bar_rect = pygame.Rect(x, y + 18, width, 8)
         pygame.draw.rect(screen, (30, 30, 30), bar_rect)
@@ -52,10 +52,10 @@ class AnimalPanel:
 
     def _measure_content(self, animal, extra_lines, name):
         title_text = f"{animal.get_type_name()}: {name}"
-        gender_label = INFO_GENDER_FEMALE if animal.gender == GENDER_FEMALE else INFO_GENDER_MALE
-        gender_text = INFO_INFO_GENDER.format(gender=gender_label)
+        gender_label = info.INFO_GENDER_FEMALE if animal.gender == GENDER_FEMALE else info.INFO_GENDER_MALE
+        gender_text = info.INFO_INFO_GENDER.format(gender=gender_label)
         diet_label = DIET_DISPLAY_MAP.get(animal.diet, animal.diet)
-        diet_text = INFO_INFO_DIET.format(diet=diet_label)
+        diet_text = info.INFO_INFO_DIET.format(diet=diet_label)
 
         # ---------- Резервируем место под звезду справа от заголовка ----------
         title_reserved_width = self.font.size(title_text)[0] + self.FAVORITE_STAR_SIZE + self.FAVORITE_STAR_GAP
@@ -90,10 +90,10 @@ class AnimalPanel:
         )
         self.info_panel_rect = panel
 
-        pygame.draw.rect(screen, INFO_PANEL_COLOR, panel)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, panel, 2)
+        pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, panel)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, panel, 2)
 
-        title_txt = self.font.render(f"{animal.get_type_name()}: {name}", True, TEXT_COLOR)
+        title_txt = self.font.render(f"{animal.get_type_name()}: {name}", True, settings.TEXT_COLOR)
         screen.blit(title_txt, (panel.x + 10, panel.y + 8))
 
         star_size = self.FAVORITE_STAR_SIZE
@@ -103,14 +103,14 @@ class AnimalPanel:
 
         y = panel.y + self.TITLE_HEIGHT
 
-        gender_label = INFO_GENDER_FEMALE if animal.gender == GENDER_FEMALE else INFO_GENDER_MALE
-        gender_color = ANIMAL_COLOR_FEMALE if animal.gender == GENDER_FEMALE else ANIMAL_COLOR_MALE
-        gender_txt = self.font.render(INFO_INFO_GENDER.format(gender=gender_label), True, gender_color)
+        gender_label = info.INFO_GENDER_FEMALE if animal.gender == GENDER_FEMALE else info.INFO_GENDER_MALE
+        gender_color = settings.ANIMAL_COLOR_FEMALE if animal.gender == GENDER_FEMALE else settings.ANIMAL_COLOR_MALE
+        gender_txt = self.font.render(info.INFO_INFO_GENDER.format(gender=gender_label), True, gender_color)
         screen.blit(gender_txt, (panel.x + 10, y))
         y += self.EXTRA_LINE_HEIGHT
 
         diet_label = DIET_DISPLAY_MAP.get(animal.diet, animal.diet)
-        diet_txt = self.font.render(INFO_INFO_DIET.format(diet=diet_label), True, (150, 210, 130))
+        diet_txt = self.font.render(info.INFO_INFO_DIET.format(diet=diet_label), True, (150, 210, 130))
         screen.blit(diet_txt, (panel.x + 10, y))
         y += self.EXTRA_LINE_HEIGHT
 
