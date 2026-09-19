@@ -2,8 +2,16 @@
 
 import pygame
 
-from settings import *
-from info import *
+from settings import (
+    FONT_NAME, FONT_SIZE_TITLE,
+    SETTINGS_OVERLAY_ALPHA, SETTINGS_PANEL_BG, SETTINGS_PANEL_BORDER,
+    WORLD_SCREEN_TEXT, TEXT_COLOR,
+    BUTTON_COLOR, BUTTON_HOVER, CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
+)
+from info import (
+    INFO_EXIT_CONFIRM_TITLE, INFO_EXIT_CONFIRM_YES,
+    INFO_EXIT_CONFIRM_NO, INFO_EXIT_CONFIRM_BACK,
+)
 
 class ExitConfirmPanel:
 

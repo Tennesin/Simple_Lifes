@@ -3,8 +3,12 @@
 import time
 import pygame
 
-from settings import *
-from info import *
+from settings import UI_HEIGHT, TEXT_COLOR, INFO_PANEL_COLOR, INFO_PANEL_BORDER
+from info import (
+    INFO_INFO_CREATED, INFO_INFO_DELETE_HINT,
+    INFO_INFO_TREE_WOOD, INFO_INFO_STONE_AMOUNT, INFO_INFO_WATER_CHARGES,
+    INFO_INFO_FOOD_AMOUNT, INFO_INFO_RESOURCE_AMOUNT,
+)
 from game.race_registry import all_object_panel_extensions
 from game.animal_registry import all_animal_object_panel_extensions
 from creatures.all_needed.instruction import wrap_instruction_text

@@ -2,9 +2,17 @@
 
 import pygame
 
-from settings import *
-from info import *
-from player import Player
+from settings import (
+    FONT_NAME, FONT_SIZE_PANEL, UI_HEIGHT,
+    TEXT_COLOR, CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
+    COLLAPSE_HANDLE_WIDTH, COLLAPSE_HANDLE_HEIGHT,
+    COLLAPSE_HANDLE_COLOR, COLLAPSE_HANDLE_BORDER,
+    COLLAPSE_HANDLE_ARROW_COLOR, COLLAPSE_HANDLE_ARROW_HOVER_COLOR,
+)
+from info import (
+    INFO_PLACEMENT_HINT, INFO_BRUSH_RADIUS,
+    INFO_TOOL_GRAB_RELEASE_HINT, INFO_TOOL_GRAB_OBJECT_HINT,
+)
 from game.race_registry import (
     all_races, all_player_tools, all_secondary_panel_specs, all_road_networks,
 )

@@ -2,8 +2,17 @@
 
 import pygame
 
-from settings import *
-from info import *
+from settings import (
+    FONT_NAME, FONT_SIZE_TITLE,
+    SETTINGS_OVERLAY_ALPHA, SETTINGS_PANEL_BG, SETTINGS_PANEL_BORDER,
+    SETTINGS_SIDEBAR_BG, SETTINGS_TAB_COLOR, SETTINGS_TAB_HOVER, SETTINGS_TAB_SELECTED,
+    WORLD_SCREEN_TEXT, TEXT_COLOR, BUTTON_HEIGHT,
+    BUTTON_COLOR, BUTTON_HOVER, CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
+)
+from info import (
+    INFO_SETTINGS_TITLE, INFO_SETTINGS_TAB_TECHNICAL, INFO_SETTINGS_TAB_DISPLAY,
+    INFO_BTN_SETTINGS_SAVE, INFO_BTN_BACK,
+)
 from game.display_settings import (
     all_display_checkbox_specs, all_technical_checkbox_specs, all_technical_slider_specs
 )

@@ -4,10 +4,21 @@
 import math
 import pygame
 
-from settings import *
+from settings import (
+    WINDOW_WIDTH, WINDOW_HEIGHT,
+    WALL_COLOR, FENCE_COLOR,
+    BUSH_COLOR, TREE_COLOR_LEAVES, STONE_COLOR, FRUIT_COLOR,
+    BIOME_PLAINS, MINIMAP_BIOME_COLOR,
+    MINIMAP_MAX_WIDTH, MINIMAP_MAX_HEIGHT, MINIMAP_MIN_WIDTH, MINIMAP_MIN_HEIGHT,
+    MINIMAP_MARGIN, MINIMAP_BG_COLOR, MINIMAP_BORDER_COLOR, MINIMAP_VIEWPORT_COLOR,
+    MINIMAP_SIMULATION_AREA_ALPHA, MINIMAP_FAVORITE_STAR_SIZE,
+    SIMULATION_AREA_MIN_UNITS, SIMULATION_AREA_MAX_UNITS,
+    SIMULATION_AREA_DEFAULT_UNITS, SIMULATION_AREA_PX_PER_UNIT,
+    DEFAULT_VISION_RADIUS,
+    FAVORITE_STAR_COLOR, FAVORITE_STAR_BORDER,
+)
 from game.race_registry import all_minimap_layers
 from game.animal_registry import all_animals
-
 
 def _mm_draw_roads(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_roads"]:

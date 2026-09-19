@@ -3,15 +3,27 @@
 import os
 import pygame
 
-from settings import *
-from info import *
-from player import Player
+from settings import (
+    UI_HEIGHT, BUTTON_HEIGHT, FONT_SIZE_BUTTON,
+    BUTTON_COLOR, BUTTON_HOVER, BUTTON_DISABLED, TEXT_COLOR,
+    PANEL_COLOR, MENU_BG, WORLD_EXTENSION,
+)
+from info import (
+    INFO_BTN_GAME, INFO_BTN_LANDSCAPE, INFO_BTN_LIFES, INFO_BTN_ANIMALS,
+    INFO_BTN_OBJECTS, INFO_BTN_NATURE, INFO_BTN_PLAYER,
+    INFO_BTN_CREATE_WORLD, INFO_BTN_LOAD_WORLD, INFO_BTN_SAVE_WORLD,
+    INFO_BTN_PAUSE, INFO_BTN_RESUME, INFO_BTN_INSTRUCTION, INFO_BTN_EXIT,
+    INFO_BTN_WALL, INFO_BTN_FENCE,
+    INFO_BTN_BIOME_PLAINS, INFO_BTN_BIOME_DESERT, INFO_BTN_BIOME_RIVER, INFO_BTN_BIOME_SEA,
+    INFO_BTN_FRUIT, INFO_BTN_BUSH, INFO_BTN_WATER, INFO_BTN_TREE,
+    INFO_BTN_STONE, INFO_BTN_GRASS, INFO_BTN_MEAT,
+    INFO_BTN_SETTINGS, INFO_WORLD_NAME_TEMPLATE,
+)
 from game.widgets import Button
 from game.race_registry import all_races, all_player_tools, all_road_networks
 from game.animal_registry import all_animals
 
 from .constants import _CORE_PLAYER_TOOLS, _CORE_OBJECT_MENU_ITEMS
-
 
 class TopBarPanel:
     _MENU_COLORS = {

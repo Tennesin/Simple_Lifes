@@ -3,8 +3,14 @@
 
 import pygame
 
-from settings import *
-from info import *
+from settings import (
+    FONT_NAME, FONT_SIZE_TITLE, FONT_SIZE_LABEL,
+    SETTINGS_OVERLAY_ALPHA, SETTINGS_PANEL_BG, SETTINGS_PANEL_BORDER,
+    SETTINGS_SIDEBAR_BG, SETTINGS_TAB_COLOR, SETTINGS_TAB_HOVER, SETTINGS_TAB_SELECTED,
+    WORLD_SCREEN_TEXT, TEXT_COLOR, BUTTON_HEIGHT,
+    CLOSE_BUTTON_COLOR, CLOSE_BUTTON_HOVER,
+)
+from info import INFO_INSTRUCTION_TITLE, INFO_INSTRUCTION_CLOSE
 from game.widgets import AccordionList, measure_instruction_blocks, draw_instruction_blocks
 from game.instruction_content import core_instruction_icon
 

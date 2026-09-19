@@ -1,7 +1,16 @@
 """Константы, общие для нескольких панелей UI (не относятся к одной конкретной)."""
 
-from settings import *
-from info import *
+from settings import (
+    COLOR_LIGHT, BIOME_BASE_COLOR,
+    BIOME_PLAINS, BIOME_DESERT, BIOME_RIVER, BIOME_SEA,
+)
+from info import (
+    INFO_BTN_BIOME_PLAINS, INFO_BTN_BIOME_DESERT, INFO_BTN_BIOME_RIVER, INFO_BTN_BIOME_SEA,
+    INFO_BTN_SPIKE,
+    INFO_BTN_PET, INFO_BTN_HIT, INFO_BTN_GRAB, INFO_BTN_FAVORITE,
+    INFO_TOOL_PET_HINT, INFO_TOOL_HIT_HINT, INFO_TOOL_GRAB_HINT, INFO_TOOL_FAVORITE_HINT,
+    INFO_TOOL_WALL_HINT, INFO_TOOL_FENCE_HINT, INFO_TOOL_BIOME_HINT,
+)
 from player import Player
 from game.race_registry import PlayerToolSpec
 
