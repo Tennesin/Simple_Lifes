@@ -69,7 +69,7 @@ class Game:
             self.desktop_w, self.desktop_h = WINDOW_MAX_WIDTH, WINDOW_MAX_HEIGHT
 
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption("Simple_Lifes")
+        pygame.display.set_caption(f"Simple_Lifes {GAME_VERSION}")
         self.clock = pygame.time.Clock()
         self.running = True
 
@@ -81,6 +81,7 @@ class Game:
         self.biome_manager = BiomeManager(self)
         self._wall_geometry_cache = (None, [], [])
         self.world_seed = None
+        self.world_version = None
         self.paused = False
 
         self.selected_creature = None

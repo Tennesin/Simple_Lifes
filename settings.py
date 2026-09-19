@@ -1,5 +1,8 @@
 import os
 
+# ---------- Версия игры (записывается в world.json каждого мира) ----------
+GAME_VERSION = "1.3.3"
+
 WINDOW_WIDTH, WINDOW_HEIGHT = 1000, 750
 WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT = WINDOW_WIDTH, WINDOW_HEIGHT
 WORLD_WIDTH, WORLD_HEIGHT = 2500, 2500
@@ -155,6 +158,7 @@ WATER_PUDDLE_CHARGE_VALUE = 10.0   # сколько единиц жажды да
 BASE_WORLDS_DIR = os.path.join(os.path.expanduser("~"), "Documents", "Simple_Lifes")
 WORLD_EXTENSION = ".slw"           # Simple Lifes World — расширение папки мира
 WORLD_META_FILENAME = "world.json" # файл-метка, по которому распознаётся мир
+WORLD_BIOME_FILENAME = "biome.json"  # обязательный файл мира
 DEFAULT_WORLD_NAME = "New_World"
 
 # Цвета

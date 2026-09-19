@@ -131,6 +131,9 @@ class WorldScreensPanel:
 
         title_txt = self.lw_title_font.render(INFO_LW_SCREEN_TITLE, True, WORLD_SCREEN_TEXT)
         screen.blit(title_txt, (content_rect.x + margin, content_rect.y + margin))
+        if state.error_text:
+            err_txt = self.lw_small_font.render(state.error_text, True, WORLD_SCREEN_ERROR_COLOR)
+            screen.blit(err_txt, (content_rect.x + margin, content_rect.y + margin + 36))
 
         list_top = content_rect.y + margin + 60
         list_width = content_rect.width // 2 - margin - 15
@@ -212,6 +215,10 @@ class WorldScreensPanel:
         if created_ts:
             created_str = time.strftime("%H:%M:%S %d.%m.%Y", time.localtime(created_ts))
             lines.append(INFO_LW_INFO_CREATED.format(created=created_str))
+
+        version = meta.get("game_version")
+        if version is not None:
+            lines.append(INFO_LW_INFO_VERSION.format(version=version))
 
         width = meta.get("world_width", WORLD_DEFAULT_SIZE[0])
         height = meta.get("world_height", WORLD_DEFAULT_SIZE[1])

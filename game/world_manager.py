@@ -25,6 +25,15 @@ from biome import (
 )
 
 INVALID_NAME_CHARS = '<>:"/\\|?*'
+# ---------- Обязательные поля world.json и обязательные файлы папки мира ----------
+_REQUIRED_META_KEYS = (
+    "name", "world_width", "world_height", "seed",
+    "biome_ratios", "generate_animals", "created_version", "game_version",
+)
+_REQUIRED_WORLD_FILES = (WORLD_BIOME_FILENAME,)
+
+class WorldLoadError(Exception):
+    """Мир нельзя открыть. Текст сообщения предназначен для показа игроку."""
 
 def sanitize_world_name(name):
     if not name:
@@ -109,7 +118,7 @@ class LoadWorldScreen:
         self.list_scroll = ScrollArea()
         self.info_scroll = ScrollArea()
         self.confirm_delete = False
-
+        self.error_text = None
 
 _CORE_OBJECT_REGISTRY = (
     ("fruits.json", "fruits", Fruit),
@@ -239,6 +248,7 @@ class WorldManager:
         screen.selected_index = index
         screen.info_scroll.offset = 0
         screen.confirm_delete = False
+        screen.error_text = None
         if 0 <= index < len(screen.entries):
             self._load_entry_counts(screen.entries[index])
 
@@ -289,8 +299,12 @@ class WorldManager:
         if screen.selected_index is None:
             return
         entry = screen.entries[screen.selected_index]
+        try:
+            self.open_world(entry.folder_path, is_new=False)
+        except WorldLoadError as error:
+            screen.error_text = str(error)
+            return
         self.game.load_world_screen = None
-        self.open_world(entry.folder_path, is_new=False)
 
     def delete_selected(self, screen):
         if screen.selected_index is None:
@@ -324,7 +338,8 @@ class WorldManager:
         meta = {
             "name": sanitize_world_name(name),
             "created": time.time(),
-            "format_version": 3,
+            "created_version": GAME_VERSION,
+            "game_version": GAME_VERSION,
             "world_width": width,
             "world_height": height,
             "seed": seed,
@@ -336,14 +351,42 @@ class WorldManager:
 
         self.open_world(world_path, is_new=True)
 
+    # ---------- Проверка мира ДО того, как игра начнёт менять своё состояние ----------
+
+    @staticmethod
+    def _read_world_meta(world_path):
+        meta_path = os.path.join(world_path, WORLD_META_FILENAME)
+        if not os.path.exists(meta_path):
+            raise WorldLoadError(INFO_LW_ERROR_MISSING_FILE.format(file=WORLD_META_FILENAME))
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                meta = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            raise WorldLoadError(INFO_LW_ERROR_META_BROKEN.format(file=WORLD_META_FILENAME))
+        for key in _REQUIRED_META_KEYS:
+            if key not in meta:
+                raise WorldLoadError(
+                    INFO_LW_ERROR_META_KEY.format(file=WORLD_META_FILENAME, key=key))
+        return meta
+
+    @staticmethod
+    def _check_world_files(world_path):
+        for filename in _REQUIRED_WORLD_FILES:
+            if not os.path.exists(os.path.join(world_path, filename)):
+                raise WorldLoadError(INFO_LW_ERROR_MISSING_FILE.format(file=filename))
+
     def open_world(self, world_path, is_new):
         game = self.game
+
+        # ---------- Сначала проверяем мир, и только потом трогаем состояние игры ----------
+        meta = self._read_world_meta(world_path)
+        if not is_new:
+            self._check_world_files(world_path)
+
         game.simulation.invalidate_nav_cache()
         if game.world_loaded and game.world_path and game.display_settings.get("autosave_enabled", True):
             self.save_world()
 
-        with open(os.path.join(world_path, WORLD_META_FILENAME), "r", encoding="utf-8") as f:
-            meta = json.load(f)
         world_width = meta["world_width"]
         world_height = meta["world_height"]
         world_seed = meta["seed"]
@@ -353,6 +396,7 @@ class WorldManager:
 
         game.world_path = world_path
         game.world_seed = world_seed
+        game.world_version = meta["game_version"]
         game.world.reset()
         for fn in all_extra_world_load_fns():
             fn(game)
@@ -403,7 +447,8 @@ class WorldManager:
                     data = json.load(f)
                 setattr(game.world, attr, [cls.from_dict(d) for d in data])
 
-        with open(os.path.join(game.world_path, "biome.json"), "r", encoding="utf-8") as f:
+        biome_path = os.path.join(game.world_path, WORLD_BIOME_FILENAME)
+        with open(biome_path, "r", encoding="utf-8") as f:
             game.biome_manager.load_from_dict(json.load(f))
 
         for creature in game.world.creatures:
@@ -440,11 +485,30 @@ class WorldManager:
             with open(os.path.join(game.world_path, filename), "w", encoding="utf-8") as f:
                 json.dump([obj.to_dict() for obj in items], f, indent=2)
         if game.biome_manager.grid is not None:
-            with open(os.path.join(game.world_path, "biome.json"), "w", encoding="utf-8") as f:
+            with open(os.path.join(game.world_path, WORLD_BIOME_FILENAME), "w", encoding="utf-8") as f:
                 json.dump(game.biome_manager.to_dict(), f)
         self._save_player_state()
         for fn in all_extra_world_save_fns():
             fn(game)
+
+        # ---------- Штамп версии - строго последним ----------
+        self._stamp_world_version()
+
+    def _stamp_world_version(self):
+        game = self.game
+        meta_path = os.path.join(game.world_path, WORLD_META_FILENAME)
+        # ---------- Папка без world.json миром не считается (см. is_valid_world) - штамповать нечего ----------
+        if not os.path.exists(meta_path):
+            return
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        meta["game_version"] = GAME_VERSION
+
+        # ---------- Через временный файл, чтобы обрыв записи не оставил битый world.json ----------
+        tmp_path = meta_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as f:
+            json.dump(meta, f, indent=2, ensure_ascii=False)
+        os.replace(tmp_path, meta_path)
 
     # ---------- ДОС: избранное существо переживает перезапуск игры ----------
     def _save_player_state(self):
@@ -491,6 +555,7 @@ class WorldManager:
         game.last_manual_save_time = None
         game.world_loaded = False
         game.world_path = None
+        game.world_version = None
 
         settings.WORLD_WIDTH, settings.WORLD_HEIGHT = WORLD_DEFAULT_SIZE
         game.restore_default_window()
