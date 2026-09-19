@@ -119,7 +119,6 @@ class RaceDescriptor:
     placeable_objects: Tuple[PlaceableObjectSpec, ...] = field(default_factory=tuple)
     render_layers: Tuple[RenderLayer, ...] = field(default_factory=tuple)
     road_networks: Tuple[RoadNetworkSpec, ...] = field(default_factory=tuple)
-    is_legacy_default: bool = False
 
     # ---------- Новое: тик "неживых" объектов расы (не существ) ----------
     world_tick_fn: Optional[Callable] = None  # (game, dt) -> None
@@ -153,7 +152,6 @@ _RACES_CACHE: Optional[dict] = None
 
 def _discover_races() -> dict:
     registry = {}
-    legacy_count = 0
     for module_info in pkgutil.iter_modules(races_package.__path__):
         race_pkg_name = f"{races_package.__name__}.{module_info.name}"
         try:
@@ -172,16 +170,6 @@ def _discover_races() -> dict:
             )
         registry[descriptor.race_name] = descriptor
 
-        if descriptor.is_legacy_default:
-            legacy_count += 1
-
-    if legacy_count > 1:
-        raise RuntimeError(
-            f"{legacy_count} рас помечены is_legacy_default=True, а должна быть ровно одна - "
-            f"иначе сохранения без поля 'race' (сделанные до мультирасовости) "
-            f"будут загружаться неоднозначно."
-        )
-
     return registry
 
 def _races() -> dict:
@@ -189,7 +177,6 @@ def _races() -> dict:
     if _RACES_CACHE is None:
         _RACES_CACHE = _discover_races()
     return _RACES_CACHE
-
 
 def get_race(race_name: str) -> RaceDescriptor:
     races = _races()

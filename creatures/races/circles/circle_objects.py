@@ -166,14 +166,10 @@ class StorageField:
 
     @staticmethod
     def from_dict(data):
-        owner_ids = data.get("owner_ids")
-        if owner_ids is None:
-            legacy_builder = data.get("built_by")
-            owner_ids = [legacy_builder] if legacy_builder else []
         field = StorageField(
             data["x"], data["y"],
             owner_campfire_pos=tuple(data["campfire_pos"]) if data.get("campfire_pos") else None,
-            owner_ids=owner_ids,
+            owner_ids=data["owner_ids"],
             house_id=data.get("house_id"),
             house_side=data.get("house_side"),
         )

@@ -1,3 +1,4 @@
+import os
 import json
 import shutil
 import time
@@ -6,7 +7,7 @@ import random
 
 from settings import *
 from game.race_registry import (
-    get_race, all_races, all_race_names, all_extra_world_save_fns, all_extra_world_load_fns,
+    get_race, all_races, all_extra_world_save_fns, all_extra_world_load_fns,
 )
 from info import *
 from player import Player
@@ -51,18 +52,6 @@ def is_valid_world(path):
     if not path.endswith(WORLD_EXTENSION):
         return False
     return os.path.isfile(os.path.join(path, WORLD_META_FILENAME))
-
-def _resolve_legacy_race_name():
-    for descriptor in all_races():
-        if descriptor.is_legacy_default:
-            return descriptor.race_name
-    race_names = all_race_names()
-    if race_names:
-        return race_names[0]
-    raise RuntimeError(
-        "Не удалось определить расу для сохранения без поля 'race': "
-        "ни одна раса не зарегистрирована."
-    )
 
 # ---------- Состояние экрана "Создание мира" ----------
 
@@ -353,25 +342,11 @@ class WorldManager:
         if game.world_loaded and game.world_path and game.display_settings.get("autosave_enabled", True):
             self.save_world()
 
-        world_width, world_height = WORLD_DEFAULT_SIZE
-        world_seed = None
-        biome_ratios = None
-        generate_animals = True
-        meta_path = os.path.join(world_path, WORLD_META_FILENAME)
-        if os.path.exists(meta_path):
-            try:
-                with open(meta_path, "r", encoding="utf-8") as f:
-                    meta = json.load(f)
-                world_width = meta.get("world_width", world_width)
-                world_height = meta.get("world_height", world_height)
-                world_seed = meta.get("seed")
-                biome_ratios = meta.get("biome_ratios")
-                generate_animals = meta.get("generate_animals", True)
-            except (OSError, json.JSONDecodeError):
-                pass
-
-        if world_seed is None:
-            world_seed = random.randint(0, 2 ** 31 - 1)
+        with open(os.path.join(world_path, WORLD_META_FILENAME), "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        world_width = meta["world_width"]
+        world_height = meta["world_height"]
+        world_seed = meta["seed"]
 
         settings.WORLD_WIDTH = world_width
         settings.WORLD_HEIGHT = world_height
@@ -394,20 +369,18 @@ class WorldManager:
         game.close_all_menus()
 
         if is_new:
-            game.biome_manager.generate(world_width, world_height, world_seed, ratios=biome_ratios)
+            game.biome_manager.generate(world_width, world_height, world_seed, ratios=meta["biome_ratios"])
             game.object_manager.generate_initial_resources(world_seed)
-            if generate_animals:
+            if meta["generate_animals"]:
                 game.object_manager.generate_initial_animals(world_seed)
             self.save_world()
         else:
             self.load_world_data()
-            game.biome_manager.ensure_grid(world_width, world_height)
 
         game.world_loaded = True
 
     def load_world_data(self):
         game = self.game
-        legacy_race_name = None
         creatures_dir = os.path.join(game.world_path, "creatures")
         if os.path.isdir(creatures_dir):
             for folder in os.listdir(creatures_dir):
@@ -417,12 +390,7 @@ class WorldManager:
                 if os.path.isdir(folder_path) and os.path.exists(state_file):
                     with open(state_file, "r", encoding="utf-8") as f:
                         state = json.load(f)
-                    race_name = state.get("race")
-                    if race_name is None:
-                        if legacy_race_name is None:
-                            legacy_race_name = _resolve_legacy_race_name()
-                        race_name = legacy_race_name
-                    descriptor = get_race(race_name)
+                    descriptor = get_race(state["race"])
                     creature = descriptor.loader_fn(state)
                     if os.path.exists(mem_file) and hasattr(creature, "memory"):
                         creature.memory.load(mem_file)
@@ -435,15 +403,8 @@ class WorldManager:
                     data = json.load(f)
                 setattr(game.world, attr, [cls.from_dict(d) for d in data])
 
-        biome_path = os.path.join(game.world_path, "biome.json")
-        biome_data = None
-        if os.path.exists(biome_path):
-            try:
-                with open(biome_path, "r", encoding="utf-8") as f:
-                    biome_data = json.load(f)
-            except (OSError, json.JSONDecodeError):
-                biome_data = None
-        game.biome_manager.load_from_dict(biome_data, settings.WORLD_WIDTH, settings.WORLD_HEIGHT)
+        with open(os.path.join(game.world_path, "biome.json"), "r", encoding="utf-8") as f:
+            game.biome_manager.load_from_dict(json.load(f))
 
         for creature in game.world.creatures:
             creature.territory.sync_claims_count(game.world.bushes, game.world.water_puddles)

@@ -1,6 +1,6 @@
 import random
 
-from ...ci_settings import *
+from ...ci_settings import CURIOSITY_DISCOVERY_CHANCE
 from .....all_needed.ai.utility import Consideration, GoalComponent
 
 # =========================================================================

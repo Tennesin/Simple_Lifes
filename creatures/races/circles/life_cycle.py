@@ -136,12 +136,7 @@ class CreatureAging(WeakOwnerMixin):
         if not c.puberty_active:
             return
 
-        if c._puberty_speed_bonus == 0.0:
-            c._puberty_speed_bonus = random.uniform(*PUBERTY_SPEED_BONUS_RANGE)
         c.base_speed_multiplier *= (1.0 + c._puberty_speed_bonus)
-
-        if c._puberty_orig_curiosity is None:
-            c._puberty_orig_curiosity = c.curiosity
         c.curiosity = random.uniform(*PUBERTY_CURIOSITY_RANGE)
 
     def effective_vision_radius(self):

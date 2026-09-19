@@ -181,9 +181,6 @@ class Memory:
 
         base_dist = self._BUCKET_DISTANCE_VALUE.get(best["distance_bucket"], 550)
         sector = best["direction"]
-        # ---------- Защита от старых сохранений, где direction был строкой ----------
-        if not isinstance(sector, int):
-            sector = 0
         angle = math.radians(sector * 45 + random.uniform(-18, 18))
         dist = base_dist * random.uniform(0.8, 1.2)
         anchor_x = best.get("origin_x", origin_x)
@@ -213,12 +210,8 @@ class Memory:
     def load(self, path):
         with open(path, 'r', encoding="utf-8") as f:
             data = json.load(f)
-        if isinstance(data, list):
-            self.memories = data
-            self.intuitive_memories = []
-        else:
-            self.memories = data.get("memories", [])
-            self.intuitive_memories = data.get("intuitive_memories", [])
+        self.memories = data["memories"]
+        self.intuitive_memories = data["intuitive_memories"]
         self._memories_by_type = {}
         for m in self.memories:
             self._memories_by_type.setdefault(m["type"], []).append(m)

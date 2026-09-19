@@ -189,32 +189,8 @@ class PrivateConstruction(Construction):
                     setattr(site, owner_attr, c.id)
                 return site
 
-        if build_type == "house":
-            # ---------- Миграция: если у самца уже есть свой (осиротевший) склад без дома -
-            # строим дом вплотную к нему, а не в произвольном месте ----------
-            orphan = next((f for f in ctx.storage_fields
-                           if c.id in f.owner_ids and getattr(f, "house_id", None) is None), None)
-            if orphan is not None:
-                point = self._pick_house_point_near_storage(orphan, ctx)
-                if point is not None:
-                    site = ConstructionSite(point[0], point[1], "house", campfire_pos=campfire_pos)
-                    ctx.construction_sites.append(site)
-                    setattr(site, owner_attr, c.id)
-                    return site
-
         site = super()._find_or_create_site(build_type, campfire_pos, ctx)
         if site is None:
-            if build_type == "house":
-                orphan = next((f for f in ctx.storage_fields
-                               if c.id in f.owner_ids and getattr(f, "house_id", None) is None), None)
-                if orphan is not None:
-                    point = self._pick_house_point_near_storage(orphan, ctx)
-                    if point is not None:
-                        site = ConstructionSite(point[0], point[1], "house", campfire_pos=campfire_pos)
-                        ctx.construction_sites.append(site)
-                        setattr(site, owner_attr, c.id)
-                        c.pending_site_cleanup = site
-                        return site
             return None
 
         setattr(site, owner_attr, c.id)
@@ -235,21 +211,31 @@ class PrivateConstruction(Construction):
 
     _PUBLIC_ORPHAN_TYPES = frozenset(("campfire", "graveyard"))
 
-    def _find_orphaned_site(self, ctx, type_filter=None):
+    def _find_or_create_site(self, build_type, campfire_pos, ctx):
+        owner_attr = self._OWNER_ATTR_BY_TYPE.get(build_type)
+        if owner_attr is None:
+            return super()._find_or_create_site(build_type, campfire_pos, ctx)
+
         c = self.c
-        candidates = []
-        for build_type in self._OWNER_ATTR_BY_TYPE:
-            candidates.extend(
-                s for s in ctx.construction_sites
-                if s.build_type == build_type
-                and self._site_belongs_to(s, ctx)
-                and math.hypot(c.x - s.x, c.y - s.y)
-                < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR
-            )
-        if candidates:
-            site = min(candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
-            owner_attr = self._OWNER_ATTR_BY_TYPE[site.build_type]
-            if getattr(site, owner_attr, None) is None:
-                setattr(site, owner_attr, c.id)
-            return site
-        return super()._find_orphaned_site(ctx, type_filter=self._PUBLIC_ORPHAN_TYPES)
+        # ---------- Ищем только свою (или бесхозную) площадку ----------
+        for site in ctx.construction_sites:
+            if site.build_type != build_type:
+                continue
+            if math.hypot(c.x - site.x, c.y - site.y) >= CONSTRUCTION_SITE_SEARCH_RADIUS:
+                continue
+            if self._site_belongs_to(site, ctx):
+                if getattr(site, owner_attr, None) is None:
+                    setattr(site, owner_attr, c.id)
+                return site
+
+        # ---------- Своей нет - создаём новую, а не подбираем чужую через базовый поиск ----------
+        site = self._create_site(build_type, campfire_pos, ctx)
+        if site is None:
+            return None
+
+        setattr(site, owner_attr, c.id)
+        if build_type == "storage":
+            house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+            if house is not None:
+                site.linked_house_id = house.id
+        return site

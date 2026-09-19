@@ -181,23 +181,13 @@ def _load_creature_age_and_stage(creature, state):
     creature.aging.sync_stage_modifiers()
 
 def _load_creature_puberty(creature, state):
-    is_legacy_puberty_data = "puberty_trigger_age" not in state
-    creature.puberty_trigger_age = state.get(
-        "puberty_trigger_age", random.uniform(PUBERTY_TRIGGER_AGE_MIN, PUBERTY_TRIGGER_AGE_MAX))
-    if is_legacy_puberty_data:
-        creature.puberty_done = creature.age >= creature.puberty_trigger_age
-        creature.puberty_active = False
-        creature.puberty_timer = 0.0
-        creature._puberty_speed_bonus = 0.0
-        creature._puberty_orig_curiosity = None
-    else:
-        creature.puberty_done = state.get("puberty_done", False)
-        creature.puberty_active = state.get("puberty_active", False)
-        creature.puberty_timer = state.get("puberty_timer", 0.0)
-        creature._puberty_speed_bonus = state.get("puberty_speed_bonus", 0.0)
-        creature._puberty_orig_curiosity = state.get("puberty_orig_curiosity")
+    creature.puberty_trigger_age = state["puberty_trigger_age"]
+    creature.puberty_done = state["puberty_done"]
+    creature.puberty_active = state["puberty_active"]
+    creature.puberty_timer = state["puberty_timer"]
+    creature._puberty_speed_bonus = state["puberty_speed_bonus"]
+    creature._puberty_orig_curiosity = state["puberty_orig_curiosity"]
     creature.aging.sync_puberty_state()
-
 
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:

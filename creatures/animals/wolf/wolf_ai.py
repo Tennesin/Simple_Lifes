@@ -264,14 +264,13 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
 
         bit = False
         if self.hunting_target_id is not None and self.bite_cooldown <= 0:
-            for prey_list in prey_lists:
-                for prey in prey_list:
-                    if prey.id == self.hunting_target_id and prey.hp > 0:
-                        if math.hypot(w.x - prey.x, w.y - prey.y) < cfg["bite_distance"]:
-                            prey.hp = max(0.0, prey.hp - cfg["bite_damage"])
-                            self.bite_cooldown = cfg["bite_cooldown"]
-                            bit = True
-                        break
+            # ---------- prey_lists - это SpatialGrid, а не списки: ищем цель через общий хелпер ----------
+            prey = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+            if (prey is not None and prey.hp > 0
+                    and math.hypot(w.x - prey.x, w.y - prey.y) < cfg["bite_distance"]):
+                prey.hp = max(0.0, prey.hp - cfg["bite_damage"])
+                self.bite_cooldown = cfg["bite_cooldown"]
+                bit = True
 
         if bit:
             self.hunt_timer = 0.0

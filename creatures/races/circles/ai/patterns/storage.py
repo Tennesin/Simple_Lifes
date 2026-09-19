@@ -1,10 +1,14 @@
 import math
 import random
 
-from ...ci_settings import *
-from ...ci_info import *
+from ...ci_settings import (
+    STATE_SEEKING, LIFE_STAGE_CHILD,
+    PARENT_FEED_MIN_WELLBEING, STORAGE_SUPPLY_CHECK_INTERVAL, STORAGE_FIELD_DEPOSIT_DISTANCE,
+)
+from ...ci_info import (
+    INFO_CREATURE_GOAL_STORAGE_DELIVER, INFO_CREATURE_GOAL_STORAGE_STOCKED,
+)
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
-
 
 # =========================================================================
 # Семейный склад запасов

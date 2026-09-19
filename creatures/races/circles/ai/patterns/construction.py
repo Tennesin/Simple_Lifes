@@ -361,7 +361,10 @@ class Construction(GoalComponent):
                 continue
             if math.hypot(c.x - site.x, c.y - site.y) < CONSTRUCTION_SITE_SEARCH_RADIUS:
                 return site
+        return self._create_site(build_type, campfire_pos, ctx)
 
+    def _create_site(self, build_type, campfire_pos, ctx):
+        c = self.c
         point = self._pick_point(build_type, campfire_pos, ctx.biome_grid, ctx)
         if point is None:
             return None
@@ -494,11 +497,6 @@ class Construction(GoalComponent):
                         and child.parent_ids and primary_owner_id in child.parent_ids):
                     if new_object.add_resident(child.id):
                         child.home_id = new_object.id
-
-            # ---------- "Осиротевший" склад из старого мира привязываем к новому дому ----------
-            for field in ctx.storage_fields:
-                if primary_owner_id in field.owner_ids and getattr(field, "house_id", None) is None:
-                    new_object.attach_storage(field)
 
             ctx.houses.append(new_object)
 

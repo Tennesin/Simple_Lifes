@@ -202,25 +202,16 @@ class BiomeGrid:
 
     @staticmethod
     def from_dict(data):
-        grid = BiomeGrid(data["world_w"], data["world_h"], cell_size=data.get("cell_size", BIOME_CELL_SIZE))
-        grid.cols = data.get("cols", grid.cols)
-        grid.rows = data.get("rows", grid.rows)
+        grid = BiomeGrid(data["world_w"], data["world_h"], cell_size=data["cell_size"])
         cells = []
-        for row_encoded in data.get("rows_rle", []):
+        for row_encoded in data["rows_rle"]:
             for biome_type, count in row_encoded:
                 cells.extend([biome_type] * count)
-        expected = grid.cols * grid.rows
-        if len(cells) < expected:
-            cells.extend([BIOME_PLAINS] * (expected - len(cells)))
-        grid.cells = cells[:expected]
+        grid.cells = cells
         return grid
 
-
 class BiomeGenerator:
-    """Детерминированная генерация по сиду. Использует СОБСТВЕННЫЙ random.Random,
-    не трогая глобальный модуль random, которым пользуется вся остальная симуляция
-    (существа, психика, размножение и т.д.) - иначе создание мира "съедало" бы
-    случайные числа из общего потока."""
+    """Детерминированная генерация по сиду."""
 
     def __init__(self, rng):
         self.rng = rng
@@ -478,18 +469,11 @@ class BiomeManager:
         rng = random.Random(seed)
         self.grid = BiomeGenerator(rng).generate(world_w, world_h, ratios=ratios)
 
-    def ensure_grid(self, world_w, world_h):
-        if self.grid is None:
-            self.grid = BiomeGrid(world_w, world_h)
-
     def to_dict(self):
         return self.grid.to_dict() if self.grid is not None else None
 
-    def load_from_dict(self, data, world_w, world_h):
-        if data:
-            self.grid = BiomeGrid.from_dict(data)
-        else:
-            self.grid = BiomeGrid(world_w, world_h)
+    def load_from_dict(self, data):
+        self.grid = BiomeGrid.from_dict(data)
 
     def paint(self, wx, wy, biome_type, radius):
         if self.grid is not None:

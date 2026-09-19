@@ -65,9 +65,7 @@ class GenealogyRegistry:
     @staticmethod
     def from_dict(data):
         reg = GenealogyRegistry()
-        reg.records = data or {}
-        for rec in reg.records.values():
-            rec.setdefault("partner_ids", [])
+        reg.records = data
         return reg
 
     def save(self, world_path):

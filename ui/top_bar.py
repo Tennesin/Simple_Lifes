@@ -1,5 +1,6 @@
 """Верхняя панель: главное меню + 5 выпадающих подменю."""
 
+import os
 import pygame
 
 from settings import *

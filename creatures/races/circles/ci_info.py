@@ -221,15 +221,6 @@ INFO_RELATIONSHIPS_MALES = "Самцы"
 INFO_RELATIONSHIPS_FEMALES = "Самки"
 INFO_RELATIONSHIPS_EMPTY = "Нет прямых контактов"
 
-# --------------------- Направления для интуитивной памяти ---------------------
-INFO_COMPASS_DIRECTIONS = [
-    "восток", "северо-восток", "север", "северо-запад",
-    "запад", "юго-запад", "юг", "юго-восток",
-]
-INFO_DISTANCE_BUCKET_NEAR = "рядом"
-INFO_DISTANCE_BUCKET_MEDIUM = "на среднем расстоянии"
-INFO_DISTANCE_BUCKET_FAR = "далеко"
-
 # --------------------- Утилиты ---------------------
 INFO_TOOL_CHILD_ROAD_HINT = "Зажмите и ведите ЛКМ — рисовать детскую дорогу"
 INFO_SETTINGS_MINIMAP_CONSTRUCTIONS = "Показать сооружения на мини-карте"
