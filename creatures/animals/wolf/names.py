@@ -1,6 +1,6 @@
 """Каталог имён волков."""
 
-from ...all_needed.animal_names import make_animal_name_pools
+from ...all_needed import animal_names
 
 WOLF_MALE_NAMES = [
     "Серый", "Клык", "Хмурый", "Лютый", "Тень",
@@ -12,4 +12,4 @@ WOLF_FEMALE_NAMES = [
     "Быстрая", "Одинокая", "Хищница", "Метель", "Ночь",
 ]
 
-WOLF_NAME_POOLS, random_wolf_name = make_animal_name_pools(WOLF_MALE_NAMES, WOLF_FEMALE_NAMES)
+WOLF_NAME_POOLS, random_wolf_name = animal_names.make_animal_name_pools(WOLF_MALE_NAMES, WOLF_FEMALE_NAMES)

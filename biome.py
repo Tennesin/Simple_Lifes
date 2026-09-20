@@ -91,7 +91,7 @@ class BiomeGrid:
 
     def get_cell(self, cx, cy):
         if not self.in_bounds(cx, cy):
-            return BIOME_PLAINS
+            return settings.BIOME_PLAINS
         return self.cells[self._index(cx, cy)]
 
     def set_cell(self, cx, cy, biome_type):
@@ -243,7 +243,7 @@ class BiomeGenerator:
             for dy in range(-blob_radius, blob_radius + 1):
                 for dx in range(-blob_radius, blob_radius + 1):
                     if dx * dx + dy * dy <= blob_radius * blob_radius:
-                        grid.set_cell(cx + dx, cy + dy, BIOME_SEA)
+                        grid.set_cell(cx + dx, cy + dy, settings.BIOME_SEA)
 
         self._cellular_automaton_step(grid, settings.BIOME_SEA, settings.SEA_AUTOMATON_ITERATIONS,
                                       birth_threshold=4, death_threshold=3)
@@ -448,7 +448,7 @@ class BiomeGenerator:
             idx = border.pop(self.rng.randrange(len(border)))
             if grid.cells[idx] != biome_type:
                 continue
-            grid.cells[idx] = BIOME_PLAINS
+            grid.cells[idx] = settings.BIOME_PLAINS
             removed += 1
 
             cx, cy = idx % grid.cols, idx // grid.cols

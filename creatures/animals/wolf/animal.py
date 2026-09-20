@@ -2,39 +2,36 @@
 
 import uuid
 
-from game.animal_registry import AnimalDescriptor
-from .wolf import (
-    Wolf, wolf_object_panel_extra_lines, wolf_minimap_marker,
-    wolf_instruction_icon, WOLF_INSTRUCTION_SECTIONS,
-)
-from .wolf_objects import Hide
-from .wolf_settings import WOLF_KIND_NAME, WOLF_MINIMAP_LABEL, WOLF_INITIAL_COUNT
-from .wolf_ai import tick_wolf
-from .names import WOLF_NAME_POOLS
+from game import animal_registry
+from . import wolf
+from . import wolf_objects
+from . import wolf_settings
+from . import wolf_ai
+from . import names
 
 def spawn_wolf(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]
-    wolf = Wolf(new_id, wx, wy)
-    object_manager.game.world.wolves.append(wolf)
+    new_wolf = wolf.Wolf(new_id, wx, wy)
+    object_manager.game.world.wolves.append(new_wolf)
 
-ANIMAL_DESCRIPTOR = AnimalDescriptor(
+ANIMAL_DESCRIPTOR = animal_registry.AnimalDescriptor(
     animal_name="wolf",
-    animal_cls=Wolf,
-    loader_fn=Wolf.from_dict,
+    animal_cls=wolf.Wolf,
+    loader_fn=wolf.Wolf.from_dict,
     spawn_fn=spawn_wolf,
     world_collection="wolves",
     save_filename="wolves.json",
     placement_mode="animal_wolf",
-    placement_label=WOLF_KIND_NAME,
-    name_pools=WOLF_NAME_POOLS,
-    object_panel_extra_fn=wolf_object_panel_extra_lines,
-    minimap_checkbox_label=WOLF_MINIMAP_LABEL,
-    minimap_marker_fn=wolf_minimap_marker,
+    placement_label=wolf_settings.WOLF_KIND_NAME,
+    name_pools=names.WOLF_NAME_POOLS,
+    object_panel_extra_fn=wolf.wolf_object_panel_extra_lines,
+    minimap_checkbox_label=wolf_settings.WOLF_MINIMAP_LABEL,
+    minimap_marker_fn=wolf.wolf_minimap_marker,
     drop_collections=("hides",),
-    drop_persistence_registry=(("hides.json", "hides", Hide),),
-    tick_fn=tick_wolf,
-    initial_count=WOLF_INITIAL_COUNT,
-    instruction_sections=WOLF_INSTRUCTION_SECTIONS,
+    drop_persistence_registry=(("hides.json", "hides", wolf_objects.Hide),),
+    tick_fn=wolf_ai.tick_wolf,
+    initial_count=wolf_settings.WOLF_INITIAL_COUNT,
+    instruction_sections=wolf.WOLF_INSTRUCTION_SECTIONS,
     instruction_preview_icon="wolf",
-    instruction_icon_factory=wolf_instruction_icon,
+    instruction_icon_factory=wolf.wolf_instruction_icon,
 )

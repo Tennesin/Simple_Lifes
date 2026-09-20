@@ -1,9 +1,9 @@
 """Настройки, специфичные для волков."""
 
-from ...all_needed.diet import DIET_CARNIVORE, FOOD_CATEGORY_RAW_MEAT
+from ...all_needed import diet
 
-WOLF_DIET = DIET_CARNIVORE
-WOLF_FOOD_CATEGORY_MAP = {"meat": FOOD_CATEGORY_RAW_MEAT}
+WOLF_DIET = diet.DIET_CARNIVORE
+WOLF_FOOD_CATEGORY_MAP = {"meat": diet.FOOD_CATEGORY_RAW_MEAT}
 WOLF_INITIAL_COUNT = 3
 
 # ---------- Базовые характеристики (хищник: быстрее и зорче овец/коров) ----------

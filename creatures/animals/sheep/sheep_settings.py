@@ -1,9 +1,9 @@
 """Настройки, специфичные для овец."""
 
-from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
+from ...all_needed import diet
 
-SHEEP_DIET = DIET_HERBIVORE
-SHEEP_FOOD_CATEGORY_MAP = {"grass": FOOD_CATEGORY_PLANT}
+SHEEP_DIET = diet.DIET_HERBIVORE
+SHEEP_FOOD_CATEGORY_MAP = {"grass": diet.FOOD_CATEGORY_PLANT}
 SHEEP_INITIAL_COUNT = 14
 
 # ---------- Базовые характеристики (передаются в CreatureBase) ----------

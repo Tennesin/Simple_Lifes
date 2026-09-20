@@ -2,39 +2,36 @@
 
 import uuid
 
-from game.animal_registry import AnimalDescriptor
-from .sheep import (
-    Sheep, sheep_object_panel_extra_lines, sheep_minimap_marker,
-    sheep_instruction_icon, SHEEP_INSTRUCTION_SECTIONS,
-)
-from .sheep_objects import Wool
-from .sheep_settings import SHEEP_KIND_NAME, SHEEP_MINIMAP_LABEL, SHEEP_INITIAL_COUNT
-from .sheep_ai import tick_sheep
-from .names import SHEEP_NAME_POOLS
+from game import animal_registry
+from . import sheep
+from . import sheep_objects
+from . import sheep_settings
+from . import sheep_ai
+from . import names
 
 def spawn_sheep(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]
-    sheep = Sheep(new_id, wx, wy)
-    object_manager.game.world.sheep.append(sheep)
+    new_sheep = sheep.Sheep(new_id, wx, wy)
+    object_manager.game.world.sheep.append(new_sheep)
 
-ANIMAL_DESCRIPTOR = AnimalDescriptor(
+ANIMAL_DESCRIPTOR = animal_registry.AnimalDescriptor(
     animal_name="sheep",
-    animal_cls=Sheep,
-    loader_fn=Sheep.from_dict,
+    animal_cls=sheep.Sheep,
+    loader_fn=sheep.Sheep.from_dict,
     spawn_fn=spawn_sheep,
     world_collection="sheep",
     save_filename="sheep.json",
     placement_mode="animal_sheep",
-    placement_label=SHEEP_KIND_NAME,
-    name_pools=SHEEP_NAME_POOLS,
-    object_panel_extra_fn=sheep_object_panel_extra_lines,
-    minimap_checkbox_label=SHEEP_MINIMAP_LABEL,
-    minimap_marker_fn=sheep_minimap_marker,
+    placement_label=sheep_settings.SHEEP_KIND_NAME,
+    name_pools=names.SHEEP_NAME_POOLS,
+    object_panel_extra_fn=sheep.sheep_object_panel_extra_lines,
+    minimap_checkbox_label=sheep_settings.SHEEP_MINIMAP_LABEL,
+    minimap_marker_fn=sheep.sheep_minimap_marker,
     drop_collections=("wools",),
-    drop_persistence_registry=(("wools.json", "wools", Wool),),
-    tick_fn=tick_sheep,
-    initial_count=SHEEP_INITIAL_COUNT,
-    instruction_sections=SHEEP_INSTRUCTION_SECTIONS,
+    drop_persistence_registry=(("wools.json", "wools", sheep_objects.Wool),),
+    tick_fn=sheep_ai.tick_sheep,
+    initial_count=sheep_settings.SHEEP_INITIAL_COUNT,
+    instruction_sections=sheep.SHEEP_INSTRUCTION_SECTIONS,
     instruction_preview_icon="sheep",
-    instruction_icon_factory=sheep_instruction_icon,
+    instruction_icon_factory=sheep.sheep_instruction_icon,
 )

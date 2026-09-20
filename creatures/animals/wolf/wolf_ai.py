@@ -3,36 +3,37 @@
 или ест мясо."""
 
 import math
-from ...all_needed.ai.roaming_ai import RoamingAnimalMixin
-from ...all_needed.ai.utility import Consideration, pick_best, scale
-from ...all_needed.simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
-from ...all_needed.weak_owner import WeakEntityMixin
+
 import settings
-from .wolf_settings import *
+from ...all_needed.ai import roaming_ai
+from ...all_needed.ai import utility
+from ...all_needed import simulation_area
+from ...all_needed import weak_owner
+from . import wolf_settings
 
 _WOLF_AI_CFG = {
-    "speed": WOLF_SPEED,
-    "hunger_drain_interval": WOLF_HUNGER_DRAIN_INTERVAL,
-    "thirst_drain_interval": WOLF_THIRST_DRAIN_INTERVAL,
-    "energy_drain_interval_hunt": WOLF_ENERGY_DRAIN_INTERVAL_HUNT,
-    "energy_regen_interval": WOLF_ENERGY_REGEN_INTERVAL,
-    "starve_hp_drain": WOLF_STARVE_HP_DRAIN,
-    "dehydrate_hp_drain": WOLF_DEHYDRATE_HP_DRAIN,
-    "wander_distance": WOLF_WANDER_DISTANCE,
-    "wander_timer": WOLF_WANDER_TIMER,
-    "drink_distance": WOLF_DRINK_DISTANCE,
-    "drink_rate": WOLF_DRINK_RATE,
-    "thirst_seek_ratio": WOLF_THIRST_SEEK_RATIO,
-    "hunt_hunger_ratio": WOLF_HUNT_HUNGER_RATIO,
-    "hunger_satisfy_ratio": WOLF_HUNGER_SATISFY_RATIO,
-    "thirst_satisfy_ratio": WOLF_THIRST_SATISFY_RATIO,
-    "bite_distance": WOLF_BITE_DISTANCE,
-    "bite_damage": WOLF_BITE_DAMAGE,
-    "bite_cooldown": WOLF_BITE_COOLDOWN,
-    "eat_distance": WOLF_EAT_DISTANCE,
-    "eat_rate": WOLF_EAT_RATE,
-    "hunt_max_duration": WOLF_HUNT_MAX_DURATION,
-    "hunt_giveup_distance": WOLF_HUNT_GIVEUP_DISTANCE,
+    "speed": wolf_settings.WOLF_SPEED,
+    "hunger_drain_interval": wolf_settings.WOLF_HUNGER_DRAIN_INTERVAL,
+    "thirst_drain_interval": wolf_settings.WOLF_THIRST_DRAIN_INTERVAL,
+    "energy_drain_interval_hunt": wolf_settings.WOLF_ENERGY_DRAIN_INTERVAL_HUNT,
+    "energy_regen_interval": wolf_settings.WOLF_ENERGY_REGEN_INTERVAL,
+    "starve_hp_drain": wolf_settings.WOLF_STARVE_HP_DRAIN,
+    "dehydrate_hp_drain": wolf_settings.WOLF_DEHYDRATE_HP_DRAIN,
+    "wander_distance": wolf_settings.WOLF_WANDER_DISTANCE,
+    "wander_timer": wolf_settings.WOLF_WANDER_TIMER,
+    "drink_distance": wolf_settings.WOLF_DRINK_DISTANCE,
+    "drink_rate": wolf_settings.WOLF_DRINK_RATE,
+    "thirst_seek_ratio": wolf_settings.WOLF_THIRST_SEEK_RATIO,
+    "hunt_hunger_ratio": wolf_settings.WOLF_HUNT_HUNGER_RATIO,
+    "hunger_satisfy_ratio": wolf_settings.WOLF_HUNGER_SATISFY_RATIO,
+    "thirst_satisfy_ratio": wolf_settings.WOLF_THIRST_SATISFY_RATIO,
+    "bite_distance": wolf_settings.WOLF_BITE_DISTANCE,
+    "bite_damage": wolf_settings.WOLF_BITE_DAMAGE,
+    "bite_cooldown": wolf_settings.WOLF_BITE_COOLDOWN,
+    "eat_distance": wolf_settings.WOLF_EAT_DISTANCE,
+    "eat_rate": wolf_settings.WOLF_EAT_RATE,
+    "hunt_max_duration": wolf_settings.WOLF_HUNT_MAX_DURATION,
+    "hunt_giveup_distance": wolf_settings.WOLF_HUNT_GIVEUP_DISTANCE,
 }
 
 # ---------- Веса принятия решений ----------
@@ -44,9 +45,9 @@ SCORE_WATER_BASE = 40.0
 SCORE_WATER_MAX_BONUS = 30.0
 SCORE_WANDER = 8.0
 
-class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
+class WolfAI(weak_owner.WeakEntityMixin, roaming_ai.RoamingAnimalMixin):
     def __init__(self, wolf, cfg):
-        WeakEntityMixin.__init__(self, wolf)
+        weak_owner.WeakEntityMixin.__init__(self, wolf)
         self.cfg = cfg
         self.target = None
         self.decision_timer = 0.0
@@ -113,7 +114,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
         def execute():
             return self.flee_from(threat, settings.ANIMAL_SPIKE_FLEE_DISTANCE, dt, biome_grid=biome_grid)
 
-        return Consideration("flee_spike", SCORE_FLEE_SPIKE, execute)
+        return utility.Consideration("flee_spike", SCORE_FLEE_SPIKE, execute)
 
     # =====================================================================
     # Домен: падаль - приоритет выше поиска новой жертвы, но ниже уже идущей погони
@@ -134,7 +135,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
         def execute():
             return (meat.x, meat.y)
 
-        return Consideration("eat_meat", SCORE_EAT_MEAT, execute)
+        return utility.Consideration("eat_meat", SCORE_EAT_MEAT, execute)
 
     # =====================================================================
     # Домен: охота на скот
@@ -156,7 +157,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
             self.hunting_target_id = prey.id
             return (prey.x, prey.y)
 
-        return Consideration("hunt", score, execute)
+        return utility.Consideration("hunt", score, execute)
 
     # =====================================================================
     # Домен: жажда
@@ -166,13 +167,13 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
         w, cfg = self.entity, self.cfg
         if not self.seeking_water:
             return None
-        deficit = scale(w.thirst_max * cfg["thirst_seek_ratio"] - w.thirst, 0, w.thirst_max)
+        deficit = utility.scale(w.thirst_max * cfg["thirst_seek_ratio"] - w.thirst, 0, w.thirst_max)
         score = SCORE_WATER_BASE + deficit * SCORE_WATER_MAX_BONUS
 
         def execute():
             return self._nearest_water_target(water_puddles, biome_grid, w.vision_radius)
 
-        return Consideration("water", score, execute)
+        return utility.Consideration("water", score, execute)
 
     # =====================================================================
     # Домен: бродяжничество
@@ -182,7 +183,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
         def execute():
             return self._wander(dt, biome_grid)
 
-        return Consideration("wander", SCORE_WANDER, execute)
+        return utility.Consideration("wander", SCORE_WANDER, execute)
 
     # =====================================================================
     # Итог: взвешенное решение (п.1)
@@ -203,7 +204,7 @@ class WolfAI(WeakEntityMixin, RoamingAnimalMixin):
             self._consider_water(water_puddles, biome_grid),
             self._consider_wander(dt, biome_grid),
         ]
-        goal = pick_best(considerations)
+        goal = utility.pick_best(considerations)
 
         self.is_urgent = self.seeking_food or self.hunting_target_id is not None or self.seeking_water
 
@@ -332,7 +333,7 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, 
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
     for wolf in world.wolves:
-        rescue_from_sea_or_kill(wolf, biome_grid, settings.ANIMAL_LAND_RESCUE_RADIUS)
+        simulation_area.rescue_from_sea_or_kill(wolf, biome_grid, settings.ANIMAL_LAND_RESCUE_RADIUS)
 
     dead = [w for w in world.wolves if w.hp <= 0]
     for wolf in dead:
@@ -345,8 +346,8 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, 
             continue
 
         is_grabbed = wolf is game.player.grabbed_object
-        if not is_grabbed and tick_frozen_state(wolf, dt, active_ids):
-            if should_be_removed(wolf):
+        if not is_grabbed and simulation_area.tick_frozen_state(wolf, dt, active_ids):
+            if simulation_area.should_be_removed(wolf):
                 frozen_to_remove.append(wolf)
             continue
 
@@ -357,7 +358,7 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, 
         if not is_grabbed:
             target = ai.decide(dt, prey_lists, water_source, meats_source, biome_grid,
                                spikes=world.spikes)
-            chase_mult = WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
+            chase_mult = wolf_settings.WOLF_CHASE_SPEED_MULTIPLIER if ai.hunting_target_id is not None else 1.0
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
                             fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=chase_mult,

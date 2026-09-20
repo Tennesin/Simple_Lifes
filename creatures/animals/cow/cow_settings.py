@@ -1,9 +1,9 @@
 """Настройки, специфичные для коров."""
 
-from ...all_needed.diet import DIET_HERBIVORE, FOOD_CATEGORY_PLANT
+from ...all_needed import diet
 
-COW_DIET = DIET_HERBIVORE
-COW_FOOD_CATEGORY_MAP = {"grass": FOOD_CATEGORY_PLANT}
+COW_DIET = diet.DIET_HERBIVORE
+COW_FOOD_CATEGORY_MAP = {"grass": diet.FOOD_CATEGORY_PLANT}
 COW_INITIAL_COUNT = 8
 
 # ---------- Базовые характеристики ----------
