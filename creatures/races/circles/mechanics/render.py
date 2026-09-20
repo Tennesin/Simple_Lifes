@@ -1,10 +1,6 @@
 """Слои отрисовки, специфичные для расы 'Круг'."""
 
-from ..ci_settings import (
-    CHILD_ROAD_COLOR_SAFE, CHILD_ROAD_COLOR_DANGEROUS, CHILD_ROAD_COLOR_PENDING,
-    STORAGE_FIELD_COLOR_BORDER, GRAVEYARD_COLOR_FILL, GRAVEYARD_COLOR_BORDER,
-    CAMPFIRE_COLOR, HOUSE_COLOR_ROOF, HOUSE_COLOR_WALL_BORDER,
-)
+from .. import ci_settings
 
 def draw_campfires(renderer, screen, game, camera, in_view):
     for fire in game.world.campfires:
@@ -58,11 +54,11 @@ def draw_minimap_child_roads(panel, screen, game, to_minimap, scale, display):
         if len(croad.points) < 2:
             continue
         if croad.rating == "safe":
-            color = CHILD_ROAD_COLOR_SAFE
+            color = ci_settings.CHILD_ROAD_COLOR_SAFE
         elif croad.rating == "dangerous":
-            color = CHILD_ROAD_COLOR_DANGEROUS
+            color = ci_settings.CHILD_ROAD_COLOR_DANGEROUS
         else:
-            color = CHILD_ROAD_COLOR_PENDING
+            color = ci_settings.CHILD_ROAD_COLOR_PENDING
         pts = [to_minimap(px, py) for px, py in croad.points]
         pygame.draw.lines(screen, color, False, pts, 1)
 
@@ -70,7 +66,7 @@ def draw_minimap_campfires(panel, screen, game, to_minimap, scale, display):
     import pygame
     for fire in game.world.campfires:
         pos = to_minimap(fire.x, fire.y)
-        pygame.draw.circle(screen, CAMPFIRE_COLOR, (int(pos[0]), int(pos[1])), 2)
+        pygame.draw.circle(screen, ci_settings.CAMPFIRE_COLOR, (int(pos[0]), int(pos[1])), 2)
 
 def draw_minimap_constructions(panel, screen, game, to_minimap, scale, display):
     import pygame
@@ -86,7 +82,7 @@ def draw_minimap_constructions(panel, screen, game, to_minimap, scale, display):
         h = max(3, int(field.height * scale_y))
         field_rect = pygame.Rect(0, 0, w, h)
         field_rect.center = (int(pos[0]), int(pos[1]))
-        pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, field_rect, 1)
+        pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_COLOR_BORDER, field_rect, 1)
 
     for gy in game.world.graveyards:
         pos = to_minimap(gy.x, gy.y)
@@ -94,9 +90,8 @@ def draw_minimap_constructions(panel, screen, game, to_minimap, scale, display):
         gy_h = max(3, int(gy.height * scale_y))
         gy_rect = pygame.Rect(0, 0, gy_w, gy_h)
         gy_rect.center = (int(pos[0]), int(pos[1]))
-        pygame.draw.rect(screen, GRAVEYARD_COLOR_FILL, gy_rect)
-        pygame.draw.rect(screen, GRAVEYARD_COLOR_BORDER, gy_rect, 1)
-
+        pygame.draw.rect(screen, ci_settings.GRAVEYARD_COLOR_FILL, gy_rect)
+        pygame.draw.rect(screen, ci_settings.GRAVEYARD_COLOR_BORDER, gy_rect, 1)
 
 def draw_minimap_houses(panel, screen, game, to_minimap, scale, display):
     """Дом на мини-карте - и его склад (если есть) виден строго вместе с ним."""
@@ -111,8 +106,8 @@ def draw_minimap_houses(panel, screen, game, to_minimap, scale, display):
         h = max(3, int(house.height * scale_y))
         house_rect = pygame.Rect(0, 0, w, h)
         house_rect.center = (int(pos[0]), int(pos[1]))
-        pygame.draw.rect(screen, HOUSE_COLOR_ROOF, house_rect)
-        pygame.draw.rect(screen, HOUSE_COLOR_WALL_BORDER, house_rect, 1)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_ROOF, house_rect)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_WALL_BORDER, house_rect, 1)
 
         if house.storage_id is None:
             continue
@@ -124,4 +119,4 @@ def draw_minimap_houses(panel, screen, game, to_minimap, scale, display):
         fh = max(3, int(field.height * scale_y))
         field_rect = pygame.Rect(0, 0, fw, fh)
         field_rect.center = (int(fpos[0]), int(fpos[1]))
-        pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, field_rect, 1)
+        pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_COLOR_BORDER, field_rect, 1)

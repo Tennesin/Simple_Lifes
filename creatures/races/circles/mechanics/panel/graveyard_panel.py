@@ -3,11 +3,10 @@
 import time
 import pygame
 
-from settings import *
-from info import *
+import settings
+import info
 from game.widgets import ScrollArea
-from ...ci_settings import *
-from ...ci_info import *
+from ... import ci_settings, ci_info
 from .....all_needed.instruction import truncate_text
 
 class GraveyardPanel:
@@ -30,16 +29,16 @@ class GraveyardPanel:
         self.name_edit_buffer = ""
         self.details_record = None
 
-        self.rebuild_layout(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     def rebuild_layout(self, window_w, window_h):
         self.panel_rect = pygame.Rect(
-            window_w - INFO_PANEL_WIDTH, UI_HEIGHT,
-            INFO_PANEL_WIDTH, window_h - UI_HEIGHT
+            window_w - settings.INFO_PANEL_WIDTH, settings.UI_HEIGHT,
+            settings.INFO_PANEL_WIDTH, window_h - settings.UI_HEIGHT
         )
         self.name_field_rect = pygame.Rect(
             self.panel_rect.x + 10, self.panel_rect.y + 40,
-            INFO_PANEL_WIDTH - 20, 26
+            settings.INFO_PANEL_WIDTH - 20, 26
         )
 
     # =====================================================================
@@ -103,7 +102,7 @@ class GraveyardPanel:
             return False
         content_height = len(self.selected.archive) * self.ROW_HEIGHT
         self.archive_scroll.update_bounds(content_height, self.list_rect.height)
-        self.archive_scroll.scroll_by_wheel(wheel_y, speed=DEFAULT_SCROLL_SPEED)
+        self.archive_scroll.scroll_by_wheel(wheel_y, speed=settings.DEFAULT_SCROLL_SPEED)
         return True
 
     def handle_keydown(self, event):
@@ -140,15 +139,16 @@ class GraveyardPanel:
         gy.prune_expired_records()
 
         panel = self.panel_rect
-        pygame.draw.rect(screen, INFO_PANEL_COLOR, panel)
+        pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, panel)
 
-        id_txt = self.font.render(INFO_GRAVEYARD_ID.format(graveyard_id=gy.id), True, TEXT_COLOR)
+        id_txt = self.font.render(
+            ci_info.INFO_GRAVEYARD_ID.format(graveyard_id=gy.id), True, settings.TEXT_COLOR)
         screen.blit(id_txt, (panel.x + 10, panel.y + 12))
 
         field = self.name_field_rect
-        field_color = NAME_FIELD_EDIT_COLOR if self.editing_name else NAME_FIELD_COLOR
+        field_color = settings.NAME_FIELD_EDIT_COLOR if self.editing_name else settings.NAME_FIELD_COLOR
         pygame.draw.rect(screen, field_color, field)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, field, 1)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, field, 1)
 
         if self.editing_name:
             display_name = self.name_edit_buffer
@@ -156,8 +156,8 @@ class GraveyardPanel:
                 display_name += "|"
             text_color = (0, 0, 0)
         else:
-            display_name = gy.name if gy.name else INFO_GRAVEYARD_DEFAULT_NAME
-            text_color = TEXT_COLOR
+            display_name = gy.name if gy.name else ci_info.INFO_GRAVEYARD_DEFAULT_NAME
+            text_color = settings.TEXT_COLOR
 
         name_txt = self.font.render(display_name, True, text_color)
         screen.blit(name_txt, (field.x + 5, field.y + 4))
@@ -167,7 +167,7 @@ class GraveyardPanel:
         self.list_rect = list_rect
 
         if not gy.archive:
-            empty_txt = self.font.render(INFO_GRAVEYARD_ARCHIVE_EMPTY, True, (180, 180, 180))
+            empty_txt = self.font.render(ci_info.INFO_GRAVEYARD_ARCHIVE_EMPTY, True, (180, 180, 180))
             screen.blit(empty_txt, (list_rect.x, list_rect.y))
             self.details_buttons = {}
             self.genealogy_buttons = {}
@@ -190,24 +190,29 @@ class GraveyardPanel:
                 continue
 
             fresh_record = gy.get_fresh_record(entry["id"])
-            label = INFO_GRAVEYARD_ARCHIVE_ENTRY.format(name=entry["name"], id=entry["id"])
+            label = ci_info.INFO_GRAVEYARD_ARCHIVE_ENTRY.format(name=entry["name"], id=entry["id"])
             max_name_width = list_rect.width - (134 if fresh_record else 0)
-            name_txt = self.font.render(truncate_text(self.font, label, max_name_width), True, TEXT_COLOR)
+            name_txt = self.font.render(
+                truncate_text(self.font, label, max_name_width), True, settings.TEXT_COLOR)
             screen.blit(name_txt, (list_rect.x, row_y + 4))
 
             if fresh_record:
                 details_rect = pygame.Rect(list_rect.right - 178, row_y + 2, 112, self.ROW_HEIGHT - 6)
                 genealogy_rect = pygame.Rect(list_rect.right - 64, row_y + 2, 62, self.ROW_HEIGHT - 6)
 
-                details_color = BUTTON_HOVER if details_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+                details_color = (settings.BUTTON_HOVER if details_rect.collidepoint(mouse_pos)
+                                 else settings.BUTTON_COLOR)
                 pygame.draw.rect(screen, details_color, details_rect, border_radius=4)
-                details_txt = self.font.render(INFO_GRAVEYARD_DETAILS_BTN, True, TEXT_COLOR)
+                details_txt = self.font.render(
+                    ci_info.INFO_GRAVEYARD_DETAILS_BTN, True, settings.TEXT_COLOR)
                 screen.blit(details_txt, details_txt.get_rect(center=details_rect.center))
                 self.details_buttons[entry["id"]] = details_rect
 
-                genealogy_color = BUTTON_HOVER if genealogy_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+                genealogy_color = (settings.BUTTON_HOVER if genealogy_rect.collidepoint(mouse_pos)
+                                   else settings.BUTTON_COLOR)
                 pygame.draw.rect(screen, genealogy_color, genealogy_rect, border_radius=4)
-                genealogy_txt = self.font.render(INFO_BTN_GENEALOGY, True, TEXT_COLOR)
+                genealogy_txt = self.font.render(
+                    ci_info.INFO_BTN_GENEALOGY, True, settings.TEXT_COLOR)
                 screen.blit(genealogy_txt, genealogy_txt.get_rect(center=genealogy_rect.center))
                 self.genealogy_buttons[entry["id"]] = genealogy_rect
 
@@ -221,53 +226,56 @@ class GraveyardPanel:
         if record is None:
             return
 
+        window_w, window_h = screen.get_width(), screen.get_height()
         width, height = 300, 230
-        rect = pygame.Rect((WINDOW_WIDTH - width) // 2, (WINDOW_HEIGHT - height) // 2, width, height)
+        rect = pygame.Rect((window_w - width) // 2, (window_h - height) // 2, width, height)
 
-        overlay = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.SRCALPHA)
+        overlay = pygame.Surface((window_w, window_h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 140))
         screen.blit(overlay, (0, 0))
 
-        pygame.draw.rect(screen, INFO_PANEL_COLOR, rect)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, rect, 2)
+        pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, rect)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, rect, 2)
 
-        title_txt = self.font.render(INFO_GRAVEYARD_DETAILS_TITLE, True, TEXT_COLOR)
+        title_txt = self.font.render(ci_info.INFO_GRAVEYARD_DETAILS_TITLE, True, settings.TEXT_COLOR)
         screen.blit(title_txt, (rect.x + 12, rect.y + 10))
 
         y = rect.y + 40
-        gender_label = INFO_GENDER_FEMALE if record["gender"] == GENDER_FEMALE else INFO_GENDER_MALE
+        gender_label = (info.INFO_GENDER_FEMALE if record["gender"] == ci_settings.GENDER_FEMALE
+                        else info.INFO_GENDER_MALE)
 
         raw_cause = record["death_cause"]
-        if raw_cause in DEATH_CAUSE_DISPLAY_MAP:
-            cause_display = gendered_text(DEATH_CAUSE_DISPLAY_MAP[raw_cause], record["gender"])
+        if raw_cause in ci_info.DEATH_CAUSE_DISPLAY_MAP:
+            cause_display = ci_info.gendered_text(ci_info.DEATH_CAUSE_DISPLAY_MAP[raw_cause], record["gender"])
         else:
-            cause_display = INFO_GRAVEYARD_DETAILS_CAUSE.format(cause=raw_cause or "-")
+            cause_display = ci_info.INFO_GRAVEYARD_DETAILS_CAUSE.format(cause=raw_cause or "-")
 
         lines = [
-            INFO_GRAVEYARD_DETAILS_NAME.format(name=record["name"]),
-            INFO_GRAVEYARD_DETAILS_ID.format(id=record["id"]),
-            INFO_GRAVEYARD_DETAILS_GENDER.format(gender=gender_label),
-            INFO_GRAVEYARD_DETAILS_TEMPERAMENT.format(
-                temperament=gendered_text(record["temperament"], record["gender"])),
-            INFO_GRAVEYARD_DETAILS_AGE.format(age=int(record["age"] // 60)),
+            ci_info.INFO_GRAVEYARD_DETAILS_NAME.format(name=record["name"]),
+            ci_info.INFO_GRAVEYARD_DETAILS_ID.format(id=record["id"]),
+            ci_info.INFO_GRAVEYARD_DETAILS_GENDER.format(gender=gender_label),
+            ci_info.INFO_GRAVEYARD_DETAILS_TEMPERAMENT.format(
+                temperament=ci_info.gendered_text(record["temperament"], record["gender"])),
+            ci_info.INFO_GRAVEYARD_DETAILS_AGE.format(age=int(record["age"] // 60)),
             cause_display,
         ]
         for line in lines:
-            line_txt = self.font.render(line, True, TEXT_COLOR)
+            line_txt = self.font.render(line, True, settings.TEXT_COLOR)
             screen.blit(line_txt, (rect.x + 12, y))
             y += 24
 
-        remaining = max(0.0, GRAVEYARD_DATA_RETENTION - record.get("time_since_burial", 0.0))
+        remaining = max(0.0, ci_settings.GRAVEYARD_DATA_RETENTION - record.get("time_since_burial", 0.0))
         minutes_left = int(remaining // 60)
         seconds_left = int(remaining % 60)
         time_txt = self.font.render(
-            INFO_GRAVEYARD_DETAILS_TIME_LEFT.format(time=f"{minutes_left}:{seconds_left:02d}"),
+            ci_info.INFO_GRAVEYARD_DETAILS_TIME_LEFT.format(time=f"{minutes_left}:{seconds_left:02d}"),
             True, (200, 200, 120))
         screen.blit(time_txt, (rect.x + 12, y))
 
         self.details_close_rect = pygame.Rect(rect.x + 12, rect.bottom + 5, width - 24, 28)
         mouse_pos = pygame.mouse.get_pos()
-        close_color = CLOSE_BUTTON_HOVER if self.details_close_rect.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        close_color = (settings.CLOSE_BUTTON_HOVER if self.details_close_rect.collidepoint(mouse_pos)
+                       else settings.CLOSE_BUTTON_COLOR)
         pygame.draw.rect(screen, close_color, self.details_close_rect, border_radius=4)
-        close_txt = self.font.render(INFO_GRAVEYARD_DETAILS_CLOSE, True, TEXT_COLOR)
+        close_txt = self.font.render(ci_info.INFO_GRAVEYARD_DETAILS_CLOSE, True, settings.TEXT_COLOR)
         screen.blit(close_txt, close_txt.get_rect(center=self.details_close_rect.center))

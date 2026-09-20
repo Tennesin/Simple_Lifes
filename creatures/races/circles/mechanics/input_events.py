@@ -4,15 +4,10 @@ import os
 import shutil
 import math
 
-from settings import DEFAULT_SCROLL_SPEED
+import settings
 from game.object_manager import footprint_radius
-from ..ci_info import INFO_CREATURE_GOAL_NAMED
+from .. import ci_settings, ci_info
 from ....all_needed import geometry
-from ..ci_settings import (
-    NAME_ASSIGN_RELATIONSHIP_BONUS, GRAVEYARD_BURIAL_DISTANCE, LIFE_STAGE_CHILD,
-    CHILD_DISTRESS_THRESHOLD, HOUSE_DESTRUCTION_PANIC_DURATION,
-    HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY,
-)
 
 # =========================================================================
 # Домен: труп сородича — перехват переноски при двойном клике и передача
@@ -34,7 +29,7 @@ def handle_corpse_release(corpse, game):
 
     target_graveyard = next(
         (g for g in game.world.graveyards
-         if g.distance_to_point(corpse.x, corpse.y) < GRAVEYARD_BURIAL_DISTANCE), None)
+         if g.distance_to_point(corpse.x, corpse.y) < ci_settings.GRAVEYARD_BURIAL_DISTANCE), None)
 
     if target_graveyard is None:
         game.selected_creature = corpse
@@ -73,9 +68,9 @@ def apply_name_edit(creature, new_name):
     if not creature.player_named:
         creature.player_named = True
         creature.player_relationship = max(-100.0, min(100.0,
-            creature.player_relationship + NAME_ASSIGN_RELATIONSHIP_BONUS))
+            creature.player_relationship + ci_settings.NAME_ASSIGN_RELATIONSHIP_BONUS))
         creature.player_reactions.add_memory("named", relationship_after=creature.player_relationship)
-        creature.goal_text = INFO_CREATURE_GOAL_NAMED
+        creature.goal_text = ci_info.INFO_CREATURE_GOAL_NAMED
 
 # =========================================================================
 # Домен: on_delete / on_removed колбэки — реакция на исчезновение объекта
@@ -110,14 +105,14 @@ def on_delete_house(game, house):
 
     for creature in residents:
         creature.home_id = None
-        creature.fear_timer = max(creature.fear_timer, HOUSE_DESTRUCTION_PANIC_DURATION)
+        creature.fear_timer = max(creature.fear_timer, ci_settings.HOUSE_DESTRUCTION_PANIC_DURATION)
         creature.fear_source = (house.x, house.y)
         creature.player_relationship = geometry.clamp(
-            creature.player_relationship + HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY, -100.0, 100.0)
+            creature.player_relationship + ci_settings.HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY, -100.0, 100.0)
         creature.psyche.on_hazard_encountered()
-        if creature.life_stage == LIFE_STAGE_CHILD:
+        if creature.life_stage == ci_settings.LIFE_STAGE_CHILD:
             # ---------- Ребёнок инстинктивно кинется искать видимого родителя (см. ChildAI._consider_distress) ----------
-            creature.child_distress_timer = CHILD_DISTRESS_THRESHOLD + 1.0
+            creature.child_distress_timer = ci_settings.CHILD_DISTRESS_THRESHOLD + 1.0
 
 def on_delete_construction_site(game, site):
     for creature in game.world.creatures:
@@ -205,7 +200,7 @@ def circle_handle_relationships_wheel(game, event, mouse_x, mouse_y):
             and panel.relationships_list_rect.collidepoint(mouse_x, mouse_y)):
         return False
 
-    panel.relationships_scroll_offset -= event.y * DEFAULT_SCROLL_SPEED
+    panel.relationships_scroll_offset -= event.y * settings.DEFAULT_SCROLL_SPEED
     panel.relationships_scroll_offset = max(
         0, min(panel.relationships_scroll_offset, panel.relationships_max_scroll))
     return True

@@ -35,10 +35,6 @@ INFO_GENEALOGY_UNKNOWN = "?"
 # --------------------- Тип существа ---------------------
 INFO_CREATURE_KIND = "Круг"
 
-INFO_INFO_GENDER = "Пол: {gender}"
-INFO_GENDER_MALE = "Самец"
-INFO_GENDER_FEMALE = "Самка"
-
 # --------------------- Состояния и цели существ ---------------------
 INFO_CREATURE_STATE_CALM = "Осматривается"
 INFO_CREATURE_STATE_DEAD = "Мёртв"

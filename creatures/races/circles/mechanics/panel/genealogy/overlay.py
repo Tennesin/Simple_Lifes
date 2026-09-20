@@ -3,9 +3,8 @@
 import math
 import pygame
 
-from settings import *
-from ....ci_settings import *
-from ....ci_info import *
+import settings
+from .... import ci_settings, ci_info
 from .layout import GenealogyLayoutBuilder
 
 class GenealogyTreeOverlay:
@@ -13,8 +12,8 @@ class GenealogyTreeOverlay:
     def __init__(self, game, font):
         self.game = game
         self.font = font
-        self.title_font = pygame.font.SysFont(FONT_NAME, FONT_SIZE_TITLE)
-        self.name_font = pygame.font.SysFont(FONT_NAME, 13)
+        self.title_font = pygame.font.SysFont(settings.FONT_NAME, settings.FONT_SIZE_TITLE)
+        self.name_font = pygame.font.SysFont(settings.FONT_NAME, 13)
 
         self._layout_builder = GenealogyLayoutBuilder(self.name_font)
 
@@ -105,12 +104,13 @@ class GenealogyTreeOverlay:
         if not nodes:
             return False
         center_x, center_y = self.viewport_rect.centerx, self.viewport_rect.centery
+        radius = ci_settings.GENEALOGY_NODE_RADIUS
         for node in nodes:
-            sx = center_x + node["x"] * GENEALOGY_SLOT_WIDTH
-            sy = center_y + node["generation"] * GENEALOGY_ROW_HEIGHT
+            sx = center_x + node["x"] * ci_settings.GENEALOGY_SLOT_WIDTH
+            sy = center_y + node["generation"] * ci_settings.GENEALOGY_ROW_HEIGHT
             node_rect = pygame.Rect(
-                int(sx - GENEALOGY_NODE_RADIUS), int(sy - GENEALOGY_NODE_RADIUS),
-                GENEALOGY_NODE_RADIUS * 2, GENEALOGY_NODE_RADIUS * 2)
+                int(sx - radius), int(sy - radius),
+                radius * 2, radius * 2)
             if not self.viewport_rect.contains(node_rect):
                 return True
         return False
@@ -118,27 +118,28 @@ class GenealogyTreeOverlay:
     # ---------- Отрисовка ----------
 
     def _screen_pos(self, node, center_x, center_y):
-        sx = center_x + node["x"] * GENEALOGY_SLOT_WIDTH + self.pan_x
-        sy = center_y + node["generation"] * GENEALOGY_ROW_HEIGHT + self.pan_y
+        sx = center_x + node["x"] * ci_settings.GENEALOGY_SLOT_WIDTH + self.pan_x
+        sy = center_y + node["generation"] * ci_settings.GENEALOGY_ROW_HEIGHT + self.pan_y
         return sx, sy
 
     def draw(self, screen):
         window_w, window_h = screen.get_width(), screen.get_height()
         overlay = pygame.Surface((window_w, window_h), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, SETTINGS_OVERLAY_ALPHA))
+        overlay.fill((0, 0, 0, settings.SETTINGS_OVERLAY_ALPHA))
         screen.blit(overlay, (0, 0))
 
-        width = min(GENEALOGY_PANEL_WIDTH, window_w - 40)
-        height = min(GENEALOGY_PANEL_HEIGHT, window_h - 40)
+        width = min(ci_settings.GENEALOGY_PANEL_WIDTH, window_w - 40)
+        height = min(ci_settings.GENEALOGY_PANEL_HEIGHT, window_h - 40)
         self.panel_rect = pygame.Rect((window_w - width) // 2, (window_h - height) // 2, width, height)
         panel = self.panel_rect
-        pygame.draw.rect(screen, SETTINGS_PANEL_BG, panel)
-        pygame.draw.rect(screen, SETTINGS_PANEL_BORDER, panel, 2)
+        pygame.draw.rect(screen, settings.SETTINGS_PANEL_BG, panel)
+        pygame.draw.rect(screen, settings.SETTINGS_PANEL_BORDER, panel, 2)
 
         registry = self._registry()
         root_rec = registry.get(self.root_id) if registry else None
         root_name = (root_rec["name"] if root_rec and root_rec["name"] else self.root_id) if root_rec else "?"
-        title_txt = self.title_font.render(INFO_GENEALOGY_TITLE.format(name=root_name), True, WORLD_SCREEN_TEXT)
+        title_txt = self.title_font.render(
+            ci_info.INFO_GENEALOGY_TITLE.format(name=root_name), True, settings.WORLD_SCREEN_TEXT)
         screen.blit(title_txt, (panel.x + 16, panel.y + 12))
 
         viewport_top = panel.y + 14 + title_txt.get_height() + 10
@@ -167,7 +168,8 @@ class GenealogyTreeOverlay:
                 continue
             pa = self._screen_pos(node_a, center_x, center_y)
             pb = self._screen_pos(node_b, center_x, center_y)
-            color = GENEALOGY_PARTNER_LINE_COLOR if kind == "partner" else GENEALOGY_LINE_COLOR
+            color = (ci_settings.GENEALOGY_PARTNER_LINE_COLOR if kind == "partner"
+                     else ci_settings.GENEALOGY_LINE_COLOR)
             pygame.draw.line(screen, color, pa, pb, 2)
 
         self._node_screen_rects = {}
@@ -180,22 +182,25 @@ class GenealogyTreeOverlay:
 
         self.close_btn_rect = pygame.Rect(panel.right - 12 - 130, panel.bottom - 12 - 34, 130, 34)
         mouse_pos = pygame.mouse.get_pos()
-        close_color = CLOSE_BUTTON_HOVER if self.close_btn_rect.collidepoint(mouse_pos) else CLOSE_BUTTON_COLOR
+        close_color = (settings.CLOSE_BUTTON_HOVER if self.close_btn_rect.collidepoint(mouse_pos)
+                       else settings.CLOSE_BUTTON_COLOR)
         pygame.draw.rect(screen, close_color, self.close_btn_rect, border_radius=4)
-        close_txt = self.font.render(INFO_GENEALOGY_CLOSE, True, TEXT_COLOR)
+        close_txt = self.font.render(ci_info.INFO_GENEALOGY_CLOSE, True, settings.TEXT_COLOR)
         screen.blit(close_txt, close_txt.get_rect(center=self.close_btn_rect.center))
 
     def _draw_node(self, screen, registry, node, sx, sy):
         rec = registry.get(node["id"]) if registry else None
         gender = rec["gender"] if rec else None
         is_dead = rec["is_dead"] if rec else False
-        name = (rec["name"] if rec and rec["name"] else node["id"]) if rec else INFO_GENEALOGY_UNKNOWN
+        name = (rec["name"] if rec and rec["name"] else node["id"]) if rec else ci_info.INFO_GENEALOGY_UNKNOWN
 
-        color = CREATURE_COLOR_FEMALE if gender == GENDER_FEMALE else CREATURE_COLOR_MALE
-        radius = GENEALOGY_NODE_RADIUS
+        color = (ci_settings.CREATURE_COLOR_FEMALE if gender == ci_settings.GENDER_FEMALE
+                 else ci_settings.CREATURE_COLOR_MALE)
+        radius = ci_settings.GENEALOGY_NODE_RADIUS
 
         if node.get("is_root"):
-            pygame.draw.circle(screen, GENEALOGY_ROOT_RING_COLOR, (int(sx), int(sy)), radius + 5, 3)
+            pygame.draw.circle(screen, ci_settings.GENEALOGY_ROOT_RING_COLOR,
+                               (int(sx), int(sy)), radius + 5, 3)
 
         if is_dead:
             cross_x = sx - radius - 12
@@ -203,15 +208,15 @@ class GenealogyTreeOverlay:
             cross_bottom = sy + 9
             crossbar_y = sy - 3
             crossbar_half = 5
-            pygame.draw.line(screen, GENEALOGY_CROSS_COLOR,
+            pygame.draw.line(screen, ci_settings.GENEALOGY_CROSS_COLOR,
                              (cross_x, cross_top), (cross_x, cross_bottom), 2)
-            pygame.draw.line(screen, GENEALOGY_CROSS_COLOR,
+            pygame.draw.line(screen, ci_settings.GENEALOGY_CROSS_COLOR,
                              (cross_x - crossbar_half, crossbar_y), (cross_x + crossbar_half, crossbar_y), 2)
 
         pygame.draw.circle(screen, color, (int(sx), int(sy)), radius)
         pygame.draw.circle(screen, (20, 20, 20), (int(sx), int(sy)), radius, 2)
 
-        name_txt = self.name_font.render(name, True, WORLD_SCREEN_TEXT)
+        name_txt = self.name_font.render(name, True, settings.WORLD_SCREEN_TEXT)
         screen.blit(name_txt, name_txt.get_rect(center=(int(sx), int(sy) + radius + 12)))
 
         self._node_screen_rects[node["id"]] = pygame.Rect(
@@ -236,4 +241,4 @@ class GenealogyTreeOverlay:
         tip = (edge_x + dx * 12, edge_y + dy * 12)
         left = (edge_x - dy * 8, edge_y + dx * 8)
         right = (edge_x + dy * 8, edge_y - dx * 8)
-        pygame.draw.polygon(screen, GENEALOGY_ROOT_RING_COLOR, [tip, left, right])
+        pygame.draw.polygon(screen, ci_settings.GENEALOGY_ROOT_RING_COLOR, [tip, left, right])

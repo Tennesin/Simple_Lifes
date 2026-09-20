@@ -4,11 +4,10 @@ import random
 import math
 import pygame
 
+import settings
 from game.object_manager import footprint_radius
-from settings import *
-from ..ci_settings import *
+from .. import ci_settings, ci_info
 from ..circle_objects import ConstructionSite
-from ..ci_info import INFO_CREATURE_GOAL_HOUSE_EVICTED
 from ..life_cycle import apply_grief_for_death
 from .input_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
 
@@ -18,15 +17,15 @@ def tick_circle_world(game, dt):
 
     panel = game.ui.graveyard_panel
     if (panel.details_record is not None
-            and panel.details_record.get("time_since_burial", 0.0) > GRAVEYARD_DATA_RETENTION):
+            and panel.details_record.get("time_since_burial", 0.0) > ci_settings.GRAVEYARD_DATA_RETENTION):
         panel.details_record = None
 
 def _storage_priority(creature):
-    if creature.life_stage == LIFE_STAGE_CHILD:
+    if creature.life_stage == ci_settings.LIFE_STAGE_CHILD:
         return 0
-    if creature.life_stage == LIFE_STAGE_OLD:
+    if creature.life_stage == ci_settings.LIFE_STAGE_OLD:
         return 1
-    if creature.gender == GENDER_FEMALE:
+    if creature.gender == ci_settings.GENDER_FEMALE:
         return 2
     return 3
 
@@ -93,7 +92,7 @@ class CircleTickProcessor:
                 continue
             kx, ky = creature.known_campfire
             for fire in campfires:
-                if math.hypot(kx - fire.x, ky - fire.y) < LANDMARK_POSITION_MATCH_TOLERANCE:
+                if math.hypot(kx - fire.x, ky - fire.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
                     occupancy[fire.id] = occupancy.get(fire.id, 0) + 1
                     break
         return occupancy
@@ -122,23 +121,24 @@ class CircleTickProcessor:
     @staticmethod
     def _apply_player_construction_boost(site, dt):
         remaining_dt = dt
+        resource_rate = ci_settings.PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE
 
         if not site.is_building:
             wood_needed = site.needed("wood")
             if wood_needed > 0:
-                gain = min(wood_needed, PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE * remaining_dt)
+                gain = min(wood_needed, resource_rate * remaining_dt)
                 site.deposited_wood += gain
                 site.player_deposited_wood += gain
-                remaining_dt -= gain / PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE
+                remaining_dt -= gain / resource_rate
                 if remaining_dt <= 0 or site.needed("wood") > 0:
                     return
 
             stone_needed = site.needed("stone")
             if stone_needed > 0:
-                gain = min(stone_needed, PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE * remaining_dt)
+                gain = min(stone_needed, resource_rate * remaining_dt)
                 site.deposited_stone += gain
                 site.player_deposited_stone += gain
-                remaining_dt -= gain / PLAYER_CONSTRUCTION_BOOST_RESOURCE_RATE
+                remaining_dt -= gain / resource_rate
                 if remaining_dt <= 0 or site.needed("stone") > 0:
                     return
 
@@ -148,7 +148,7 @@ class CircleTickProcessor:
             return
         remaining_progress = max(0.0, site.build_time - site.build_progress)
         gain = min(remaining_progress,
-                   site.build_time * PLAYER_CONSTRUCTION_BOOST_PROGRESS_RATE * remaining_dt)
+                   site.build_time * ci_settings.PLAYER_CONSTRUCTION_BOOST_PROGRESS_RATE * remaining_dt)
         site.build_progress += gain
         site.player_build_progress += gain
 
@@ -201,13 +201,13 @@ class CircleTickProcessor:
         else:
             sons = [c for c in world.creatures
                     if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
-                    and c.gender == GENDER_MALE and c.id in house.resident_ids]
+                    and c.gender == ci_settings.GENDER_MALE and c.id in house.resident_ids]
             if sons:
-                heir_id = min(sons, key=lambda s: s.age).id  # самый младший сын
+                heir_id = min(sons, key=lambda s: s.age).id
             else:
                 unmarried_daughters = [c for c in world.creatures
                                        if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
-                                       and c.gender == GENDER_FEMALE and c.partner_id is None
+                                       and c.gender == ci_settings.GENDER_FEMALE and c.partner_id is None
                                        and c.id in house.resident_ids]
                 if unmarried_daughters:
                     heir_id = random.choice(unmarried_daughters).id
@@ -249,8 +249,8 @@ class CircleTickProcessor:
         else:
             children = [c for c in world.creatures
                        if not c.is_dead and c.parent_ids and owner_id in c.parent_ids]
-            daughters = [c for c in children if c.gender == GENDER_FEMALE]
-            sons = [c for c in children if c.gender == GENDER_MALE]
+            daughters = [c for c in children if c.gender == ci_settings.GENDER_FEMALE]
+            sons = [c for c in children if c.gender == ci_settings.GENDER_MALE]
             if daughters:
                 heir_id = random.choice(daughters).id
             elif sons:
@@ -286,7 +286,8 @@ class CircleTickProcessor:
                     target_graveyard = next(
                         (g for g in world.graveyards if g.id == carrier.graveyard_target_id), None)
                     if (target_graveyard is not None and
-                            target_graveyard.distance_to_point(creature.x, creature.y) < GRAVEYARD_BURIAL_DISTANCE):
+                            target_graveyard.distance_to_point(creature.x, creature.y)
+                            < ci_settings.GRAVEYARD_BURIAL_DISTANCE):
                         target_graveyard.bury(creature)
                         carrier.burial_target_id = None
                         carrier.graveyard_target_id = None
@@ -344,11 +345,11 @@ class CircleTickProcessor:
                         house.remove_resident(creature.id)
                     creature.home_id = None
                     creature.home_eviction_timer = 0.0
-                    creature.goal_text = INFO_CREATURE_GOAL_HOUSE_EVICTED
+                    creature.goal_text = ci_info.INFO_CREATURE_GOAL_HOUSE_EVICTED
 
             if (game.biome_manager.grid is not None
-                    and game.biome_manager.grid.get_at(creature.x, creature.y) == BIOME_SEA):
-                creature.die(DEATH_CAUSE_DROWNING)
+                    and game.biome_manager.grid.get_at(creature.x, creature.y) == settings.BIOME_SEA):
+                creature.die(ci_settings.DEATH_CAUSE_DROWNING)
                 if game.player.grabbed_creature is creature:
                     game.player.grabbed_creature = None
                 continue
@@ -409,14 +410,19 @@ class CircleTickProcessor:
 
         for creature in ready_for_interact:
             if grids is not None:
-                nearby_fruits = grids["fruits"].query_nearby(creature.x, creature.y, EAT_DISTANCE + 10)
-                nearby_spikes = grids["spikes"].query_nearby(creature.x, creature.y, EAT_DISTANCE + 10)
-                nearby_water = grids["water"].query_nearby(creature.x, creature.y, EAT_DISTANCE + 40)
-                nearby_bushes = grids["bushes"].query_nearby(creature.x, creature.y,
-                                                             TERRITORY_BUSH_CLAIM_RADIUS + 20)
-                nearby_campfires = grids["campfires"].query_nearby(creature.x, creature.y, CAMPFIRE_RADIUS)
+                nearby_fruits = grids["fruits"].query_nearby(
+                    creature.x, creature.y, ci_settings.EAT_DISTANCE + 10)
+                nearby_spikes = grids["spikes"].query_nearby(
+                    creature.x, creature.y, ci_settings.EAT_DISTANCE + 10)
+                nearby_water = grids["water"].query_nearby(
+                    creature.x, creature.y, ci_settings.EAT_DISTANCE + 40)
+                nearby_bushes = grids["bushes"].query_nearby(
+                    creature.x, creature.y, ci_settings.TERRITORY_BUSH_CLAIM_RADIUS + 20)
+                nearby_campfires = grids["campfires"].query_nearby(
+                    creature.x, creature.y, ci_settings.CAMPFIRE_RADIUS)
                 nearby_creatures = grids["creatures"].query_nearby(
-                    creature.x, creature.y, max(TALK_DISTANCE, JEALOUSY_CHECK_DISTANCE))
+                    creature.x, creature.y,
+                    max(ci_settings.TALK_DISTANCE, ci_settings.JEALOUSY_CHECK_DISTANCE))
             else:
                 nearby_fruits, nearby_spikes = world.fruits, world.spikes
                 nearby_water, nearby_bushes = world.water_puddles, world.bushes

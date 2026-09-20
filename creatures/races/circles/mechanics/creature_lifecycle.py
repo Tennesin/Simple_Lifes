@@ -5,8 +5,7 @@ import random
 import uuid
 
 import settings
-from settings import *
-from ..ci_settings import *
+from .. import ci_settings
 from ..creature import Creature
 from ..life_cycle import CreatureAging
 from ..genealogy import GenealogyRegistry
@@ -16,7 +15,7 @@ from ..genealogy import GenealogyRegistry
 # =========================================================================
 
 def circle_spawn_dispatch(object_manager, wx, wy, placement_mode):
-    gender = GENDER_MALE if placement_mode == "creature_male" else GENDER_FEMALE
+    gender = ci_settings.GENDER_MALE if placement_mode == "creature_male" else ci_settings.GENDER_FEMALE
     object_manager.spawn_managers["circle"].create_creature_at(wx, wy, gender)
 
 class CircleSpawnManager:
@@ -34,16 +33,16 @@ class CircleSpawnManager:
         creature.y = wy
         creature.comfort_point = (wx, wy)
         game.world.creatures.append(creature)
-        creature.age = AGE_CHILD_END
-        creature.life_stage = LIFE_STAGE_ADULT
+        creature.age = ci_settings.AGE_CHILD_END
+        creature.life_stage = ci_settings.LIFE_STAGE_ADULT
 
     def create_child_creature(self, mother, father_id):
         game = self.game
         father = next((c for c in game.world.creatures if c.id == father_id), None)
 
-        gender = random.choice(GENDER_LIST)
+        gender = random.choice(ci_settings.GENDER_LIST)
         temperament = None
-        if random.random() < FAMILY_TEMPERAMENT_INHERIT_CHANCE:
+        if random.random() < ci_settings.FAMILY_TEMPERAMENT_INHERIT_CHANCE:
             temperament = random.choice([mother.temperament, father.temperament]) \
                 if father is not None else mother.temperament
 
@@ -57,18 +56,18 @@ class CircleSpawnManager:
         child.comfort_point = (child.x, child.y)
 
         child.age = 0.0
-        child.life_stage = LIFE_STAGE_CHILD
+        child.life_stage = ci_settings.LIFE_STAGE_CHILD
         child.parent_ids = (mother.id, father.id if father is not None else None)
 
         if mother.known_campfire is not None:
             child.known_campfire = mother.known_campfire
             child.known_campfire_id = mother.known_campfire_id
 
-        child.relationships[mother.id] = FAMILY_PARENT_START_RELATIONSHIP
-        mother.relationships[child.id] = FAMILY_PARENT_START_RELATIONSHIP
+        child.relationships[mother.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
+        mother.relationships[child.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
         if father is not None:
-            child.relationships[father.id] = FAMILY_PARENT_START_RELATIONSHIP
-            father.relationships[child.id] = FAMILY_PARENT_START_RELATIONSHIP
+            child.relationships[father.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
+            father.relationships[child.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
 
         if mother.home_id is not None:
             house = next((h for h in game.world.houses if h.id == mother.home_id), None)
@@ -83,14 +82,15 @@ class CircleSpawnManager:
         fallback = (mother.x, mother.y)
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
-            px = mother.x + math.cos(angle) * FAMILY_CHILD_SPAWN_OFFSET
-            py = mother.y + math.sin(angle) * FAMILY_CHILD_SPAWN_OFFSET
+            px = mother.x + math.cos(angle) * ci_settings.FAMILY_CHILD_SPAWN_OFFSET
+            py = mother.y + math.sin(angle) * ci_settings.FAMILY_CHILD_SPAWN_OFFSET
             px = max(20, min(px, settings.WORLD_WIDTH - 20))
             py = max(20, min(py, settings.WORLD_HEIGHT - 20))
-            if biome_grid is None or biome_grid.get_at(px, py) not in (BIOME_SEA, BIOME_RIVER):
+            if biome_grid is None or biome_grid.get_at(px, py) not in (settings.BIOME_SEA, settings.BIOME_RIVER):
                 return px, py
             fallback = (px, py)
-        if biome_grid is not None and biome_grid.get_at(mother.x, mother.y) not in (BIOME_SEA, BIOME_RIVER):
+        if biome_grid is not None and biome_grid.get_at(mother.x, mother.y) not in (
+                settings.BIOME_SEA, settings.BIOME_RIVER):
             return mother.x, mother.y
         return fallback
 
@@ -99,10 +99,10 @@ class CircleSpawnManager:
 # =========================================================================
 
 _CREATURE_SIMPLE_FIELDS = (
-    ("hp", "hp", HP_MAX),
-    ("hunger", "hunger", HUNGER_MAX),
-    ("thirst", "thirst", THIRST_MAX),
-    ("consciousness", "consciousness", SANITY_MAX),
+    ("hp", "hp", ci_settings.HP_MAX),
+    ("hunger", "hunger", ci_settings.HUNGER_MAX),
+    ("thirst", "thirst", ci_settings.THIRST_MAX),
+    ("consciousness", "consciousness", ci_settings.SANITY_MAX),
     ("x", "x", 0.0),
     ("y", "y", 0.0),
     ("player_memory", "player_memory", list),
@@ -115,14 +115,15 @@ _CREATURE_SIMPLE_FIELDS = (
     ("known_roads", "known_roads", dict),
     ("known_road_links", "known_road_links", dict),
     ("relationships", "relationships", dict),
-    ("energy", "energy", ENERGY_MAX),
+    ("energy", "energy", ci_settings.ENERGY_MAX),
     ("partner_id", "partner_id", None),
     ("is_pregnant", "is_pregnant", False),
     ("pregnancy_timer", "pregnancy_timer", 0.0),
     ("carried_fruit", "carried_fruit", False),
     ("carried_water", "carried_water", False),
     ("storage_supply_mode", "storage_supply_mode", False),
-    ("carry_capacity", "carry_capacity", lambda: random.randint(*CREATURE_CARRY_CAPACITY_RANGE)),
+    ("carry_capacity", "carry_capacity",
+     lambda: random.randint(*ci_settings.CREATURE_CARRY_CAPACITY_RANGE)),
     ("carried_resources", "carried_resources", lambda: {"wood": 0, "stone": 0}),
     ("elder_ward_id", "elder_ward_id", None),
     ("burial_target_id", "burial_target_id", None),
@@ -176,7 +177,7 @@ def _load_creature_knowledge(creature, state):
     creature.knowledge = {**default_knowledge, **state.get("knowledge", {})}
 
 def _load_creature_age_and_stage(creature, state):
-    creature.age = state.get("age", AGE_CHILD_END)
+    creature.age = state.get("age", ci_settings.AGE_CHILD_END)
     creature.life_stage = CreatureAging.compute_stage(creature.age)
     creature.aging.sync_stage_modifiers()
 

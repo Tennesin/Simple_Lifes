@@ -2,13 +2,7 @@
 (x, generation) и список рёбер по записям GenealogyRegistry."""
 
 from ......all_needed import geometry
-from ....ci_settings import (
-    GENEALOGY_MAX_DEPTH, GENEALOGY_SLOT_WIDTH, GENEALOGY_ROW_HEIGHT, GENEALOGY_PARTNER_OFFSET,
-    GENEALOGY_MIN_NODE_GAP, GENEALOGY_CROSS_RESERVED_WIDTH, GENEALOGY_CROSS_LINE_CLEARANCE,
-    GENEALOGY_NODE_RADIUS,
-)
-from ....ci_info import INFO_GENEALOGY_UNKNOWN
-
+from .... import ci_settings, ci_info
 
 class GenealogyLayoutBuilder:
     """Единственная задача - превратить (registry, root_id, живые существа)
@@ -56,7 +50,7 @@ class GenealogyLayoutBuilder:
             key = partner_id + "::partner_of::" + node["id"]
             all_nodes[key] = {
                 "id": partner_id, "generation": node["generation"],
-                "x": node["x"] + GENEALOGY_PARTNER_OFFSET / GENEALOGY_SLOT_WIDTH,
+                "x": node["x"] + ci_settings.GENEALOGY_PARTNER_OFFSET / ci_settings.GENEALOGY_SLOT_WIDTH,
                 "is_root": False,
             }
             all_edges.append((node["id"], partner_id, "partner"))
@@ -83,14 +77,14 @@ class GenealogyLayoutBuilder:
         counter = [0]
 
         def assign(cid, generation):
-            if cid is None or generation > GENEALOGY_MAX_DEPTH:
+            if cid is None or generation > ci_settings.GENEALOGY_MAX_DEPTH:
                 return None
             rec = registry.get(cid)
             if rec is None:
                 return None
             parent_ids = rec["parent_ids"]
             mother_x = father_x = None
-            if parent_ids and generation < GENEALOGY_MAX_DEPTH:
+            if parent_ids and generation < ci_settings.GENEALOGY_MAX_DEPTH:
                 mother_id = parent_ids[0] if len(parent_ids) > 0 else None
                 father_id = parent_ids[1] if len(parent_ids) > 1 else None
                 mother_x = assign(mother_id, generation + 1)
@@ -128,7 +122,7 @@ class GenealogyLayoutBuilder:
             rec = registry.get(cid)
             if rec is None:
                 return None
-            children = registry.children_of(cid) if generation < GENEALOGY_MAX_DEPTH else []
+            children = registry.children_of(cid) if generation < ci_settings.GENEALOGY_MAX_DEPTH else []
             if children:
                 child_xs = []
                 for child_id in children:
@@ -179,8 +173,8 @@ class GenealogyLayoutBuilder:
                     prev_node, cur_node = group[i - 1], group[i]
                     prev_left, prev_right = extents[id(prev_node)]
                     cur_left, cur_right = extents[id(cur_node)]
-                    min_gap_px = prev_right + cur_left + GENEALOGY_MIN_NODE_GAP
-                    min_gap = min_gap_px / GENEALOGY_SLOT_WIDTH
+                    min_gap_px = prev_right + cur_left + ci_settings.GENEALOGY_MIN_NODE_GAP
+                    min_gap = min_gap_px / ci_settings.GENEALOGY_SLOT_WIDTH
                     overlap = min_gap - (cur_node["x"] - prev_node["x"])
                     if overlap > 0:
                         shift = overlap / 2
@@ -191,19 +185,21 @@ class GenealogyLayoutBuilder:
                     break
 
     def _local_pos(self, node):
-        return node["x"] * GENEALOGY_SLOT_WIDTH, node["generation"] * GENEALOGY_ROW_HEIGHT
+        return (node["x"] * ci_settings.GENEALOGY_SLOT_WIDTH,
+                node["generation"] * ci_settings.GENEALOGY_ROW_HEIGHT)
 
     def _node_extents(self, registry, node):
         rec = registry.get(node["id"]) if registry else None
-        name = (rec["name"] if rec and rec["name"] else node["id"]) if rec else INFO_GENEALOGY_UNKNOWN
+        name = (rec["name"] if rec and rec["name"] else node["id"]) if rec else ci_info.INFO_GENEALOGY_UNKNOWN
         is_dead = bool(rec and rec.get("is_dead"))
 
         name_half_width = self.name_font.size(name)[0] / 2.0
-        base = max(GENEALOGY_NODE_RADIUS, name_half_width) + 4
+        base = max(ci_settings.GENEALOGY_NODE_RADIUS, name_half_width) + 4
 
         left_extent = base
         if is_dead:
-            left_extent = max(left_extent, GENEALOGY_NODE_RADIUS + GENEALOGY_CROSS_RESERVED_WIDTH)
+            left_extent = max(left_extent,
+                              ci_settings.GENEALOGY_NODE_RADIUS + ci_settings.GENEALOGY_CROSS_RESERVED_WIDTH)
         right_extent = base
         return left_extent, right_extent
 
@@ -224,7 +220,7 @@ class GenealogyLayoutBuilder:
             changed = False
             for node in dead_nodes:
                 nx, ny = self._local_pos(node)
-                cross_x = nx - GENEALOGY_NODE_RADIUS - 12
+                cross_x = nx - ci_settings.GENEALOGY_NODE_RADIUS - 12
                 cross_y = ny
 
                 for a_id, b_id, _kind in edges:
@@ -234,8 +230,9 @@ class GenealogyLayoutBuilder:
                     ax, ay = self._local_pos(node_a)
                     bx, by_ = self._local_pos(node_b)
                     dist = geometry.point_segment_distance(cross_x, cross_y, ax, ay, bx, by_)
-                    if dist < GENEALOGY_CROSS_LINE_CLEARANCE:
-                        node["x"] += (GENEALOGY_CROSS_LINE_CLEARANCE - dist) / GENEALOGY_SLOT_WIDTH * 0.6
+                    if dist < ci_settings.GENEALOGY_CROSS_LINE_CLEARANCE:
+                        node["x"] += ((ci_settings.GENEALOGY_CROSS_LINE_CLEARANCE - dist)
+                                      / ci_settings.GENEALOGY_SLOT_WIDTH * 0.6)
                         changed = True
             if not changed:
                 break

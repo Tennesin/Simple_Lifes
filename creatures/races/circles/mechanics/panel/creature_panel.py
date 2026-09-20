@@ -4,11 +4,10 @@
 import time
 import pygame
 
-from settings import *
-from info import *
+import settings
+import info
 from game.widgets import Button, draw_favorite_star
-from ...ci_settings import *
-from ...ci_info import *
+from ... import ci_settings, ci_info
 from .....all_needed.diet import DIET_DISPLAY_MAP
 from .....all_needed.instruction import truncate_text, draw_wrapped_text
 
@@ -39,17 +38,17 @@ class CreaturePanel:
         self.psyche_header_rect = None
         self.psyche_panel_rect = None
 
-        self.rebuild_layout(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     def rebuild_layout(self, window_w, window_h):
         self.window_h = window_h
         self.info_panel_rect = pygame.Rect(
-            window_w - INFO_PANEL_WIDTH, UI_HEIGHT,
-            INFO_PANEL_WIDTH, window_h - UI_HEIGHT
+            window_w - settings.INFO_PANEL_WIDTH, settings.UI_HEIGHT,
+            settings.INFO_PANEL_WIDTH, window_h - settings.UI_HEIGHT
         )
 
         id_row_y = self.info_panel_rect.y + 8
-        btn_width, btn_height, btn_gap = 85, BUTTON_HEIGHT - 4, 6
+        btn_width, btn_height, btn_gap = 85, settings.BUTTON_HEIGHT - 4, 6
 
         # ---------- Звезда "Избранное" - смещает кнопки Гладить/Ударить левее ----------
         star_size = btn_height
@@ -58,14 +57,14 @@ class CreaturePanel:
 
         self.btn_creature_hit = Button(
             pygame.Rect(self.favorite_star_rect.x - btn_gap - btn_width, id_row_y, btn_width, btn_height),
-            INFO_BTN_HIT)
+            info.INFO_BTN_HIT)
         self.btn_creature_pet = Button(
             pygame.Rect(self.btn_creature_hit.rect.x - btn_gap - btn_width, id_row_y, btn_width, btn_height),
-            INFO_BTN_PET)
+            info.INFO_BTN_PET)
 
         self.name_field_rect = pygame.Rect(
             self.info_panel_rect.x + 10, id_row_y + btn_height + 8,
-            INFO_PANEL_WIDTH - 20, 26
+            settings.INFO_PANEL_WIDTH - 20, 26
         )
 
     # ---------- Текстовые утилиты ----------
@@ -104,7 +103,7 @@ class CreaturePanel:
                     and self.psyche_panel_rect.collidepoint(mouse_x, mouse_y))
 
     def _draw_stat_bar(self, screen, label, value, max_value, color, x, y, width, stat_key=None):
-        label_txt = self.font.render(f"{label}: {value:.1f}/{max_value}", True, TEXT_COLOR)
+        label_txt = self.font.render(f"{label}: {value:.1f}/{max_value}", True, settings.TEXT_COLOR)
         screen.blit(label_txt, (x, y))
         bar_rect = pygame.Rect(x, y + 20, width, 10)
         pygame.draw.rect(screen, (30, 30, 30), bar_rect)
@@ -131,10 +130,11 @@ class CreaturePanel:
             return
         self._check_creature_changed(creature)
         panel = self.info_panel_rect
-        pygame.draw.rect(screen, INFO_PANEL_COLOR, panel)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, panel, 2)
+        pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, panel)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, panel, 2)
 
-        id_txt = self.font.render(INFO_INFO_ID.format(creature_id=creature.id), True, TEXT_COLOR)
+        id_txt = self.font.render(
+            ci_info.INFO_INFO_ID.format(creature_id=creature.id), True, settings.TEXT_COLOR)
         screen.blit(id_txt, (panel.x + 10, panel.y + 12))
 
         if not creature.is_dead:
@@ -144,9 +144,9 @@ class CreaturePanel:
             draw_favorite_star(screen, self.favorite_star_rect, game.favorite_id == creature.id, mouse_pos)
 
         field = self.name_field_rect
-        field_color = NAME_FIELD_EDIT_COLOR if game.editing_name else NAME_FIELD_COLOR
+        field_color = settings.NAME_FIELD_EDIT_COLOR if game.editing_name else settings.NAME_FIELD_COLOR
         pygame.draw.rect(screen, field_color, field)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, field, 1)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, field, 1)
 
         if game.editing_name:
             display_name = game.name_edit_buffer
@@ -154,19 +154,21 @@ class CreaturePanel:
                 display_name += "|"
             text_color = (0, 0, 0)
         else:
-            display_name = creature.name if creature.name else INFO_INFO_NO_NAME
-            text_color = TEXT_COLOR if creature.name else (180, 180, 180)
+            display_name = creature.name if creature.name else ci_info.INFO_INFO_NO_NAME
+            text_color = settings.TEXT_COLOR if creature.name else (180, 180, 180)
 
         name_txt = self.font.render(display_name, True, text_color)
         screen.blit(name_txt, (field.x + 5, field.y + 4))
 
         y = field.bottom + 16
 
-        kind_txt = self.font.render(INFO_INFO_KIND.format(kind=creature.get_type_name()), True, TEXT_COLOR)
+        kind_txt = self.font.render(
+            ci_info.INFO_INFO_KIND.format(kind=creature.get_type_name()), True, settings.TEXT_COLOR)
         screen.blit(kind_txt, (panel.x + 10, y))
 
         age_minutes = int(creature.age // 60)
-        age_txt = self.font.render(INFO_INFO_AGE_MINUTES.format(age=age_minutes), True, TEXT_COLOR)
+        age_txt = self.font.render(
+            ci_info.INFO_INFO_AGE_MINUTES.format(age=age_minutes), True, settings.TEXT_COLOR)
         screen.blit(age_txt, (panel.x + 150, y))
         y += 30
 
@@ -174,29 +176,31 @@ class CreaturePanel:
         col2_width = panel.width - 150 - 10
         row2_bottom = y + 30
 
-        gender_label = INFO_GENDER_FEMALE if creature.gender == GENDER_FEMALE else INFO_GENDER_MALE
-        gender_color = CREATURE_COLOR_FEMALE if creature.gender == GENDER_FEMALE else CREATURE_COLOR_MALE
-        gender_txt = self.font.render(INFO_INFO_GENDER.format(gender=gender_label), True, gender_color)
+        is_female = creature.gender == ci_settings.GENDER_FEMALE
+        gender_label = info.INFO_GENDER_FEMALE if is_female else info.INFO_GENDER_MALE
+        gender_color = ci_settings.CREATURE_COLOR_FEMALE if is_female else ci_settings.CREATURE_COLOR_MALE
+        gender_txt = self.font.render(info.INFO_INFO_GENDER.format(gender=gender_label), True, gender_color)
         screen.blit(gender_txt, (panel.x + 10, y))
 
         if not creature.is_dead:
             temp_end_y = draw_wrapped_text(
                 screen, self.font,
-                INFO_INFO_TEMPERAMENT.format(temperament=gendered_text(creature.temperament, creature.gender)),
-                col2_x, y, col2_width, TEXT_COLOR)
+                ci_info.INFO_INFO_TEMPERAMENT.format(
+                    temperament=ci_info.gendered_text(creature.temperament, creature.gender)),
+                col2_x, y, col2_width, settings.TEXT_COLOR)
             row2_bottom = max(row2_bottom, temp_end_y)
 
         y = row2_bottom + 2
 
         diet_label = DIET_DISPLAY_MAP.get(creature.diet, creature.diet)
-        diet_txt = self.font.render(INFO_INFO_DIET.format(diet=diet_label), True, (150, 210, 130))
+        diet_txt = self.font.render(info.INFO_INFO_DIET.format(diet=diet_label), True, (150, 210, 130))
         screen.blit(diet_txt, (panel.x + 10, y))
         if not creature.is_dead:
             self._draw_genealogy_button(screen, y - 3)
         y += 28
 
         if creature.is_dead:
-            status_txt = self.font.render(INFO_INFO_STATUS_DEAD, True, (210, 90, 90))
+            status_txt = self.font.render(ci_info.INFO_INFO_STATUS_DEAD, True, (210, 90, 90))
             screen.blit(status_txt, (panel.x + 10, y))
             self._draw_genealogy_button(screen, y - 3)
             y += 26
@@ -205,17 +209,20 @@ class CreaturePanel:
                 max_text_width = panel.width - 20
                 y = draw_wrapped_text(
                     screen, self.font,
-                    gendered_text(DEATH_CAUSE_DISPLAY_MAP.get(creature.death_cause, ""), creature.gender),
-                    panel.x + 10, y, max_text_width, TEXT_COLOR)
+                    ci_info.gendered_text(
+                        ci_info.DEATH_CAUSE_DISPLAY_MAP.get(creature.death_cause, ""), creature.gender),
+                    panel.x + 10, y, max_text_width, settings.TEXT_COLOR)
                 y += 8
 
             temp_txt = self.font.render(
-                INFO_INFO_TEMPERAMENT.format(temperament=gendered_text(creature.temperament, creature.gender)),
-                True, TEXT_COLOR)
+                ci_info.INFO_INFO_TEMPERAMENT.format(
+                    temperament=ci_info.gendered_text(creature.temperament, creature.gender)),
+                True, settings.TEXT_COLOR)
             screen.blit(temp_txt, (panel.x + 10, y))
             y += 26
 
-            timer_txt = self.font.render(INFO_INFO_DEATH_TIMER.format(time=creature.death_timer), True, TEXT_COLOR)
+            timer_txt = self.font.render(
+                ci_info.INFO_INFO_DEATH_TIMER.format(time=creature.death_timer), True, settings.TEXT_COLOR)
             screen.blit(timer_txt, (panel.x + 10, y))
             y += 30
             self._draw_relationships_section(screen, creature, panel.x + 10, y, panel.width - 20)
@@ -225,45 +232,47 @@ class CreaturePanel:
         y = self._draw_family_info(screen, creature, panel.x + 10, y, panel.width - 20)
         y = self._draw_psyche_toggle(screen, panel.x + 10, y, panel.width - 20)
 
-        self._draw_stat_bar(screen, INFO_INFO_HP, creature.hp, HP_MAX, (220, 60, 60),
+        self._draw_stat_bar(screen, ci_info.INFO_INFO_HP, creature.hp, ci_settings.HP_MAX, (220, 60, 60),
                             panel.x + 10, y, panel.width - 20, stat_key="hp")
         y += 40
-        self._draw_stat_bar(screen, INFO_INFO_HUNGER, creature.hunger, HUNGER_MAX, (200, 150, 40),
-                            panel.x + 10, y, panel.width - 20, stat_key="hunger")
+        self._draw_stat_bar(screen, ci_info.INFO_INFO_HUNGER, creature.hunger, ci_settings.HUNGER_MAX,
+                            (200, 150, 40), panel.x + 10, y, panel.width - 20, stat_key="hunger")
         y += 40
-        self._draw_stat_bar(screen, INFO_INFO_THIRST, creature.thirst, THIRST_MAX, (60, 140, 220),
-                            panel.x + 10, y, panel.width - 20, stat_key="thirst")
+        self._draw_stat_bar(screen, ci_info.INFO_INFO_THIRST, creature.thirst, ci_settings.THIRST_MAX,
+                            (60, 140, 220), panel.x + 10, y, panel.width - 20, stat_key="thirst")
         y += 40
-        self._draw_stat_bar(screen, INFO_INFO_ENERGY, creature.energy, ENERGY_MAX, (90, 200, 200),
-                            panel.x + 10, y, panel.width - 20, stat_key="energy")
+        self._draw_stat_bar(screen, ci_info.INFO_INFO_ENERGY, creature.energy, ci_settings.ENERGY_MAX,
+                            (90, 200, 200), panel.x + 10, y, panel.width - 20, stat_key="energy")
         y += 40
 
         state_color_map = {
-            STATE_CALM: (120, 220, 120),
-            STATE_SEEKING: (230, 200, 60),
-            STATE_PANIC: (230, 70, 70),
-            STATE_SLEEP: (120, 160, 220)
+            ci_settings.STATE_CALM: (120, 220, 120),
+            ci_settings.STATE_SEEKING: (230, 200, 60),
+            ci_settings.STATE_PANIC: (230, 70, 70),
+            ci_settings.STATE_SLEEP: (120, 160, 220)
         }
         state_txt = self.font.render(
-            INFO_INFO_STATE.format(state=gendered_text(creature.state, creature.gender)),
-            True, state_color_map.get(creature.state, TEXT_COLOR))
+            ci_info.INFO_INFO_STATE.format(state=ci_info.gendered_text(creature.state, creature.gender)),
+            True, state_color_map.get(creature.state, settings.TEXT_COLOR))
         screen.blit(state_txt, (panel.x + 10, y))
         y += 24
 
-        if creature.gender == GENDER_FEMALE and creature.is_pregnant:
-            pregnant_txt = self.font.render(INFO_INFO_PREGNANT, True, (255, 170, 210))
+        if creature.gender == ci_settings.GENDER_FEMALE and creature.is_pregnant:
+            pregnant_txt = self.font.render(ci_info.INFO_INFO_PREGNANT, True, (255, 170, 210))
             screen.blit(pregnant_txt, (panel.x + 10, y))
             y += 24
 
         if creature.puberty_active:
-            puberty_txt = self.font.render(INFO_INFO_PUBERTY_ACTIVE, True, PUBERTY_RING_COLOR)
+            puberty_txt = self.font.render(
+                ci_info.INFO_INFO_PUBERTY_ACTIVE, True, ci_settings.PUBERTY_RING_COLOR)
             screen.blit(puberty_txt, (panel.x + 10, y))
             y += 24
 
         max_text_width = panel.width - 20
         y = draw_wrapped_text(
-            screen, self.font, INFO_INFO_GOAL.format(goal=gendered_text(creature.goal_text, creature.gender)),
-            panel.x + 10, y, max_text_width, TEXT_COLOR)
+            screen, self.font,
+            ci_info.INFO_INFO_GOAL.format(goal=ci_info.gendered_text(creature.goal_text, creature.gender)),
+            panel.x + 10, y, max_text_width, settings.TEXT_COLOR)
         y += 12
         self._draw_relationships_section(screen, creature, panel.x + 10, y, panel.width - 20)
 
@@ -285,51 +294,58 @@ class CreaturePanel:
             entry = next((a for a in gy.archive if a["id"] == parent_id), None)
             if entry is not None:
                 return entry["name"] if entry["name"] else entry["id"]
-        return INFO_INFO_UNKNOWN_PARENT
+        return ci_info.INFO_INFO_UNKNOWN_PARENT
 
     def _draw_parent_line(self, screen, creature, label_template, index, x, y):
         if creature.parent_ids is None:
-            name = INFO_INFO_HEAVEN
+            name = ci_info.INFO_INFO_HEAVEN
         else:
             parent_id = creature.parent_ids[index] if index < len(creature.parent_ids) else None
-            name = INFO_INFO_UNKNOWN_PARENT if parent_id is None else self._resolve_parent_name(parent_id)
-        txt = self.font.render(label_template.format(name=name), True, TEXT_COLOR)
+            name = (ci_info.INFO_INFO_UNKNOWN_PARENT if parent_id is None
+                    else self._resolve_parent_name(parent_id))
+        txt = self.font.render(label_template.format(name=name), True, settings.TEXT_COLOR)
         screen.blit(txt, (x, y))
         return y + 24
 
     def _draw_family_info(self, screen, creature, x, y, max_width):
         game = self.game
 
-        y = self._draw_parent_line(screen, creature, INFO_INFO_MOTHER, 0, x, y)
-        y = self._draw_parent_line(screen, creature, INFO_INFO_FATHER, 1, x, y)
+        y = self._draw_parent_line(screen, creature, ci_info.INFO_INFO_MOTHER, 0, x, y)
+        y = self._draw_parent_line(screen, creature, ci_info.INFO_INFO_FATHER, 1, x, y)
 
         partner = None
         if creature.partner_id:
             partner = next((c for c in game.world.creatures
                             if c.id == creature.partner_id and not c.is_dead), None)
         partner_label = (partner.name if partner and partner.name
-                         else (partner.id if partner else INFO_INFO_PARTNER_NONE))
-        partner_txt = self.font.render(INFO_INFO_PARTNER.format(name=partner_label), True, TEXT_COLOR)
+                         else (partner.id if partner else ci_info.INFO_INFO_PARTNER_NONE))
+        partner_txt = self.font.render(
+            ci_info.INFO_INFO_PARTNER.format(name=partner_label), True, settings.TEXT_COLOR)
         screen.blit(partner_txt, (x, y))
         y += 24
 
         sons = [c for c in game.world.creatures
-                if c.parent_ids and creature.id in c.parent_ids and not c.is_dead and c.gender == GENDER_MALE]
+                if c.parent_ids and creature.id in c.parent_ids and not c.is_dead
+                and c.gender == ci_settings.GENDER_MALE]
         daughters = [c for c in game.world.creatures
-                     if c.parent_ids and creature.id in c.parent_ids and not c.is_dead and c.gender == GENDER_FEMALE]
+                     if c.parent_ids and creature.id in c.parent_ids and not c.is_dead
+                     and c.gender == ci_settings.GENDER_FEMALE]
 
         if not sons and not daughters:
-            children_txt = self.font.render(INFO_INFO_CHILDREN.format(names=INFO_INFO_CHILDREN_NONE), True, TEXT_COLOR)
+            children_txt = self.font.render(
+                ci_info.INFO_INFO_CHILDREN.format(names=ci_info.INFO_INFO_CHILDREN_NONE),
+                True, settings.TEXT_COLOR)
             screen.blit(children_txt, (x, y))
             y += 24
         else:
-            sons_names = ", ".join(c.name if c.name else c.id for c in sons) if sons else INFO_INFO_CHILDREN_NONE
-            daughters_names = ", ".join(
-                c.name if c.name else c.id for c in daughters) if daughters else INFO_INFO_CHILDREN_NONE
-            y = draw_wrapped_text(screen, self.font, INFO_INFO_SONS.format(names=sons_names), x, y, max_width,
-                                  TEXT_COLOR)
-            y = draw_wrapped_text(screen, self.font, INFO_INFO_DAUGHTERS.format(names=daughters_names), x, y, max_width,
-                                  TEXT_COLOR)
+            sons_names = (", ".join(c.name if c.name else c.id for c in sons)
+                          if sons else ci_info.INFO_INFO_CHILDREN_NONE)
+            daughters_names = (", ".join(c.name if c.name else c.id for c in daughters)
+                               if daughters else ci_info.INFO_INFO_CHILDREN_NONE)
+            y = draw_wrapped_text(screen, self.font, ci_info.INFO_INFO_SONS.format(names=sons_names),
+                                  x, y, max_width, settings.TEXT_COLOR)
+            y = draw_wrapped_text(screen, self.font, ci_info.INFO_INFO_DAUGHTERS.format(names=daughters_names),
+                                  x, y, max_width, settings.TEXT_COLOR)
 
         y += 10
         return y
@@ -337,30 +353,31 @@ class CreaturePanel:
     # ---------- Отношение к игроку ----------
 
     def _relationship_label(self, creature):
+        gender = creature.gender
         if creature.player_fear_timer > 0:
-            return gendered_text(INFO_RELATIONSHIP_FEAR, creature.gender), (230, 70, 70)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_FEAR, gender), (230, 70, 70)
         if creature.calm_timer > 0:
-            return gendered_text(INFO_RELATIONSHIP_CALMED, creature.gender), (255, 210, 120)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_CALMED, gender), (255, 210, 120)
 
         r = creature.player_relationship
         if r <= -70:
-            return gendered_text(INFO_RELATIONSHIP_DESPISE, creature.gender), (210, 40, 40)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_DESPISE, gender), (210, 40, 40)
         elif r <= -30:
-            return gendered_text(INFO_RELATIONSHIP_AFRAID, creature.gender), (215, 100, 60)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_AFRAID, gender), (215, 100, 60)
         elif r <= -10:
-            return gendered_text(INFO_RELATIONSHIP_WARY, creature.gender), (210, 160, 70)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_WARY, gender), (210, 160, 70)
         elif r < 10:
-            return gendered_text(INFO_RELATIONSHIP_NEUTRAL, creature.gender), (190, 190, 190)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_NEUTRAL, gender), (190, 190, 190)
         elif r < 30:
-            return gendered_text(INFO_RELATIONSHIP_FRIENDLY, creature.gender), (150, 200, 120)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_FRIENDLY, gender), (150, 200, 120)
         elif r < 70:
-            return gendered_text(INFO_RELATIONSHIP_TRUST, creature.gender), (100, 210, 130)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_TRUST, gender), (100, 210, 130)
         else:
-            return gendered_text(INFO_RELATIONSHIP_DEVOTED, creature.gender), (80, 230, 140)
+            return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_DEVOTED, gender), (80, 230, 140)
 
     def _draw_relationship_bar(self, screen, creature, x, y, width):
         label, color = self._relationship_label(creature)
-        label_txt = self.font.render(INFO_INFO_RELATIONSHIP.format(label=label), True, color)
+        label_txt = self.font.render(ci_info.INFO_INFO_RELATIONSHIP.format(label=label), True, color)
         screen.blit(label_txt, (x, y))
 
         bar_y = y + 22
@@ -386,13 +403,13 @@ class CreaturePanel:
         tri_half = 6
         tri_bottom_y = bar_y - 2
         tri_top_y = tri_bottom_y - tri_half - 2
-        pygame.draw.polygon(screen, TEXT_COLOR, [
+        pygame.draw.polygon(screen, settings.TEXT_COLOR, [
             (marker_x - tri_half, tri_top_y),
             (marker_x + tri_half, tri_top_y),
             (marker_x, tri_bottom_y),
         ])
 
-        value_txt = self.font.render(f"{ratio:+.2f}", True, TEXT_COLOR)
+        value_txt = self.font.render(f"{ratio:+.2f}", True, settings.TEXT_COLOR)
         screen.blit(value_txt, (x + width - value_txt.get_width(), bar_y + bar_height + 4))
 
         return bar_y + bar_height + 26
@@ -403,10 +420,10 @@ class CreaturePanel:
         header_rect = pygame.Rect(x, y, width, 26)
 
         mouse_pos = pygame.mouse.get_pos()
-        header_color = MENU_HOVER if header_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+        header_color = settings.MENU_HOVER if header_rect.collidepoint(mouse_pos) else settings.BUTTON_COLOR
         pygame.draw.rect(screen, header_color, header_rect)
         arrow = "<" if self.show_relationships_section else "v"
-        txt = self.font.render(f"{arrow} {INFO_RELATIONSHIPS_TITLE}", True, TEXT_COLOR)
+        txt = self.font.render(f"{arrow} {ci_info.INFO_RELATIONSHIPS_TITLE}", True, settings.TEXT_COLOR)
         screen.blit(txt, (header_rect.x + 6, header_rect.y + 3))
         self.relationships_header_rect = header_rect
         y = header_rect.bottom + 8
@@ -433,22 +450,22 @@ class CreaturePanel:
                     (creature.parent_ids and other.id in creature.parent_ids)
             )
             entry = (other, value, is_close)
-            (females if other.gender == GENDER_FEMALE else males).append(entry)
+            (females if other.gender == ci_settings.GENDER_FEMALE else males).append(entry)
 
         males.sort(key=lambda e: (e[0].name or "").lower())
         females.sort(key=lambda e: (e[0].name or "").lower())
 
         if not males and not females:
-            empty_txt = self.font.render(INFO_RELATIONSHIPS_EMPTY, True, (180, 180, 180))
+            empty_txt = self.font.render(ci_info.INFO_RELATIONSHIPS_EMPTY, True, (180, 180, 180))
             screen.blit(empty_txt, (x, y))
             self.relationships_list_rect = None
             self.relationships_max_scroll = 0
             self.relationships_scrollbar_rect = None
             return y + 24
 
-        male_header = self.font.render(INFO_RELATIONSHIPS_MALES, True, (170, 190, 230))
+        male_header = self.font.render(ci_info.INFO_RELATIONSHIPS_MALES, True, (170, 190, 230))
         screen.blit(male_header, (x, y))
-        female_header = self.font.render(INFO_RELATIONSHIPS_FEMALES, True, (230, 170, 210))
+        female_header = self.font.render(ci_info.INFO_RELATIONSHIPS_FEMALES, True, (230, 170, 210))
         screen.blit(female_header, (x + col_width + col_gap, y))
         y += 24
 
@@ -473,7 +490,7 @@ class CreaturePanel:
                 row_y = y + row_index * row_height - scroll
                 if row_y + row_height < y or row_y > y + available_height:
                     continue
-                color = (255, 210, 60) if is_close else TEXT_COLOR
+                color = (255, 210, 60) if is_close else settings.TEXT_COLOR
                 name = other.name if other.name else other.id
                 value_txt = self.font.render(f"{value:+.0f}", True, color)
                 name_max_width = col_width - value_txt.get_width() - 8
@@ -531,45 +548,53 @@ class CreaturePanel:
         rect = pygame.Rect(x, y, width, height)
         self.psyche_panel_rect = rect
 
-        pygame.draw.rect(screen, INFO_PANEL_COLOR, rect)
-        pygame.draw.rect(screen, INFO_PANEL_BORDER, rect, 2)
+        pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, rect)
+        pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, rect, 2)
 
         inner_x = rect.x + 10
         inner_y = rect.y + 10
         inner_width = rect.width - 20
 
         title_txt = self.font.render(
-            f"{INFO_PSYCHE_TITLE}: {creature.name if creature.name else creature.id}", True, TEXT_COLOR)
+            f"{ci_info.INFO_PSYCHE_TITLE}: {creature.name if creature.name else creature.id}",
+            True, settings.TEXT_COLOR)
         screen.blit(title_txt, (inner_x, inner_y))
         inner_y += title_h
 
         label, _color = self._relationship_label(creature)
         inner_y = self._draw_axis_bar(
-            screen, f"{INFO_PSYCHE_PLAYER_REL}: {label}", creature.player_relationship,
-            INFO_RELATIONSHIP_DESPISE, INFO_RELATIONSHIP_DEVOTED, inner_x, inner_y, inner_width)
+            screen, f"{ci_info.INFO_PSYCHE_PLAYER_REL}: {label}", creature.player_relationship,
+            ci_info.INFO_RELATIONSHIP_DESPISE, ci_info.INFO_RELATIONSHIP_DEVOTED,
+            inner_x, inner_y, inner_width)
 
-        self._draw_stat_bar(screen, INFO_PSYCHE_CONSCIOUSNESS, creature.consciousness, SANITY_MAX,
-                            (160, 100, 220), inner_x, inner_y, inner_width, stat_key="consciousness")
+        self._draw_stat_bar(screen, ci_info.INFO_PSYCHE_CONSCIOUSNESS, creature.consciousness,
+                            ci_settings.SANITY_MAX, (160, 100, 220),
+                            inner_x, inner_y, inner_width, stat_key="consciousness")
         inner_y += stat_bar_h
 
         psyche = creature.psyche
-        inner_y = self._draw_axis_bar(screen, INFO_PSYCHE_JOY_TITLE, psyche.joy,
-                                      INFO_PSYCHE_JOY_LEFT, INFO_PSYCHE_JOY_RIGHT, inner_x, inner_y, inner_width)
-        inner_y = self._draw_axis_bar(screen, INFO_PSYCHE_SATISFACTION_TITLE, psyche.satisfaction,
-                                      INFO_PSYCHE_SATISFACTION_LEFT, INFO_PSYCHE_SATISFACTION_RIGHT,
+        inner_y = self._draw_axis_bar(screen, ci_info.INFO_PSYCHE_JOY_TITLE, psyche.joy,
+                                      ci_info.INFO_PSYCHE_JOY_LEFT, ci_info.INFO_PSYCHE_JOY_RIGHT,
                                       inner_x, inner_y, inner_width)
-        inner_y = self._draw_axis_bar(screen, INFO_PSYCHE_CALM_TITLE, psyche.calmness,
-                                      INFO_PSYCHE_CALM_LEFT, INFO_PSYCHE_CALM_RIGHT, inner_x, inner_y, inner_width)
-        inner_y = self._draw_axis_bar(screen, INFO_PSYCHE_CONFIDENCE_TITLE, psyche.confidence,
-                                      INFO_PSYCHE_CONFIDENCE_LEFT, INFO_PSYCHE_CONFIDENCE_RIGHT,
+        inner_y = self._draw_axis_bar(screen, ci_info.INFO_PSYCHE_SATISFACTION_TITLE, psyche.satisfaction,
+                                      ci_info.INFO_PSYCHE_SATISFACTION_LEFT,
+                                      ci_info.INFO_PSYCHE_SATISFACTION_RIGHT,
                                       inner_x, inner_y, inner_width)
-        inner_y = self._draw_axis_bar(screen, INFO_PSYCHE_ATTACHMENT_TITLE, psyche.attachment,
-                                      INFO_PSYCHE_ATTACHMENT_LEFT, INFO_PSYCHE_ATTACHMENT_RIGHT,
+        inner_y = self._draw_axis_bar(screen, ci_info.INFO_PSYCHE_CALM_TITLE, psyche.calmness,
+                                      ci_info.INFO_PSYCHE_CALM_LEFT, ci_info.INFO_PSYCHE_CALM_RIGHT,
+                                      inner_x, inner_y, inner_width)
+        inner_y = self._draw_axis_bar(screen, ci_info.INFO_PSYCHE_CONFIDENCE_TITLE, psyche.confidence,
+                                      ci_info.INFO_PSYCHE_CONFIDENCE_LEFT,
+                                      ci_info.INFO_PSYCHE_CONFIDENCE_RIGHT,
+                                      inner_x, inner_y, inner_width)
+        inner_y = self._draw_axis_bar(screen, ci_info.INFO_PSYCHE_ATTACHMENT_TITLE, psyche.attachment,
+                                      ci_info.INFO_PSYCHE_ATTACHMENT_LEFT,
+                                      ci_info.INFO_PSYCHE_ATTACHMENT_RIGHT,
                                       inner_x, inner_y, inner_width)
 
     def _draw_axis_bar(self, screen, title, value, left_label, right_label, x, y, width):
         if title:
-            title_txt = self.font.render(title, True, TEXT_COLOR)
+            title_txt = self.font.render(title, True, settings.TEXT_COLOR)
             screen.blit(title_txt, (x, y))
             y += 20
 
@@ -603,21 +628,21 @@ class CreaturePanel:
     def _draw_psyche_toggle(self, screen, x, y, width):
         header_rect = pygame.Rect(x, y, width, 26)
         mouse_pos = pygame.mouse.get_pos()
-        header_color = MENU_HOVER if header_rect.collidepoint(mouse_pos) else BUTTON_COLOR
+        header_color = settings.MENU_HOVER if header_rect.collidepoint(mouse_pos) else settings.BUTTON_COLOR
         pygame.draw.rect(screen, header_color, header_rect)
         arrow = "<" if self.show_psyche_section else "v"
-        txt = self.font.render(f"{arrow} {INFO_PSYCHE_TOGGLE}", True, TEXT_COLOR)
+        txt = self.font.render(f"{arrow} {ci_info.INFO_PSYCHE_TOGGLE}", True, settings.TEXT_COLOR)
         screen.blit(txt, (header_rect.x + 6, header_rect.y + 3))
         self.psyche_header_rect = header_rect
         return header_rect.bottom + 10
 
     def _draw_genealogy_button(self, screen, y):
         panel = self.info_panel_rect
-        btn_width, btn_height = 85, BUTTON_HEIGHT - 4
+        btn_width, btn_height = 85, settings.BUTTON_HEIGHT - 4
         rect = pygame.Rect(panel.right - 10 - btn_width, y, btn_width, btn_height)
         mouse_pos = pygame.mouse.get_pos()
-        color = MENU_HOVER if rect.collidepoint(mouse_pos) else BUTTON_COLOR
+        color = settings.MENU_HOVER if rect.collidepoint(mouse_pos) else settings.BUTTON_COLOR
         pygame.draw.rect(screen, color, rect, border_radius=4)
-        txt = self.font.render(INFO_BTN_GENEALOGY, True, TEXT_COLOR)
+        txt = self.font.render(ci_info.INFO_BTN_GENEALOGY, True, settings.TEXT_COLOR)
         screen.blit(txt, txt.get_rect(center=rect.center))
         self.genealogy_btn_rect = rect
