@@ -7,8 +7,8 @@ import settings
 from memory import Memory
 from names import random_name
 
-from .ci_settings import *
-from .ci_info import *
+from . import ci_settings
+from . import ci_info
 from ...all_needed import geometry
 from .life_cycle import CreatureAging, CreatureTerritory, CreatureFamily
 from .physiology import CreatureNeeds, CirclePathfinder
@@ -27,26 +27,26 @@ from ...all_needed.base_entity import LivingEntity
 
 class Creature(LivingEntity):
     race_name = "circle"
-    diet = RACE_DIET
-    food_category_map = RACE_FOOD_CATEGORY_MAP
+    diet = ci_settings.RACE_DIET
+    food_category_map = ci_settings.RACE_FOOD_CATEGORY_MAP
 
     def __init__(self, creature_id, name=None, temperament=None, gender=None, name_pools=None):
         self.id = creature_id
-        self.gender = gender if gender in GENDER_LIST else random.choice(GENDER_LIST)
+        self.gender = gender if gender in ci_settings.GENDER_LIST else random.choice(ci_settings.GENDER_LIST)
         self.name = name if name else random_name(self.gender, pools=name_pools)
         self.player_named = False
-        self.hp = HP_MAX
-        self.hunger = HUNGER_MAX
-        self.thirst = THIRST_MAX
-        self.consciousness = SANITY_MAX
-        self.sanity_decay_timer = SANITY_DECAY_INTERVAL
+        self.hp = ci_settings.HP_MAX
+        self.hunger = ci_settings.HUNGER_MAX
+        self.thirst = ci_settings.THIRST_MAX
+        self.consciousness = ci_settings.SANITY_MAX
+        self.sanity_decay_timer = ci_settings.SANITY_DECAY_INTERVAL
         self.x = random.uniform(50, settings.WORLD_WIDTH - 50)
         self.y = random.uniform(50, settings.WORLD_HEIGHT - 50)
         self.memory = Memory()
-        self.energy = ENERGY_MAX
+        self.energy = ci_settings.ENERGY_MAX
 
-        self.state = STATE_CALM
-        self.goal_text = INFO_CREATURE_STATE_CALM
+        self.state = ci_settings.STATE_CALM
+        self.goal_text = ci_info.INFO_CREATURE_STATE_CALM
         self.panic_active = False
         self.is_talking = False
 
@@ -56,9 +56,10 @@ class Creature(LivingEntity):
         self._pending_grief = False
         self.radius = 10
 
-        self.temperament = temperament if temperament in TEMPERAMENT_LIST else random.choice(TEMPERAMENT_LIST)
-        self.base_speed_multiplier = SPEED_MULTIPLIER[self.temperament]
-        self.curiosity = random.uniform(*CURIOSITY_RANGE.get(self.temperament, (0.3, 0.6)))
+        self.temperament = (temperament if temperament in ci_settings.TEMPERAMENT_LIST
+                            else random.choice(ci_settings.TEMPERAMENT_LIST))
+        self.base_speed_multiplier = ci_settings.SPEED_MULTIPLIER[self.temperament]
+        self.curiosity = random.uniform(*ci_settings.CURIOSITY_RANGE.get(self.temperament, (0.3, 0.6)))
         self.curiosity_active = False
 
         self.social_request_timer = 0.0
@@ -76,7 +77,7 @@ class Creature(LivingEntity):
         self.target = None
         self.decision_timer = 0.0
         self.speed_factor = 1.0
-        self.stuck_check_timer = STUCK_CHECK_INTERVAL
+        self.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
         self.position_at_last_check = (self.x, self.y)
         self.stuck_level = 0
         self.stuck_last_nav_index = 0
@@ -101,7 +102,8 @@ class Creature(LivingEntity):
         self.nav_goal = None
         self.nav_recalc_timer = 0.0
 
-        self.wake_threshold = random.uniform(*WAKE_ENERGY_THRESHOLD.get(self.temperament, (85, 90)))
+        self.wake_threshold = random.uniform(
+            *ci_settings.WAKE_ENERGY_THRESHOLD.get(self.temperament, (85, 90)))
         self.seeking_sleep = False
         self.is_sleeping = False
         self.sleep_forced = False
@@ -119,9 +121,10 @@ class Creature(LivingEntity):
         self.grab_before_state = None
 
         self.age = 0.0
-        self.life_stage = LIFE_STAGE_ADULT
+        self.life_stage = ci_settings.LIFE_STAGE_ADULT
         # ---------- Гормональный бум (переходный возраст) ----------
-        self.puberty_trigger_age = random.uniform(PUBERTY_TRIGGER_AGE_MIN, PUBERTY_TRIGGER_AGE_MAX)
+        self.puberty_trigger_age = random.uniform(
+            ci_settings.PUBERTY_TRIGGER_AGE_MIN, ci_settings.PUBERTY_TRIGGER_AGE_MAX)
         self.puberty_done = False
         self.puberty_active = False
         self.puberty_timer = 0.0
@@ -146,7 +149,7 @@ class Creature(LivingEntity):
         self.road_progress = 0
         self.road_direction = 1
         self.road_entry_reached = False
-        self.road_follow_check_timer = random.uniform(*ROAD_FOLLOW_REROLL_INTERVAL)
+        self.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
 
         # ---------- Детские дороги ----------
         self.following_child_road = None
@@ -165,7 +168,7 @@ class Creature(LivingEntity):
         self.child_road_verify_direction = 1
         self.child_road_verify_entry_reached = False
         self.child_road_verify_found_danger = False
-        self.child_road_verify_check_timer = random.uniform(*CHILD_ROAD_VERIFY_CHECK_INTERVAL)
+        self.child_road_verify_check_timer = random.uniform(*ci_settings.CHILD_ROAD_VERIFY_CHECK_INTERVAL)
 
         self.partner_id = None
         self.is_pregnant = False
@@ -183,7 +186,7 @@ class Creature(LivingEntity):
         self.territory_pursuit_commit_timer = 0.0
         # ---------- Опека стариков над случайными детьми ----------
         self.elder_ward_id = None
-        self.elder_ward_check_timer = random.uniform(*ELDER_WARD_CHECK_INTERVAL)
+        self.elder_ward_check_timer = random.uniform(*ci_settings.ELDER_WARD_CHECK_INTERVAL)
 
         # ---------- Кладбище: перенос трупов ----------
         self.being_carried_by = None  # (для трупов) id несущего
@@ -200,12 +203,12 @@ class Creature(LivingEntity):
         self.carried_fruit = False
         self.carried_water = False
         self.feed_target_id = None
-        self.parent_feed_check_timer = random.uniform(*PARENT_FEED_CHECK_INTERVAL)
+        self.parent_feed_check_timer = random.uniform(*ci_settings.PARENT_FEED_CHECK_INTERVAL)
         self.urgent_child_id = None
         self.urgent_child_timer = 0.0
 
         # ---------- Семейный склад запасов ----------
-        self.storage_supply_check_timer = random.uniform(*STORAGE_SUPPLY_CHECK_INTERVAL)
+        self.storage_supply_check_timer = random.uniform(*ci_settings.STORAGE_SUPPLY_CHECK_INTERVAL)
         self.storage_supply_mode = False
 
         # ---------- Жильё ----------
@@ -214,7 +217,7 @@ class Creature(LivingEntity):
         self.at_home = False
 
         # ---------- Добыча ресурсов и строительство ----------
-        self.carry_capacity = random.randint(*CREATURE_CARRY_CAPACITY_RANGE)
+        self.carry_capacity = random.randint(*ci_settings.CREATURE_CARRY_CAPACITY_RANGE)
         self.carried_resources = {"wood": 0, "stone": 0}
         self.gather_target_id = None
         self.gather_type = None  # "wood" | "stone"
@@ -224,8 +227,8 @@ class Creature(LivingEntity):
         self.gather_needed_amount = None
         self.pending_construction_cleanup = None
         self.pending_site_cleanup = None
-        self.construction_check_timer = random.uniform(*CONSTRUCTION_CHECK_INTERVAL)
-        self.build_help_check_timer = random.uniform(*BUILD_HELP_CHECK_INTERVAL)
+        self.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
+        self.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
 
         # ---------- Специализированные подсистемы ----------
         self.needs = CreatureNeeds(self)
@@ -249,17 +252,17 @@ class Creature(LivingEntity):
         return max(0, self.carry_capacity - self.carried_total())
 
     def can_handle_corpses(self):
-        if self.life_stage == LIFE_STAGE_OLD:
+        if self.life_stage == ci_settings.LIFE_STAGE_OLD:
             return True
-        if (self.life_stage == LIFE_STAGE_ADULT and self.gender == GENDER_MALE
-                and self.temperament != TEMPERAMENT_LAZY):
+        if (self.life_stage == ci_settings.LIFE_STAGE_ADULT and self.gender == ci_settings.GENDER_MALE
+                and self.temperament != ci_settings.TEMPERAMENT_LAZY):
             return True
         return False
 
     def can_jump_fences(self):
-        if self.life_stage != LIFE_STAGE_ADULT:
+        if self.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return False
-        if self.gender == GENDER_FEMALE and self.is_pregnant:
+        if self.gender == ci_settings.GENDER_FEMALE and self.is_pregnant:
             return False
         return True
 
@@ -275,7 +278,7 @@ class Creature(LivingEntity):
         return abs(self.x - house.x) <= half_w and abs(self.y - house.y) <= half_h
 
     def get_type_name(self):
-        return INFO_CREATURE_KIND
+        return ci_info.INFO_CREATURE_KIND
 
     def commit_name_edit(self, new_name):
         _apply_name_edit(self, new_name)
@@ -307,7 +310,7 @@ class Creature(LivingEntity):
         self.is_dead = True
         self._pending_grief = True
         self.hp = 0
-        self.death_timer = CORPSE_LIFETIME
+        self.death_timer = ci_settings.CORPSE_LIFETIME
         self.death_cause = cause
         self.target = None
         self.decision_timer = 0.0
@@ -354,8 +357,8 @@ class Creature(LivingEntity):
         self.construction_target_id = None
         self.construction_phase = None
         self.storage_supply_mode = False
-        self.state = STATE_CALM
-        self.goal_text = INFO_CREATURE_STATE_DEAD
+        self.state = ci_settings.STATE_CALM
+        self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
         self.elder_ward_id = None
         # ---------- Кладбище ----------
         self.burial_target_id = None
@@ -387,7 +390,7 @@ class Creature(LivingEntity):
         return self.aging.effective_vision_radius()
 
     def can_verify_child_road_safety(self):
-        return self.life_stage == LIFE_STAGE_ADULT
+        return self.life_stage == ci_settings.LIFE_STAGE_ADULT
 
     def on_road_deleted(self, road_obj_type, road):
         if road_obj_type == "road":
@@ -449,24 +452,28 @@ class Creature(LivingEntity):
     # ---------- Отрисовка ----------
 
     def draw_minimap_color(self):
-        if self.gender == GENDER_FEMALE:
-            return CREATURE_COLOR_FEMALE_DEAD if self.is_dead else CREATURE_COLOR_FEMALE
-        return CREATURE_COLOR_MALE_DEAD if self.is_dead else CREATURE_COLOR_MALE
+        if self.gender == ci_settings.GENDER_FEMALE:
+            return (ci_settings.CREATURE_COLOR_FEMALE_DEAD if self.is_dead
+                    else ci_settings.CREATURE_COLOR_FEMALE)
+        return ci_settings.CREATURE_COLOR_MALE_DEAD if self.is_dead else ci_settings.CREATURE_COLOR_MALE
 
     def draw(self, screen, screen_pos, show_status_rings=True):
         sx, sy = screen_pos
-        if self.gender == GENDER_FEMALE:
-            color = CREATURE_COLOR_FEMALE_DEAD if self.is_dead else CREATURE_COLOR_FEMALE
+        if self.gender == ci_settings.GENDER_FEMALE:
+            color = (ci_settings.CREATURE_COLOR_FEMALE_DEAD if self.is_dead
+                     else ci_settings.CREATURE_COLOR_FEMALE)
         else:
-            color = CREATURE_COLOR_MALE_DEAD if self.is_dead else CREATURE_COLOR_MALE
+            color = (ci_settings.CREATURE_COLOR_MALE_DEAD if self.is_dead
+                     else ci_settings.CREATURE_COLOR_MALE)
 
         # ---------- Радиус круга зависит от стадии жизни ----------
-        draw_radius = CHILD_CREATURE_RADIUS if self.life_stage == LIFE_STAGE_CHILD else self.radius
+        draw_radius = (ci_settings.CHILD_CREATURE_RADIUS
+                       if self.life_stage == ci_settings.LIFE_STAGE_CHILD else self.radius)
 
         pygame.draw.circle(screen, color, (int(sx), int(sy)), draw_radius)
 
         # ---------- Старики: полая белая окружность внутри основного круга ----------
-        if self.life_stage == LIFE_STAGE_OLD:
+        if self.life_stage == ci_settings.LIFE_STAGE_OLD:
             inner_radius = max(2, draw_radius - 3)
             pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), inner_radius, 2)
 
@@ -479,7 +486,8 @@ class Creature(LivingEntity):
             elif self.fear_timer > 0:
                 pygame.draw.circle(screen, (255, 90, 90), (int(sx), int(sy)), draw_radius + 3, 1)
             elif self.puberty_active:
-                pygame.draw.circle(screen, PUBERTY_RING_COLOR, (int(sx), int(sy)), draw_radius + 3, 1)
+                pygame.draw.circle(screen, ci_settings.PUBERTY_RING_COLOR,
+                                   (int(sx), int(sy)), draw_radius + 3, 1)
 
     # ---------- Сохранение ----------
 

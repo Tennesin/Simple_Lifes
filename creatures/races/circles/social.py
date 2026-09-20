@@ -1,4 +1,4 @@
-from .ci_settings import *
+from . import ci_settings
 from ...all_needed import geometry
 from ...all_needed.weak_owner import WeakOwnerMixin
 
@@ -23,7 +23,7 @@ class CreatureSocial(WeakOwnerMixin):
     def companion_score(self, other) -> float:
         c = self.c
         rel = self.get_relationship(other)
-        return c.distance_to(other) - rel * RELATIONSHIP_COMPANION_WEIGHT
+        return c.distance_to(other) - rel * ci_settings.RELATIONSHIP_COMPANION_WEIGHT
 
     def best_companion(self, companions):
         if not companions:
@@ -32,15 +32,16 @@ class CreatureSocial(WeakOwnerMixin):
 
     def mate_attractiveness_bonus(self, candidate, storage_fields):
         c = self.c
-        if c.gender != GENDER_FEMALE or candidate.gender != GENDER_MALE or not storage_fields:
+        if (c.gender != ci_settings.GENDER_FEMALE or candidate.gender != ci_settings.GENDER_MALE
+                or not storage_fields):
             return 0.0
         is_provider = any(
             candidate.id in field.owner_ids
-            and field.fruits >= STORAGE_ATTRACTIVENESS_MIN_FRUITS
-            and field.water >= STORAGE_ATTRACTIVENESS_MIN_WATER
+            and field.fruits >= ci_settings.STORAGE_ATTRACTIVENESS_MIN_FRUITS
+            and field.water >= ci_settings.STORAGE_ATTRACTIVENESS_MIN_WATER
             for field in storage_fields
         )
-        return MATE_STORAGE_ATTRACTIVENESS_BONUS if is_provider else 0.0
+        return ci_settings.MATE_STORAGE_ATTRACTIVENESS_BONUS if is_provider else 0.0
 
     def pairing_score(self, other, storage_fields=None):
         score = self.companion_score(other)
@@ -50,7 +51,7 @@ class CreatureSocial(WeakOwnerMixin):
 
     def request_company(self, point):
         c = self.c
-        c.social_request_timer = SOCIAL_REQUEST_HOLD_TIME
+        c.social_request_timer = ci_settings.SOCIAL_REQUEST_HOLD_TIME
         c.social_request_point = point
 
 class CreatureCommunication(WeakOwnerMixin):
@@ -61,7 +62,7 @@ class CreatureCommunication(WeakOwnerMixin):
         c = self.c
         relationship = c.social.get_relationship(other)
 
-        if relationship >= SHARE_RESOURCE_MIN_RELATIONSHIP:
+        if relationship >= ci_settings.SHARE_RESOURCE_MIN_RELATIONSHIP:
             self._share_memory_type(other, "fruit")
             self._share_memory_type(other, "water")
             self._share_memory_type(other, "campfire")
@@ -80,7 +81,7 @@ class CreatureCommunication(WeakOwnerMixin):
         if best is None:
             return
         x, y, importance = best
-        shared_importance = importance * SHARE_IMPORTANCE_FACTOR
+        shared_importance = importance * ci_settings.SHARE_IMPORTANCE_FACTOR
         c.memory.add_memory(mem_type, x, y, importance=shared_importance)
         c.memory.add_intuitive_memory(mem_type, *c.comfort_point, x, y, importance=shared_importance)
         if mem_type in c.knowledge:
@@ -115,7 +116,7 @@ class CreatureCommunication(WeakOwnerMixin):
         if best is None:
             return
         x, y, importance = best
-        c.memory.add_memory("spike", x, y, importance=importance * SHARE_IMPORTANCE_FACTOR)
+        c.memory.add_memory("spike", x, y, importance=importance * ci_settings.SHARE_IMPORTANCE_FACTOR)
         c.knowledge["spike"] = True
 
     # ---------- Дороги ----------

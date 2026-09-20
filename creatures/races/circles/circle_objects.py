@@ -7,17 +7,17 @@ import random
 import pygame
 
 from objects import PolylineRoad, WorldObject
-from .ci_settings import *
-from .ci_info import *
+from . import ci_settings
+from . import ci_info
 from ...all_needed import geometry
 
 class Campfire(WorldObject):
-    type_name = INFO_OBJECT_CAMPFIRE
+    type_name = ci_info.INFO_OBJECT_CAMPFIRE
 
     def __init__(self, x, y):
         super().__init__(x, y, gen_id=True)
         self.radius = 16
-        self.effect_radius = CAMPFIRE_RADIUS
+        self.effect_radius = ci_settings.CAMPFIRE_RADIUS
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
@@ -27,9 +27,9 @@ class Campfire(WorldObject):
         screen.blit(halo, (sx - self.effect_radius, sy - self.effect_radius))
 
         pygame.draw.circle(screen, (90, 70, 60), (sx, sy), self.radius + 3)
-        pygame.draw.circle(screen, CAMPFIRE_COLOR_BORDER, (sx, sy), self.radius, 2)
-        pygame.draw.circle(screen, CAMPFIRE_COLOR, (sx, sy - 2), self.radius - 5)
-        pygame.draw.circle(screen, CAMPFIRE_COLOR_CORE, (sx, sy - 4), self.radius - 9)
+        pygame.draw.circle(screen, ci_settings.CAMPFIRE_COLOR_BORDER, (sx, sy), self.radius, 2)
+        pygame.draw.circle(screen, ci_settings.CAMPFIRE_COLOR, (sx, sy - 2), self.radius - 5)
+        pygame.draw.circle(screen, ci_settings.CAMPFIRE_COLOR_CORE, (sx, sy - 4), self.radius - 9)
 
     def to_dict(self):
         return self._base_dict()
@@ -44,9 +44,9 @@ class StorageField:
     def __init__(self, x, y, owner_campfire_pos=None, owner_ids=None, house_id=None, house_side=None):
         self.x = x
         self.y = y
-        self.width = STORAGE_FIELD_WIDTH
-        self.height = STORAGE_FIELD_HEIGHT
-        self.radius = STORAGE_FIELD_RADIUS
+        self.width = ci_settings.STORAGE_FIELD_WIDTH
+        self.height = ci_settings.STORAGE_FIELD_HEIGHT
+        self.radius = ci_settings.STORAGE_FIELD_RADIUS
         self.fruits = 0
         self.water = 0
         self.built_by = None
@@ -56,16 +56,16 @@ class StorageField:
         self.house_side = house_side
         self.created = time.time()
         self.id = str(uuid.uuid4())[:8]
-        self.owner_ids = set(list(owner_ids)[:STORAGE_FIELD_MAX_OWNERS]) if owner_ids else set()
+        self.owner_ids = set(list(owner_ids)[:ci_settings.STORAGE_FIELD_MAX_OWNERS]) if owner_ids else set()
 
     def get_type_name(self):
-        return INFO_OBJECT_STORAGE_FIELD
+        return ci_info.INFO_OBJECT_STORAGE_FIELD
 
     def has_space_for_fruit(self):
-        return self.fruits < STORAGE_FIELD_MAX_FRUITS
+        return self.fruits < ci_settings.STORAGE_FIELD_MAX_FRUITS
 
     def has_space_for_water(self):
-        return self.water < STORAGE_FIELD_MAX_WATER
+        return self.water < ci_settings.STORAGE_FIELD_MAX_WATER
 
     def is_public(self):
         return not self.owner_ids
@@ -73,7 +73,7 @@ class StorageField:
     def add_owner(self, owner_id):
         if owner_id is None or owner_id in self.owner_ids:
             return
-        if len(self.owner_ids) >= STORAGE_FIELD_MAX_OWNERS:
+        if len(self.owner_ids) >= ci_settings.STORAGE_FIELD_MAX_OWNERS:
             return
         self.owner_ids.add(owner_id)
 
@@ -85,7 +85,7 @@ class StorageField:
         for owner_id in self.owner_ids:
             if creature.partner_id == owner_id:
                 return True
-            if (creature.life_stage == LIFE_STAGE_CHILD and creature.parent_ids
+            if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.parent_ids
                     and owner_id in creature.parent_ids):
                 return True
         return False
@@ -93,14 +93,14 @@ class StorageField:
     def punish_theft(self, thief, other_creatures):
         if not other_creatures:
             return
-        thief_is_child = getattr(thief, "life_stage", None) == LIFE_STAGE_CHILD
+        thief_is_child = getattr(thief, "life_stage", None) == ci_settings.LIFE_STAGE_CHILD
         for owner_id in self.owner_ids:
             owner = next((o for o in other_creatures if o.id == owner_id), None)
             if owner is None or owner.is_dead:
                 continue
-            if thief_is_child and owner.life_stage == LIFE_STAGE_OLD:
+            if thief_is_child and owner.life_stage == ci_settings.LIFE_STAGE_OLD:
                 continue
-            owner.social.adjust_relationship(thief, STORAGE_THEFT_RELATIONSHIP_PENALTY)
+            owner.social.adjust_relationship(thief, ci_settings.STORAGE_THEFT_RELATIONSHIP_PENALTY)
 
     def is_owned_by_campfire(self, campfire_pos, tolerance=10):
         if self.campfire_pos is None:
@@ -126,18 +126,18 @@ class StorageField:
 
         # ---------- Полупрозрачная заливка ----------
         fill_surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
-        fill_surf.fill((*STORAGE_FIELD_COLOR_BORDER, STORAGE_FIELD_FILL_ALPHA))
+        fill_surf.fill((*ci_settings.STORAGE_FIELD_COLOR_BORDER, ci_settings.STORAGE_FIELD_FILL_ALPHA))
         screen.blit(fill_surf, rect.topleft)
 
         # ---------- Основная рамка ----------
-        pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, rect, 3)
+        pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_COLOR_BORDER, rect, 3)
 
         # ---------- Угловые столбы - лёгкая деталировка ----------
         post_size = 5
         for corner in (rect.topleft, rect.topright, rect.bottomleft, rect.bottomright):
             post_rect = pygame.Rect(0, 0, post_size, post_size)
             post_rect.center = corner
-            pygame.draw.rect(screen, STORAGE_FIELD_COLOR_BORDER, post_rect)
+            pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_COLOR_BORDER, post_rect)
 
             # ---------- Внутренние полые кубы (светло-коричневые) - вместо полок и крыши ----------
             self._draw_inner_boxes(screen, rect)
@@ -149,7 +149,7 @@ class StorageField:
         for i in range(1, box_count + 1):
             box_rect = pygame.Rect(0, 0, box_size, box_size)
             box_rect.center = (rect.centerx, int(rect.y + step_y * i))
-            pygame.draw.rect(screen, STORAGE_FIELD_INNER_BOX_COLOR, box_rect, 2)
+            pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_INNER_BOX_COLOR, box_rect, 2)
 
     def to_dict(self):
         return {
@@ -185,16 +185,16 @@ class Graveyard:
         self.id = graveyard_id if graveyard_id else str(uuid.uuid4())[:8]
         self.x = x
         self.y = y
-        self.width = GRAVEYARD_DEFAULT_SIZE[0]
-        self.height = GRAVEYARD_DEFAULT_SIZE[1]
-        self.name = name if name else INFO_GRAVEYARD_DEFAULT_NAME
+        self.width = ci_settings.GRAVEYARD_DEFAULT_SIZE[0]
+        self.height = ci_settings.GRAVEYARD_DEFAULT_SIZE[1]
+        self.name = name if name else ci_info.INFO_GRAVEYARD_DEFAULT_NAME
         self.created = time.time()
 
         self.archive = []
         self.records = []
 
     def get_type_name(self):
-        return INFO_OBJECT_GRAVEYARD
+        return ci_info.INFO_OBJECT_GRAVEYARD
 
     def distance_to_point(self, px, py):
         dx = max(self.x - self.width / 2 - px, 0, px - (self.x + self.width / 2))
@@ -222,18 +222,20 @@ class Graveyard:
         rec = next((r for r in self.records if r["id"] == creature_id), None)
         if rec is None:
             return None
-        if rec.get("time_since_burial", 0.0) > GRAVEYARD_DATA_RETENTION:
+        if rec.get("time_since_burial", 0.0) > ci_settings.GRAVEYARD_DATA_RETENTION:
             return None
         return rec
 
     def prune_expired_records(self):
-        self.records = [r for r in self.records if r.get("time_since_burial", 0.0) <= GRAVEYARD_DATA_RETENTION]
+        self.records = [r for r in self.records
+                        if r.get("time_since_burial", 0.0) <= ci_settings.GRAVEYARD_DATA_RETENTION]
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         rect = pygame.Rect(sx - self.width // 2, sy - self.height // 2, self.width, self.height)
-        pygame.draw.rect(screen, GRAVEYARD_COLOR_FILL, rect)
-        pygame.draw.rect(screen, GRAVEYARD_COLOR_BORDER, rect, GRAVEYARD_BORDER_THICKNESS)
+        pygame.draw.rect(screen, ci_settings.GRAVEYARD_COLOR_FILL, rect)
+        pygame.draw.rect(screen, ci_settings.GRAVEYARD_COLOR_BORDER, rect,
+                         ci_settings.GRAVEYARD_BORDER_THICKNESS)
 
     def to_dict(self):
         return {
@@ -256,13 +258,13 @@ class ConstructionSite:
         self.x = x
         self.y = y
         self.build_type = build_type
-        self.width, self.height = CONSTRUCTION_SITE_SIZE.get(build_type, (40, 40))
+        self.width, self.height = ci_settings.CONSTRUCTION_SITE_SIZE.get(build_type, (40, 40))
         self.linked_house_id = None
 
         self.storage_owner_id = None
         self.house_owner_id = None
 
-        req = BUILDING_REQUIREMENTS[build_type]
+        req = ci_settings.BUILDING_REQUIREMENTS[build_type]
         self.required_wood = req["wood"]
         self.required_stone = req["stone"]
         self.build_time = req["build_time"]
@@ -281,7 +283,7 @@ class ConstructionSite:
         self.player_build_progress = 0.0
 
     def get_type_name(self):
-        return INFO_OBJECT_CONSTRUCTION_SITE
+        return ci_info.INFO_OBJECT_CONSTRUCTION_SITE
 
     @property
     def is_locked(self):
@@ -300,9 +302,10 @@ class ConstructionSite:
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
         ready = self.resources_complete()
-        color = CONSTRUCTION_SITE_COLOR_READY if ready else CONSTRUCTION_SITE_COLOR_INCOMPLETE
+        color = (ci_settings.CONSTRUCTION_SITE_COLOR_READY if ready
+                 else ci_settings.CONSTRUCTION_SITE_COLOR_INCOMPLETE)
         rect = pygame.Rect(sx - self.width // 2, sy - self.height // 2, self.width, self.height)
-        pygame.draw.rect(screen, color, rect, CONSTRUCTION_SITE_BORDER_THICKNESS)
+        pygame.draw.rect(screen, color, rect, ci_settings.CONSTRUCTION_SITE_BORDER_THICKNESS)
 
         if self.is_building and self.build_time > 0:
             ratio = max(0.0, min(1.0, self.build_progress / self.build_time))
@@ -352,7 +355,7 @@ class ChildRoad(PolylineRoad):
         self.verifier_id = None
 
     def get_type_name(self):
-        return INFO_OBJECT_CHILD_ROAD
+        return ci_info.INFO_OBJECT_CHILD_ROAD
 
     def verify_safety(self, spikes):
         points = self.points
@@ -361,14 +364,15 @@ class ChildRoad(PolylineRoad):
                 return True
             px, py = points[0]
             return all(
-                math.hypot(s.x - px, s.y - py) >= CHILD_ROAD_SAFETY_CHECK_RADIUS
+                math.hypot(s.x - px, s.y - py) >= ci_settings.CHILD_ROAD_SAFETY_CHECK_RADIUS
                 for s in spikes
             )
         for i in range(len(points) - 1):
             ax, ay = points[i]
             bx, by = points[i + 1]
             for spike in spikes:
-                if geometry.point_segment_distance(spike.x, spike.y, ax, ay, bx, by) < CHILD_ROAD_SAFETY_CHECK_RADIUS:
+                if (geometry.point_segment_distance(spike.x, spike.y, ax, ay, bx, by)
+                        < ci_settings.CHILD_ROAD_SAFETY_CHECK_RADIUS):
                     return False
         return True
 
@@ -376,11 +380,11 @@ class ChildRoad(PolylineRoad):
         if len(self.points) < 2:
             return
         if self.rating == "safe":
-            color = CHILD_ROAD_COLOR_SAFE
+            color = ci_settings.CHILD_ROAD_COLOR_SAFE
         elif self.rating == "dangerous":
-            color = CHILD_ROAD_COLOR_DANGEROUS
+            color = ci_settings.CHILD_ROAD_COLOR_DANGEROUS
         else:
-            color = CHILD_ROAD_COLOR_PENDING
+            color = ci_settings.CHILD_ROAD_COLOR_PENDING
         screen_points = [camera.apply_pos(p) for p in self.points]
         pygame.draw.lines(screen, color, False, screen_points, 3)
 
@@ -403,7 +407,7 @@ class House:
         self.id = house_id if house_id else str(uuid.uuid4())[:8]
         self.x = x
         self.y = y
-        self.width, self.height = HOUSE_DEFAULT_SIZE
+        self.width, self.height = ci_settings.HOUSE_DEFAULT_SIZE
         self.capacity = capacity if capacity is not None else random.randint(3, 6)
         self.owner_ids = set(owner_ids) if owner_ids else set()
         self.resident_ids = set(resident_ids) if resident_ids else set()
@@ -442,9 +446,9 @@ class House:
 
     def _compute_storage_position(self):
         half_house_w = self.width / 2
-        half_store_w = STORAGE_FIELD_WIDTH / 2
+        half_store_w = ci_settings.STORAGE_FIELD_WIDTH / 2
         side_sign = 1 if self.storage_side == "right" else -1
-        px = self.x + side_sign * (half_house_w + STORAGE_HOUSE_GAP + half_store_w)
+        px = self.x + side_sign * (half_house_w + ci_settings.STORAGE_HOUSE_GAP + half_store_w)
         return (px, self.y)
 
     def on_object_moved(self, game):
@@ -485,7 +489,7 @@ class House:
         return list(free_slots)
 
     def get_type_name(self):
-        return INFO_OBJECT_HOUSE
+        return ci_info.INFO_OBJECT_HOUSE
 
     def distance_to_point(self, px, py):
         dx = max(self.x - self.width / 2 - px, 0, px - (self.x + self.width / 2))
@@ -505,16 +509,16 @@ class House:
         half_w, half_h = self.width // 2, self.height // 2
 
         wall_rect = pygame.Rect(sx - half_w, sy - half_h, self.width, self.height)
-        pygame.draw.rect(screen, HOUSE_COLOR_WALL, wall_rect)
-        pygame.draw.rect(screen, HOUSE_COLOR_WALL_BORDER, wall_rect, 2)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_WALL, wall_rect)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_WALL_BORDER, wall_rect, 2)
 
         roof_points = [
             (sx - half_w - 6, sy - half_h),
             (sx + half_w + 6, sy - half_h),
-            (sx, sy - half_h - HOUSE_ROOF_HEIGHT),
+            (sx, sy - half_h - ci_settings.HOUSE_ROOF_HEIGHT),
         ]
-        pygame.draw.polygon(screen, HOUSE_COLOR_ROOF, roof_points)
-        pygame.draw.polygon(screen, HOUSE_COLOR_ROOF_BORDER, roof_points, 2)
+        pygame.draw.polygon(screen, ci_settings.HOUSE_COLOR_ROOF, roof_points)
+        pygame.draw.polygon(screen, ci_settings.HOUSE_COLOR_ROOF_BORDER, roof_points, 2)
 
         slot_x = self._slot_positions(wall_rect)
         self._draw_door(screen, slot_x[self.door_slot], wall_rect)
@@ -525,18 +529,20 @@ class House:
         door_w, door_h = 18, int(wall_rect.height * 0.65)
         door_rect = pygame.Rect(0, 0, door_w, door_h)
         door_rect.midbottom = (int(center_x), wall_rect.bottom)
-        pygame.draw.rect(screen, HOUSE_COLOR_DOOR, door_rect)
-        pygame.draw.rect(screen, HOUSE_COLOR_DOOR_BORDER, door_rect, 2)
-        pygame.draw.circle(screen, HOUSE_COLOR_DOOR_HANDLE, (door_rect.right - 4, door_rect.centery), 2)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_DOOR, door_rect)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_DOOR_BORDER, door_rect, 2)
+        pygame.draw.circle(screen, ci_settings.HOUSE_COLOR_DOOR_HANDLE, (door_rect.right - 4, door_rect.centery), 2)
 
     def _draw_window(self, screen, center_x, wall_rect):
         size = 16
         rect = pygame.Rect(0, 0, size, size)
         rect.center = (int(center_x), wall_rect.centery)
-        pygame.draw.rect(screen, HOUSE_COLOR_WINDOW, rect)
-        pygame.draw.rect(screen, HOUSE_COLOR_WINDOW_BORDER, rect, 2)
-        pygame.draw.line(screen, HOUSE_COLOR_WINDOW_BORDER, (rect.centerx, rect.top), (rect.centerx, rect.bottom), 2)
-        pygame.draw.line(screen, HOUSE_COLOR_WINDOW_BORDER, (rect.left, rect.centery), (rect.right, rect.centery), 2)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_WINDOW, rect)
+        pygame.draw.rect(screen, ci_settings.HOUSE_COLOR_WINDOW_BORDER, rect, 2)
+        pygame.draw.line(screen, ci_settings.HOUSE_COLOR_WINDOW_BORDER,
+                         (rect.centerx, rect.top), (rect.centerx, rect.bottom), 2)
+        pygame.draw.line(screen, ci_settings.HOUSE_COLOR_WINDOW_BORDER,
+                         (rect.left, rect.centery), (rect.right, rect.centery), 2)
 
     def to_dict(self):
         return {

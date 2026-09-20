@@ -1,29 +1,8 @@
 import math
 import random
 import settings
-from settings import BIOME_RIVER, BIOME_SEA
-from .ci_settings import (
-    LIFE_STAGE_CHILD, LIFE_STAGE_OLD,
-    HP_MAX, HUNGER_MAX, THIRST_MAX, SANITY_MAX,
-    EAT_DISTANCE, TALK_DISTANCE,
-    FRUIT_HP_BONUS, FRUIT_HUNGER_BONUS,
-    HUNGER_SATISFY_THRESHOLD, THIRST_SATISFY_THRESHOLD,
-    WATER_DRINK_RATE, WATER_DRINK_DEFICIT_FLOOR,
-    RESOURCE_COMPETE_RADIUS, RESOURCE_STEAL_PENALTY, RESOURCE_STEAL_MIN_HUNGER_URGENCY,
-    JEALOUSY_CHECK_DISTANCE, JEALOUSY_OPPOSITE_GENDER_ONLY, JEALOUSY_CHANCE_PER_SEC,
-    JEALOUSY_PENALTY_PARTNER, JEALOUSY_PENALTY_RIVAL,
-    SPIKE_DAMAGE, SPIKE_INVULN_DURATION, CHILD_ROAD_DANGER_FEAR_DURATION,
-    TERRITORY_BUSH_CLAIM_RADIUS,
-    SANITY_CAMPFIRE_RESTORE_RATE_NEAR, SANITY_CAMPFIRE_RESTORE_RATE_FAR, SANITY_TALK_RATE,
-    GENDER_OPPOSITE_TALK_BONUS, PUBERTY_TALK_RATE_MULTIPLIER, PUBERTY_QUARREL_CHANCE_MULTIPLIER,
-    RELATIONSHIP_TALK_RATE, QUARREL_THRESHOLD, QUARREL_CHANCE_PER_SEC, QUARREL_PENALTY,
-    SHARE_INFO_INTERVAL,
-    OLD_SANITY_AURA_RADIUS, OLD_SANITY_AURA_RATE_NEAR, OLD_SANITY_AURA_RATE_FAR,
-    STORAGE_CONSUME_HUNGER_THRESHOLD, STORAGE_CONSUME_THIRST_THRESHOLD,
-    STORAGE_EMERGENCY_HUNGER_THRESHOLD, STORAGE_EMERGENCY_THIRST_THRESHOLD,
-    STORAGE_FIELD_DEPOSIT_DISTANCE, STORAGE_FIELD_WATER_HYDRATION,
-)
-from .ci_info import INFO_CREATURE_GOAL_ROAD_DEADLY, INFO_CREATURE_GOAL_CHILD_ROAD_DANGER
+from . import ci_settings
+from . import ci_info
 from ...all_needed import geometry
 from ...all_needed.weak_owner import WeakOwnerMixin
 
@@ -47,7 +26,7 @@ class CreatureInteractions(WeakOwnerMixin):
 
     def _child_must_wait_for_parent(self, other_creatures):
         c = self.c
-        return c.life_stage == LIFE_STAGE_CHILD and c.family.has_living_parent(other_creatures)
+        return c.life_stage == ci_settings.LIFE_STAGE_CHILD and c.family.has_living_parent(other_creatures)
 
     def _eat_fruits(self, fruits, other_creatures):
         c = self.c
@@ -55,14 +34,14 @@ class CreatureInteractions(WeakOwnerMixin):
             return
         if self._child_must_wait_for_parent(other_creatures):
             return
-        if c.hunger >= HUNGER_SATISFY_THRESHOLD and c.hp >= HP_MAX:
+        if c.hunger >= ci_settings.HUNGER_SATISFY_THRESHOLD and c.hp >= ci_settings.HP_MAX:
             return
         for fruit in fruits:
-            if fruit.active and c.distance_to(fruit) < EAT_DISTANCE:
+            if fruit.active and c.distance_to(fruit) < ci_settings.EAT_DISTANCE:
                 self._register_resource_rivals(fruit, other_creatures, need_attr="hunger")
                 fruit.active = False
-                c.hp = min(c.hp + FRUIT_HP_BONUS, HP_MAX)
-                c.hunger = min(c.hunger + FRUIT_HUNGER_BONUS, HUNGER_MAX)
+                c.hp = min(c.hp + ci_settings.FRUIT_HP_BONUS, ci_settings.HP_MAX)
+                c.hunger = min(c.hunger + ci_settings.FRUIT_HUNGER_BONUS, ci_settings.HUNGER_MAX)
                 c.memory.add_memory("fruit", fruit.x, fruit.y, importance=2.0)
                 c.knowledge["fruit"] = True
 
@@ -71,35 +50,39 @@ class CreatureInteractions(WeakOwnerMixin):
         for other in other_creatures:
             if other is c or other.is_dead:
                 continue
-            if getattr(other, need_attr) >= RESOURCE_STEAL_MIN_HUNGER_URGENCY:
+            if getattr(other, need_attr) >= ci_settings.RESOURCE_STEAL_MIN_HUNGER_URGENCY:
                 continue  # рыл не был голоден - ему всё равно
-            if math.hypot(other.x - obj.x, other.y - obj.y) > RESOURCE_COMPETE_RADIUS:
+            if math.hypot(other.x - obj.x, other.y - obj.y) > ci_settings.RESOURCE_COMPETE_RADIUS:
                 continue
             # он тоже спешил сюда и явно голодал - обидится
-            other.social.adjust_relationship(c, RESOURCE_STEAL_PENALTY)
+            other.social.adjust_relationship(c, ci_settings.RESOURCE_STEAL_PENALTY)
 
     def _drink_water(self, water_puddles, dt, other_creatures, biome_grid=None, campfires=None):
         c = self.c
         if self._child_must_wait_for_parent(other_creatures):
             return
-        if c.thirst >= THIRST_SATISFY_THRESHOLD:
+        if c.thirst >= ci_settings.THIRST_SATISFY_THRESHOLD:
             return
         for water in water_puddles:
             if not water.has_water():
                 continue
-            if c.distance_to(water) < EAT_DISTANCE + water.radius:
+            if c.distance_to(water) < ci_settings.EAT_DISTANCE + water.radius:
                 self._register_resource_rivals(water, other_creatures, need_attr="thirst")
-                deficit_ratio = max(WATER_DRINK_DEFICIT_FLOOR, (THIRST_MAX - c.thirst) / THIRST_MAX)
-                wanted = min(WATER_DRINK_RATE * deficit_ratio * dt, THIRST_MAX - c.thirst)
+                deficit_ratio = max(ci_settings.WATER_DRINK_DEFICIT_FLOOR,
+                                    (ci_settings.THIRST_MAX - c.thirst) / ci_settings.THIRST_MAX)
+                wanted = min(ci_settings.WATER_DRINK_RATE * deficit_ratio * dt,
+                             ci_settings.THIRST_MAX - c.thirst)
                 actual_gain = water.consume(wanted)
-                c.thirst = min(c.thirst + actual_gain, THIRST_MAX)
+                c.thirst = min(c.thirst + actual_gain, ci_settings.THIRST_MAX)
                 c.memory.add_memory("water", water.x, water.y, importance=1.5)
                 c.knowledge["water"] = True
                 c.territory.register_use(water, "water", dt, campfires=campfires)
 
-        if biome_grid is not None and biome_grid.get_at(c.x, c.y) == BIOME_RIVER:
-            deficit_ratio = max(WATER_DRINK_DEFICIT_FLOOR, (THIRST_MAX - c.thirst) / THIRST_MAX)
-            c.thirst = min(c.thirst + WATER_DRINK_RATE * deficit_ratio * dt, THIRST_MAX)
+        if biome_grid is not None and biome_grid.get_at(c.x, c.y) == settings.BIOME_RIVER:
+            deficit_ratio = max(ci_settings.WATER_DRINK_DEFICIT_FLOOR,
+                                (ci_settings.THIRST_MAX - c.thirst) / ci_settings.THIRST_MAX)
+            c.thirst = min(c.thirst + ci_settings.WATER_DRINK_RATE * deficit_ratio * dt,
+                           ci_settings.THIRST_MAX)
             c.knowledge["water"] = True
 
     def _check_jealousy(self, other_creatures, dt):
@@ -109,17 +92,18 @@ class CreatureInteractions(WeakOwnerMixin):
         partner = next((o for o in other_creatures if o.id == c.partner_id and not o.is_dead), None)
         if partner is None:
             return
-        if c.distance_to(partner) > JEALOUSY_CHECK_DISTANCE:
+        if c.distance_to(partner) > ci_settings.JEALOUSY_CHECK_DISTANCE:
             return
         for other in other_creatures:
             if other in (c, partner) or other.is_dead:
                 continue
-            if JEALOUSY_OPPOSITE_GENDER_ONLY and other.gender == partner.gender:
+            if ci_settings.JEALOUSY_OPPOSITE_GENDER_ONLY and other.gender == partner.gender:
                 continue
-            if partner.distance_to(other) < TALK_DISTANCE and c.distance_to(other) > TALK_DISTANCE:
-                if random.random() < JEALOUSY_CHANCE_PER_SEC * c.psyche.jealousy_modifier() * dt:
-                    c.social.adjust_relationship(partner, JEALOUSY_PENALTY_PARTNER)
-                    c.social.adjust_relationship(other, JEALOUSY_PENALTY_RIVAL)
+            if (partner.distance_to(other) < ci_settings.TALK_DISTANCE
+                    and c.distance_to(other) > ci_settings.TALK_DISTANCE):
+                if random.random() < ci_settings.JEALOUSY_CHANCE_PER_SEC * c.psyche.jealousy_modifier() * dt:
+                    c.social.adjust_relationship(partner, ci_settings.JEALOUSY_PENALTY_PARTNER)
+                    c.social.adjust_relationship(other, ci_settings.JEALOUSY_PENALTY_RIVAL)
 
     def _hit_spikes(self, spikes, other_creatures, walls=None, biome_grid=None):
         c = self.c
@@ -127,9 +111,9 @@ class CreatureInteractions(WeakOwnerMixin):
             return
         wall_polylines = [w.points for w in walls if w.points] if walls else []
         for spike in spikes:
-            if c.distance_to(spike) < EAT_DISTANCE:
-                c.hp -= SPIKE_DAMAGE
-                c.spike_invuln_timer = SPIKE_INVULN_DURATION
+            if c.distance_to(spike) < ci_settings.EAT_DISTANCE:
+                c.hp -= ci_settings.SPIKE_DAMAGE
+                c.spike_invuln_timer = ci_settings.SPIKE_INVULN_DURATION
                 dx = c.x - spike.x
                 dy = c.y - spike.y
                 dist = math.hypot(dx, dy)
@@ -139,7 +123,7 @@ class CreatureInteractions(WeakOwnerMixin):
                     blocked_by_wall = wall_polylines and geometry.segment_blocked_by_polylines(
                         c.x, c.y, new_x, new_y, wall_polylines)
                     blocked_by_sea = (biome_grid is not None
-                                      and biome_grid.get_at(new_x, new_y) == BIOME_SEA)
+                                      and biome_grid.get_at(new_x, new_y) == settings.BIOME_SEA)
                     if not blocked_by_wall and not blocked_by_sea:
                         c.x = new_x
                         c.y = new_y
@@ -157,7 +141,7 @@ class CreatureInteractions(WeakOwnerMixin):
                     c.following_road_active = False
                     c.road_progress = 0
                     c.road_entry_reached = False
-                    c.goal_text = INFO_CREATURE_GOAL_ROAD_DEADLY
+                    c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_DEADLY
 
                 if c.following_child_road is not None:
                     self._mark_child_road_dangerous(c.following_child_road, other_creatures)
@@ -172,9 +156,9 @@ class CreatureInteractions(WeakOwnerMixin):
         c.child_road_entry_reached = False
         c.child_road_progress = 0
         c.following_road_active = False
-        c.fear_timer = max(c.fear_timer, CHILD_ROAD_DANGER_FEAR_DURATION)
+        c.fear_timer = max(c.fear_timer, ci_settings.CHILD_ROAD_DANGER_FEAR_DURATION)
         c.fear_source = (c.x, c.y)
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_DANGER
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_DANGER
 
         for other in other_creatures:
             if other is c or other.is_dead:
@@ -184,7 +168,7 @@ class CreatureInteractions(WeakOwnerMixin):
                 other.child_road_entry_reached = False
                 other.child_road_progress = 0
                 other.following_road_active = False
-                other.fear_timer = max(other.fear_timer, CHILD_ROAD_DANGER_FEAR_DURATION)
+                other.fear_timer = max(other.fear_timer, ci_settings.CHILD_ROAD_DANGER_FEAR_DURATION)
                 other.fear_source = (c.x, c.y)
 
     def _push_out_of_bushes(self, bushes, biome_grid=None):
@@ -200,7 +184,7 @@ class CreatureInteractions(WeakOwnerMixin):
                     push = min_dist - dist
                     new_x = c.x + dx / dist * push
                     new_y = c.y + dy / dist * push
-                    if biome_grid is not None and biome_grid.get_at(new_x, new_y) == BIOME_SEA:
+                    if biome_grid is not None and biome_grid.get_at(new_x, new_y) == settings.BIOME_SEA:
                         continue
                     c.x = new_x
                     c.y = new_y
@@ -210,7 +194,7 @@ class CreatureInteractions(WeakOwnerMixin):
     def _linger_near_bush(self, bushes, dt, campfires=None):
         c = self.c
         for bush in bushes:
-            if c.distance_to(bush) < TERRITORY_BUSH_CLAIM_RADIUS:
+            if c.distance_to(bush) < ci_settings.TERRITORY_BUSH_CLAIM_RADIUS:
                 c.territory.register_use(bush, "bush", dt, campfires=campfires)
 
     def _warm_by_campfires(self, campfires, dt):
@@ -224,11 +208,12 @@ class CreatureInteractions(WeakOwnerMixin):
                     best_ratio = ratio
         if best_ratio is not None:
             # ---------- Чем ближе к огню - тем быстрее восстановление (несколько костров не суммируются) ----------
-            rate = SANITY_CAMPFIRE_RESTORE_RATE_FAR + (
-                    SANITY_CAMPFIRE_RESTORE_RATE_NEAR - SANITY_CAMPFIRE_RESTORE_RATE_FAR) * best_ratio
-            c.consciousness = min(c.consciousness + rate * dt, SANITY_MAX)
+            rate = ci_settings.SANITY_CAMPFIRE_RESTORE_RATE_FAR + (
+                    ci_settings.SANITY_CAMPFIRE_RESTORE_RATE_NEAR
+                    - ci_settings.SANITY_CAMPFIRE_RESTORE_RATE_FAR) * best_ratio
+            c.consciousness = min(c.consciousness + rate * dt, ci_settings.SANITY_MAX)
             c.knowledge["campfire"] = True
-            
+
     def _talk_to_companions(self, other_creatures, dt):
         c = self.c
         c.is_talking = False
@@ -236,58 +221,60 @@ class CreatureInteractions(WeakOwnerMixin):
         for other in other_creatures:
             if other is c or other.is_dead:
                 continue
-            if c.distance_to(other) < TALK_DISTANCE:
+            if c.distance_to(other) < ci_settings.TALK_DISTANCE:
                 c.is_talking = True
-                gender_bonus = GENDER_OPPOSITE_TALK_BONUS if c.gender != other.gender else 1.0
-                rate = SANITY_TALK_RATE.get(other.temperament, 0.2) * gender_bonus
-                c.consciousness = min(c.consciousness + rate * dt, SANITY_MAX)
+                gender_bonus = ci_settings.GENDER_OPPOSITE_TALK_BONUS if c.gender != other.gender else 1.0
+                rate = ci_settings.SANITY_TALK_RATE.get(other.temperament, 0.2) * gender_bonus
+                c.consciousness = min(c.consciousness + rate * dt, ci_settings.SANITY_MAX)
 
-                talk_mult = PUBERTY_TALK_RATE_MULTIPLIER if c.puberty_active else 1.0
-                c.social.adjust_relationship(other, RELATIONSHIP_TALK_RATE * gender_bonus * talk_mult * dt)
+                talk_mult = ci_settings.PUBERTY_TALK_RATE_MULTIPLIER if c.puberty_active else 1.0
+                c.social.adjust_relationship(
+                    other, ci_settings.RELATIONSHIP_TALK_RATE * gender_bonus * talk_mult * dt)
 
                 rel = c.social.get_relationship(other)
                 c.psyche.on_talk(dt, rel, gender_bonus)
 
-                if rel < QUARREL_THRESHOLD:
-                    quarrel_chance = QUARREL_CHANCE_PER_SEC * c.psyche.quarrel_modifier()
+                if rel < ci_settings.QUARREL_THRESHOLD:
+                    quarrel_chance = ci_settings.QUARREL_CHANCE_PER_SEC * c.psyche.quarrel_modifier()
                     if c.puberty_active:
-                        quarrel_chance *= PUBERTY_QUARREL_CHANCE_MULTIPLIER
+                        quarrel_chance *= ci_settings.PUBERTY_QUARREL_CHANCE_MULTIPLIER
                     if random.random() < quarrel_chance * dt:
-                        c.social.adjust_mutual_relationship(other, QUARREL_PENALTY)
+                        c.social.adjust_mutual_relationship(other, ci_settings.QUARREL_PENALTY)
                         c.psyche.on_quarrel()
                         other.psyche.on_quarrel()
 
                 if c.share_info_timer <= 0:
                     c.communication.share_information(other)
-                    c.share_info_timer = random.uniform(*SHARE_INFO_INTERVAL)
+                    c.share_info_timer = random.uniform(*ci_settings.SHARE_INFO_INTERVAL)
 
     def _receive_elder_support(self, other_creatures, dt):
         c = self.c
-        if c.life_stage == LIFE_STAGE_OLD:
+        if c.life_stage == ci_settings.LIFE_STAGE_OLD:
             return
         best_ratio = None
         for other in other_creatures:
-            if other is c or other.is_dead or other.life_stage != LIFE_STAGE_OLD:
+            if other is c or other.is_dead or other.life_stage != ci_settings.LIFE_STAGE_OLD:
                 continue
             d = c.distance_to(other)
-            if d < OLD_SANITY_AURA_RADIUS:
-                ratio = 1.0 - (d / OLD_SANITY_AURA_RADIUS)
+            if d < ci_settings.OLD_SANITY_AURA_RADIUS:
+                ratio = 1.0 - (d / ci_settings.OLD_SANITY_AURA_RADIUS)
                 if best_ratio is None or ratio > best_ratio:
                     best_ratio = ratio
         if best_ratio is not None:
-            rate = OLD_SANITY_AURA_RATE_FAR + (OLD_SANITY_AURA_RATE_NEAR - OLD_SANITY_AURA_RATE_FAR) * best_ratio
-            c.consciousness = min(c.consciousness + rate * dt, SANITY_MAX)
+            rate = ci_settings.OLD_SANITY_AURA_RATE_FAR + (
+                    ci_settings.OLD_SANITY_AURA_RATE_NEAR - ci_settings.OLD_SANITY_AURA_RATE_FAR) * best_ratio
+            c.consciousness = min(c.consciousness + rate * dt, ci_settings.SANITY_MAX)
 
     def _feed_from_storage_field(self, storage_fields, other_creatures):
         c = self.c
         if not storage_fields:
             return
 
-        hungry_enough = c.hunger < STORAGE_CONSUME_HUNGER_THRESHOLD
-        thirsty_enough = c.thirst < STORAGE_CONSUME_THIRST_THRESHOLD
-        needs_hp = c.hp < HP_MAX
-        emergency_hunger = c.hunger < STORAGE_EMERGENCY_HUNGER_THRESHOLD
-        emergency_thirst = c.thirst < STORAGE_EMERGENCY_THIRST_THRESHOLD
+        hungry_enough = c.hunger < ci_settings.STORAGE_CONSUME_HUNGER_THRESHOLD
+        thirsty_enough = c.thirst < ci_settings.STORAGE_CONSUME_THIRST_THRESHOLD
+        needs_hp = c.hp < ci_settings.HP_MAX
+        emergency_hunger = c.hunger < ci_settings.STORAGE_EMERGENCY_HUNGER_THRESHOLD
+        emergency_thirst = c.thirst < ci_settings.STORAGE_EMERGENCY_THIRST_THRESHOLD
 
         fruit_needed = hungry_enough or needs_hp or emergency_hunger
         water_needed = thirsty_enough or emergency_thirst
@@ -297,7 +284,7 @@ class CreatureInteractions(WeakOwnerMixin):
         for field in storage_fields:
             if not fruit_needed and not water_needed:
                 break
-            if math.hypot(c.x - field.x, c.y - field.y) > STORAGE_FIELD_DEPOSIT_DISTANCE:
+            if math.hypot(c.x - field.x, c.y - field.y) > ci_settings.STORAGE_FIELD_DEPOSIT_DISTANCE:
                 continue
 
             has_family_access = field.grants_full_access(c, other_creatures)
@@ -310,15 +297,15 @@ class CreatureInteractions(WeakOwnerMixin):
 
             if fruit_needed and field.fruits > 0 and (has_family_access or emergency_hunger):
                 field.fruits -= 1
-                c.hp = min(c.hp + FRUIT_HP_BONUS, HP_MAX)
+                c.hp = min(c.hp + ci_settings.FRUIT_HP_BONUS, ci_settings.HP_MAX)
                 if hungry_enough or emergency_hunger:
-                    c.hunger = min(c.hunger + FRUIT_HUNGER_BONUS, HUNGER_MAX)
+                    c.hunger = min(c.hunger + ci_settings.FRUIT_HUNGER_BONUS, ci_settings.HUNGER_MAX)
                 fruit_needed = False
                 took_something = True
 
             if water_needed and field.water > 0 and (has_family_access or emergency_thirst):
                 field.water -= 1
-                c.thirst = min(c.thirst + STORAGE_FIELD_WATER_HYDRATION, THIRST_MAX)
+                c.thirst = min(c.thirst + ci_settings.STORAGE_FIELD_WATER_HYDRATION, ci_settings.THIRST_MAX)
                 water_needed = False
                 took_something = True
 

@@ -2,12 +2,8 @@
 
 import pygame
 
-from .ci_settings import (
-    GENDER_FEMALE, CREATURE_COLOR_MALE, CREATURE_COLOR_FEMALE,
-    CREATURE_COLOR_MALE_DEAD, CREATURE_COLOR_FEMALE_DEAD,
-    CHILD_CREATURE_RADIUS, PUBERTY_RING_COLOR,
-)
-from .ci_info import INFO_CREATURE_KIND
+from . import ci_settings
+from . import ci_info
 from ...all_needed.instruction_icons import IconCache
 from ...all_needed.instruction import (
     InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
@@ -25,13 +21,11 @@ _ICON_CACHE = IconCache()
 
 _STAGE_KEYS = ("child", "adult", "old", "dead", "puberty")
 
-
 def _resolve_variant(variant_key):
     parts = (variant_key or "adult").split("_")
     stage = parts[0] if parts and parts[0] in _STAGE_KEYS else "adult"
-    gender = GENDER_FEMALE if "female" in parts else "male"
+    gender = ci_settings.GENDER_FEMALE if "female" in parts else ci_settings.GENDER_MALE
     return stage, gender
-
 
 def _build_icon(variant_key, size):
     stage, gender = _resolve_variant(variant_key)
@@ -39,13 +33,15 @@ def _build_icon(variant_key, size):
     center = (size // 2, size // 2)
 
     if stage == "dead":
-        color = CREATURE_COLOR_FEMALE_DEAD if gender == GENDER_FEMALE else CREATURE_COLOR_MALE_DEAD
+        color = (ci_settings.CREATURE_COLOR_FEMALE_DEAD if gender == ci_settings.GENDER_FEMALE
+                 else ci_settings.CREATURE_COLOR_MALE_DEAD)
     else:
-        color = CREATURE_COLOR_FEMALE if gender == GENDER_FEMALE else CREATURE_COLOR_MALE
+        color = (ci_settings.CREATURE_COLOR_FEMALE if gender == ci_settings.GENDER_FEMALE
+                 else ci_settings.CREATURE_COLOR_MALE)
 
     base_radius = max(3, size // 2 - 2)
     if stage == "child":
-        radius = max(2, int(base_radius * (CHILD_CREATURE_RADIUS / _ADULT_RADIUS)))
+        radius = max(2, int(base_radius * (ci_settings.CHILD_CREATURE_RADIUS / _ADULT_RADIUS)))
     else:
         radius = base_radius
 
@@ -54,14 +50,12 @@ def _build_icon(variant_key, size):
     if stage == "old":
         pygame.draw.circle(surf, (255, 255, 255), center, max(2, radius - 3), 2)
     elif stage == "puberty":
-        pygame.draw.circle(surf, PUBERTY_RING_COLOR, center, radius + 2, 1)
+        pygame.draw.circle(surf, ci_settings.PUBERTY_RING_COLOR, center, radius + 2, 1)
 
     return surf
 
-
 def circle_instruction_icon(variant_key, size=20):
     return _ICON_CACHE.get((variant_key, size), lambda: _build_icon(variant_key, size))
-
 
 # =========================================================================
 # Содержимое раздела
@@ -255,5 +249,5 @@ CIRCLE_INSTRUCTION_SECTIONS = (
         "всегда, даже врагу - инстинкт сильнее неприязни.", color=INSTRUCTION_COLOR_HINT),
 )
 
-CIRCLE_INSTRUCTION_TITLE = INFO_CREATURE_KIND
+CIRCLE_INSTRUCTION_TITLE = ci_info.INFO_CREATURE_KIND
 CIRCLE_INSTRUCTION_PREVIEW_ICON = "adult_male"

@@ -1,12 +1,7 @@
 """Текстовые константы, специфичные для расы 'Круг': состояния, цели ИИ,
 подписи панели существа, психика, взаимоотношения, гендерные варианты фраз."""
 
-from .ci_settings import (
-    GENDER_FEMALE, TEMPERAMENT_NORMAL, TEMPERAMENT_EXPLORER, TEMPERAMENT_LAZY,
-    LIFE_STAGE_ADULT, LIFE_STAGE_OLD, STATE_SEEKING,
-    DEATH_CAUSE_STARVATION, DEATH_CAUSE_SANITY, DEATH_CAUSE_OLD_AGE,
-    DEATH_CAUSE_PLAYER_HIT, DEATH_CAUSE_DROWNING,
-)
+from . import ci_settings
 
 # --------------------- Названия объектов ---------------------
 INFO_OBJECT_CAMPFIRE = "Костёр"
@@ -254,16 +249,16 @@ INFO_INFO_DEATH_CAUSE_PLAYER_HIT = "Причина: погиб от руки и�
 INFO_INFO_DEATH_CAUSE_DROWNING = "Причина: утонул в море"
 
 DEATH_CAUSE_DISPLAY_MAP = {
-    DEATH_CAUSE_STARVATION: INFO_INFO_DEATH_CAUSE_STARVATION,
-    DEATH_CAUSE_SANITY: INFO_INFO_DEATH_CAUSE_SANITY,
-    DEATH_CAUSE_OLD_AGE: INFO_INFO_DEATH_CAUSE_OLD_AGE,
-    DEATH_CAUSE_PLAYER_HIT: INFO_INFO_DEATH_CAUSE_PLAYER_HIT,
-    DEATH_CAUSE_DROWNING: INFO_INFO_DEATH_CAUSE_DROWNING,
+    ci_settings.DEATH_CAUSE_STARVATION: INFO_INFO_DEATH_CAUSE_STARVATION,
+    ci_settings.DEATH_CAUSE_SANITY: INFO_INFO_DEATH_CAUSE_SANITY,
+    ci_settings.DEATH_CAUSE_OLD_AGE: INFO_INFO_DEATH_CAUSE_OLD_AGE,
+    ci_settings.DEATH_CAUSE_PLAYER_HIT: INFO_INFO_DEATH_CAUSE_PLAYER_HIT,
+    ci_settings.DEATH_CAUSE_DROWNING: INFO_INFO_DEATH_CAUSE_DROWNING,
 }
 
 # --------------------- Женские варианты фраз ---------------------
 INFO_FEMALE_VARIANTS = {
-    STATE_SEEKING: "Занята",
+    ci_settings.STATE_SEEKING: "Занята",
     INFO_CREATURE_STATE_DEAD: "Мертва",
 
     # ---------- Причины смерти (были пропущены) ----------
@@ -303,15 +298,15 @@ INFO_FEMALE_VARIANTS = {
     INFO_RELATIONSHIP_DEVOTED: "Предана",
     INFO_RELATIONSHIP_CALMED: "Успокоена",
 
-    TEMPERAMENT_NORMAL: "Обычная",
-    TEMPERAMENT_EXPLORER: "Исследовательница",
-    TEMPERAMENT_LAZY: "Лентяйка",
+    ci_settings.TEMPERAMENT_NORMAL: "Обычная",
+    ci_settings.TEMPERAMENT_EXPLORER: "Исследовательница",
+    ci_settings.TEMPERAMENT_LAZY: "Лентяйка",
 
-    LIFE_STAGE_ADULT: "Взрослая",
-    LIFE_STAGE_OLD: "Старуха",
+    ci_settings.LIFE_STAGE_ADULT: "Взрослая",
+    ci_settings.LIFE_STAGE_OLD: "Старуха",
 }
 
 def gendered_text(text, gender):
-    if gender == GENDER_FEMALE:
+    if gender == ci_settings.GENDER_FEMALE:
         return INFO_FEMALE_VARIANTS.get(text, text)
     return text

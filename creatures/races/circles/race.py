@@ -7,6 +7,8 @@ from game.race_registry import (
     MinimapLayer, SecondaryPanelSpec, LandmarkSpec,
     ExtraObjectCollectionSpec, BiomeCascadeSpec,
 )
+from . import ci_settings
+from . import ci_info
 from .mechanics.input_events import (
     on_delete_storage_field, storage_field_can_delete, on_delete_graveyard, on_delete_construction_site,
     on_delete_house, on_delete_campfire, circle_handle_relationships_scrollbar_down,
@@ -19,8 +21,6 @@ from .race_instruction import (
     CIRCLE_INSTRUCTION_PREVIEW_ICON, circle_instruction_icon,
 )
 from .creature import Creature
-from .ci_info import *
-from .ci_settings import GRAVEYARD_DEFAULT_SIZE, CHILD_ROAD_COLOR_PENDING, HOUSE_DEFAULT_SIZE
 from .circle_objects import (
     ChildRoad, StorageField, ConstructionSite, Graveyard, House, Campfire
 )
@@ -47,8 +47,8 @@ RACE_DESCRIPTOR = RaceDescriptor(
     panel_cls=CreaturePanel,
     spawn_manager_cls=CircleSpawnManager,
     creature_placement_modes=(
-        ("creature_male", INFO_BTN_CREATE_MALE),
-        ("creature_female", INFO_BTN_CREATE_FEMALE),
+        ("creature_male", ci_info.INFO_BTN_CREATE_MALE),
+        ("creature_female", ci_info.INFO_BTN_CREATE_FEMALE),
     ),
     spawn_fn=circle_spawn_dispatch,
     world_collections=(
@@ -67,22 +67,22 @@ RACE_DESCRIPTOR = RaceDescriptor(
     ),
     placeable_objects=(
         PlaceableObjectSpec(
-            obj_type="graveyard", attr="graveyards", cls=Graveyard, label=INFO_BTN_GRAVEYARD,
-            placement_clearance=GRAVEYARD_DEFAULT_SIZE[0] / 2 + 10,
+            obj_type="graveyard", attr="graveyards", cls=Graveyard, label=ci_info.INFO_BTN_GRAVEYARD,
+            placement_clearance=ci_settings.GRAVEYARD_DEFAULT_SIZE[0] / 2 + 10,
             secondary_panel_attr="graveyard_panel",
             blocks_creature_spawn=True,
             mutual_clearance_additive=True,
             manually_placeable=False,
         ),
         PlaceableObjectSpec(
-            obj_type="house", attr="houses", cls=House, label=INFO_BTN_HOUSE,
-            placement_clearance=HOUSE_DEFAULT_SIZE[0] / 2 + 10,
+            obj_type="house", attr="houses", cls=House, label=ci_info.INFO_BTN_HOUSE,
+            placement_clearance=ci_settings.HOUSE_DEFAULT_SIZE[0] / 2 + 10,
             blocks_creature_spawn=True,
             mutual_clearance_additive=True,
             manually_placeable=False,
         ),
         PlaceableObjectSpec(
-            obj_type="campfire", attr="campfires", cls=Campfire, label=INFO_BTN_CAMPFIRE,
+            obj_type="campfire", attr="campfires", cls=Campfire, label=ci_info.INFO_BTN_CAMPFIRE,
             manually_placeable=False,
         ),
     ),
@@ -100,15 +100,15 @@ RACE_DESCRIPTOR = RaceDescriptor(
             crossing_collection="child_road_crossings",
             verify_fn=lambda road, spikes: road.verify_safety(spikes),
             road_cls=ChildRoad,
-            preview_color=CHILD_ROAD_COLOR_PENDING,
-            menu_label=INFO_BTN_DRAW_CHILD_ROAD,
-            menu_hint=INFO_TOOL_CHILD_ROAD_HINT,
+            preview_color=ci_settings.CHILD_ROAD_COLOR_PENDING,
+            menu_label=ci_info.INFO_BTN_DRAW_CHILD_ROAD,
+            menu_hint=ci_info.INFO_TOOL_CHILD_ROAD_HINT,
         ),
     ),
     world_tick_fn=tick_circle_world,
     display_checkboxes=(
-        ("minimap_show_constructions", INFO_SETTINGS_MINIMAP_CONSTRUCTIONS),
-        ("minimap_show_houses", INFO_SETTINGS_MINIMAP_HOUSES),
+        ("minimap_show_constructions", ci_info.INFO_SETTINGS_MINIMAP_CONSTRUCTIONS),
+        ("minimap_show_houses", ci_info.INFO_SETTINGS_MINIMAP_HOUSES),
     ),
     minimap_layers=(
         MinimapLayer("child_roads", insert_after="roads", draw_fn=draw_minimap_child_roads),
