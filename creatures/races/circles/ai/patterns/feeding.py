@@ -1,26 +1,8 @@
 import math
 import random
 
-from settings import BIOME_RIVER
-from ...ci_settings import (
-    STATE_SEEKING, LIFE_STAGE_CHILD,
-    HP_MAX, HUNGER_MAX, THIRST_MAX,
-    EAT_DISTANCE, FEED_DISTANCE,
-    FRUIT_HP_BONUS, FRUIT_HUNGER_BONUS, PARENT_CARRY_WATER_HYDRATION,
-    HUNGER_SATISFY_THRESHOLD, THIRST_SATISFY_THRESHOLD,
-    CHILD_FEED_HUNGER_THRESHOLD, CHILD_FEED_THIRST_THRESHOLD,
-    GIFT_CHECK_CHANCE, GIFT_MIN_RELATIONSHIP,
-    FAMILY_FEED_RELATIONSHIP_BONUS, FAMILY_FEED_RELATIONSHIP_BONUS_ADULT,
-    PARENT_FEED_MIN_WELLBEING, PARENT_FEED_CHECK_INTERVAL,
-)
-from ...ci_info import (
-    INFO_CREATURE_GOAL_FEED_FETCH_FOOD, INFO_CREATURE_GOAL_FEED_CARRY_FOOD,
-    INFO_CREATURE_GOAL_FEED_FETCH_FOOD_ADULT, INFO_CREATURE_GOAL_FEED_CARRY_FOOD_ADULT,
-    INFO_CREATURE_GOAL_FEED_FETCH_WATER, INFO_CREATURE_GOAL_FEED_CARRY_WATER,
-    INFO_CREATURE_GOAL_FEED_FETCH_WATER_ADULT, INFO_CREATURE_GOAL_FEED_CARRY_WATER_ADULT,
-    INFO_CREATURE_GOAL_FEED_DELIVER, INFO_CREATURE_GOAL_FEED_DELIVER_ADULT,
-    INFO_CREATURE_GOAL_FEED_DONE, INFO_CREATURE_GOAL_FEED_DONE_ADULT,
-)
+import settings
+from ... import ci_settings, ci_info
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 
 # =========================================================================
@@ -35,13 +17,14 @@ class ResourceActions:
 
     def find_needy_friend(self, other_creatures):
         c = self.c
-        if random.random() > GIFT_CHECK_CHANCE * c.psyche.helpfulness_modifier():
+        if random.random() > ci_settings.GIFT_CHECK_CHANCE * c.psyche.helpfulness_modifier():
             return None
         candidates = [
             o for o in other_creatures
-            if o.life_stage != LIFE_STAGE_CHILD and not o.is_dead and o is not c
-               and c.social.get_relationship(o) >= GIFT_MIN_RELATIONSHIP
-               and (o.hunger < CHILD_FEED_HUNGER_THRESHOLD or o.thirst < CHILD_FEED_THIRST_THRESHOLD)
+            if o.life_stage != ci_settings.LIFE_STAGE_CHILD and not o.is_dead and o is not c
+               and c.social.get_relationship(o) >= ci_settings.GIFT_MIN_RELATIONSHIP
+               and (o.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
+                    or o.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD)
         ]
         if not candidates:
             return None
@@ -55,13 +38,13 @@ class ResourceActions:
         fetch_text, carry_text = self._feed_food_texts(recipient)
 
         if target_fruit is not None:
-            if c.distance_to(target_fruit) < EAT_DISTANCE:
+            if c.distance_to(target_fruit) < ci_settings.EAT_DISTANCE:
                 target_fruit.active = False
                 c.carried_fruit = True
                 c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
-            c.state = STATE_SEEKING
+            c.state = ci_settings.STATE_SEEKING
             c.goal_text = fetch_text
             c.target = (target_fruit.x, target_fruit.y)
             return c.target
@@ -69,7 +52,7 @@ class ResourceActions:
         memory_positions = c.memory.get_food_memories()
         if memory_positions:
             pos = min(memory_positions, key=lambda p: math.hypot(c.x - p[0], c.y - p[1]))
-            c.state = STATE_SEEKING
+            c.state = ci_settings.STATE_SEEKING
             c.goal_text = fetch_text
             c.target = pos
             return pos
@@ -77,15 +60,17 @@ class ResourceActions:
 
     @staticmethod
     def _feed_food_texts(recipient):
-        if recipient is not None and recipient.life_stage != LIFE_STAGE_CHILD:
-            return INFO_CREATURE_GOAL_FEED_FETCH_FOOD_ADULT, INFO_CREATURE_GOAL_FEED_CARRY_FOOD_ADULT
-        return INFO_CREATURE_GOAL_FEED_FETCH_FOOD, INFO_CREATURE_GOAL_FEED_CARRY_FOOD
+        if recipient is not None and recipient.life_stage != ci_settings.LIFE_STAGE_CHILD:
+            return (ci_info.INFO_CREATURE_GOAL_FEED_FETCH_FOOD_ADULT,
+                    ci_info.INFO_CREATURE_GOAL_FEED_CARRY_FOOD_ADULT)
+        return ci_info.INFO_CREATURE_GOAL_FEED_FETCH_FOOD, ci_info.INFO_CREATURE_GOAL_FEED_CARRY_FOOD
 
     @staticmethod
     def _feed_water_texts(recipient):
-        if recipient is not None and recipient.life_stage != LIFE_STAGE_CHILD:
-            return INFO_CREATURE_GOAL_FEED_FETCH_WATER_ADULT, INFO_CREATURE_GOAL_FEED_CARRY_WATER_ADULT
-        return INFO_CREATURE_GOAL_FEED_FETCH_WATER, INFO_CREATURE_GOAL_FEED_CARRY_WATER
+        if recipient is not None and recipient.life_stage != ci_settings.LIFE_STAGE_CHILD:
+            return (ci_info.INFO_CREATURE_GOAL_FEED_FETCH_WATER_ADULT,
+                    ci_info.INFO_CREATURE_GOAL_FEED_CARRY_WATER_ADULT)
+        return ci_info.INFO_CREATURE_GOAL_FEED_FETCH_WATER, ci_info.INFO_CREATURE_GOAL_FEED_CARRY_WATER
 
     def go_fetch_water(self, visible_water, biome_grid=None, recipient=None):
         c = self.c
@@ -94,7 +79,7 @@ class ResourceActions:
         fetch_text, carry_text = self._feed_water_texts(recipient)
 
         if target_water is not None:
-            if c.distance_to(target_water) < EAT_DISTANCE + target_water.radius:
+            if c.distance_to(target_water) < ci_settings.EAT_DISTANCE + target_water.radius:
                 if target_water.take_charge():
                     c.carried_water = True
                     c.goal_text = carry_text
@@ -102,7 +87,7 @@ class ResourceActions:
                     return c.target
                 # заряд иссяк прямо в момент подхода - падаем в общий поиск ниже
             else:
-                c.state = STATE_SEEKING
+                c.state = ci_settings.STATE_SEEKING
                 c.goal_text = fetch_text
                 c.target = (target_water.x, target_water.y)
                 return c.target
@@ -110,21 +95,21 @@ class ResourceActions:
         memory_positions = c.memory.get_water_memories()
         if memory_positions:
             pos = min(memory_positions, key=lambda p: math.hypot(c.x - p[0], c.y - p[1]))
-            c.state = STATE_SEEKING
+            c.state = ci_settings.STATE_SEEKING
             c.goal_text = fetch_text
             c.target = pos
             return pos
 
         if biome_grid is not None:
-            if biome_grid.get_at(c.x, c.y) == BIOME_RIVER:
+            if biome_grid.get_at(c.x, c.y) == settings.BIOME_RIVER:
                 c.carried_water = True
                 c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
             vision_radius = c.aging.effective_vision_radius()
-            river_point = biome_grid.find_nearest_of_type(c.x, c.y, BIOME_RIVER, vision_radius)
+            river_point = biome_grid.find_nearest_of_type(c.x, c.y, settings.BIOME_RIVER, vision_radius)
             if river_point:
-                c.state = STATE_SEEKING
+                c.state = ci_settings.STATE_SEEKING
                 c.goal_text = fetch_text
                 c.target = river_point
                 return river_point
@@ -133,33 +118,35 @@ class ResourceActions:
 
     def deliver_resource_to(self, target):
         c = self.c
-        still_needs_food = c.carried_fruit and target.hunger < HUNGER_SATISFY_THRESHOLD
-        still_needs_water = c.carried_water and target.thirst < THIRST_SATISFY_THRESHOLD
+        still_needs_food = c.carried_fruit and target.hunger < ci_settings.HUNGER_SATISFY_THRESHOLD
+        still_needs_water = c.carried_water and target.thirst < ci_settings.THIRST_SATISFY_THRESHOLD
 
         if not still_needs_food and not still_needs_water:
             c.feed_target_id = None
             return None
 
-        is_adult_recipient = target.life_stage != LIFE_STAGE_CHILD
-        deliver_text = INFO_CREATURE_GOAL_FEED_DELIVER_ADULT if is_adult_recipient else INFO_CREATURE_GOAL_FEED_DELIVER
-        done_text = INFO_CREATURE_GOAL_FEED_DONE_ADULT if is_adult_recipient else INFO_CREATURE_GOAL_FEED_DONE
+        is_adult_recipient = target.life_stage != ci_settings.LIFE_STAGE_CHILD
+        deliver_text = (ci_info.INFO_CREATURE_GOAL_FEED_DELIVER_ADULT if is_adult_recipient
+                        else ci_info.INFO_CREATURE_GOAL_FEED_DELIVER)
+        done_text = (ci_info.INFO_CREATURE_GOAL_FEED_DONE_ADULT if is_adult_recipient
+                     else ci_info.INFO_CREATURE_GOAL_FEED_DONE)
 
-        c.state = STATE_SEEKING
-        if c.distance_to(target) > FEED_DISTANCE:
+        c.state = ci_settings.STATE_SEEKING
+        if c.distance_to(target) > ci_settings.FEED_DISTANCE:
             c.goal_text = deliver_text
             c.target = (target.x, target.y)
             return c.target
 
         if still_needs_food:
-            target.hunger = min(target.hunger + FRUIT_HUNGER_BONUS, HUNGER_MAX)
-            target.hp = min(target.hp + FRUIT_HP_BONUS, HP_MAX)
+            target.hunger = min(target.hunger + ci_settings.FRUIT_HUNGER_BONUS, ci_settings.HUNGER_MAX)
+            target.hp = min(target.hp + ci_settings.FRUIT_HP_BONUS, ci_settings.HP_MAX)
             c.carried_fruit = False
         if still_needs_water:
-            target.thirst = min(target.thirst + PARENT_CARRY_WATER_HYDRATION, THIRST_MAX)
+            target.thirst = min(target.thirst + ci_settings.PARENT_CARRY_WATER_HYDRATION, ci_settings.THIRST_MAX)
             c.carried_water = False
 
-        bonus = (FAMILY_FEED_RELATIONSHIP_BONUS if target.life_stage == LIFE_STAGE_CHILD
-                 else FAMILY_FEED_RELATIONSHIP_BONUS_ADULT)
+        bonus = (ci_settings.FAMILY_FEED_RELATIONSHIP_BONUS if target.life_stage == ci_settings.LIFE_STAGE_CHILD
+                 else ci_settings.FAMILY_FEED_RELATIONSHIP_BONUS_ADULT)
         c.social.adjust_mutual_relationship(target, bonus)
         c.psyche.on_help_given()
         target.psyche.on_help_received()
@@ -187,7 +174,7 @@ class Feeding(GoalComponent):
         urgent_child_active = c.urgent_child_id is not None and c.urgent_child_timer > 0
         already_committed = c.feed_target_id is not None or c.carried_fruit or c.carried_water
         if not (urgent_child_active or already_committed
-                or c.needs.wellbeing_score() >= PARENT_FEED_MIN_WELLBEING):
+                or c.needs.wellbeing_score() >= ci_settings.PARENT_FEED_MIN_WELLBEING):
             return [None]
 
         if urgent_child_active:
@@ -210,12 +197,13 @@ class Feeding(GoalComponent):
         if c.urgent_child_id is not None and c.urgent_child_timer > 0:
             candidate = lookup_creature(other_creatures, c.urgent_child_id, other_by_id)
             if (candidate is not None and not candidate.is_dead
-                    and candidate.life_stage == LIFE_STAGE_CHILD
+                    and candidate.life_stage == ci_settings.LIFE_STAGE_CHILD
                     and candidate.parent_ids and c.id in candidate.parent_ids):
                 urgent_child = candidate
 
         already_committed = c.feed_target_id is not None or c.carried_fruit or c.carried_water
-        if urgent_child is None and not already_committed and c.needs.wellbeing_score() < PARENT_FEED_MIN_WELLBEING:
+        if (urgent_child is None and not already_committed
+                and c.needs.wellbeing_score() < ci_settings.PARENT_FEED_MIN_WELLBEING):
             return None
 
         if urgent_child is not None and c.feed_target_id != urgent_child.id:
@@ -241,13 +229,13 @@ class Feeding(GoalComponent):
 
         if c.feed_target_id is not None:
             recipient = lookup_creature(other_creatures, c.feed_target_id, other_by_id, alive_only=True)
-            if recipient is not None and (recipient.hunger < CHILD_FEED_HUNGER_THRESHOLD
-                                          or recipient.thirst < CHILD_FEED_THIRST_THRESHOLD):
-                if recipient.hunger < CHILD_FEED_HUNGER_THRESHOLD:
+            if recipient is not None and (recipient.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
+                                          or recipient.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD):
+                if recipient.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD:
                     goal = self.actions.go_fetch_fruit(ctx.visible_fruits, recipient=recipient)
                     if goal:
                         return goal
-                if recipient.thirst < CHILD_FEED_THIRST_THRESHOLD:
+                if recipient.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD:
                     goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid,
                                                        recipient=recipient)
                     if goal:
@@ -262,17 +250,17 @@ class Feeding(GoalComponent):
             if c.parent_feed_check_timer > 0:
                 c.parent_feed_check_timer -= dt
                 return None
-            c.parent_feed_check_timer = random.uniform(*PARENT_FEED_CHECK_INTERVAL)
+            c.parent_feed_check_timer = random.uniform(*ci_settings.PARENT_FEED_CHECK_INTERVAL)
             needy = self.actions.find_needy_friend(ctx.visible_companions)
             if needy is None:
                 return None
 
         c.feed_target_id = needy.id
-        if needy.hunger < CHILD_FEED_HUNGER_THRESHOLD:
+        if needy.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD:
             goal = self.actions.go_fetch_fruit(ctx.visible_fruits, recipient=needy)
             if goal:
                 return goal
-        if needy.thirst < CHILD_FEED_THIRST_THRESHOLD:
+        if needy.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD:
             goal = self.actions.go_fetch_water(ctx.visible_water, biome_grid=ctx.biome_grid, recipient=needy)
             if goal:
                 return goal

@@ -1,23 +1,8 @@
 import math
 import random
 
-from settings import BIOME_RIVER
-from ...ci_settings import (
-    STATE_SEEKING,
-    ROAD_LINK_RESOURCE_MAP, ROAD_FOLLOW_CHANCE_FACTOR, ROAD_FOLLOW_REROLL_INTERVAL,
-    ROAD_OUTCOME_RADIUS, ROAD_DANGEROUS_THRESHOLD,
-    CROSSING_POINT_TOLERANCE, CROSSING_SWITCH_CHANCE_FACTOR,
-    CHILD_ROAD_VERIFY_CHECK_INTERVAL, CHILD_ROAD_SAFETY_CHECK_RADIUS,
-)
-from ...ci_info import (
-    INFO_CREATURE_GOAL_ROAD_KNOWN_ROUTE, INFO_CREATURE_GOAL_ROAD_APPROACH,
-    INFO_CREATURE_GOAL_ROAD_FOLLOW, INFO_CREATURE_GOAL_ROAD_CROSSING_KNOWN,
-    INFO_CREATURE_GOAL_ROAD_CROSSING_SWITCH,
-    INFO_CREATURE_GOAL_ROAD_USEFUL, INFO_CREATURE_GOAL_ROAD_USELESS_DANGER,
-    INFO_CREATURE_GOAL_ROAD_EMPTY, INFO_CREATURE_GOAL_ROAD_USEFUL_SIMPLE,
-    INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY, INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE,
-    INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER,
-)
+import settings
+from ... import ci_settings, ci_info
 from .....all_needed.ai.utility import Consideration, GoalComponent
 from .....all_needed.path_walker import PathProgressTracker
 
@@ -63,13 +48,13 @@ class Roads(GoalComponent):
             c.known_road_links.pop(resource_type, None)
             return None
         endpoint = road.endpoint_a if link["target_end"] == "a" else road.endpoint_b
-        if endpoint is None or ROAD_LINK_RESOURCE_MAP.get(endpoint["type"]) != resource_type:
+        if endpoint is None or ci_settings.ROAD_LINK_RESOURCE_MAP.get(endpoint["type"]) != resource_type:
             c.known_road_links.pop(resource_type, None)
             return None
         if c.following_road is not road:
             target_index = 0 if link["target_end"] == "a" else len(road.points) - 1
             self._start_following(road, target_index=target_index)
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_KNOWN_ROUTE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_KNOWN_ROUTE
             return c.target
         return self._continue_following(ctx)
 
@@ -80,13 +65,14 @@ class Roads(GoalComponent):
 
         if c.road_follow_check_timer > 0:
             return None
-        c.road_follow_check_timer = random.uniform(*ROAD_FOLLOW_REROLL_INTERVAL)
+        c.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
 
         candidates = [r for r in ctx.visible_roads if c.known_roads.get(r.id) not in ("useless", "dangerous")]
         if not candidates:
             return None
 
-        effective_chance = c.curiosity * ROAD_FOLLOW_CHANCE_FACTOR * self.follow_dampener * c.psyche.curiosity_modifier()
+        effective_chance = (c.curiosity * ci_settings.ROAD_FOLLOW_CHANCE_FACTOR
+                            * self.follow_dampener * c.psyche.curiosity_modifier())
         if random.random() >= effective_chance:
             return None
 
@@ -95,7 +81,7 @@ class Roads(GoalComponent):
             math.hypot(c.x - r.points[-1][0], c.y - r.points[-1][1])
         ))
         self._start_following(road)
-        c.goal_text = INFO_CREATURE_GOAL_ROAD_APPROACH
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_APPROACH
         return c.target
 
     def _start_following(self, road, target_index=None, entry_already_reached=False):
@@ -104,7 +90,7 @@ class Roads(GoalComponent):
         c.road_progress, c.road_direction = PathProgressTracker.start(
             road.points, c.x, c.y, target_index=target_index)
         c.road_entry_reached = entry_already_reached
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
         c.following_road_active = entry_already_reached
         c.target = road.points[c.road_progress]
 
@@ -134,13 +120,13 @@ class Roads(GoalComponent):
                     return None
             target_point = PathProgressTracker.target_point(road.points, c.road_progress)
 
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
         c.target = target_point
         if c.road_entry_reached:
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_FOLLOW
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_FOLLOW
             c.following_road_active = True
         else:
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_APPROACH
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_APPROACH
             c.following_road_active = False
         return target_point
 
@@ -158,7 +144,8 @@ class Roads(GoalComponent):
         if not road_crossings or not all_roads:
             return False
         crossing = next((cr for cr in road_crossings
-                         if math.hypot(cr.x - point[0], cr.y - point[1]) < CROSSING_POINT_TOLERANCE), None)
+                         if math.hypot(cr.x - point[0], cr.y - point[1]) < ci_settings.CROSSING_POINT_TOLERANCE),
+                        None)
         if crossing is None or len(crossing.road_ids) < 2:
             return False
         other_road_ids = [rid for rid in crossing.road_ids if rid != road.id]
@@ -173,15 +160,17 @@ class Roads(GoalComponent):
                 if candidate_road is not None and candidate_road.points:
                     target_index = 0 if link["target_end"] == "a" else len(candidate_road.points) - 1
                     self._start_following(candidate_road, target_index=target_index, entry_already_reached=True)
-                    c.goal_text = INFO_CREATURE_GOAL_ROAD_CROSSING_KNOWN
+                    c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_CROSSING_KNOWN
                     return True
 
-        if random.random() < c.curiosity * CROSSING_SWITCH_CHANCE_FACTOR * c.psyche.curiosity_modifier():
+        switch_chance = (c.curiosity * ci_settings.CROSSING_SWITCH_CHANCE_FACTOR
+                         * c.psyche.curiosity_modifier())
+        if random.random() < switch_chance:
             chosen_id = random.choice(other_road_ids)
             candidate_road = next((r for r in all_roads if r.id == chosen_id), None)
             if candidate_road is not None and candidate_road.points:
                 self._start_following(candidate_road, entry_already_reached=True)
-                c.goal_text = INFO_CREATURE_GOAL_ROAD_CROSSING_SWITCH
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_CROSSING_SWITCH
                 return True
         return False
 
@@ -192,38 +181,41 @@ class Roads(GoalComponent):
 
         useful_objects = (ctx.visible_fruits + ctx.visible_water + ctx.visible_bushes
                           + ctx.visible_campfires + ctx.visible_trees + ctx.visible_stones)
-        helpful = any(math.hypot(ex - o.x, ey - o.y) < ROAD_OUTCOME_RADIUS for o in useful_objects)
+        helpful = any(math.hypot(ex - o.x, ey - o.y) < ci_settings.ROAD_OUTCOME_RADIUS for o in useful_objects)
 
         if not helpful:
             structures = (list(ctx.graveyards) + list(ctx.houses) + list(ctx.storage_fields)
                           + list(ctx.campfires) + list(ctx.construction_sites))
             helpful = any(
-                self._distance_to_structure(obj, ex, ey) < ROAD_OUTCOME_RADIUS
+                self._distance_to_structure(obj, ex, ey) < ci_settings.ROAD_OUTCOME_RADIUS
                 for obj in structures
             )
 
         # ---------- Река у конца дороги ----------
         if not helpful and ctx.biome_grid is not None:
-            helpful = ctx.biome_grid.get_at(ex, ey) == BIOME_RIVER
+            helpful = ctx.biome_grid.get_at(ex, ey) == settings.BIOME_RIVER
 
         # ---------- Травяная поляна поблизости ----------
         if not helpful and ctx.all_grass:
-            helpful = any(math.hypot(ex - g.x, ey - g.y) < ROAD_OUTCOME_RADIUS for g in ctx.all_grass)
+            helpful = any(math.hypot(ex - g.x, ey - g.y) < ci_settings.ROAD_OUTCOME_RADIUS
+                          for g in ctx.all_grass)
 
-        nearby_danger = sum(1 for t in ctx.all_threats if math.hypot(ex - t.x, ey - t.y) < ROAD_OUTCOME_RADIUS)
+        nearby_danger = sum(1 for t in ctx.all_threats
+                            if math.hypot(ex - t.x, ey - t.y) < ci_settings.ROAD_OUTCOME_RADIUS)
 
         if helpful and nearby_danger == 0:
             verdict = "useful"
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_USEFUL
-        elif nearby_danger >= ROAD_DANGEROUS_THRESHOLD or (not helpful and nearby_danger > 0):
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_USEFUL
+        elif (nearby_danger >= ci_settings.ROAD_DANGEROUS_THRESHOLD
+              or (not helpful and nearby_danger > 0)):
             verdict = "useless"
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_USELESS_DANGER
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_USELESS_DANGER
         elif not helpful:
             verdict = "useless"
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_EMPTY
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_EMPTY
         else:
             verdict = "useful"
-            c.goal_text = INFO_CREATURE_GOAL_ROAD_USEFUL_SIMPLE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_USEFUL_SIMPLE
 
         c.known_roads[road.id] = verdict
         road.rating = verdict
@@ -238,7 +230,7 @@ class Roads(GoalComponent):
         endpoint = road.endpoint_b if c.road_direction > 0 else road.endpoint_a
         if endpoint is None:
             return
-        resource = ROAD_LINK_RESOURCE_MAP.get(endpoint["type"])
+        resource = ci_settings.ROAD_LINK_RESOURCE_MAP.get(endpoint["type"])
         if resource is None:
             return
         c.known_road_links[resource] = {"road_id": road.id, "target_end": reached_end_key}
@@ -271,7 +263,7 @@ class ChildRoadVerification(GoalComponent):
         if c.child_road_verify_check_timer > 0:
             c.child_road_verify_check_timer -= ctx.dt
             return [None]
-        c.child_road_verify_check_timer = random.uniform(*CHILD_ROAD_VERIFY_CHECK_INTERVAL)
+        c.child_road_verify_check_timer = random.uniform(*ci_settings.CHILD_ROAD_VERIFY_CHECK_INTERVAL)
 
         pending_roads = [r for r in ctx.visible_child_roads
                          if r.rating == "pending" and len(r.points) >= 2
@@ -307,8 +299,8 @@ class ChildRoadVerification(GoalComponent):
         c.child_road_verify_progress, c.child_road_verify_direction = PathProgressTracker.start(
             road.points, c.x, c.y)
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
         c.target = road.points[c.child_road_verify_progress]
         return c.target
 
@@ -319,7 +311,8 @@ class ChildRoadVerification(GoalComponent):
             self._cancel(road)
             return None
 
-        if any(math.hypot(c.x - s.x, c.y - s.y) < CHILD_ROAD_SAFETY_CHECK_RADIUS for s in ctx.visible_spikes):
+        if any(math.hypot(c.x - s.x, c.y - s.y) < ci_settings.CHILD_ROAD_SAFETY_CHECK_RADIUS
+               for s in ctx.visible_spikes):
             c.child_road_verify_found_danger = True
 
         if c.child_road_verify_progress < 0 or c.child_road_verify_progress >= len(road.points):
@@ -336,8 +329,8 @@ class ChildRoadVerification(GoalComponent):
                 return None
             target_point = PathProgressTracker.target_point(road.points, c.child_road_verify_progress)
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
         c.target = target_point
         c.following_road_active = c.child_road_verify_entry_reached
         return target_point
@@ -347,8 +340,8 @@ class ChildRoadVerification(GoalComponent):
         road.rating = "dangerous" if c.child_road_verify_found_danger else "safe"
         road.checked_by = c.id
         road.verifier_id = None
-        c.goal_text = (INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER if c.child_road_verify_found_danger
-                       else INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE)
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER if c.child_road_verify_found_danger
+                       else ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE)
         c.child_road_verify_target_id = None
         c.child_road_verify_progress = 0
         c.child_road_verify_found_danger = False

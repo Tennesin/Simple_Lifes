@@ -1,22 +1,6 @@
 import math
 
-from ...ci_settings import (
-    STATE_SEEKING, STATE_PANIC,
-    ENERGY_LOW_THRESHOLD,
-    SANITY_LOW_THRESHOLD, SANITY_PANIC_THRESHOLD, SANITY_SATISFY_THRESHOLD,
-    HUNGER_SATISFY_THRESHOLD, THIRST_SATISFY_THRESHOLD,
-    CAMPFIRE_RADIUS, TALK_DISTANCE, VISION_RADIUS,
-)
-from ...ci_info import (
-    INFO_CREATURE_GOAL_URGENT_FOOD, INFO_CREATURE_GOAL_SEEK_SAFETY,
-    INFO_CREATURE_GOAL_SEEK_FOOD, INFO_CREATURE_GOAL_SEEK_FOOD_ACTIVE,
-    INFO_CREATURE_GOAL_SEEK_WATER, INFO_CREATURE_GOAL_SEEK_WATER_ACTIVE,
-    INFO_CREATURE_GOAL_SANITY_URGENT_FIRE, INFO_CREATURE_GOAL_SANITY_FIRE,
-    INFO_CREATURE_GOAL_SANITY_URGENT_COMPANION_FIRE, INFO_CREATURE_GOAL_SANITY_COMPANION_FIRE,
-    INFO_CREATURE_GOAL_SANITY_TALK, INFO_CREATURE_GOAL_SANITY_ALONE,
-    INFO_CREATURE_GOAL_SANITY_URGENT_ANYONE, INFO_CREATURE_GOAL_SANITY_COMPANIONS,
-    INFO_CREATURE_GOAL_SANITY_URGENT_NO_FIRE, INFO_CREATURE_GOAL_SANITY_NO_FIRE,
-)
+from ... import ci_settings, ci_info
 from .....all_needed.ai.utility import Consideration, scale, GoalComponent
 
 # =========================================================================
@@ -55,19 +39,19 @@ class SurvivalNeeds(GoalComponent):
 
     def _tick_seeking_flags(self):
         c = self.c
-        if c.energy < ENERGY_LOW_THRESHOLD:
+        if c.energy < ci_settings.ENERGY_LOW_THRESHOLD:
             c.seeking_sleep = True
-        if c.consciousness < SANITY_LOW_THRESHOLD:
+        if c.consciousness < ci_settings.SANITY_LOW_THRESHOLD:
             c.seeking_sanity = True
-        if c.seeking_sanity and c.consciousness >= SANITY_SATISFY_THRESHOLD:
+        if c.seeking_sanity and c.consciousness >= ci_settings.SANITY_SATISFY_THRESHOLD:
             c.seeking_sanity = False
         if c.hunger < 10:
             c.seeking_food = True
-        if c.seeking_food and c.hunger >= HUNGER_SATISFY_THRESHOLD:
+        if c.seeking_food and c.hunger >= ci_settings.HUNGER_SATISFY_THRESHOLD:
             c.seeking_food = False
         if c.thirst < 10:
             c.seeking_water = True
-        if c.seeking_water and c.thirst >= THIRST_SATISFY_THRESHOLD:
+        if c.seeking_water and c.thirst >= ci_settings.THIRST_SATISFY_THRESHOLD:
             c.seeking_water = False
 
     def _consider_urgent_survival(self, ctx):
@@ -80,14 +64,14 @@ class SurvivalNeeds(GoalComponent):
         def execute():
             goal = self.instincts.nearest_food_target(ctx.visible_fruits)
             if goal:
-                c.state = STATE_SEEKING
-                c.goal_text = INFO_CREATURE_GOAL_URGENT_FOOD
+                c.state = ci_settings.STATE_SEEKING
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_URGENT_FOOD
                 return goal
             danger_pos = self.instincts.nearest_danger_position(ctx.all_threats)
             if danger_pos:
-                c.state = STATE_PANIC
+                c.state = ci_settings.STATE_PANIC
                 c.panic_active = True
-                c.goal_text = INFO_CREATURE_GOAL_SEEK_SAFETY
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_SEEK_SAFETY
                 return c.flee_point(danger_pos, 80)
             return None
 
@@ -95,9 +79,10 @@ class SurvivalNeeds(GoalComponent):
 
     def _consider_urgent_sanity(self, ctx):
         c = self.c
-        if not (c.seeking_sanity and c.consciousness < SANITY_PANIC_THRESHOLD):
+        if not (c.seeking_sanity and c.consciousness < ci_settings.SANITY_PANIC_THRESHOLD):
             return None
-        urgency = scale(SANITY_PANIC_THRESHOLD - c.consciousness, 0, SANITY_PANIC_THRESHOLD)
+        urgency = scale(ci_settings.SANITY_PANIC_THRESHOLD - c.consciousness,
+                        0, ci_settings.SANITY_PANIC_THRESHOLD)
         score = self.SCORE_URGENT_SANITY_BASE + urgency * self.SCORE_URGENT_SANITY_MAX_BONUS
 
         def execute():
@@ -109,7 +94,7 @@ class SurvivalNeeds(GoalComponent):
         c = self.c
         if not c.seeking_sleep:
             return None
-        deficit = scale(ENERGY_LOW_THRESHOLD - c.energy, 0, ENERGY_LOW_THRESHOLD)
+        deficit = scale(ci_settings.ENERGY_LOW_THRESHOLD - c.energy, 0, ci_settings.ENERGY_LOW_THRESHOLD)
         score = self.SCORE_SLEEP_BASE + deficit * self.SCORE_SLEEP_MAX_BONUS
 
         def execute():
@@ -126,14 +111,14 @@ class SurvivalNeeds(GoalComponent):
         def execute():
             self.instincts.check_stale_food_memory(ctx.visible_fruits)
             found = self.instincts.nearest_food_target(ctx.visible_fruits)
-            c.state = STATE_SEEKING
+            c.state = ci_settings.STATE_SEEKING
             if found:
-                c.goal_text = INFO_CREATURE_GOAL_SEEK_FOOD
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_SEEK_FOOD
                 return found
             route = self.roads.pursue_known_link("food", ctx)
             if route:
                 return route
-            c.goal_text = INFO_CREATURE_GOAL_SEEK_FOOD_ACTIVE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SEEK_FOOD_ACTIVE
             return self.instincts.pursue_search_target(ctx.visible_companions, biome_grid=ctx.biome_grid)
 
         return Consideration("food", score, execute)
@@ -147,14 +132,14 @@ class SurvivalNeeds(GoalComponent):
         def execute():
             self.instincts.check_stale_water_memory(ctx.visible_water)
             found = self.instincts.nearest_water_target(ctx.visible_water, biome_grid=ctx.biome_grid)
-            c.state = STATE_SEEKING
+            c.state = ci_settings.STATE_SEEKING
             if found:
-                c.goal_text = INFO_CREATURE_GOAL_SEEK_WATER
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_SEEK_WATER
                 return found
             route = self.roads.pursue_known_link("water", ctx)
             if route:
                 return route
-            c.goal_text = INFO_CREATURE_GOAL_SEEK_WATER_ACTIVE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SEEK_WATER_ACTIVE
             return self.instincts.pursue_search_target(ctx.visible_companions, biome_grid=ctx.biome_grid)
 
         return Consideration("water", score, execute)
@@ -163,7 +148,7 @@ class SurvivalNeeds(GoalComponent):
         c = self.c
         if not c.seeking_sanity:
             return None
-        deficit = scale(SANITY_LOW_THRESHOLD - c.consciousness, 0, SANITY_LOW_THRESHOLD)
+        deficit = scale(ci_settings.SANITY_LOW_THRESHOLD - c.consciousness, 0, ci_settings.SANITY_LOW_THRESHOLD)
         score = self.SCORE_SANITY_BASE + deficit * self.SCORE_SANITY_MAX_BONUS
 
         def execute():
@@ -174,66 +159,66 @@ class SurvivalNeeds(GoalComponent):
     def _seek_sanity_relief(self, ctx, urgent):
         c = self.c
         other_creatures = ctx.other_creatures
-        c.state = STATE_PANIC if urgent else STATE_SEEKING
+        c.state = ci_settings.STATE_PANIC if urgent else ci_settings.STATE_SEEKING
         c.panic_active = urgent
 
         campfire_pos = self.instincts.nearest_known_campfire()
 
         if campfire_pos:
             dist_to_fire = math.hypot(c.x - campfire_pos[0], c.y - campfire_pos[1])
-            if dist_to_fire > CAMPFIRE_RADIUS:
-                c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_FIRE if urgent
-                               else INFO_CREATURE_GOAL_SANITY_FIRE)
+            if dist_to_fire > ci_settings.CAMPFIRE_RADIUS:
+                c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_FIRE if urgent
+                               else ci_info.INFO_CREATURE_GOAL_SANITY_FIRE)
                 c.target = campfire_pos
                 return campfire_pos
 
             companions_in_fire_zone = [
                 o for o in other_creatures
                 if o is not c and not o.is_dead
-                and math.hypot(o.x - campfire_pos[0], o.y - campfire_pos[1]) < CAMPFIRE_RADIUS
+                and math.hypot(o.x - campfire_pos[0], o.y - campfire_pos[1]) < ci_settings.CAMPFIRE_RADIUS
             ]
             if companions_in_fire_zone:
                 nearest_companion = c.social.best_companion(companions_in_fire_zone)
                 nearest_companion.social.request_company(campfire_pos)
-                if c.distance_to(nearest_companion) > TALK_DISTANCE:
-                    c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_COMPANION_FIRE if urgent
-                                   else INFO_CREATURE_GOAL_SANITY_COMPANION_FIRE)
+                if c.distance_to(nearest_companion) > ci_settings.TALK_DISTANCE:
+                    c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_COMPANION_FIRE if urgent
+                                   else ci_info.INFO_CREATURE_GOAL_SANITY_COMPANION_FIRE)
                     c.target = (nearest_companion.x, nearest_companion.y)
                     return c.target
                 else:
-                    c.goal_text = INFO_CREATURE_GOAL_SANITY_TALK
+                    c.goal_text = ci_info.INFO_CREATURE_GOAL_SANITY_TALK
                     c.target = (c.x, c.y)
                     return c.target
 
-            c.goal_text = INFO_CREATURE_GOAL_SANITY_ALONE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SANITY_ALONE
             c.target = campfire_pos
             return campfire_pos
 
         route = self.roads.pursue_known_link("campfire", ctx)
         if route:
-            c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_FIRE if urgent
-                           else INFO_CREATURE_GOAL_SANITY_FIRE)
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_FIRE if urgent
+                           else ci_info.INFO_CREATURE_GOAL_SANITY_FIRE)
             c.target = route
             return route
 
         companions = [o for o in other_creatures
-                      if o is not c and not o.is_dead and c.distance_to(o) < VISION_RADIUS]
+                      if o is not c and not o.is_dead and c.distance_to(o) < ci_settings.VISION_RADIUS]
         nearest_companion = c.social.best_companion(companions)
 
         if nearest_companion:
             nearest_companion.social.request_company((c.x, c.y))
-            c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_ANYONE if urgent
-                           else INFO_CREATURE_GOAL_SANITY_COMPANIONS)
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_ANYONE if urgent
+                           else ci_info.INFO_CREATURE_GOAL_SANITY_COMPANIONS)
             c.target = (nearest_companion.x, nearest_companion.y)
             return c.target
 
         intuitive = c.memory.get_campfire_intuitive_target(*c.comfort_point)
         if intuitive:
-            c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_NO_FIRE if urgent
-                           else INFO_CREATURE_GOAL_SANITY_NO_FIRE)
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_NO_FIRE if urgent
+                           else ci_info.INFO_CREATURE_GOAL_SANITY_NO_FIRE)
             c.target = intuitive
             return intuitive
 
-        c.goal_text = (INFO_CREATURE_GOAL_SANITY_URGENT_NO_FIRE if urgent
-                       else INFO_CREATURE_GOAL_SANITY_NO_FIRE)
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_NO_FIRE if urgent
+                       else ci_info.INFO_CREATURE_GOAL_SANITY_NO_FIRE)
         return self.instincts.pursue_search_target(biome_grid=ctx.biome_grid)

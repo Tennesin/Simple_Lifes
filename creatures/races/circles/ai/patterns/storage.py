@@ -1,13 +1,7 @@
 import math
 import random
 
-from ...ci_settings import (
-    STATE_SEEKING, LIFE_STAGE_CHILD,
-    PARENT_FEED_MIN_WELLBEING, STORAGE_SUPPLY_CHECK_INTERVAL, STORAGE_FIELD_DEPOSIT_DISTANCE,
-)
-from ...ci_info import (
-    INFO_CREATURE_GOAL_STORAGE_DELIVER, INFO_CREATURE_GOAL_STORAGE_STOCKED,
-)
+from ... import ci_settings, ci_info
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 
 # =========================================================================
@@ -48,7 +42,7 @@ class Storage(GoalComponent):
 
         if not field.has_space_for_fruit() and not field.has_space_for_water():
             return None
-        if c.needs.wellbeing_score() < PARENT_FEED_MIN_WELLBEING:
+        if c.needs.wellbeing_score() < ci_settings.PARENT_FEED_MIN_WELLBEING:
             return None
         if c.reuniting_with_partner:
             return None
@@ -56,7 +50,7 @@ class Storage(GoalComponent):
         if c.storage_supply_check_timer > 0:
             c.storage_supply_check_timer -= ctx.dt
             return None
-        c.storage_supply_check_timer = random.uniform(*STORAGE_SUPPLY_CHECK_INTERVAL)
+        c.storage_supply_check_timer = random.uniform(*ci_settings.STORAGE_SUPPLY_CHECK_INTERVAL)
 
         fetch_fruit = (self.actions.go_fetch_fruit, ctx.visible_fruits, field.has_space_for_fruit)
         fetch_water = (
@@ -82,7 +76,7 @@ class Storage(GoalComponent):
             if c.urgent_child_id is not None and c.urgent_child_timer > 0:
                 candidate = lookup_creature(other_creatures, c.urgent_child_id, other_by_id)
                 if (candidate is not None and not candidate.is_dead
-                        and candidate.life_stage == LIFE_STAGE_CHILD
+                        and candidate.life_stage == ci_settings.LIFE_STAGE_CHILD
                         and candidate.parent_ids and c.id in candidate.parent_ids):
                     urgent_child = candidate
             needy = urgent_child if urgent_child is not None else self.actions.find_needy_friend(ctx.visible_companions)
@@ -95,10 +89,10 @@ class Storage(GoalComponent):
             c.storage_supply_mode = False
             return None
 
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
         dist = math.hypot(c.x - field.x, c.y - field.y)
-        if dist > STORAGE_FIELD_DEPOSIT_DISTANCE:
-            c.goal_text = INFO_CREATURE_GOAL_STORAGE_DELIVER
+        if dist > ci_settings.STORAGE_FIELD_DEPOSIT_DISTANCE:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_STORAGE_DELIVER
             c.target = (field.x, field.y)
             return c.target
 
@@ -110,6 +104,6 @@ class Storage(GoalComponent):
             c.carried_water = False
 
         c.storage_supply_mode = False
-        c.goal_text = INFO_CREATURE_GOAL_STORAGE_STOCKED
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_STORAGE_STOCKED
         c.target = (c.x, c.y)
         return c.target

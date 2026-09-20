@@ -1,6 +1,6 @@
 import random
 
-from ...ci_settings import CURIOSITY_DISCOVERY_CHANCE
+from ... import ci_settings
 from .....all_needed.ai.utility import Consideration, GoalComponent
 
 # =========================================================================
@@ -61,7 +61,7 @@ class Curiosity(GoalComponent):
                 c.curiosity_rolled.discard(t)
                 c.curiosity_interested.discard(t)
 
-        chance = CURIOSITY_DISCOVERY_CHANCE.get(c.temperament, 0.3) * c.psyche.curiosity_modifier()
+        chance = ci_settings.CURIOSITY_DISCOVERY_CHANCE.get(c.temperament, 0.3) * c.psyche.curiosity_modifier()
         for t in visible_types_now:
             if t not in c.curiosity_rolled:
                 c.curiosity_rolled.add(t)

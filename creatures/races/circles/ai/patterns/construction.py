@@ -1,35 +1,8 @@
 import math
 import random
 
-from settings import BIOME_SEA, BIOME_RIVER, BIOME_PLAINS, BIOME_DESERT
-from ...ci_settings import (
-    STATE_SEEKING, GENDER_MALE, LIFE_STAGE_ADULT,
-    PARENT_FEED_MIN_WELLBEING,
-    STORAGE_FIELD_WIDTH, STORAGE_FIELD_HEIGHT, STORAGE_HOUSE_GAP,
-    GRAVEYARD_DEFAULT_SIZE, GRAVEYARD_BUILD_OFFSET_RANGE, GRAVEYARD_CAMPFIRE_LINK_RADIUS,
-    HOUSE_DEFAULT_SIZE, HOUSE_BUILD_OFFSET_RANGE, HOUSE_CAPACITY_RANGE,
-    HOUSE_SITE_SCORE_ATTEMPTS, HOUSE_DESERT_PENALTY, HOUSE_STORAGE_ROOM_BONUS,
-    HOUSE_CAMPFIRE_DISTANCE_IDEAL,
-    NEW_CAMPFIRE_DISTANCE_RANGE, NEW_CAMPFIRE_JOIN_SEARCH_RADIUS,
-    CAMPFIRE_BUILD_OFFSET_RANGE, FIRST_CAMPFIRE_SITE_ATTEMPTS, CAMPFIRE_COMFORT_RADIUS,
-    CAMPFIRE_DESERT_PENALTY, CAMPFIRE_WATER_BONUS, CAMPFIRE_BUSH_BONUS,
-    CAMPFIRE_RESOURCE_BONUS, CAMPFIRE_SPIKE_PENALTY, CAMPFIRE_SPIKE_PENALTY_MAX_COUNT,
-    CAMPFIRE_DISTANCE_PENALTY,
-    CONSTRUCTION_CHECK_INTERVAL, CONSTRUCTION_SITE_SEARCH_RADIUS, CONSTRUCTION_APPROACH_DISTANCE,
-    CONSTRUCTION_CLEARANCE_MARGIN, CONSTRUCTION_PUBERTY_DRIVE_BONUS,
-    ORPHAN_SITE_SEARCH_RADIUS_FACTOR,
-    GATHER_APPROACH_DISTANCE, RESOURCE_GATHER_RATE,
-    BUILD_HELP_MIN_RELATIONSHIP, BUILD_HELP_JOIN_CHANCE, BUILD_HELP_CHECK_INTERVAL,
-    BUILD_HELP_RELATIONSHIP_BONUS, BUILD_HELP_SPEED_BONUS_PER_HELPER,
-    PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX,
-)
-from ...ci_info import (
-    INFO_CREATURE_GOAL_GATHER_WOOD, INFO_CREATURE_GOAL_GATHER_STONE,
-    INFO_CREATURE_GOAL_GATHERING_WOOD, INFO_CREATURE_GOAL_GATHERING_STONE,
-    INFO_CREATURE_GOAL_CONSTRUCTION_GO, INFO_CREATURE_GOAL_CONSTRUCTION_DEPOSIT,
-    INFO_CREATURE_GOAL_CONSTRUCTION_BUILD, INFO_CREATURE_GOAL_CONSTRUCTION_HELP,
-    INFO_CREATURE_GOAL_CONSTRUCTION_DONE,
-)
+import settings
+from ... import ci_settings, ci_info
 from .....all_needed import geometry
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 from ...circle_objects import StorageField, Graveyard, ConstructionSite, House, Campfire
@@ -44,9 +17,9 @@ class Construction(GoalComponent):
 
     _BUILDING_FINAL_FOOTPRINT = {
         "campfire": 20,
-        "storage": max(STORAGE_FIELD_WIDTH, STORAGE_FIELD_HEIGHT) / 2 + 8,
-        "graveyard": max(GRAVEYARD_DEFAULT_SIZE) / 2 + 10,
-        "house": max(HOUSE_DEFAULT_SIZE) / 2 + 10,
+        "storage": max(ci_settings.STORAGE_FIELD_WIDTH, ci_settings.STORAGE_FIELD_HEIGHT) / 2 + 8,
+        "graveyard": max(ci_settings.GRAVEYARD_DEFAULT_SIZE) / 2 + 10,
+        "house": max(ci_settings.HOUSE_DEFAULT_SIZE) / 2 + 10,
     }
 
     def __init__(self, creature, instincts, roads=None):
@@ -56,18 +29,18 @@ class Construction(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        if c.gender != GENDER_MALE or c.life_stage != LIFE_STAGE_ADULT:
+        if c.gender != ci_settings.GENDER_MALE or c.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return [None]
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return [None]
 
         committed = c.construction_target_id is not None or c.gather_target_id is not None
-        if not committed and c.needs.wellbeing_score() < PARENT_FEED_MIN_WELLBEING:
+        if not committed and c.needs.wellbeing_score() < ci_settings.PARENT_FEED_MIN_WELLBEING:
             return [None]
 
         score = self.SCORE_COMMITTED if committed else self.SCORE_NEW
         if c.puberty_active and not self._owns_any_storage(ctx.storage_fields):
-            score += CONSTRUCTION_PUBERTY_DRIVE_BONUS
+            score += ci_settings.CONSTRUCTION_PUBERTY_DRIVE_BONUS
 
         def execute():
             return self._pursue(ctx)
@@ -104,7 +77,7 @@ class Construction(GoalComponent):
         if c.construction_check_timer > 0:
             c.construction_check_timer -= ctx.dt
             return None
-        c.construction_check_timer = random.uniform(*CONSTRUCTION_CHECK_INTERVAL)
+        c.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
 
         campfire_pos = c.known_campfire
         build_type = self._determine_need(campfire_pos, ctx)
@@ -161,20 +134,20 @@ class Construction(GoalComponent):
             self._cancel_gathering()
             return None
 
-        if c.distance_to(source) > GATHER_APPROACH_DISTANCE:
-            c.state = STATE_SEEKING
-            c.goal_text = (INFO_CREATURE_GOAL_GATHER_WOOD if c.gather_type == "wood"
-                           else INFO_CREATURE_GOAL_GATHER_STONE)
+        if c.distance_to(source) > ci_settings.GATHER_APPROACH_DISTANCE:
+            c.state = ci_settings.STATE_SEEKING
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHER_WOOD if c.gather_type == "wood"
+                           else ci_info.INFO_CREATURE_GOAL_GATHER_STONE)
             c.target = (source.x, source.y)
             return c.target
 
-        c.state = STATE_SEEKING
-        c.goal_text = (INFO_CREATURE_GOAL_GATHERING_WOOD if c.gather_type == "wood"
-                       else INFO_CREATURE_GOAL_GATHERING_STONE)
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHERING_WOOD if c.gather_type == "wood"
+                       else ci_info.INFO_CREATURE_GOAL_GATHERING_STONE)
         c.target = (c.x, c.y)
 
         c.gather_progress += ctx.dt
-        tick = 1.0 / RESOURCE_GATHER_RATE
+        tick = 1.0 / ci_settings.RESOURCE_GATHER_RATE
         while (c.gather_progress >= tick and c.carry_free_space() > 0 and has_resource
                and (c.gather_needed_amount is None
                     or c.carried_resources[c.gather_type] < c.gather_needed_amount)):
@@ -212,7 +185,7 @@ class Construction(GoalComponent):
         if campfire_pos is None:
             nearby_campfire_site = any(
                 s.build_type == "campfire"
-                and math.hypot(c.x - s.x, c.y - s.y) < NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
+                and math.hypot(c.x - s.x, c.y - s.y) < ci_settings.NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
                 for s in sites
             )
             if not nearby_campfire_site:
@@ -240,7 +213,7 @@ class Construction(GoalComponent):
         if campfire_pos is None or not graveyards:
             return None
         for gy in graveyards:
-            if math.hypot(gy.x - campfire_pos[0], gy.y - campfire_pos[1]) < GRAVEYARD_CAMPFIRE_LINK_RADIUS:
+            if math.hypot(gy.x - campfire_pos[0], gy.y - campfire_pos[1]) < ci_settings.GRAVEYARD_CAMPFIRE_LINK_RADIUS:
                 return gy
         return None
 
@@ -249,10 +222,10 @@ class Construction(GoalComponent):
 
     def _point_clear(self, point, build_type, biome_grid, ctx, skip_house_id=None):
         px, py = point
-        if biome_grid is not None and biome_grid.get_at(px, py) in (BIOME_SEA, BIOME_RIVER):
+        if biome_grid is not None and biome_grid.get_at(px, py) in (settings.BIOME_SEA, settings.BIOME_RIVER):
             return False
 
-        footprint = self._footprint_radius(build_type) + CONSTRUCTION_CLEARANCE_MARGIN
+        footprint = self._footprint_radius(build_type) + ci_settings.CONSTRUCTION_CLEARANCE_MARGIN
 
         def _blocked(objects, radius_attr=None):
             for obj in objects:
@@ -294,7 +267,7 @@ class Construction(GoalComponent):
             return self._pick_storage_point(ctx)
 
         anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
-        dist_range = GRAVEYARD_BUILD_OFFSET_RANGE
+        dist_range = ci_settings.GRAVEYARD_BUILD_OFFSET_RANGE
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
             dist = random.uniform(*dist_range)
@@ -307,9 +280,9 @@ class Construction(GoalComponent):
         c = self.c
         anchor = campfire_pos if campfire_pos is not None else (c.x, c.y)
         best_point, best_score = None, None
-        for _ in range(HOUSE_SITE_SCORE_ATTEMPTS):
+        for _ in range(ci_settings.HOUSE_SITE_SCORE_ATTEMPTS):
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(*HOUSE_BUILD_OFFSET_RANGE)
+            dist = random.uniform(*ci_settings.HOUSE_BUILD_OFFSET_RANGE)
             point = geometry.clamped_point(anchor[0], anchor[1], angle, dist)
             if not self._point_clear(point, "house", biome_grid, ctx):
                 continue
@@ -321,22 +294,22 @@ class Construction(GoalComponent):
     def _score_house_site(self, point, campfire_pos, biome_grid, ctx):
         px, py = point
         score = 0.0
-        biome = biome_grid.get_at(px, py) if biome_grid is not None else BIOME_PLAINS
-        if biome == BIOME_DESERT:
-            score -= HOUSE_DESERT_PENALTY
+        biome = biome_grid.get_at(px, py) if biome_grid is not None else settings.BIOME_PLAINS
+        if biome == settings.BIOME_DESERT:
+            score -= ci_settings.HOUSE_DESERT_PENALTY
 
         # ---------- Есть ли место сбоку под будущий склад ----------
-        half_house_w = HOUSE_DEFAULT_SIZE[0] / 2
-        side_w = STORAGE_FIELD_WIDTH + STORAGE_HOUSE_GAP * 2
+        half_house_w = ci_settings.HOUSE_DEFAULT_SIZE[0] / 2
+        side_w = ci_settings.STORAGE_FIELD_WIDTH + ci_settings.STORAGE_HOUSE_GAP * 2
         left_ok = self._point_clear((px - half_house_w - side_w / 2, py), "storage", biome_grid, ctx)
         right_ok = self._point_clear((px + half_house_w + side_w / 2, py), "storage", biome_grid, ctx)
         if left_ok or right_ok:
-            score += HOUSE_STORAGE_ROOM_BONUS
+            score += ci_settings.HOUSE_STORAGE_ROOM_BONUS
 
         # ---------- Не слишком далеко и не впритык к костру ----------
         if campfire_pos is not None:
             dist = math.hypot(px - campfire_pos[0], py - campfire_pos[1])
-            score -= abs(dist - HOUSE_CAMPFIRE_DISTANCE_IDEAL) * 0.05
+            score -= abs(dist - ci_settings.HOUSE_CAMPFIRE_DISTANCE_IDEAL) * 0.05
 
         return score
 
@@ -346,13 +319,13 @@ class Construction(GoalComponent):
         if house is None:
             return None
         half_house_w = house.width / 2
-        half_store_w = STORAGE_FIELD_WIDTH / 2
+        half_store_w = ci_settings.STORAGE_FIELD_WIDTH / 2
         sides = [1, -1]
         random.shuffle(sides)
         for side_sign in sides:
-            px = house.x + side_sign * (half_house_w + STORAGE_HOUSE_GAP + half_store_w)
+            px = house.x + side_sign * (half_house_w + ci_settings.STORAGE_HOUSE_GAP + half_store_w)
             point = (px, house.y)
-            if self._point_clear(point, "storage", ctx.biome_grid, ctx, skip_house_id=house.id):  # НОВОЕ
+            if self._point_clear(point, "storage", ctx.biome_grid, ctx, skip_house_id=house.id):
                 return point
         return None
 
@@ -365,15 +338,16 @@ class Construction(GoalComponent):
         if not existing_fires and not pending_sites:
             return self._pick_first_campfire_point(ctx)
 
+        min_gap = ci_settings.NEW_CAMPFIRE_DISTANCE_RANGE[0]
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(*NEW_CAMPFIRE_DISTANCE_RANGE)
+            dist = random.uniform(*ci_settings.NEW_CAMPFIRE_DISTANCE_RANGE)
             point = geometry.clamped_point(c.x, c.y, angle, dist)
 
             far_enough = (
-                    all(math.hypot(point[0] - f.x, point[1] - f.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
+                    all(math.hypot(point[0] - f.x, point[1] - f.y) >= min_gap
                         for f in existing_fires)
-                    and all(math.hypot(point[0] - s.x, point[1] - s.y) >= NEW_CAMPFIRE_DISTANCE_RANGE[0]
+                    and all(math.hypot(point[0] - s.x, point[1] - s.y) >= min_gap
                             for s in pending_sites)
             )
             if not far_enough:
@@ -386,12 +360,12 @@ class Construction(GoalComponent):
 
     # ---------- Первый костёр мира: комфортное место рядом с существом ----------
 
-    def _pick_first_campfire_point(self, ctx, attempts=FIRST_CAMPFIRE_SITE_ATTEMPTS):
+    def _pick_first_campfire_point(self, ctx, attempts=ci_settings.FIRST_CAMPFIRE_SITE_ATTEMPTS):
         c = self.c
         best_point, best_score = None, None
         for _ in range(attempts):
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(*CAMPFIRE_BUILD_OFFSET_RANGE)
+            dist = random.uniform(*ci_settings.CAMPFIRE_BUILD_OFFSET_RANGE)
             point = geometry.clamped_point(c.x, c.y, angle, dist)
             if not self._point_clear(point, "campfire", ctx.biome_grid, ctx):
                 continue
@@ -404,28 +378,30 @@ class Construction(GoalComponent):
         c = self.c
         px, py = point
         grid = ctx.biome_grid
-        radius = CAMPFIRE_COMFORT_RADIUS
+        radius = ci_settings.CAMPFIRE_COMFORT_RADIUS
         score = 0.0
 
-        if grid is not None and grid.get_at(px, py) == BIOME_DESERT:
-            score -= CAMPFIRE_DESERT_PENALTY
+        if grid is not None and grid.get_at(px, py) == settings.BIOME_DESERT:
+            score -= ci_settings.CAMPFIRE_DESERT_PENALTY
 
         def _near(objects):
             return [o for o in objects if math.hypot(px - o.x, py - o.y) < radius]
 
         has_water = bool(_near(ctx.visible_water)) or (
-                grid is not None and grid.find_nearest_of_type(px, py, BIOME_RIVER, radius) is not None)
+                grid is not None
+                and grid.find_nearest_of_type(px, py, settings.BIOME_RIVER, radius) is not None)
         if has_water:
-            score += CAMPFIRE_WATER_BONUS
+            score += ci_settings.CAMPFIRE_WATER_BONUS
         if _near(ctx.visible_bushes):
-            score += CAMPFIRE_BUSH_BONUS
+            score += ci_settings.CAMPFIRE_BUSH_BONUS
         if _near(ctx.visible_trees):
-            score += CAMPFIRE_RESOURCE_BONUS
+            score += ci_settings.CAMPFIRE_RESOURCE_BONUS
         if _near(ctx.visible_stones):
-            score += CAMPFIRE_RESOURCE_BONUS
+            score += ci_settings.CAMPFIRE_RESOURCE_BONUS
 
-        score -= CAMPFIRE_SPIKE_PENALTY * min(len(_near(ctx.visible_spikes)), CAMPFIRE_SPIKE_PENALTY_MAX_COUNT)
-        score -= math.hypot(px - c.x, py - c.y) * CAMPFIRE_DISTANCE_PENALTY
+        spike_count = min(len(_near(ctx.visible_spikes)), ci_settings.CAMPFIRE_SPIKE_PENALTY_MAX_COUNT)
+        score -= ci_settings.CAMPFIRE_SPIKE_PENALTY * spike_count
+        score -= math.hypot(px - c.x, py - c.y) * ci_settings.CAMPFIRE_DISTANCE_PENALTY
         return score
 
     def _find_or_create_site(self, build_type, campfire_pos, ctx):
@@ -433,7 +409,7 @@ class Construction(GoalComponent):
         for site in ctx.construction_sites:
             if site.build_type != build_type:
                 continue
-            if math.hypot(c.x - site.x, c.y - site.y) < CONSTRUCTION_SITE_SEARCH_RADIUS:
+            if math.hypot(c.x - site.x, c.y - site.y) < ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS:
                 return site
         return self._create_site(build_type, campfire_pos, ctx)
 
@@ -452,9 +428,9 @@ class Construction(GoalComponent):
 
     def _deliver(self, site):
         c = self.c
-        c.state = STATE_SEEKING
-        if math.hypot(c.x - site.x, c.y - site.y) > CONSTRUCTION_APPROACH_DISTANCE:
-            c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_GO
+        c.state = ci_settings.STATE_SEEKING
+        if math.hypot(c.x - site.x, c.y - site.y) > ci_settings.CONSTRUCTION_APPROACH_DISTANCE:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_GO
             c.target = (site.x, site.y)
             return c.target
 
@@ -473,7 +449,7 @@ class Construction(GoalComponent):
         if site.needed("stone") == 0:
             c.carried_resources["stone"] = 0
 
-        c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_DEPOSIT
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_DEPOSIT
         c.target = (c.x, c.y)
 
         if site.resources_complete():
@@ -488,14 +464,14 @@ class Construction(GoalComponent):
         site.builder_ids.add(c.id)
         site.contributor_ids.add(c.id)
         c.construction_phase = "build"
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
 
-        if math.hypot(c.x - site.x, c.y - site.y) > CONSTRUCTION_APPROACH_DISTANCE:
-            c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_GO
+        if math.hypot(c.x - site.x, c.y - site.y) > ci_settings.CONSTRUCTION_APPROACH_DISTANCE:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_GO
             c.target = (site.x, site.y)
             return c.target
 
-        c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_BUILD
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_BUILD
         c.target = (c.x, c.y)
 
         alive_ids = {o.id for o in ctx.other_creatures if not o.is_dead}
@@ -506,7 +482,7 @@ class Construction(GoalComponent):
 
         is_leader = c.id == min(site.builder_ids)
         if is_leader:
-            speed = 1.0 + max(0, len(site.builder_ids) - 1) * BUILD_HELP_SPEED_BONUS_PER_HELPER
+            speed = 1.0 + max(0, len(site.builder_ids) - 1) * ci_settings.BUILD_HELP_SPEED_BONUS_PER_HELPER
             site.build_progress += ctx.dt * speed
 
         if site.build_progress >= site.build_time:
@@ -549,7 +525,7 @@ class Construction(GoalComponent):
             ctx.graveyards.append(new_object)
 
         elif site.build_type == "house":
-            cap_range = HOUSE_CAPACITY_RANGE.get(c.temperament, (4, 6))
+            cap_range = ci_settings.HOUSE_CAPACITY_RANGE.get(c.temperament, (4, 6))
             new_object = House(site.x, site.y, capacity=random.randint(*cap_range))
             primary_owner_id = getattr(site, "house_owner_id", None) or c.id
             new_object.owner_ids.add(primary_owner_id)
@@ -579,7 +555,7 @@ class Construction(GoalComponent):
 
         self._react_to_player_construction_help(site, c, ctx)
 
-        c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_DONE
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_DONE
         c.construction_target_id = None
         c.construction_phase = None
         c.pending_construction_cleanup = (site.build_type, new_object)
@@ -611,9 +587,9 @@ class Construction(GoalComponent):
                 res_type, source = alt_type, alt_source
 
         if source is None:
-            c.state = STATE_SEEKING
-            c.goal_text = (INFO_CREATURE_GOAL_GATHER_WOOD if res_type == "wood"
-                           else INFO_CREATURE_GOAL_GATHER_STONE)
+            c.state = ci_settings.STATE_SEEKING
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHER_WOOD if res_type == "wood"
+                           else ci_info.INFO_CREATURE_GOAL_GATHER_STONE)
             if self.roads is not None:
                 route = self.roads.pursue_known_link(res_type, ctx)
                 if route:
@@ -630,7 +606,7 @@ class Construction(GoalComponent):
 
     def _find_orphaned_site(self, ctx, type_filter=None):
         c = self.c
-        if c.gender != GENDER_MALE or c.life_stage != LIFE_STAGE_ADULT:
+        if c.gender != ci_settings.GENDER_MALE or c.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return None
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return None
@@ -640,11 +616,12 @@ class Construction(GoalComponent):
         claimed_ids = {o.construction_target_id for o in ctx.other_creatures
                        if not o.is_dead and o.construction_target_id is not None}
 
+        search_radius = (ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS
+                         * ci_settings.ORPHAN_SITE_SEARCH_RADIUS_FACTOR)
         candidates = [s for s in ctx.construction_sites
                       if s.id not in claimed_ids
                       and (type_filter is None or s.build_type in type_filter)
-                      and math.hypot(c.x - s.x, c.y - s.y)
-                      < CONSTRUCTION_SITE_SEARCH_RADIUS * ORPHAN_SITE_SEARCH_RADIUS_FACTOR]
+                      and math.hypot(c.x - s.x, c.y - s.y) < search_radius]
         if not candidates:
             return None
         return min(candidates, key=lambda s: math.hypot(c.x - s.x, c.y - s.y))
@@ -654,7 +631,7 @@ class Construction(GoalComponent):
         if c.build_help_check_timer > 0:
             c.build_help_check_timer -= ctx.dt
             return None
-        c.build_help_check_timer = random.uniform(*BUILD_HELP_CHECK_INTERVAL)
+        c.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
 
         own_need = self._determine_need(c.known_campfire, ctx)
         if own_need in ("house", "storage"):
@@ -664,24 +641,24 @@ class Construction(GoalComponent):
 
         candidates = [
             o for o in ctx.visible_companions
-            if o.gender == GENDER_MALE and o.life_stage == LIFE_STAGE_ADULT
+            if o.gender == ci_settings.GENDER_MALE and o.life_stage == ci_settings.LIFE_STAGE_ADULT
                and o.construction_target_id is not None and o.construction_phase in ("deposit", "build")
-               and c.social.get_relationship(o) >= BUILD_HELP_MIN_RELATIONSHIP
+               and c.social.get_relationship(o) >= ci_settings.BUILD_HELP_MIN_RELATIONSHIP
                and sites_by_id.get(o.construction_target_id) is not None
                and sites_by_id[o.construction_target_id].build_type not in ("house", "storage")
         ]
         if not candidates:
             return None
-        if random.random() >= BUILD_HELP_JOIN_CHANCE * c.psyche.helpfulness_modifier():
+        if random.random() >= ci_settings.BUILD_HELP_JOIN_CHANCE * c.psyche.helpfulness_modifier():
             return None
 
         target_worker = c.social.best_companion(candidates)
         c.construction_target_id = target_worker.construction_target_id
         c.construction_phase = "deposit"
-        c.social.adjust_mutual_relationship(target_worker, BUILD_HELP_RELATIONSHIP_BONUS)
+        c.social.adjust_mutual_relationship(target_worker, ci_settings.BUILD_HELP_RELATIONSHIP_BONUS)
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CONSTRUCTION_HELP
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_HELP
         c.target = (target_worker.x, target_worker.y)
         return c.target
 
@@ -704,7 +681,7 @@ class Construction(GoalComponent):
                 if owner is not None:
                     target = owner
 
-        bonus = PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX * share
+        bonus = ci_settings.PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX * share
         target.player_relationship = geometry.clamp(
             target.player_relationship + bonus, -100.0, 100.0)
         target.psyche.on_player_construction_help(share)
