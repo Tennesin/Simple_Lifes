@@ -3,12 +3,7 @@
 import math
 import random
 
-from ..ci_settings import (
-    LIFE_STAGE_CHILD, LANDMARK_POSITION_MATCH_TOLERANCE,
-    NEW_CAMPFIRE_JOIN_SEARCH_RADIUS, CONSTRUCTION_SITE_SEARCH_RADIUS,
-    HOUSE_SITE_SCORE_ATTEMPTS, HOUSE_BUILD_OFFSET_RANGE, HOUSE_DEFAULT_SIZE,
-    STORAGE_HOUSE_GAP,
-)
+from .. import ci_settings
 from .patterns import Storage, Construction
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration
@@ -20,11 +15,11 @@ def same_household(creature, owner_id, other_creatures=None):
         return True
     if creature.partner_id == owner_id:
         return True
-    if (creature.life_stage == LIFE_STAGE_CHILD and creature.parent_ids
+    if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.parent_ids
             and owner_id in creature.parent_ids):
         return True
     for other in other_creatures or ():
-        if (other.id == owner_id and other.life_stage == LIFE_STAGE_CHILD
+        if (other.id == owner_id and other.life_stage == ci_settings.LIFE_STAGE_CHILD
                 and other.parent_ids and creature.id in other.parent_ids):
             return True
     return False
@@ -64,10 +59,9 @@ class PrivateStorage(Storage):
             return None
         return self._pursue_supply(field, ctx)
 
-
 class PrivateConstruction(Construction):
     _OWNER_ATTR_BY_TYPE = {"storage": "storage_owner_id", "house": "house_owner_id"}
-    CAMPFIRE_ANCHOR_MERGE_RADIUS = LANDMARK_POSITION_MATCH_TOLERANCE
+    CAMPFIRE_ANCHOR_MERGE_RADIUS = ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE
 
     def _site_belongs_to(self, site, ctx):
         owner_attr = self._OWNER_ATTR_BY_TYPE.get(site.build_type)
@@ -85,7 +79,7 @@ class PrivateConstruction(Construction):
         if campfire_pos is None:
             nearby_campfire_site = any(
                 s.build_type == "campfire"
-                and math.hypot(c.x - s.x, c.y - s.y) < NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
+                and math.hypot(c.x - s.x, c.y - s.y) < ci_settings.NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
                 for s in sites
             )
             if not nearby_campfire_site:
@@ -108,7 +102,7 @@ class PrivateConstruction(Construction):
         if owned_field is None:
             owned_site = next((s for s in sites
                                if s.build_type == "storage"
-                               and math.hypot(c.x - s.x, c.y - s.y) < CONSTRUCTION_SITE_SEARCH_RADIUS
+                               and math.hypot(c.x - s.x, c.y - s.y) < ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS
                                and self._site_belongs_to(s, ctx)), None)
             if owned_site is None:
                 return "storage"
@@ -154,9 +148,9 @@ class PrivateConstruction(Construction):
 
     def _score_best_house_site_near(self, anchor, biome_grid, ctx):
         best_point, best_score = None, None
-        for _ in range(HOUSE_SITE_SCORE_ATTEMPTS):
+        for _ in range(ci_settings.HOUSE_SITE_SCORE_ATTEMPTS):
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(*HOUSE_BUILD_OFFSET_RANGE)
+            dist = random.uniform(*ci_settings.HOUSE_BUILD_OFFSET_RANGE)
             point = geometry.clamped_point(anchor[0], anchor[1], angle, dist)
             if not self._point_clear(point, "house", biome_grid, ctx):
                 continue
@@ -189,7 +183,7 @@ class PrivateConstruction(Construction):
         for site in ctx.construction_sites:
             if site.build_type != build_type:
                 continue
-            if math.hypot(c.x - site.x, c.y - site.y) >= CONSTRUCTION_SITE_SEARCH_RADIUS:
+            if math.hypot(c.x - site.x, c.y - site.y) >= ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS:
                 continue
             if self._site_belongs_to(site, ctx):
                 if getattr(site, owner_attr, None) is None:

@@ -1,8 +1,7 @@
 import math
 import random
 
-from ..ci_settings import *
-from ..ci_info import *
+from .. import ci_settings, ci_info
 from .patterns import (
     GoalComponent, ResourceActions, Roads, SurvivalNeeds, CorpseHandling,
     EmpathyHelp, Feeding, SocialResponse, PartnerBond,
@@ -25,7 +24,7 @@ class TerritoryDefense(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        if c.gender != TERRITORY_ENABLED_GENDER:
+        if c.gender != ci_settings.TERRITORY_ENABLED_GENDER:
             return [None]
 
         cached_intrusion = None
@@ -59,18 +58,18 @@ class TerritoryDefense(GoalComponent):
             still_near_object = False
             if intruder is not None and obj is not None:
                 still_near_object = (
-                    math.hypot(intruder.x - obj.x, intruder.y - obj.y)
-                    < TERRITORY_INTRUSION_RADIUS * TERRITORY_PURSUIT_EXIT_RADIUS_FACTOR
+                        math.hypot(intruder.x - obj.x, intruder.y - obj.y)
+                        < ci_settings.TERRITORY_INTRUSION_RADIUS * ci_settings.TERRITORY_PURSUIT_EXIT_RADIUS_FACTOR
                 )
                 c.territory_pursuit_last_pos = (intruder.x, intruder.y)
 
             keep_pursuing = still_near_object or c.territory_pursuit_commit_timer > 0
 
             if keep_pursuing and c.territory_pursuit_last_pos is not None:
-                c.state = STATE_SEEKING
-                c.goal_text = INFO_CREATURE_GOAL_TERRITORY_GUARD
+                c.state = ci_settings.STATE_SEEKING
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_TERRITORY_GUARD
                 target_pos = c.territory_pursuit_last_pos
-                if math.hypot(c.x - target_pos[0], c.y - target_pos[1]) > TERRITORY_GUARD_APPROACH_DISTANCE:
+                if math.hypot(c.x - target_pos[0], c.y - target_pos[1]) > ci_settings.TERRITORY_GUARD_APPROACH_DISTANCE:
                     c.target = target_pos
                 else:
                     c.target = (c.x, c.y)
@@ -80,9 +79,6 @@ class TerritoryDefense(GoalComponent):
             c.territory_pursuit_obj = None
             c.territory_pursuit_last_pos = None
 
-        # ---------- НОВОЕ: используем то, что уже посчитано в consider(),
-        # и пересчитываем find_intrusion только если сюда попали без кэша
-        # (например, из ветки "committed", где до этого intrusion не искали) ----------
         intrusion = cached_intrusion if cached_intrusion is not None else c.territory.find_intrusion(
             visible_bushes, visible_water, visible_companions)
         if intrusion is None:
@@ -96,11 +92,11 @@ class TerritoryDefense(GoalComponent):
         c.territory_pursuit_target_id = intruder.id
         c.territory_pursuit_obj = obj
         c.territory_pursuit_last_pos = (intruder.x, intruder.y)
-        c.territory_pursuit_commit_timer = TERRITORY_PURSUIT_COMMIT_TIME
+        c.territory_pursuit_commit_timer = ci_settings.TERRITORY_PURSUIT_COMMIT_TIME
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_TERRITORY_GUARD
-        if c.distance_to(intruder) > TERRITORY_GUARD_APPROACH_DISTANCE:
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_TERRITORY_GUARD
+        if c.distance_to(intruder) > ci_settings.TERRITORY_GUARD_APPROACH_DISTANCE:
             c.target = (intruder.x, intruder.y)
         else:
             c.target = (c.x, c.y)
@@ -124,7 +120,7 @@ class PubertyCourtship(GoalComponent):
             return [None]
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return [None]
-        wellbeing_threshold = FAMILY_MIN_WELLBEING - PUBERTY_WELLBEING_DISCOUNT
+        wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
         if c.needs.wellbeing_score() < wellbeing_threshold:
             return [None]
         if c.puberty_courtship_cooldown > 0:
@@ -172,14 +168,14 @@ class PubertyCourtship(GoalComponent):
 
     def _pick_new_target(self, ctx):
         c = self.c
-        wellbeing_threshold = FAMILY_MIN_WELLBEING - PUBERTY_WELLBEING_DISCOUNT
-        my_threshold = (FAMILY_MIN_RELATIONSHIP - PUBERTY_PAIR_RELATIONSHIP_DISCOUNT
+        wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
+        my_threshold = (ci_settings.FAMILY_MIN_RELATIONSHIP - ci_settings.PUBERTY_PAIR_RELATIONSHIP_DISCOUNT
                         - c.psyche.pairing_relationship_discount())
 
         candidates = [
             o for o in ctx.visible_companions
             if o.gender != c.gender
-               and o.life_stage == LIFE_STAGE_ADULT
+               and o.life_stage == ci_settings.LIFE_STAGE_ADULT
                and o.partner_id is None
                and not o.is_dead and not o.is_sleeping
                and not o.panic_active and o.fear_timer <= 0
@@ -194,15 +190,15 @@ class PubertyCourtship(GoalComponent):
 
     def _give_up_on(self, target_id):
         c = self.c
-        c.puberty_courtship_avoid[target_id] = random.uniform(*PUBERTY_COURTSHIP_REJECT_COOLDOWN)
+        c.puberty_courtship_avoid[target_id] = random.uniform(*ci_settings.PUBERTY_COURTSHIP_REJECT_COOLDOWN)
         c.puberty_courtship_fail_streak += 1
         self._reset_courtship()
 
-        if c.puberty_courtship_fail_streak >= PUBERTY_COURTSHIP_MAX_FAIL_STREAK:
+        if c.puberty_courtship_fail_streak >= ci_settings.PUBERTY_COURTSHIP_MAX_FAIL_STREAK:
             c.puberty_courtship_fail_streak = 0
-            c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_LONG_COOLDOWN)
+            c.puberty_courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_LONG_COOLDOWN)
         else:
-            c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+            c.puberty_courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_RECHECK_INTERVAL)
 
     # ---------- Основная логика тика ----------
 
@@ -216,7 +212,7 @@ class PubertyCourtship(GoalComponent):
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return None
 
-        wellbeing_threshold = FAMILY_MIN_WELLBEING - PUBERTY_WELLBEING_DISCOUNT
+        wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
         if c.needs.wellbeing_score() < wellbeing_threshold:
             return None
 
@@ -230,21 +226,21 @@ class PubertyCourtship(GoalComponent):
         if target is None:
             target = self._pick_new_target(ctx)
             if target is None:
-                c.puberty_courtship_cooldown = random.uniform(*PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+                c.puberty_courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_RECHECK_INTERVAL)
                 return None
             c.puberty_courtship_target_id = target.id
             c.puberty_courtship_timer = 0.0
-            c.puberty_courtship_deadline = random.uniform(*PUBERTY_COURTSHIP_ATTEMPT_DURATION)
+            c.puberty_courtship_deadline = random.uniform(*ci_settings.PUBERTY_COURTSHIP_ATTEMPT_DURATION)
 
         c.puberty_courtship_timer += dt
         if c.puberty_courtship_timer > c.puberty_courtship_deadline:
             self._give_up_on(target.id)
             return None
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_PUBERTY_COURT
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_PUBERTY_COURT
 
-        if c.distance_to(target) > TALK_DISTANCE:
+        if c.distance_to(target) > ci_settings.TALK_DISTANCE:
             c.target = (target.x, target.y)
         else:
             c.target = (c.x, c.y)
@@ -269,27 +265,27 @@ class AdultCuriosityStrategy(CuriosityStrategy):
             return None
 
         c.curiosity_active = True
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
 
         if interested_hazards:
             target_obj = min(interested_hazards, key=c.distance_to)
             dx = c.x - target_obj.x
             dy = c.y - target_obj.y
             d = math.hypot(dx, dy)
-            if d <= CURIOSITY_HAZARD_STUDY_DISTANCE:
+            if d <= ci_settings.CURIOSITY_HAZARD_STUDY_DISTANCE:
                 c.memory.add_memory("spike", target_obj.x, target_obj.y, importance=-1.5)
                 c.knowledge["spike"] = True
-                c.goal_text = INFO_CREATURE_GOAL_CURIOSITY_HAZARD_KNOWN
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_CURIOSITY_HAZARD_KNOWN
                 c.target = (c.x, c.y)
                 return c.target
-            ratio = CURIOSITY_HAZARD_STUDY_DISTANCE / d
+            ratio = ci_settings.CURIOSITY_HAZARD_STUDY_DISTANCE / d
             approach_point = (target_obj.x + dx * ratio, target_obj.y + dy * ratio)
-            c.goal_text = INFO_CREATURE_GOAL_CURIOSITY_HAZARD_STUDY
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CURIOSITY_HAZARD_STUDY
             c.target = approach_point
             return approach_point
 
         target_type, target_obj = min(interested_harmless, key=lambda p: c.distance_to(p[1]))
-        c.goal_text = INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN
         c.target = (target_obj.x, target_obj.y)
         return c.target
 

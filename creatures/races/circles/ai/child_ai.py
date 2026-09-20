@@ -8,8 +8,7 @@ if TYPE_CHECKING:
 import math
 import random
 
-from ..ci_settings import *
-from ..ci_info import *
+from .. import ci_settings, ci_info
 from .private_storage import field_belongs_to
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration, pick_best, scale, lookup_creature
@@ -66,7 +65,7 @@ class _ChildSharedUtilsMixin:
     def _find_elder_guardian(child_id, other_creatures):
         return next(
             (o for o in other_creatures
-             if not o.is_dead and o.life_stage == LIFE_STAGE_OLD
+             if not o.is_dead and o.life_stage == ci_settings.LIFE_STAGE_OLD
              and getattr(o, "elder_ward_id", None) == child_id),
             None
         )
@@ -79,9 +78,10 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
     def _consider_distress(self, visible_companions, biome_grid=None):
         c = self.c
-        if c.child_distress_timer <= CHILD_DISTRESS_THRESHOLD:
+        if c.child_distress_timer <= ci_settings.CHILD_DISTRESS_THRESHOLD:
             return None
-        urgency = scale(c.child_distress_timer - CHILD_DISTRESS_THRESHOLD, 0, CHILD_DISTRESS_THRESHOLD)
+        urgency = scale(c.child_distress_timer - ci_settings.CHILD_DISTRESS_THRESHOLD,
+                        0, ci_settings.CHILD_DISTRESS_THRESHOLD)
         score = SCORE_CHILD_DISTRESS_BASE + urgency * SCORE_CHILD_DISTRESS_MAX_BONUS
 
         def execute():
@@ -91,9 +91,9 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
     def _handle_distress(self, visible_companions, biome_grid=None):
         c = self.c
-        c.state = STATE_PANIC
+        c.state = ci_settings.STATE_PANIC
         c.panic_active = True
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_DISTRESS
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_DISTRESS
 
         parent = self._find_visible_parent(c.parent_ids, visible_companions)
         if parent is not None:
@@ -150,8 +150,8 @@ class _ChildFeedInterruptMixin(_ChildAIMixinBase):
         if c.following_child_road is not None:
             self._end_child_road_play()
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_AWAIT_FEEDING
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_AWAIT_FEEDING
         c.target = (c.x, c.y)
         return c.target
 
@@ -166,7 +166,7 @@ class _ChildSleepMixin(_ChildAIMixinBase):
         c = self.c
         if not c.seeking_sleep:
             return None
-        deficit = scale(ENERGY_LOW_THRESHOLD - c.energy, 0, ENERGY_LOW_THRESHOLD)
+        deficit = scale(ci_settings.ENERGY_LOW_THRESHOLD - c.energy, 0, ci_settings.ENERGY_LOW_THRESHOLD)
         score = SCORE_CHILD_SLEEP_BASE + deficit * SCORE_CHILD_SLEEP_MAX_BONUS
 
         def execute():
@@ -191,38 +191,42 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
     def maybe_signal_parent(self, visible_companions):
         c = self.c
-        if not (c.hunger < CHILD_FEED_HUNGER_THRESHOLD or c.thirst < CHILD_FEED_THIRST_THRESHOLD):
+        if not (c.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
+                or c.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD):
             return
         parent = self._find_visible_parent(c.parent_ids, visible_companions)
         if parent is not None:
             parent.urgent_child_id = c.id
-            parent.urgent_child_timer = CHILD_URGENT_SIGNAL_HOLD_TIME
+            parent.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
             return
 
         guardian = next(
             (o for o in visible_companions
-             if o.life_stage == LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id),
+             if o.life_stage == ci_settings.LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id),
             None
         )
         if guardian is not None:
             guardian.urgent_child_id = c.id
-            guardian.urgent_child_timer = CHILD_URGENT_SIGNAL_HOLD_TIME
+            guardian.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
 
     def _consider_hunger_signal(self, visible_companions, other_creatures, storage_fields, houses,
                                  biome_grid=None):
         c = self.c
-        if not (c.hunger < CHILD_FEED_HUNGER_THRESHOLD or c.thirst < CHILD_FEED_THIRST_THRESHOLD):
+        if not (c.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
+                or c.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD):
             return None
 
         self.maybe_signal_parent(visible_companions)
 
-        hunger_deficit = scale(CHILD_FEED_HUNGER_THRESHOLD - c.hunger, 0, CHILD_FEED_HUNGER_THRESHOLD)
-        thirst_deficit = scale(CHILD_FEED_THIRST_THRESHOLD - c.thirst, 0, CHILD_FEED_THIRST_THRESHOLD)
+        hunger_deficit = scale(ci_settings.CHILD_FEED_HUNGER_THRESHOLD - c.hunger,
+                               0, ci_settings.CHILD_FEED_HUNGER_THRESHOLD)
+        thirst_deficit = scale(ci_settings.CHILD_FEED_THIRST_THRESHOLD - c.thirst,
+                               0, ci_settings.CHILD_FEED_THIRST_THRESHOLD)
         deficit = max(hunger_deficit, thirst_deficit)
         score = SCORE_CHILD_HUNGER_BASE + deficit * SCORE_CHILD_HUNGER_MAX_BONUS
 
         parent = self._find_visible_parent(c.parent_ids, visible_companions)
-        if parent is not None and c.distance_to(parent) < TALK_DISTANCE:
+        if parent is not None and c.distance_to(parent) < ci_settings.TALK_DISTANCE:
             score = max(score, SCORE_CHILD_FREE_TIME + 5.0)
 
         def execute():
@@ -234,23 +238,24 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
     def _handle_child_hunger_signal(self, visible_companions, other_creatures, storage_fields, houses,
                                      biome_grid=None):
         c = self.c
-        if not (c.hunger < CHILD_FEED_HUNGER_THRESHOLD or c.thirst < CHILD_FEED_THIRST_THRESHOLD):
+        if not (c.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
+                or c.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD):
             return None
 
         field = self._find_family_storage_field(storage_fields, other_creatures)
         if field is not None:
-            wants_fruit = c.hunger < CHILD_FEED_HUNGER_THRESHOLD and field.fruits > 0
-            wants_water = c.thirst < CHILD_FEED_THIRST_THRESHOLD and field.water > 0
+            wants_fruit = c.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD and field.fruits > 0
+            wants_water = c.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD and field.water > 0
             if wants_fruit or wants_water:
-                c.state = STATE_SEEKING
-                c.goal_text = INFO_CREATURE_GOAL_CHILD_SEEK_STORAGE
+                c.state = ci_settings.STATE_SEEKING
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_SEEK_STORAGE
                 c.target = (field.x, field.y)
                 return c.target
 
         parent = self._find_visible_parent(c.parent_ids, visible_companions)
-        if parent is not None and c.distance_to(parent) < TALK_DISTANCE:
-            c.state = STATE_SEEKING
-            c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+        if parent is not None and c.distance_to(parent) < ci_settings.TALK_DISTANCE:
+            c.state = ci_settings.STATE_SEEKING
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
             c.target = (c.x, c.y)
             return c.target
 
@@ -261,25 +266,25 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             caretaker_house = self._find_caretaker_house(other_creatures, houses, guardian)
             if caretaker_house is not None:
                 dist = math.hypot(c.x - caretaker_house.x, c.y - caretaker_house.y)
-                c.state = STATE_SEEKING
-                if dist > HOUSE_SLEEP_ARRIVAL_DISTANCE:
-                    c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_GO_HOME
+                c.state = ci_settings.STATE_SEEKING
+                if dist > ci_settings.HOUSE_SLEEP_ARRIVAL_DISTANCE:
+                    c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_HUNGER_GO_HOME
                     c.target = (caretaker_house.x, caretaker_house.y)
                 else:
-                    c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+                    c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
                     c.target = (c.x, c.y)
                 return c.target
 
             # ---------- Опекун есть, но дома пока нет - просто ждём/ищем поблизости ----------
-            c.state = STATE_SEEKING
-            c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+            c.state = ci_settings.STATE_SEEKING
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
             c.target = self.instincts.pursue_search_target(biome_grid=biome_grid)
             return c.target
 
         # ---------- Настоящий сирота: некому идти домой - тянется к костру ----------
         campfire_pos = self.instincts.nearest_known_campfire()
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
         if campfire_pos:
             c.target = campfire_pos
         else:
@@ -330,14 +335,14 @@ class _ChildExploreMixin(_ChildAIMixinBase):
         c = self.c
 
         def execute():
-            c.goal_text = INFO_CREATURE_GOAL_CHILD_EXPLORE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_EXPLORE
             reached = (c.target is None or math.hypot(c.x - c.target[0], c.y - c.target[1]) < 12)
             if reached or c.decision_timer <= 0:
                 angle = random.uniform(0, 2 * math.pi)
-                dist = random.uniform(*CHILD_EXPLORE_DISTANCE)
+                dist = random.uniform(*ci_settings.CHILD_EXPLORE_DISTANCE)
                 point = geometry.clamped_point(c.x, c.y, angle, dist)
                 c.target = self.instincts.avoid_sea(point, biome_grid)
-                c.decision_timer = random.uniform(*EXPLORE_TIMER[TEMPERAMENT_NORMAL])
+                c.decision_timer = random.uniform(*ci_settings.EXPLORE_TIMER[ci_settings.TEMPERAMENT_NORMAL])
             return c.target
 
         return Consideration("child_explore", SCORE_CHILD_EXPLORE, execute)
@@ -361,10 +366,10 @@ class _ChildHomeMixin(_ChildAIMixinBase):
 
         def execute():
             if not c.is_in_own_house(houses):
-                c.goal_text = INFO_CREATURE_GOAL_IDLE_GO_HOME
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_IDLE_GO_HOME
                 c.target = (house.x, house.y)
             else:
-                c.goal_text = INFO_CREATURE_GOAL_IDLE_AT_HOME
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_IDLE_AT_HOME
                 c.target = (c.x, c.y)
             return c.target
 
@@ -392,25 +397,25 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
             return None
 
         def execute():
-            c.play_cooldown = random.uniform(*CHILD_PLAY_CHECK_INTERVAL)
+            c.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
             started_tag = False
 
-            if c.temperament != TEMPERAMENT_LAZY:
+            if c.temperament != ci_settings.TEMPERAMENT_LAZY:
                 other_children = [o for o in visible_companions
-                                  if o.life_stage == LIFE_STAGE_CHILD and o.play_target_id is None
-                                  and o.temperament != TEMPERAMENT_LAZY]
-                if other_children and random.random() < CHILD_PLAY_CHANCE:
+                                  if o.life_stage == ci_settings.LIFE_STAGE_CHILD and o.play_target_id is None
+                                  and o.temperament != ci_settings.TEMPERAMENT_LAZY]
+                if other_children and random.random() < ci_settings.CHILD_PLAY_CHANCE:
                     playmate = min(other_children, key=c.distance_to)
                     self._start_child_tag_game(playmate)
                     started_tag = True
                     return self._pursue_child_tag_game(visible_companions, dt, biome_grid=biome_grid)
 
-            if not started_tag and visible_roads and random.random() < CHILD_ROAD_RUN_CHANCE:
+            if not started_tag and visible_roads and random.random() < ci_settings.CHILD_ROAD_RUN_CHANCE:
                 safe_roads = [r for r in visible_roads if c.known_roads.get(r.id) != "dangerous"]
                 if safe_roads:
                     road = random.choice(safe_roads)
-                    c.state = STATE_SEEKING
-                    c.goal_text = INFO_CREATURE_GOAL_CHILD_PLAY_ROAD
+                    c.state = ci_settings.STATE_SEEKING
+                    c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_PLAY_ROAD
                     point = random.choice(road.points)
                     c.target = point
                     return point
@@ -428,37 +433,38 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
     def _pursue_child_tag_game(self, visible_companions, dt, biome_grid=None):
         c = self.c
         partner = next((o for o in visible_companions if o.id == c.play_target_id), None)
-        if partner is None or partner.is_dead or partner.life_stage != LIFE_STAGE_CHILD:
+        if partner is None or partner.is_dead or partner.life_stage != ci_settings.LIFE_STAGE_CHILD:
             self._end_child_tag_game()
             return None
 
         c.play_timer += dt
-        if c.play_timer >= CHILD_PLAY_MAX_DURATION:
+        if c.play_timer >= ci_settings.CHILD_PLAY_MAX_DURATION:
             self._end_child_tag_game(partner)
             return None
 
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_PLAY_TAG
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_PLAY_TAG
 
-        if c.temperament == TEMPERAMENT_NORMAL:
-            c.speed_factor = SPEED_MULTIPLIER[TEMPERAMENT_EXPLORER] / SPEED_MULTIPLIER[TEMPERAMENT_NORMAL]
+        if c.temperament == ci_settings.TEMPERAMENT_NORMAL:
+            c.speed_factor = (ci_settings.SPEED_MULTIPLIER[ci_settings.TEMPERAMENT_EXPLORER]
+                              / ci_settings.SPEED_MULTIPLIER[ci_settings.TEMPERAMENT_NORMAL])
 
         anchor = self.instincts.nearest_known_campfire()
 
         if c.play_role == "chaser":
             dist = c.distance_to(partner)
-            if dist < CHILD_TAG_DISTANCE:
+            if dist < ci_settings.CHILD_TAG_DISTANCE:
                 partner.play_target_id = c.id
                 partner.play_role = "chaser"
                 partner.play_timer = c.play_timer
                 c.play_role = "runner"
-                raw_target = c.flee_point((partner.x, partner.y), CHILD_FLEE_DISTANCE)
+                raw_target = c.flee_point((partner.x, partner.y), ci_settings.CHILD_FLEE_DISTANCE)
                 c.target = self._confine_play_point(raw_target, anchor, biome_grid)
                 return c.target
             c.target = (partner.x, partner.y)
             return c.target
 
-        raw_target = c.flee_point((partner.x, partner.y), CHILD_FLEE_DISTANCE)
+        raw_target = c.flee_point((partner.x, partner.y), ci_settings.CHILD_FLEE_DISTANCE)
         c.target = self._confine_play_point(raw_target, anchor, biome_grid)
         return c.target
 
@@ -471,8 +477,8 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
             ax, ay = anchor
             px, py = point
             dist = math.hypot(px - ax, py - ay)
-            if dist > CAMPFIRE_RADIUS:
-                ratio = (CAMPFIRE_RADIUS * CHILD_PLAY_TERRITORY_PULLBACK) / dist
+            if dist > ci_settings.CAMPFIRE_RADIUS:
+                ratio = (ci_settings.CAMPFIRE_RADIUS * CHILD_PLAY_TERRITORY_PULLBACK) / dist
                 point = (ax + (px - ax) * ratio, ay + (py - ay) * ratio)
         return self.instincts.avoid_sea(point, biome_grid)
 
@@ -481,13 +487,12 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
         c.play_target_id = None
         c.play_role = None
         c.play_timer = 0.0
-        c.play_cooldown = random.uniform(*CHILD_PLAY_CHECK_INTERVAL)
+        c.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
         if partner is not None:
             partner.play_target_id = None
             partner.play_role = None
             partner.play_timer = 0.0
-            partner.play_cooldown = random.uniform(*CHILD_PLAY_CHECK_INTERVAL)
-
+            partner.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
 
 # =========================================================================
 # Домен: игра на детской дороге (пройти туда-обратно + скука от повторов)
@@ -499,7 +504,6 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
         c = self.c
 
         self._tick_child_road_disinterest(dt)
-
         if c.following_child_road is not None:
             def execute():
                 return self._pursue_child_road_play(dt)
@@ -529,8 +533,8 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
         c.following_child_road = road
         c.child_road_progress, c.child_road_direction = PathProgressTracker.start(road.points, c.x, c.y)
         c.child_road_entry_reached = False
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH
         c.target = road.points[c.child_road_progress]
         return c.target
 
@@ -555,10 +559,10 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
                 return None
             target_point = PathProgressTracker.target_point(road.points, c.child_road_progress)
 
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
         c.target = target_point
-        c.goal_text = (INFO_CREATURE_GOAL_CHILD_ROAD_PLAY if c.child_road_entry_reached
-                       else INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH)
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_PLAY if c.child_road_entry_reached
+                       else ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH)
         c.following_road_active = c.child_road_entry_reached
 
         if c.child_road_entry_reached:
@@ -576,13 +580,13 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
         c.child_road_progress = 0
         c.child_road_entry_reached = False
         c.following_road_active = False
-        c.child_road_play_cooldown = random.uniform(*CHILD_ROAD_PLAY_COOLDOWN)
+        c.child_road_play_cooldown = random.uniform(*ci_settings.CHILD_ROAD_PLAY_COOLDOWN)
 
     def _register_child_road_play_session(self, road):
         c = self.c
         count = c.child_road_play_counts.get(road.id, 0) + 1
-        if count >= CHILD_ROAD_DISINTEREST_THRESHOLD:
-            c.child_road_disinterest[road.id] = CHILD_ROAD_DISINTEREST_DURATION
+        if count >= ci_settings.CHILD_ROAD_DISINTEREST_THRESHOLD:
+            c.child_road_disinterest[road.id] = ci_settings.CHILD_ROAD_DISINTEREST_DURATION
             c.child_road_play_counts[road.id] = 0
         else:
             c.child_road_play_counts[road.id] = count
@@ -614,7 +618,7 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
     def decide(self, visible_companions, visible_roads, storage_fields, other_creatures, dt,
                visible_child_roads=None, biome_grid=None, houses=None):
         c = self.c
-        c.state = STATE_CALM
+        c.state = ci_settings.STATE_CALM
         visible_child_roads = visible_child_roads or []
         houses = houses or []
 
@@ -626,7 +630,7 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
         near_caretaker = False
         if not near_fire and not near_parent:
             near_caretaker = any(
-                o.life_stage == LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id
+                o.life_stage == ci_settings.LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id
                 for o in visible_companions
             )
 
@@ -635,7 +639,7 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
         else:
             c.child_distress_timer += dt
 
-        if c.energy < ENERGY_LOW_THRESHOLD:
+        if c.energy < ci_settings.ENERGY_LOW_THRESHOLD:
             c.seeking_sleep = True
 
         considerations = [

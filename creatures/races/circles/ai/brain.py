@@ -5,9 +5,8 @@ import random
 from collections import namedtuple
 from typing import TYPE_CHECKING
 
-from settings import WALL_VISION_BLOCK_MARGIN
-from ..ci_settings import *
-from ..ci_info import *
+import settings
+from .. import ci_settings, ci_info
 from ....all_needed import geometry, filter_same_race
 from ....all_needed.weak_owner import WeakOwnerMixin
 from .circles_instincts import UniversalInstincts
@@ -72,7 +71,7 @@ class _TimerTickMixin(_BrainMixinBase):
             c.partner_reunite_cooldown -= dt
         if c.graveyard_alert_timer > 0:
             c.graveyard_alert_timer -= dt
-        if getattr(c, 'state', None) == STATE_PANIC:
+        if getattr(c, 'state', None) == ci_settings.STATE_PANIC:
             c.panic_duration = getattr(c, 'panic_duration', 0.0) + dt
         else:
             c.panic_duration = 0.0
@@ -99,20 +98,21 @@ class _PerceptionMixin(_BrainMixinBase):
         walls, fences, spatial_grids = ctx.walls, ctx.fences, ctx.spatial_grids
         trees, stones, dt = ctx.trees, ctx.stones, ctx.dt
 
-        reaction_distance = (LAZY_RISK_REACTION_DISTANCE if c.temperament == TEMPERAMENT_LAZY
-                             else DEFAULT_RISK_REACTION_DISTANCE)
+        reaction_distance = (ci_settings.LAZY_RISK_REACTION_DISTANCE
+                             if c.temperament == ci_settings.TEMPERAMENT_LAZY
+                             else ci_settings.DEFAULT_RISK_REACTION_DISTANCE)
         vision_radius = c.aging.effective_vision_radius()
 
         nearby_wall_polylines = [
             w.points for w, bx, by, br in ctx.wall_bounds
-            if math.hypot(c.x - bx, c.y - by) < vision_radius + WALL_VISION_BLOCK_MARGIN + br
+            if math.hypot(c.x - bx, c.y - by) < vision_radius + settings.WALL_VISION_BLOCK_MARGIN + br
         ]
 
         nearby_blocking_polylines = list(nearby_wall_polylines)
         if not c.can_jump_fences():
             nearby_blocking_polylines += [
                 f.points for f, bx, by, br in ctx.fence_bounds
-                if math.hypot(c.x - bx, c.y - by) < vision_radius + WALL_VISION_BLOCK_MARGIN + br
+                if math.hypot(c.x - bx, c.y - by) < vision_radius + settings.WALL_VISION_BLOCK_MARGIN + br
             ]
 
         def _visible(obj):
@@ -208,13 +208,13 @@ class _ReflexMixin(_BrainMixinBase):
             c.sleep_spot = None
             return False
 
-        c.state = STATE_SLEEP
+        c.state = ci_settings.STATE_SLEEP
         if c.sleep_forced:
-            c.goal_text = INFO_CREATURE_GOAL_SLEEP_FORCED
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_FORCED
         elif in_house:
-            c.goal_text = INFO_CREATURE_GOAL_SLEEP_AT_HOME
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_AT_HOME
         else:
-            c.goal_text = INFO_CREATURE_GOAL_SLEEP_FIRE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_FIRE
         c.target = (c.x, c.y)
         return True
 
@@ -227,9 +227,9 @@ class _ReflexMixin(_BrainMixinBase):
 
     def _flee_from_fear(self):
         c = self.c
-        c.state = STATE_PANIC
+        c.state = ci_settings.STATE_PANIC
         c.panic_active = True
-        c.goal_text = INFO_CREATURE_GOAL_PANIC_FLEE
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_PANIC_FLEE
         self._interrupt_child_road_play()
         goal = c.flee_point(c.fear_source, 130)
         c.target = goal
@@ -254,40 +254,42 @@ class _DispatchMixin(_LifeStageDispatchBase):
 
     def _fallback_goal(self, dt, biome_grid, ctx=None):
         c = self.c
-        c.state = STATE_CALM
+        c.state = ci_settings.STATE_CALM
 
         houses = ctx.race_collections.get("houses", []) if ctx is not None else []
         house = next((h for h in houses if h.id == c.home_id), None) if c.home_id is not None else None
         if house is not None:
             if not c.is_in_own_house(houses):
-                c.goal_text = INFO_CREATURE_GOAL_IDLE_GO_HOME
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_IDLE_GO_HOME
                 c.target = (house.x, house.y)
                 return c.target
-            c.goal_text = INFO_CREATURE_GOAL_IDLE_AT_HOME
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_IDLE_AT_HOME
             c.target = (c.x, c.y)
             return c.target
 
         if c.freeze_timer > 0:
             c.freeze_timer -= dt
-            c.goal_text = INFO_CREATURE_GOAL_FROZEN
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_FROZEN
             return None
 
         reached = (c.target is None or
                    math.hypot(c.x - c.target[0], c.y - c.target[1]) < 12)
         if reached or c.decision_timer <= 0:
-            if random.random() < FREEZE_CHANCE.get(c.temperament, 0.2) * c.psyche.freeze_modifier():
-                c.freeze_timer = random.uniform(*FREEZE_DURATION[c.temperament])
+            if random.random() < ci_settings.FREEZE_CHANCE.get(c.temperament, 0.2) * c.psyche.freeze_modifier():
+                c.freeze_timer = random.uniform(*ci_settings.FREEZE_DURATION[c.temperament])
                 c.target = None
-                c.goal_text = INFO_CREATURE_GOAL_FROZEN
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_FROZEN
                 return None
-            c.goal_text = (INFO_CREATURE_GOAL_LAZY_REST if c.temperament == TEMPERAMENT_LAZY
-                           else INFO_CREATURE_GOAL_EXPLORE)
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_LAZY_REST
+                           if c.temperament == ci_settings.TEMPERAMENT_LAZY
+                           else ci_info.INFO_CREATURE_GOAL_EXPLORE)
             c.target = self.instincts.explore(biome_grid=biome_grid)
-            c.decision_timer = random.uniform(*EXPLORE_TIMER[c.temperament])
+            c.decision_timer = random.uniform(*ci_settings.EXPLORE_TIMER[c.temperament])
             return c.target
 
-        c.goal_text = (INFO_CREATURE_GOAL_LAZY_REST if c.temperament == TEMPERAMENT_LAZY
-                       else INFO_CREATURE_GOAL_EXPLORE)
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_LAZY_REST
+                       if c.temperament == ci_settings.TEMPERAMENT_LAZY
+                       else ci_info.INFO_CREATURE_GOAL_EXPLORE)
         return c.target
 
     def _is_in_own_house(self, ctx):
@@ -310,7 +312,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
         biome_grid = ctx.biome_grid
         campfires = ctx.campfires
 
-        if c.life_stage == LIFE_STAGE_CHILD:
+        if c.life_stage == ci_settings.LIFE_STAGE_CHILD:
             goal = self.child.decide(perception.visible_companions, perception.visible_roads, storage_fields,
                                      other_creatures, dt, visible_child_roads=perception.visible_child_roads,
                                      biome_grid=biome_grid, houses=houses)
@@ -348,7 +350,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
                 all_grass=ctx.grass,
             )
 
-            if c.life_stage == LIFE_STAGE_OLD:
+            if c.life_stage == ci_settings.LIFE_STAGE_OLD:
                 goal = self.older.decide(dctx)
             else:
                 goal = self.adult.decide(dctx)
@@ -378,7 +380,7 @@ class CreatureBrain(WeakOwnerMixin, _TimerTickMixin, _PerceptionMixin, _ReflexMi
 
         perception = self._gather_perception(ctx)
 
-        if c.life_stage == LIFE_STAGE_CHILD:
+        if c.life_stage == ci_settings.LIFE_STAGE_CHILD:
             self.child.maybe_signal_parent(perception.visible_companions)
 
         in_house = self._is_in_own_house(ctx)

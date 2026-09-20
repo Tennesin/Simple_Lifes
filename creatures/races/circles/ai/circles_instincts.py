@@ -1,9 +1,8 @@
 import math
 import random
 
-from settings import *
-from ..ci_settings import *
-from ..ci_info import *
+import settings
+from .. import ci_settings, ci_info
 from ....all_needed import geometry
 
 # =========================================================================
@@ -16,9 +15,9 @@ class _CorpseHandlingInstinctMixin:
         if corpse.being_carried_by is not None or corpse.burial_claimant_id is not None:
             return
         for other in visible_companions:
-            if other.life_stage == LIFE_STAGE_OLD:
+            if other.life_stage == ci_settings.LIFE_STAGE_OLD:
                 other.graveyard_alert_pos = (corpse.x, corpse.y)
-                other.graveyard_alert_timer = GRAVEYARD_ALERT_HOLD_TIME
+                other.graveyard_alert_timer = ci_settings.GRAVEYARD_ALERT_HOLD_TIME
 
     def pursue_corpse_burial(self, visible_corpses, graveyards):
         c = self.c
@@ -49,9 +48,9 @@ class _CorpseHandlingInstinctMixin:
 
     def _approach_claimed_corpse(self, corpse, graveyards):
         c = self.c
-        c.state = STATE_SEEKING
-        if c.distance_to(corpse) > CORPSE_APPROACH_DISTANCE:
-            c.goal_text = INFO_CREATURE_GOAL_CORPSE_APPROACH
+        c.state = ci_settings.STATE_SEEKING
+        if c.distance_to(corpse) > ci_settings.CORPSE_APPROACH_DISTANCE:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_APPROACH
             c.target = (corpse.x, corpse.y)
             return c.target
 
@@ -61,9 +60,9 @@ class _CorpseHandlingInstinctMixin:
     def _continue_carrying(self, corpse, graveyards):
         c = self.c
         c.is_dragging_corpse = True
-        c.state = STATE_SEEKING
-        c.speed_factor = CORPSE_DRAG_SPEED_FACTOR
-        c.goal_text = INFO_CREATURE_GOAL_CORPSE_CARRY
+        c.state = ci_settings.STATE_SEEKING
+        c.speed_factor = ci_settings.CORPSE_DRAG_SPEED_FACTOR
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_CARRY
 
         target_graveyard = next((g for g in graveyards if g.id == c.graveyard_target_id), None)
         if target_graveyard is None:
@@ -88,9 +87,10 @@ class _CorpseHandlingInstinctMixin:
 
     def _investigate_alert(self):
         c = self.c
-        c.state = STATE_SEEKING
-        c.goal_text = INFO_CREATURE_GOAL_CORPSE_ALERT
-        if math.hypot(c.x - c.graveyard_alert_pos[0], c.y - c.graveyard_alert_pos[1]) < CORPSE_APPROACH_DISTANCE * 2:
+        c.state = ci_settings.STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_ALERT
+        if math.hypot(c.x - c.graveyard_alert_pos[0], c.y - c.graveyard_alert_pos[1]) < ci_settings.CORPSE_APPROACH_DISTANCE * 2:
             c.graveyard_alert_pos = None
             c.graveyard_alert_timer = 0.0
             return None
@@ -99,17 +99,16 @@ class _CorpseHandlingInstinctMixin:
 
     def flee_to_campfire(self, threat_pos):
         c = self.c
-        c.state = STATE_PANIC
+        c.state = ci_settings.STATE_PANIC
         c.panic_active = True
         campfire_pos = self.nearest_known_campfire()
         if campfire_pos:
-            c.goal_text = INFO_CREATURE_GOAL_CORPSE_FLEE_FIRE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_FLEE_FIRE
             c.target = campfire_pos
             return campfire_pos
-        c.goal_text = INFO_CREATURE_GOAL_CORPSE_FLEE_BLIND
-        c.target = c.flee_point(threat_pos, PANIC_SCAN_DISTANCE)
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_FLEE_BLIND
+        c.target = c.flee_point(threat_pos, ci_settings.PANIC_SCAN_DISTANCE)
         return c.target
-
 
 # =========================================================================
 # Домен: поиск места для сна
@@ -123,11 +122,11 @@ class _SleepInstinctMixin:
         house = self._resolve_home_house(houses)
         if house is not None:
             dist_to_house = math.hypot(c.x - house.x, c.y - house.y)
-            if dist_to_house > HOUSE_SLEEP_ARRIVAL_DISTANCE:
-                c.goal_text = INFO_CREATURE_GOAL_SLEEP_GO_HOUSE
+            if dist_to_house > ci_settings.HOUSE_SLEEP_ARRIVAL_DISTANCE:
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_GO_HOUSE
                 c.target = (house.x, house.y)
                 return c.target
-            c.goal_text = INFO_CREATURE_GOAL_SLEEP_AT_HOME
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_AT_HOME
             c.target = (c.x, c.y)
             c.is_sleeping = True
             c.sleep_forced = False
@@ -149,16 +148,17 @@ class _SleepInstinctMixin:
             )
             if needs_new_spot:
                 angle = random.uniform(0, 2 * math.pi)
-                dist = random.uniform(SLEEP_SPOT_MIN_DISTANCE, CAMPFIRE_RADIUS * SLEEP_SPOT_MAX_RADIUS_FACTOR)
+                dist = random.uniform(ci_settings.SLEEP_SPOT_MIN_DISTANCE,
+                                      ci_settings.CAMPFIRE_RADIUS * ci_settings.SLEEP_SPOT_MAX_RADIUS_FACTOR)
                 c.sleep_spot = geometry.clamped_point(campfire_pos[0], campfire_pos[1], angle, dist)
                 c.sleep_spot_campfire = campfire_pos
 
             dist_to_spot = math.hypot(c.x - c.sleep_spot[0], c.y - c.sleep_spot[1])
-            if dist_to_spot > SLEEP_SPOT_ARRIVAL_DISTANCE:
-                c.goal_text = INFO_CREATURE_GOAL_SLEEP_GO_FIRE
+            if dist_to_spot > ci_settings.SLEEP_SPOT_ARRIVAL_DISTANCE:
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_GO_FIRE
                 c.target = c.sleep_spot
                 return c.sleep_spot
-            c.goal_text = INFO_CREATURE_GOAL_SLEEP_AT_FIRE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_AT_FIRE
             c.target = (c.x, c.y)
             c.is_sleeping = True
             c.sleep_forced = False
@@ -166,11 +166,11 @@ class _SleepInstinctMixin:
 
         intuitive = c.memory.get_campfire_intuitive_target(*c.comfort_point)
         if intuitive:
-            c.goal_text = INFO_CREATURE_GOAL_SLEEP_INTUITIVE
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_INTUITIVE
             c.target = intuitive
             return intuitive
 
-        c.goal_text = INFO_CREATURE_GOAL_SLEEP_ON_MOVE
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_ON_MOVE
         return self.pursue_search_target(biome_grid=biome_grid)
 
     def _resolve_home_house(self, houses):
@@ -205,7 +205,7 @@ class _LandmarkLookupMixin:
         pos = self.nearest_known_campfire()
         if pos is None:
             return False
-        return math.hypot(c.x - pos[0], c.y - pos[1]) < CAMPFIRE_RADIUS
+        return math.hypot(c.x - pos[0], c.y - pos[1]) < ci_settings.CAMPFIRE_RADIUS
 
     def nearest_known_graveyard(self):
         c = self.c
@@ -236,7 +236,7 @@ class _LandmarkLookupMixin:
         if c.landmark_register_timer > 0:
             c.landmark_register_timer -= dt
             return
-        c.landmark_register_timer = random.uniform(*LANDMARK_REGISTER_INTERVAL)
+        c.landmark_register_timer = random.uniform(*ci_settings.LANDMARK_REGISTER_INTERVAL)
 
         for water in visible_water:
             c.memory.add_intuitive_memory("water", *c.comfort_point, water.x, water.y, importance=1.0)
@@ -247,12 +247,13 @@ class _LandmarkLookupMixin:
             c.memory.add_memory("campfire", fire.x, fire.y, importance=2.0)
             if c.known_campfire is None:
                 occupancy = campfire_occupancy.get(fire.id, 0) if campfire_occupancy else 0
-                if occupancy < CAMPFIRE_MAX_OCCUPANTS:
+                if occupancy < ci_settings.CAMPFIRE_MAX_OCCUPANTS:
                     c.known_campfire = (fire.x, fire.y)
                     c.known_campfire_id = fire.id
                     c.comfort_point = c.known_campfire
             elif c.known_campfire_id is None and math.hypot(
-                    c.known_campfire[0] - fire.x, c.known_campfire[1] - fire.y) < LANDMARK_POSITION_MATCH_TOLERANCE:
+                        c.known_campfire[0] - fire.x,
+                        c.known_campfire[1] - fire.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
                 c.known_campfire_id = fire.id
         for gy in (visible_graveyards or []):
             c.memory.add_intuitive_memory("graveyard", *c.comfort_point, gy.x, gy.y, importance=1.2)
@@ -261,7 +262,8 @@ class _LandmarkLookupMixin:
                 c.known_graveyard = (gy.x, gy.y)
                 c.known_graveyard_id = gy.id
             elif c.known_graveyard_id is None and math.hypot(
-                    c.known_graveyard[0] - gy.x, c.known_graveyard[1] - gy.y) < LANDMARK_POSITION_MATCH_TOLERANCE:
+                    c.known_graveyard[0] - gy.x,
+                    c.known_graveyard[1] - gy.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
                 c.known_graveyard_id = gy.id
 
 # =========================================================================
@@ -274,7 +276,7 @@ class _NavigationInstinctMixin:
         c = self.c
         if c.stuck_check_timer > 0 or goal is None:
             return
-        c.stuck_check_timer = STUCK_CHECK_INTERVAL
+        c.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
         moved = math.hypot(c.x - c.position_at_last_check[0], c.y - c.position_at_last_check[1])
         c.position_at_last_check = (c.x, c.y)
 
@@ -283,21 +285,22 @@ class _NavigationInstinctMixin:
         c.stuck_last_nav_index = nav_index
 
         goal_dist = math.hypot(c.x - goal[0], c.y - goal[1])
-        if not path_advanced and moved < STUCK_DISTANCE_THRESHOLD and goal_dist > STUCK_DISTANCE_THRESHOLD:
+        if (not path_advanced and moved < ci_settings.STUCK_DISTANCE_THRESHOLD
+                and goal_dist > ci_settings.STUCK_DISTANCE_THRESHOLD):
             c.stuck_level += 1
             c.pathfinder.reset_navigation()
             c.following_road_active = False
 
-            if c.stuck_level >= STUCK_ESCALATION_THRESHOLD:
+            if c.stuck_level >= ci_settings.STUCK_ESCALATION_THRESHOLD:
                 angle = random.uniform(0, 2 * math.pi)
-                dist = random.uniform(*STUCK_ESCAPE_DISTANCE)
+                dist = random.uniform(*ci_settings.STUCK_ESCAPE_DISTANCE)
                 point = geometry.clamped_point(c.x, c.y, angle, dist)
                 c.target = self._avoid_sea(point, biome_grid)
                 c.stuck_level = 0
             else:
                 c.target = self.explore(biome_grid=biome_grid)
 
-            c.decision_timer = random.uniform(*EXPLORE_TIMER[c.temperament])
+            c.decision_timer = random.uniform(*ci_settings.EXPLORE_TIMER[c.temperament])
         else:
             c.stuck_level = max(0, c.stuck_level - 1)
 
@@ -305,23 +308,22 @@ class _NavigationInstinctMixin:
         c = self.c
         if visible_companions:
             nearest = c.social.best_companion(visible_companions)
-            if c.distance_to(nearest) > TALK_DISTANCE:
+            if c.distance_to(nearest) > ci_settings.TALK_DISTANCE:
                 c.target = (nearest.x, nearest.y)
             else:
                 c.target = (c.x, c.y)
-            c.decision_timer = random.uniform(*ACTIVE_SEARCH_TIMER)
+            c.decision_timer = random.uniform(*ci_settings.ACTIVE_SEARCH_TIMER)
             return c.target
 
         reached = (c.target is None or
                    math.hypot(c.x - c.target[0], c.y - c.target[1]) < 12)
         if reached or c.decision_timer <= 0:
             angle = random.uniform(0, 2 * math.pi)
-            dist = random.uniform(*ACTIVE_SEARCH_DISTANCE)
+            dist = random.uniform(*ci_settings.ACTIVE_SEARCH_DISTANCE)
             point = geometry.clamped_point(c.x, c.y, angle, dist)
             c.target = self._avoid_sea(point, biome_grid)
-            c.decision_timer = random.uniform(*ACTIVE_SEARCH_TIMER)
+            c.decision_timer = random.uniform(*ci_settings.ACTIVE_SEARCH_TIMER)
         return c.target
-
 
 # =========================================================================
 # Домен: память о еде/воде/опасности (в т.ч. протухание точной памяти)
@@ -357,7 +359,7 @@ class _ResourceMemoryMixin:
         extra = []
         if biome_grid is not None:
             vision_radius = c.aging.effective_vision_radius()
-            river_point = biome_grid.find_nearest_of_type(c.x, c.y, BIOME_RIVER, vision_radius)
+            river_point = biome_grid.find_nearest_of_type(c.x, c.y, settings.BIOME_RIVER, vision_radius)
             if river_point:
                 extra.append(river_point)
         target = self._nearest_known_target(visible_water, c.memory.get_water_memories(),
@@ -372,7 +374,7 @@ class _ResourceMemoryMixin:
         if target is None:
             return
         tx, ty = target
-        if math.hypot(c.x - tx, c.y - ty) > EAT_DISTANCE + 10:
+        if math.hypot(c.x - tx, c.y - ty) > ci_settings.EAT_DISTANCE + 10:
             return
         still_there = any(presence_check(o, tx, ty) for o in visible_objs)
         if not still_there:
@@ -382,12 +384,12 @@ class _ResourceMemoryMixin:
     def check_stale_food_memory(self, visible_fruits):
         self._check_stale_memory_target(
             "fruit", "food_memory_target", visible_fruits,
-            lambda f, tx, ty: f.active and math.hypot(f.x - tx, f.y - ty) < EAT_DISTANCE + 10)
+            lambda f, tx, ty: f.active and math.hypot(f.x - tx, f.y - ty) < ci_settings.EAT_DISTANCE + 10)
 
     def check_stale_water_memory(self, visible_water):
         self._check_stale_memory_target(
             "water", "water_memory_target", visible_water,
-            lambda w, tx, ty: w.has_water() and math.hypot(w.x - tx, w.y - ty) < EAT_DISTANCE + 10)
+            lambda w, tx, ty: w.has_water() and math.hypot(w.x - tx, w.y - ty) < ci_settings.EAT_DISTANCE + 10)
 
     def nearest_danger_position(self, known_threats):
         c = self.c
@@ -405,9 +407,9 @@ class _ExplorationMixin:
 
     def explore(self, biome_grid=None):
         c = self.c
-        if c.temperament == TEMPERAMENT_LAZY:
+        if c.temperament == ci_settings.TEMPERAMENT_LAZY:
             point = self._explore_lazy()
-        elif c.temperament == TEMPERAMENT_EXPLORER:
+        elif c.temperament == ci_settings.TEMPERAMENT_EXPLORER:
             point = self._explore_wide()
         else:
             point = self._explore_normal()
@@ -416,25 +418,26 @@ class _ExplorationMixin:
     def _explore_normal(self):
         c = self.c
         angle = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(*EXPLORE_DISTANCE[TEMPERAMENT_NORMAL])
+        dist = random.uniform(*ci_settings.EXPLORE_DISTANCE[ci_settings.TEMPERAMENT_NORMAL])
         return geometry.clamped_point(c.x, c.y, angle, dist)
 
     def _explore_wide(self):
         c = self.c
         angle = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(*EXPLORE_DISTANCE[TEMPERAMENT_EXPLORER])
+        dist = random.uniform(*ci_settings.EXPLORE_DISTANCE[ci_settings.TEMPERAMENT_EXPLORER])
         return geometry.clamped_point(c.x, c.y, angle, dist)
 
     def _explore_lazy(self):
         c = self.c
         cx, cy = c.comfort_point
         dist_from_comfort = math.hypot(c.x - cx, c.y - cy)
-        if dist_from_comfort > LAZY_COMFORT_RADIUS * 1.5:
+        lazy_range = ci_settings.EXPLORE_DISTANCE[ci_settings.TEMPERAMENT_LAZY]
+        if dist_from_comfort > ci_settings.LAZY_COMFORT_RADIUS * 1.5:
             angle = math.atan2(cy - c.y, cx - c.x) + random.uniform(-0.4, 0.4)
-            dist = min(dist_from_comfort, random.uniform(*EXPLORE_DISTANCE[TEMPERAMENT_LAZY]) + 60)
+            dist = min(dist_from_comfort, random.uniform(*lazy_range) + 60)
             return geometry.clamped_point(c.x, c.y, angle, dist)
         angle = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(*EXPLORE_DISTANCE[TEMPERAMENT_LAZY])
+        dist = random.uniform(*lazy_range)
         return geometry.clamped_point(cx, cy, angle, dist)
 
     def _avoid_sea(self, point, biome_grid, attempts=3):
@@ -442,10 +445,11 @@ class _ExplorationMixin:
             return point
         c = self.c
         for _ in range(attempts):
-            if biome_grid.get_at(point[0], point[1]) != BIOME_SEA:
+            if biome_grid.get_at(point[0], point[1]) != settings.BIOME_SEA:
                 return point
             angle = random.uniform(0, 2 * math.pi)
-            dist_range = EXPLORE_DISTANCE.get(c.temperament, EXPLORE_DISTANCE[TEMPERAMENT_NORMAL])
+            dist_range = ci_settings.EXPLORE_DISTANCE.get(
+                c.temperament, ci_settings.EXPLORE_DISTANCE[ci_settings.TEMPERAMENT_NORMAL])
             dist = random.uniform(*dist_range)
             point = geometry.clamped_point(c.x, c.y, angle, dist)
         return point

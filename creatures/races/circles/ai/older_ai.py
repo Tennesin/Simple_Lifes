@@ -1,8 +1,7 @@
 import math
 import random
 
-from ..ci_settings import *
-from ..ci_info import *
+from .. import ci_settings, ci_info
 from .patterns import (
     GoalComponent, ResourceActions, Roads, SurvivalNeeds, CorpseHandling,
     Feeding, SocialResponse, PartnerBond, Curiosity, CuriosityStrategy,
@@ -28,7 +27,7 @@ class ElderWardCare(GoalComponent):
         c = self.c
         committed = c.elder_ward_id is not None
         has_candidate = committed or any(
-            o.life_stage == LIFE_STAGE_CHILD for o in ctx.visible_companions
+            o.life_stage == ci_settings.LIFE_STAGE_CHILD for o in ctx.visible_companions
         )
         if not has_candidate:
             return [None]
@@ -49,7 +48,7 @@ class ElderWardCare(GoalComponent):
 
         if c.elder_ward_id is not None:
             ward = lookup_creature(other_creatures, c.elder_ward_id, other_by_id)
-            if ward is not None and (ward.is_dead or ward.life_stage != LIFE_STAGE_CHILD):
+            if ward is not None and (ward.is_dead or ward.life_stage != ci_settings.LIFE_STAGE_CHILD):
                 ward = None
 
             if ward is not None:
@@ -66,47 +65,48 @@ class ElderWardCare(GoalComponent):
         if c.elder_ward_check_timer > 0:
             c.elder_ward_check_timer -= dt
             return None
-        c.elder_ward_check_timer = random.uniform(*ELDER_WARD_CHECK_INTERVAL)
+        c.elder_ward_check_timer = random.uniform(*ci_settings.ELDER_WARD_CHECK_INTERVAL)
 
         candidates = [o for o in visible_companions
-                     if o.life_stage == LIFE_STAGE_CHILD
+                     if o.life_stage == ci_settings.LIFE_STAGE_CHILD
                      and self._child_needs_help(o, visible_companions, other_creatures)]
         if not candidates:
             return None
 
         ward = min(candidates, key=c.distance_to)
         c.elder_ward_id = ward.id
-        c.social.adjust_mutual_relationship(ward, RELATIONSHIP_HELP_BONUS_HELPER, RELATIONSHIP_HELP_BONUS_HELPED)
+        c.social.adjust_mutual_relationship(
+            ward, ci_settings.RELATIONSHIP_HELP_BONUS_HELPER, ci_settings.RELATIONSHIP_HELP_BONUS_HELPED)
         c.communication.share_information(ward)
 
         return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt, biome_grid=ctx.biome_grid)
 
     def _tend_to(self, ward, visible_fruits, visible_water, dt, biome_grid=None):
         c = self.c
-        c.state = STATE_SEEKING
-        c.energy = max(0.0, c.energy - ELDER_WARD_ENERGY_DRAIN_RATE * dt)
+        c.state = ci_settings.STATE_SEEKING
+        c.energy = max(0.0, c.energy - ci_settings.ELDER_WARD_ENERGY_DRAIN_RATE * dt)
 
-        if ward.hunger < CHILD_FEED_HUNGER_THRESHOLD:
+        if ward.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD:
             goal = self.actions.go_fetch_fruit(visible_fruits)
             if goal:
-                c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_FETCH
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_WARD_FETCH
                 return goal
-        if ward.thirst < CHILD_FEED_THIRST_THRESHOLD:
+        if ward.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD:
             goal = self.actions.go_fetch_water(visible_water, biome_grid=biome_grid)
             if goal:
-                c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_FETCH
+                c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_WARD_FETCH
                 return goal
 
-        if c.distance_to(ward) > HELP_APPROACH_DISTANCE:
-            c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_APPROACH
+        if c.distance_to(ward) > ci_settings.HELP_APPROACH_DISTANCE:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_WARD_APPROACH
             return (ward.x, ward.y)
 
         campfire_pos = self.instincts.nearest_known_campfire()
-        if campfire_pos and math.hypot(ward.x - campfire_pos[0], ward.y - campfire_pos[1]) > CAMPFIRE_RADIUS * 0.6:
-            c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_LEAD
+        if campfire_pos and math.hypot(ward.x - campfire_pos[0], ward.y - campfire_pos[1]) > ci_settings.CAMPFIRE_RADIUS * 0.6:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_WARD_LEAD
             return campfire_pos
 
-        c.goal_text = INFO_CREATURE_GOAL_ELDER_WARD_COMFORT
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_WARD_COMFORT
         return (c.x, c.y)
 
 
@@ -126,8 +126,8 @@ class ElderCuriosityStrategy(CuriosityStrategy):
             for spike in unknown_hazards:
                 c.memory.add_memory("spike", spike.x, spike.y, importance=-1.5)
             c.knowledge["spike"] = True
-            c.state = STATE_CALM
-            c.goal_text = INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN
+            c.state = ci_settings.STATE_CALM
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN
 
         interested_harmless = [(t, obj) for t, obj in unknown_harmless if t in c.curiosity_interested]
         if not interested_harmless:
@@ -135,9 +135,9 @@ class ElderCuriosityStrategy(CuriosityStrategy):
             return None
 
         c.curiosity_active = True
-        c.state = STATE_SEEKING
+        c.state = ci_settings.STATE_SEEKING
         target_type, target_obj = min(interested_harmless, key=lambda p: c.distance_to(p[1]))
-        c.goal_text = INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN
         c.target = (target_obj.x, target_obj.y)
         return c.target
 
@@ -153,7 +153,7 @@ class OlderAI:
         self.instincts = instincts
 
         self.actions = ResourceActions(creature)
-        self.roads = Roads(creature, follow_dampener=ELDER_ROAD_FOLLOW_DAMPENER)
+        self.roads = Roads(creature, follow_dampener=ci_settings.ELDER_ROAD_FOLLOW_DAMPENER)
 
         self.survival = SurvivalNeeds(creature, instincts, self.roads)
         self.corpse_handling = CorpseHandling(creature, instincts)
@@ -164,8 +164,7 @@ class OlderAI:
         self.storage = PrivateStorage(creature, instincts, self.actions)
         self.curiosity = Curiosity(creature, ElderCuriosityStrategy(creature))
 
-        # ---------- территории, пубертата и проверки детских дорог у стариков нет -
-        # не заглушки в общем файле, а просто отсутствие в этом списке ----------
+        # ---------- территории, пубертата и проверки детских дорог у стариков нет ----------
         self.components = [
             self.survival, self.corpse_handling, self.ward_care, self.feeding,
             self.social_response, self.partner_bond, self.storage, self.roads,
