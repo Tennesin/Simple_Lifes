@@ -11,7 +11,7 @@ from .generation import WorldGenerator
 from .growth import NaturalGrowth
 from .lookup import ObjectLookup
 from .object_types import type_of_instance
-from .placement import PlacementService
+from .object_placement import PlacementService
 from .removal import ObjectRemover, CoreClear
 from .roads import RoadNetworkService
 
