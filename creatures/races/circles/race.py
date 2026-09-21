@@ -83,6 +83,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         ),
         PlaceableObjectSpec(
             obj_type="campfire", attr="campfires", cls=Campfire, label=ci_info.INFO_BTN_CAMPFIRE,
+            blocks_creature_spawn=True,
             manually_placeable=False,
         ),
     ),
@@ -122,6 +123,7 @@ RACE_DESCRIPTOR = RaceDescriptor(
         SecondaryPanelSpec(attr_name="genealogy_overlay", panel_cls=GenealogyTreeOverlay),
     ),
     landmark_specs=(
+        LandmarkSpec(type_name="campfire", attr="campfires"),
         LandmarkSpec(type_name="storage", attr="storage_fields"),
         LandmarkSpec(type_name="graveyard", attr="graveyards"),
     ),

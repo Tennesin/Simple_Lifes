@@ -5,7 +5,7 @@ import math
 import pygame
 
 import settings
-from game.object_manager import footprint_radius
+from ....all_needed.geometry import footprint_radius
 from .. import ci_settings, ci_info
 from ..circle_objects import ConstructionSite
 from ..life_cycle import apply_grief_for_death

@@ -211,3 +211,19 @@ def nearest_point(origin_x, origin_y, points):
     if not points:
         return None
     return min(points, key=lambda p: math.hypot(origin_x - p[0], origin_y - p[1]))
+
+# =========================================================================
+# Домен: "занимаемое место" объекта (footprint)
+# =========================================================================
+
+def footprint_radius(obj):
+    if hasattr(obj, "radius"):
+        return obj.radius
+    if hasattr(obj, "width") and hasattr(obj, "height"):
+        return max(obj.width, obj.height) / 2
+    return 0
+
+def distance_to_footprint(obj, px, py):
+    if hasattr(obj, "distance_to_point"):
+        return obj.distance_to_point(px, py)
+    return max(0.0, math.hypot(px - obj.x, py - obj.y) - footprint_radius(obj))

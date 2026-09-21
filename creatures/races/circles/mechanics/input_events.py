@@ -5,7 +5,7 @@ import shutil
 import math
 
 import settings
-from game.object_manager import footprint_radius
+from ....all_needed.geometry import footprint_radius
 from .. import ci_settings, ci_info
 from ....all_needed import geometry
 
