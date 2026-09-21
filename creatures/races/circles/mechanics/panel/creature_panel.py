@@ -98,6 +98,41 @@ class CreaturePanel:
         game.finish_name_editing()
         return True
 
+    def handle_click(self, game, mouse_x, mouse_y):
+        """Единая точка входа для ЛКМ по панели существа и её левому окну психики.
+        True - клик обработан и дальше по цепочке не идёт."""
+        creature = game.selected_creature
+        if creature is None:
+            return False
+
+        if not creature.is_dead:
+            if self.btn_creature_pet.collidepoint(mouse_x, mouse_y):
+                creature.receive_pet()
+                return True
+            if self.btn_creature_hit.collidepoint(mouse_x, mouse_y):
+                creature.receive_hit()
+                return True
+            if self.favorite_star_rect.collidepoint(mouse_x, mouse_y):
+                game.toggle_favorite(creature.id, entity=creature)
+                return True
+            if self._click_stat_bar(creature, mouse_x, mouse_y):
+                return True
+
+        if self.info_panel_rect.collidepoint(mouse_x, mouse_y):
+            return self.handle_info_panel_click(game, mouse_x, mouse_y)
+        if self.is_point_in_extra_panel(mouse_x, mouse_y):
+            self._click_stat_bar(creature, mouse_x, mouse_y)
+            return True
+        return False
+
+    def _click_stat_bar(self, creature, mouse_x, mouse_y):
+        for stat_key, rect in self.stat_bar_rects.items():
+            if rect.collidepoint(mouse_x, mouse_y):
+                direction = -1 if mouse_x < rect.centerx else 1
+                creature.player_reactions.adjust_stat(stat_key, direction)
+                return True
+        return False
+
     def is_point_in_extra_panel(self, mouse_x, mouse_y):
         return bool(self.show_psyche_section and self.psyche_panel_rect
                     and self.psyche_panel_rect.collidepoint(mouse_x, mouse_y))

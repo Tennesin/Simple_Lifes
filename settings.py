@@ -298,11 +298,18 @@ RIVER_GENERATION_COUNT = (1, 3)
 SEA_AUTOMATON_ITERATIONS = 5
 DESERT_AUTOMATON_ITERATIONS = 3
 
-# ---------- Кисть рисования биомов (регулировка радиуса - следующий шаг) ----------
+# ---------- Кисть рисования биомов ----------
 BIOME_BRUSH_DEFAULT_RADIUS = 60
 BIOME_BRUSH_MIN_RADIUS = 20
 BIOME_BRUSH_MAX_RADIUS = 300
 BIOME_BRUSH_SENSITIVITY = 1.5
+BIOME_BRUSH_MIN_STEP = 4.0             # px - минимальный шаг интерполяции мазка
+BIOME_BRUSH_STEP_RADIUS_RATIO = 0.5    # шаг мазка = радиус * это значение (но не меньше MIN_STEP)
+
+# ---------- Ввод ----------
+NAME_MAX_LENGTH = 24                   # макс. длина имени при вводе с клавиатуры
+GRAB_WORLD_MARGIN_CREATURE = 15        # px - как близко к краю мира можно унести существо в руке
+GRAB_WORLD_MARGIN_OBJECT = 10          # px - то же для объекта
 
 # ---------- Настройки по умолчанию ----------
 DEFAULT_DISPLAY_SETTINGS = {

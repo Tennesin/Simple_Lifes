@@ -298,6 +298,9 @@ class Creature(LivingEntity):
     def on_marked_favorite(self):
         self.player_reactions.mark_favorite()
 
+    def on_selected_by_player(self):
+        self.player_reactions.register_touch()
+
     def grab_by_player(self):
         self.player_reactions.start_grab()
 

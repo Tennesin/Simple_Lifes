@@ -64,6 +64,10 @@ class UIManager:
         race_name = getattr(creature, "race_name", None) or self._default_race_name
         return self._creature_panels.get(race_name) or self._creature_panels.get(self._default_race_name)
 
+    def has_creature_panel(self, entity):
+        """True, если у расы сущности есть собственная боковая панель (разумное существо, не животное/объект)."""
+        return getattr(entity, "race_name", None) in self._creature_panels
+
     def _delegate_objects(self):
         return (self.top_bar, self.creature_panel, self.world_screens, self.minimap, self.settings_panel,
                 self.exit_confirm_panel)

@@ -5,7 +5,7 @@ import pygame
 
 import settings
 import info
-from game.widgets import ScrollArea
+from game.widgets import ScrollArea, edit_text_buffer, TEXT_EDIT_COMMIT, TEXT_EDIT_CANCEL
 from ... import ci_settings, ci_info
 from .....all_needed.instruction import truncate_text
 
@@ -106,9 +106,10 @@ class GraveyardPanel:
         return True
 
     def handle_keydown(self, event):
-        if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+        self.name_edit_buffer, action = edit_text_buffer(self.name_edit_buffer, event)
+        if action == TEXT_EDIT_COMMIT:
             self.finish_name_editing()
-        elif event.key == pygame.K_ESCAPE:
+        elif action == TEXT_EDIT_CANCEL:
             self.editing_name = False
             self.name_edit_buffer = ""
         elif event.key == pygame.K_BACKSPACE:

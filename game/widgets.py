@@ -7,6 +7,22 @@ from creatures.all_needed.instruction import (
     wrap_instruction_text, INSTRUCTION_COLOR_DEFAULT,
 )
 
+TEXT_EDIT_COMMIT = "commit"
+TEXT_EDIT_CANCEL = "cancel"
+
+def edit_text_buffer(buffer, event, max_len=settings.NAME_MAX_LENGTH):
+    """Одно нажатие клавиши при редактировании строки.
+    Возвращает (новый_буфер, действие): None / TEXT_EDIT_COMMIT / TEXT_EDIT_CANCEL."""
+    if event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+        return buffer, TEXT_EDIT_COMMIT
+    if event.key == pygame.K_ESCAPE:
+        return "", TEXT_EDIT_CANCEL
+    if event.key == pygame.K_BACKSPACE:
+        return buffer[:-1], None
+    if event.unicode and event.unicode.isprintable() and len(buffer) < max_len:
+        return buffer + event.unicode, None
+    return buffer, None
+
 class TextInputBox:
     def __init__(self, rect, value="", max_len=24, digits_only=False, placeholder=""):
         self.rect = pygame.Rect(rect)

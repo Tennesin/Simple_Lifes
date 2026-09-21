@@ -32,13 +32,12 @@ class SettingsPanel:
         self._technical_sliders = all_technical_slider_specs()
 
         self.panel_rect = pygame.Rect(0, 0, 0, 0)
-        self.settings_tab_technical_rect = pygame.Rect(0, 0, 0, 0)
-        self.settings_tab_display_rect = pygame.Rect(0, 0, 0, 0)
+        self.tab_rects = {}
         self.settings_save_btn_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_back_btn_rect = pygame.Rect(0, 0, 0, 0)
         self.settings_checkbox_rows = {}
         self.settings_slider_rows = {}
-        self._slider_dragging_key = None
+        self.slider_dragging_key = None
         self.scrolls = {"display": ScrollArea(), "technical": ScrollArea()}
 
     def _layout_panel(self, screen):
@@ -88,10 +87,7 @@ class SettingsPanel:
         y = sidebar_rect.y + 8
         for tab_key, tab_label in SETTINGS_TABS:
             rect = pygame.Rect(sidebar_rect.x + 6, y, sidebar_rect.width - 12, settings.BUTTON_HEIGHT)
-            if tab_key == "display":
-                self.settings_tab_display_rect = rect
-            elif tab_key == "technical":
-                self.settings_tab_technical_rect = rect
+            self.tab_rects[tab_key] = rect
 
             if state.active_tab == tab_key:
                 color = settings.SETTINGS_TAB_SELECTED
@@ -163,7 +159,7 @@ class SettingsPanel:
         ratio = (value - min_v) / (max_v - min_v) if max_v > min_v else 0.0
         fill_w = max(4, int(bar_rect.width * max(0.0, min(1.0, ratio))))
         fill_rect = pygame.Rect(bar_rect.x, bar_rect.y, fill_w, bar_rect.height)
-        fill_color = (100, 160, 210) if self._slider_dragging_key == key else settings.BUTTON_COLOR
+        fill_color = (100, 160, 210) if self.slider_dragging_key == key else settings.BUTTON_COLOR
         pygame.draw.rect(screen, fill_color, fill_rect)
         pygame.draw.rect(screen, (15, 15, 15), bar_rect, 1)
 
