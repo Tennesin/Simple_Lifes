@@ -8,7 +8,7 @@ from .. import ci_settings
 from ..creature import Creature
 from ..life_cycle import CreatureAging
 from ..genealogy import GenealogyRegistry
-from ...all_needed.ids import new_id
+from ....all_needed.ids import new_id
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -46,9 +46,9 @@ class CircleSpawnManager:
             temperament = random.choice([mother.temperament, father.temperament]) \
                 if father is not None else mother.temperament
 
-        new_id = str(uuid.uuid4())[:8]
+        child_id = new_id()
         pools = self.descriptor.name_pools if self.descriptor else None
-        child = Creature(new_id, temperament=temperament, gender=gender, name_pools=pools)
+        child = Creature(child_id, temperament=temperament, gender=gender, name_pools=pools)
 
         cx, cy = self._pick_child_spawn_point(mother)
         child.x = cx

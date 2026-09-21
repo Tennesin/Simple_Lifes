@@ -49,7 +49,9 @@ def _discover_animals() -> dict:
         pkg_name = f"{animals_package.__name__}.{module_info.name}"
         try:
             animal_module = importlib.import_module(f"{pkg_name}.animal")
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as error:
+            if error.name != f"{pkg_name}.animal":
+                raise
             continue
         descriptor = getattr(animal_module, "ANIMAL_DESCRIPTOR", None)
         if descriptor is None:

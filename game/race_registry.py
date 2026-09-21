@@ -157,7 +157,9 @@ def _discover_races() -> dict:
         race_pkg_name = f"{races_package.__name__}.{module_info.name}"
         try:
             race_module = importlib.import_module(f"{race_pkg_name}.race")
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as error:
+            if error.name != f"{race_pkg_name}.race":
+                raise
             continue
         descriptor = getattr(race_module, "RACE_DESCRIPTOR", None)
         if descriptor is None:
