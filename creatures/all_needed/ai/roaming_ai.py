@@ -27,8 +27,13 @@ class RoamingAnimalMixin:
         e = self.entity
         if not spikes or e.spike_invuln_timer > 0:
             return
-        for spike in spikes:
+        if hasattr(spikes, "query_nearby"):
+            candidates = spikes.query_nearby(e.x, e.y, settings.ANIMAL_SPIKE_HIT_DISTANCE)
+        else:
+            candidates = spikes
+        for spike in candidates:
             if math.hypot(e.x - spike.x, e.y - spike.y) < settings.ANIMAL_SPIKE_HIT_DISTANCE:
+                # ... остальное тело цикла без изменений ...
                 e.hp = max(0.0, e.hp - settings.ANIMAL_SPIKE_DAMAGE)
                 e.spike_invuln_timer = settings.ANIMAL_SPIKE_INVULN_DURATION
 
@@ -204,6 +209,7 @@ class RoamingAnimalMixin:
         e.nav_path_index = 0
         e.nav_goal = None
         e.nav_recalc_timer = 0.0
+        e.nav_search_failed = False
 
     def _navigate_with_astar(self, target, dt, nav_grid, fallback_nav_grid=None, urgent=False):
         e = self.entity
@@ -215,12 +221,14 @@ class RoamingAnimalMixin:
                 e.nav_goal is None or
                 math.hypot(e.nav_goal[0] - target[0], e.nav_goal[1] - target[1]) > settings.NAV_GOAL_CHANGE_THRESHOLD
         )
-        path_exhausted = not e.nav_path or e.nav_path_index >= len(e.nav_path)
+        # ---------- Провалившийся поиск не должен повторяться каждый кадр ----------
+        if e.nav_path:
+            path_exhausted = e.nav_path_index >= len(e.nav_path)
+        else:
+            path_exhausted = not e.nav_search_failed
         needs_recalc = goal_changed or path_exhausted or e.nav_recalc_timer <= 0
 
         if needs_recalc:
-            # ---------- "Прокачанный" поиск для выживания: больше узлов на просмотр
-            # и чаще пересчёт маршрута ----------
             max_nodes = settings.NAV_MAX_ASTAR_NODES * (settings.NAV_URGENT_NODE_MULTIPLIER if urgent else 1)
             recalc_interval = settings.NAV_URGENT_RECALC_INTERVAL if urgent else settings.NAV_PATH_RECALC_INTERVAL
 
@@ -229,6 +237,7 @@ class RoamingAnimalMixin:
                 path = fallback_nav_grid.find_path((e.x, e.y), target, max_nodes=max_nodes)
             e.nav_goal = target
             e.nav_recalc_timer = random.uniform(*recalc_interval)
+            e.nav_search_failed = not path
             e.nav_path = path if path else []
             e.nav_path_index = 0
 

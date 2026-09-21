@@ -421,7 +421,12 @@ class BasePathfinder(WeakOwnerMixin):
             c.nav_goal is None or
             math.hypot(c.nav_goal[0] - goal[0], c.nav_goal[1] - goal[1]) > settings.NAV_GOAL_CHANGE_THRESHOLD
         )
-        path_exhausted = not c.nav_path or c.nav_path_index >= len(c.nav_path)
+        # ---------- Пустой путь после ПРОВАЛЕННОГО поиска - не "исчерпанный маршрут":
+        # повторять поиск нужно только по таймеру или при смене цели ----------
+        if c.nav_path:
+            path_exhausted = c.nav_path_index >= len(c.nav_path)
+        else:
+            path_exhausted = not c.nav_search_failed
         needs_recalc = nav_grid is not None and (goal_changed or path_exhausted or c.nav_recalc_timer <= 0)
 
         if needs_recalc:
@@ -430,10 +435,8 @@ class BasePathfinder(WeakOwnerMixin):
                 path = fallback_nav_grid.find_path((c.x, c.y), goal, max_nodes=settings.NAV_MAX_ASTAR_NODES)
             c.nav_goal = goal
             c.nav_recalc_timer = random.uniform(*settings.NAV_PATH_RECALC_INTERVAL)
-            if path:
-                c.nav_path = path
-            else:
-                c.nav_path = []
+            c.nav_search_failed = not path
+            c.nav_path = path if path else []
             c.nav_path_index = 0
 
         if not c.nav_path:
@@ -452,6 +455,7 @@ class BasePathfinder(WeakOwnerMixin):
         c.nav_path_index = 0
         c.nav_goal = None
         c.nav_recalc_timer = 0.0
+        c.nav_search_failed = False
 
     # ---------- Движение ----------
 

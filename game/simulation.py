@@ -37,6 +37,7 @@ class Simulation:
             for descriptor in all_animals()
         }
         self._static_grid_frame = 0
+        self._static_grids_built = False
         self._dynamic_grid_frame = 0
         self._dos_frame = 0
         self._cached_simulation_bounds = None
@@ -93,8 +94,8 @@ class Simulation:
 
     def _tick_static_grid_frame(self):
         self._static_grid_frame += 1
-        return (self._static_grid_frame % self.STATIC_GRID_REBUILD_INTERVAL == 0
-                or not self._fruit_grid.buckets)
+        return (not self._static_grids_built
+                or self._static_grid_frame % self.STATIC_GRID_REBUILD_INTERVAL == 0)
 
     def _tick_dynamic_grid_frame(self):
         self._dynamic_grid_frame += 1
@@ -114,12 +115,16 @@ class Simulation:
         self._stone_grid.build(s for s in world.stones if s.has_stone())
         self._grass_grid.build(g for g in world.grass if g.has_food())
         self._meat_grid.build(world.meats)
+        self._static_grids_built = True
 
     def _rebuild_animal_spatial_grids(self):
         """Позиции животных двигаются каждый кадр - строим заново каждый раз,
         как и _creature_grid у существ."""
         world = self.game.world
-        grids = {"grass": self._grass_grid, "water": self._water_grid, "meats": self._meat_grid}
+        grids = {
+            "grass": self._grass_grid, "water": self._water_grid, "meats": self._meat_grid,
+            "spikes": self._spike_grid,
+        }
         for descriptor in all_animals():
             grid = self._animal_grids[descriptor.world_collection]
             grid.build(a for a in getattr(world, descriptor.world_collection) if a.hp > 0)
@@ -439,3 +444,18 @@ class Simulation:
 
     def invalidate_nav_cache(self):
         self._nav_cache.invalidate()
+
+    def reset_world_caches(self):
+        """Смена/закрытие мира: сетки, кэш ДОС и nav-карты прежнего мира недействительны."""
+        self.invalidate_nav_cache()
+        for grid in (self._fruit_grid, self._spike_grid, self._water_grid, self._bush_grid,
+                     self._campfire_grid, self._creature_grid, self._corpse_grid,
+                     self._tree_grid, self._stone_grid, self._grass_grid, self._meat_grid,
+                     *self._animal_grids.values()):
+            grid.clear()
+        self._static_grids_built = False
+        self._static_grid_frame = 0
+        self._dynamic_grid_frame = 0
+        self._dos_frame = 0
+        self._cached_simulation_bounds = None
+        self._cached_active_ids = None

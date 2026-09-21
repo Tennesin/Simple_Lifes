@@ -71,11 +71,14 @@ class _TimerTickMixin(_BrainMixinBase):
             c.partner_reunite_cooldown -= dt
         if c.graveyard_alert_timer > 0:
             c.graveyard_alert_timer -= dt
-        if getattr(c, 'state', None) == ci_settings.STATE_PANIC:
-            c.panic_duration = getattr(c, 'panic_duration', 0.0) + dt
-        else:
-            c.panic_duration = 0.0
-
+        if c.puberty_courtship_cooldown > 0:
+            c.puberty_courtship_cooldown -= dt
+        if c.puberty_courtship_avoid:
+            c.puberty_courtship_avoid = {
+                target_id: remaining - dt
+                for target_id, remaining in c.puberty_courtship_avoid.items()
+                if remaining - dt > 0
+            }
 
 # =========================================================================
 # Домен: восприятие мира - что существо реально видит прямо сейчас

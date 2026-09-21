@@ -38,6 +38,7 @@ class WorldState:
     def reset(self):
         for name in self.COLLECTION_NAMES:
             setattr(self, name, [])
+        self.landscape_version += 1
 
 @dataclass
 class WorldFrameContext:

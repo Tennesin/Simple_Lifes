@@ -101,6 +101,7 @@ class Creature(LivingEntity):
         self.nav_path_index = 0
         self.nav_goal = None
         self.nav_recalc_timer = 0.0
+        self.nav_search_failed = False
 
         self.wake_threshold = random.uniform(
             *ci_settings.WAKE_ENERGY_THRESHOLD.get(self.temperament, (85, 90)))
@@ -425,6 +426,9 @@ class Creature(LivingEntity):
         elif obj_type == "child_road":
             if self.following_child_road is road and self.child_road_progress >= inserted_index:
                 self.child_road_progress += 1
+            if (self.child_road_verify_target_id == road.id
+                    and self.child_road_verify_progress >= inserted_index):
+                self.child_road_verify_progress += 1
 
     def on_landmark_removed(self, landmark_type, landmark_id, position):
         if landmark_type == "campfire":
@@ -548,6 +552,7 @@ class Creature(LivingEntity):
             "puberty_orig_curiosity": self._puberty_orig_curiosity,
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
+            "sleep_forced": self.sleep_forced,
             "fear_timer": self.fear_timer,
             "psyche_joy": self.psyche.joy,
             "psyche_satisfaction": self.psyche.satisfaction,

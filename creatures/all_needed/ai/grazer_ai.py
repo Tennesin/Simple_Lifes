@@ -212,6 +212,7 @@ def tick_grazer_species(game, dt, nav_grid, fallback_nav_grid, active_ids, spati
     grass_source = spatial_grids.get("grass", world.grass)
     water_source = spatial_grids.get("water", world.water_puddles)
     wolves_source = spatial_grids.get(wolves_grid_key)
+    spikes_source = spatial_grids.get("spikes", world.spikes)
 
     collection = getattr(world, world_attr)
 
@@ -248,13 +249,13 @@ def tick_grazer_species(game, dt, nav_grid, fallback_nav_grid, active_ids, spati
             continue
         if not is_grabbed:
             target = ai.decide(dt, grass_source, water_source, alive_wolves, biome_grid,
-                               spikes=world.spikes)
+                               spikes=spikes_source)
             ai.move_towards(target, dt, biome_grid=biome_grid, nav_grid=nav_grid,
                             fallback_nav_grid=fallback_nav_grid,
                             speed_multiplier=(flee_speed_multiplier if ai.fleeing else 1.0),
                             wall_polylines=wall_polylines, fence_polylines=fence_polylines,
                             urgent=ai.is_urgent)
-        ai.interact(dt, grass_source, water_source, biome_grid, spikes=world.spikes)
+        ai.interact(dt, grass_source, water_source, biome_grid, spikes=spikes_source)
 
     for animal in frozen_to_remove:
         game.object_manager.remove_animal_silently(animal)

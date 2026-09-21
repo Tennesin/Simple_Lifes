@@ -141,20 +141,6 @@ class PubertyCourtship(GoalComponent):
         c.puberty_courtship_timer = 0.0
         c.puberty_courtship_deadline = 0.0
 
-    def _tick_avoid_list(self, dt):
-        c = self.c
-        if not c.puberty_courtship_avoid:
-            return
-        expired = []
-        for target_id, remaining in c.puberty_courtship_avoid.items():
-            remaining -= dt
-            if remaining <= 0:
-                expired.append(target_id)
-            else:
-                c.puberty_courtship_avoid[target_id] = remaining
-        for target_id in expired:
-            del c.puberty_courtship_avoid[target_id]
-
     # ---------- Выбор/удержание цели ----------
 
     def _resolve_committed_target(self, visible_companions):
@@ -217,12 +203,6 @@ class PubertyCourtship(GoalComponent):
         wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
         if c.needs.wellbeing_score() < wellbeing_threshold:
             return None
-
-        if c.puberty_courtship_cooldown > 0:
-            c.puberty_courtship_cooldown -= dt
-            return None
-
-        self._tick_avoid_list(dt)
 
         target = self._resolve_committed_target(ctx.visible_companions)
         if target is None:

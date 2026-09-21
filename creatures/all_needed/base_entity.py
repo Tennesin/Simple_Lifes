@@ -89,6 +89,9 @@ class LivingEntity(BaseEntity):
     def on_selected_by_player(self):
         pass
 
+    def release_references(self):
+        pass
+
     def draw(self, screen, screen_pos, show_status_rings=True):
         raise NotImplementedError
 

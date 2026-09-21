@@ -1,4 +1,5 @@
 import os
+import gc
 import json
 import shutil
 import time
@@ -163,6 +164,15 @@ class WorldManager:
             _CORE_OBJECT_REGISTRY + _collect_race_object_registry()
             + _collect_animal_object_registry() + _collect_animal_drop_object_registry()
     )
+
+    def _discard_world_state(self):
+        """Выбрасывает прежний мир: рвёт циклы существ, чистит коллекции и кэши симуляции."""
+        game = self.game
+        for creature in game.world.creatures:
+            creature.release_references()
+        game.world.reset()
+        game.simulation.reset_world_caches()
+        gc.collect()
 
     # ---------- Экран создания мира ----------
 
@@ -407,7 +417,7 @@ class WorldManager:
         game.world_path = world_path
         game.world_seed = world_seed
         game.world_version = meta["game_version"]
-        game.world.reset()
+        self._discard_world_state()
         for fn in all_extra_world_load_fns():
             fn(game)
         game.clear_secondary_selections()
@@ -551,7 +561,7 @@ class WorldManager:
             if save:
                 self.save_world()
 
-        game.world.reset()
+        self._discard_world_state()
         game.clear_secondary_selections()
         game.placement_mode = None
         game.paused = False

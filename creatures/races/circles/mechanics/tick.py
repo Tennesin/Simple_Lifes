@@ -39,6 +39,7 @@ class CircleTickProcessor:
         self.game = game
         self._campfire_occupancy_frame = 0
         self._cached_campfire_occupancy = None
+        self._claims_resync_frame = 0
 
     def process(self, ctx):
         genealogy = self.game.object_manager.spawn_managers[ci_settings.RACE_NAME].genealogy
@@ -46,6 +47,7 @@ class CircleTickProcessor:
         ctx.race_creatures = race_creatures
 
         ctx.campfire_occupancy = self._get_campfire_occupancy(ctx.campfires, race_creatures)
+        self._resync_territory_claims(ctx, race_creatures)
 
         self._reconcile_storage_ownership(ctx)
         self._reconcile_house_ownership(ctx)
@@ -96,6 +98,32 @@ class CircleTickProcessor:
                     occupancy[fire.id] = occupancy.get(fire.id, 0) + 1
                     break
         return occupancy
+
+    # =====================================================================
+    # Домен: счётчики занятых кустов/водоёмов - истина в obj.claimed_by, а не в счётчике
+    # =====================================================================
+
+    def _resync_territory_claims(self, ctx, race_creatures):
+        self._claims_resync_frame += 1
+        if self._claims_resync_frame % ci_settings.TERRITORY_CLAIMS_RESYNC_FRAMES != 0:
+            return
+
+        bush_counts, water_counts = {}, {}
+        for bush in ctx.bushes:
+            owner_id = getattr(bush, "claimed_by", None)
+            if owner_id is not None:
+                bush_counts[owner_id] = bush_counts.get(owner_id, 0) + 1
+        for water in ctx.water_puddles:
+            owner_id = getattr(water, "claimed_by", None)
+            if owner_id is not None:
+                water_counts[owner_id] = water_counts.get(owner_id, 0) + 1
+
+        for creature in race_creatures:
+            territory = creature.territory
+            if territory is None:       # у выброшенного существа подсистемы уже оборваны
+                continue
+            territory.claims_count["bush"] = bush_counts.get(creature.id, 0)
+            territory.claims_count["water"] = water_counts.get(creature.id, 0)
 
     # =====================================================================
     # Домен: ускорение строительства игроком (Z + ЛКМ на выбранной стройплощадке)

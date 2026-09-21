@@ -67,6 +67,7 @@ class CreatureBase(LivingEntity):
         self.nav_path_index = 0
         self.nav_goal = None
         self.nav_recalc_timer = 0.0
+        self.nav_search_failed = False
 
         # ---------- Метка создания - нужна животным для отображения в ObjectPanel ----------
         self.created = time.time()

@@ -145,6 +145,7 @@ _CREATURE_SIMPLE_FIELDS = (
     ("known_graveyard_id", "known_graveyard_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
     ("is_sleeping", "is_sleeping", False),
+    ("sleep_forced", "sleep_forced", False),
     ("fear_timer", "fear_timer", 0.0),
 )
 

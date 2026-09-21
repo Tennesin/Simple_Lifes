@@ -94,12 +94,6 @@ class BiomeCascadeSpec:
     clear_on_desert: bool = False
     on_removed: Optional[Callable] = None  # (game, obj) -> None
 
-def all_road_networks() -> Tuple[RoadNetworkSpec, ...]:
-    result = [CORE_ROAD_NETWORK]
-    for descriptor in all_races():
-        result.extend(descriptor.road_networks)
-    return tuple(result)
-
 @dataclass(frozen=True)
 class RaceDescriptor:
     """Описание одной расы существ - всё, что нужно движку, чтобы работать с ней."""

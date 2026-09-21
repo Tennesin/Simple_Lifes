@@ -106,17 +106,13 @@ class GraveyardPanel:
         return True
 
     def handle_keydown(self, event):
+        # ---------- Всю работу с буфером (ввод, Backspace, лимит длины) делает edit_text_buffer ----------
         self.name_edit_buffer, action = edit_text_buffer(self.name_edit_buffer, event)
         if action == TEXT_EDIT_COMMIT:
             self.finish_name_editing()
         elif action == TEXT_EDIT_CANCEL:
             self.editing_name = False
             self.name_edit_buffer = ""
-        elif event.key == pygame.K_BACKSPACE:
-            self.name_edit_buffer = self.name_edit_buffer[:-1]
-        else:
-            if event.unicode and event.unicode.isprintable() and len(self.name_edit_buffer) < 24:
-                self.name_edit_buffer += event.unicode
 
     def close_popup_or_deselect(self, game):
         if self.details_record is not None:
