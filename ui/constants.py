@@ -1,9 +1,9 @@
 """Константы, общие для нескольких панелей UI (не относятся к одной конкретной)."""
 
-import settings
 import info
-from player import Player
+import settings
 from game.race_registry import PlayerToolSpec
+from player import Player
 
 BIOME_PREVIEW_COLOR = {
     "biome_plains": settings.COLOR_LIGHT,

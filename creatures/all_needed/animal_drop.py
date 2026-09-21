@@ -2,7 +2,9 @@
 механика идентична, различается только оформление."""
 
 import pygame
+
 from objects import WorldObject
+
 
 class AnimalDropResource(WorldObject):
     """Наследник задаёт атрибуты класса: type_name, drop_collection_attr,

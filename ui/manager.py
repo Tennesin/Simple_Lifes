@@ -2,22 +2,26 @@
 
 import pygame
 
-import settings
 import info
-from game.race_registry import (
-    all_races, all_player_tools, all_secondary_panel_specs, all_road_networks,
-)
-from game.animal_registry import animal_classes
+import settings
 from game.animal_panel import AnimalPanel
+from game.animal_registry import animal_classes
+from game.race_registry import (
+    all_player_tools,
+    all_races,
+    all_road_networks,
+    all_secondary_panel_specs,
+)
 
-from .constants import BIOME_PREVIEW_COLOR, _CORE_PLAYER_TOOLS, _CORE_TOOL_HINTS
-from .top_bar import TopBarPanel
-from .object_panel import ObjectPanel
-from .minimap import MinimapPanel
-from .world_screens import WorldScreensPanel
-from .settings_panel import SettingsPanel
-from .instruction_panel import InstructionPanel
+from .constants import _CORE_PLAYER_TOOLS, _CORE_TOOL_HINTS, BIOME_PREVIEW_COLOR
 from .exit_confirm import ExitConfirmPanel
+from .instruction_panel import InstructionPanel
+from .minimap import MinimapPanel
+from .object_panel import ObjectPanel
+from .settings_panel import SettingsPanel
+from .top_bar import TopBarPanel
+from .world_screens import WorldScreensPanel
+
 
 class UIManager:
 

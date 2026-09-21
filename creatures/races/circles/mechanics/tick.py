@@ -1,15 +1,21 @@
-import os
-import shutil
-import random
 import math
+import os
+import random
+import shutil
+
 import pygame
 
 import settings
+
 from ....all_needed.geometry import footprint_radius
-from .. import ci_settings, ci_info
+from .. import ci_info, ci_settings
 from ..circle_objects import ConstructionSite
 from ..life_cycle import apply_grief_for_death
-from .input_events import cleanup_area_for_new_graveyard, cleanup_area_for_new_construction
+from .input_events import (
+    cleanup_area_for_new_construction,
+    cleanup_area_for_new_graveyard,
+)
+
 
 def tick_circle_world(game, dt):
     for gy in game.world.graveyards:

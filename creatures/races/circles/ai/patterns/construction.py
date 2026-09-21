@@ -2,10 +2,11 @@ import math
 import random
 
 import settings
-from ... import ci_settings, ci_info
+
 from .....all_needed import geometry
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
-from ...circle_objects import StorageField, Graveyard, ConstructionSite, House, Campfire
+from ... import ci_info, ci_settings
+from ...circle_objects import Campfire, ConstructionSite, Graveyard, House, StorageField
 
 # =========================================================================
 # Добыча ресурсов и строительство

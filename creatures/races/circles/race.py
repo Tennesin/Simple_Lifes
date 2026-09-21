@@ -1,42 +1,73 @@
 """Точка входа расы 'Круг' для авто-регистрации."""
 
+from game.race_registry import (
+    BiomeCascadeSpec,
+    ExtraObjectCollectionSpec,
+    LandmarkSpec,
+    MinimapLayer,
+    PlaceableObjectSpec,
+    RaceDescriptor,
+    RenderLayer,
+    RoadNetworkSpec,
+    SecondaryPanelSpec,
+)
 from objects import RoadCrossing
 
-from game.race_registry import (
-    RaceDescriptor, RenderLayer, PlaceableObjectSpec, RoadNetworkSpec,
-    MinimapLayer, SecondaryPanelSpec, LandmarkSpec,
-    ExtraObjectCollectionSpec, BiomeCascadeSpec,
-)
-from . import ci_settings
-from . import ci_info
-from .mechanics.input_events import (
-    on_delete_storage_field, storage_field_can_delete, on_delete_graveyard, on_delete_construction_site,
-    on_delete_house, on_delete_campfire, circle_handle_relationships_scrollbar_down,
-    circle_handle_relationships_scrollbar_up, circle_handle_relationships_wheel,
-    circle_handle_relationships_scrollbar_motion,
-)
-
-from .race_instruction import (
-    CIRCLE_INSTRUCTION_SECTIONS, CIRCLE_INSTRUCTION_TITLE,
-    CIRCLE_INSTRUCTION_PREVIEW_ICON, circle_instruction_icon,
+from . import ci_info, ci_settings
+from .circle_objects import (
+    Campfire,
+    ChildRoad,
+    ConstructionSite,
+    Graveyard,
+    House,
+    StorageField,
 )
 from .creature import Creature
-from .circle_objects import (
-    ChildRoad, StorageField, ConstructionSite, Graveyard, House, Campfire
-)
-from .mechanics.tick import CircleTickProcessor, tick_circle_world
 from .mechanics.creature_lifecycle import (
-    CircleSpawnManager, circle_spawn_dispatch,
-    save_circle_genealogy, load_circle_genealogy,
+    CircleSpawnManager,
+    circle_spawn_dispatch,
+    load_circle_genealogy,
+    save_circle_genealogy,
+)
+from .mechanics.creature_lifecycle import (
+    load_creature_from_state as load_circle_creature,
+)
+from .mechanics.input_events import (
+    circle_handle_relationships_scrollbar_down,
+    circle_handle_relationships_scrollbar_motion,
+    circle_handle_relationships_scrollbar_up,
+    circle_handle_relationships_wheel,
+    on_delete_campfire,
+    on_delete_construction_site,
+    on_delete_graveyard,
+    on_delete_house,
+    on_delete_storage_field,
+    storage_field_can_delete,
 )
 from .mechanics.panel import (
-    CreaturePanel, GraveyardPanel, GenealogyTreeOverlay, circle_object_panel_extra_lines,
+    CreaturePanel,
+    GenealogyTreeOverlay,
+    GraveyardPanel,
+    circle_object_panel_extra_lines,
 )
-from .mechanics.creature_lifecycle import load_creature_from_state as load_circle_creature
 from .mechanics.render import (
-    draw_child_roads, draw_campfires, draw_storage_fields, draw_construction_sites, draw_graveyards,
-    draw_minimap_child_roads, draw_minimap_campfires, draw_minimap_constructions, draw_houses,
+    draw_campfires,
+    draw_child_roads,
+    draw_construction_sites,
+    draw_graveyards,
+    draw_houses,
+    draw_minimap_campfires,
+    draw_minimap_child_roads,
+    draw_minimap_constructions,
     draw_minimap_houses,
+    draw_storage_fields,
+)
+from .mechanics.tick import CircleTickProcessor, tick_circle_world
+from .race_instruction import (
+    CIRCLE_INSTRUCTION_PREVIEW_ICON,
+    CIRCLE_INSTRUCTION_SECTIONS,
+    CIRCLE_INSTRUCTION_TITLE,
+    circle_instruction_icon,
 )
 
 RACE_DESCRIPTOR = RaceDescriptor(

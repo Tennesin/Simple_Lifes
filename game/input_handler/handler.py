@@ -6,10 +6,11 @@
 import pygame
 
 from .common import ScreenLayer
-from .world_screens import CreateWorldLayer, LoadWorldLayer
-from .settings_input import SettingsLayer
 from .instruction_input import InstructionLayer
+from .settings_input import SettingsLayer
 from .world_layer import WorldLayer
+from .world_screens import CreateWorldLayer, LoadWorldLayer
+
 
 class CrashLayer(ScreenLayer):
 

@@ -1,10 +1,12 @@
-import pygame
-import settings
-import info
-import time
-import uuid
 import math
 import random
+import time
+import uuid
+
+import pygame
+
+import info
+import settings
 
 # --------------- Шаблоны ---------------
 

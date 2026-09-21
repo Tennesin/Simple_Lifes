@@ -1,7 +1,8 @@
 """Универсальный формат текстового наполнения игровой инструкции."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple, Union
+from typing import Union
 
 # =========================================================================
 # Семантические цвета - переиспользуем уже принятые в проекте оттенки,
@@ -30,20 +31,20 @@ class InstructionHeader:
 class InstructionParagraph:
     """Обычный абзац. color=None -> берётся цвет по умолчанию при отрисовке."""
     text: str
-    color: Optional[Tuple[int, int, int]] = None
+    color: tuple[int, int, int] | None = None
 
 @dataclass(frozen=True)
 class InstructionBullet:
     """Пункт списка. icon - строковый ключ варианта иконки."""
     text: str
-    color: Optional[Tuple[int, int, int]] = None
-    icon: Optional[str] = None
+    color: tuple[int, int, int] | None = None
+    icon: str | None = None
 
 @dataclass(frozen=True)
 class InstructionCallout:
     """Акцентная врезка (предупреждение / 'это не баг' / важное замечание)."""
     text: str
-    color: Tuple[int, int, int] = INSTRUCTION_COLOR_WARNING
+    color: tuple[int, int, int] = INSTRUCTION_COLOR_WARNING
 
 
 InstructionBlock = Union[InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout]
@@ -56,9 +57,9 @@ InstructionBlock = Union[InstructionHeader, InstructionParagraph, InstructionBul
 class InstructionEntry:
     key: str                                            # race_name / animal_name
     title: str                                           # "Круг", "Корова"
-    sections: Tuple[InstructionBlock, ...] = field(default_factory=tuple)
-    preview_icon: Optional[str] = None                   # вариант иконки для строки-заголовка
-    icon_factory: Optional[Callable[[str], object]] = None
+    sections: tuple[InstructionBlock, ...] = field(default_factory=tuple)
+    preview_icon: str | None = None                   # вариант иконки для строки-заголовка
+    icon_factory: Callable[[str], object] | None = None
 
 # =========================================================================
 # Категория верхнего уровня ("Основы", "Расы", "Животные", "Полезное").
@@ -68,8 +69,8 @@ class InstructionEntry:
 class InstructionCategory:
     key: str
     label: str
-    sections: Tuple[InstructionBlock, ...] = field(default_factory=tuple)
-    entries: Tuple[InstructionEntry, ...] = field(default_factory=tuple)
+    sections: tuple[InstructionBlock, ...] = field(default_factory=tuple)
+    entries: tuple[InstructionEntry, ...] = field(default_factory=tuple)
 
     @property
     def is_list(self):

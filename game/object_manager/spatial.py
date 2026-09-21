@@ -5,7 +5,9 @@ SpatialIndex - временная пространственная сетка н
                по одной сетке на коллекцию, при первом обращении к ней."""
 
 from creatures.all_needed.navigation import SpatialGrid
+
 from . import object_settings as cfg
+
 
 class LinearSource:
 

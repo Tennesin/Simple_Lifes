@@ -1,9 +1,10 @@
 """Физиологическое состояние существа каждый тик."""
 
 import settings
-from . import ci_settings
-from ...all_needed.weak_owner import WeakOwnerMixin
+
 from ...all_needed.navigation import BasePathfinder
+from ...all_needed.weak_owner import WeakOwnerMixin
+from . import ci_settings
 
 # =========================================================================
 # Домен: голод / жажда / сон / здоровье / рассудок

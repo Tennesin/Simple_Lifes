@@ -6,18 +6,20 @@ from collections import namedtuple
 from typing import TYPE_CHECKING
 
 import settings
-from .. import ci_settings, ci_info
-from ....all_needed import geometry, filter_same_race
+
+from ....all_needed import filter_same_race, geometry
 from ....all_needed.weak_owner import WeakOwnerMixin
-from .circles_instincts import UniversalInstincts
+from .. import ci_info, ci_settings
 from .adult_ai import AdultAI
 from .child_ai import ChildAI
+from .circles_instincts import UniversalInstincts
 from .older_ai import OlderAI
 from .patterns import DecisionContext
 
 if TYPE_CHECKING:
-    from ..creature import Creature
     from game.world_context import WorldFrameContext
+
+    from ..creature import Creature
 
 _Perception = namedtuple("_Perception", [
     "reaction_distance",
@@ -29,13 +31,13 @@ _Perception = namedtuple("_Perception", [
 ])
 
 class _BrainMixinBase:
-    c: "Creature"
-    instincts: "UniversalInstincts"
+    c: Creature
+    instincts: UniversalInstincts
 
 class _LifeStageDispatchBase(_BrainMixinBase):
-    child: "ChildAI"
-    adult: "AdultAI"
-    older: "OlderAI"
+    child: ChildAI
+    adult: AdultAI
+    older: OlderAI
 
 # =========================================================================
 # Домен: тик всех таймеров/кулдаунов существа (без принятия решений)
@@ -91,7 +93,7 @@ class _PerceptionMixin(_BrainMixinBase):
         bx, by, br = obj.get_bounding_circle()
         return math.hypot(cx - bx, cy - by) < radius + br
 
-    def _gather_perception(self, ctx: "WorldFrameContext"):
+    def _gather_perception(self, ctx: WorldFrameContext):
         c = self.c
         fruits, spikes, water_puddles = ctx.fruits, ctx.spikes, ctx.water_puddles
         bushes, campfires, other_creatures = ctx.bushes, ctx.campfires, ctx.creatures
@@ -300,7 +302,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
         houses = ctx.race_collections.get("houses", [])
         return c.is_in_own_house(houses)
 
-    def _dispatch_life_stage(self, perception, ctx: "WorldFrameContext"):
+    def _dispatch_life_stage(self, perception, ctx: WorldFrameContext):
         c = self.c
         other_creatures = ctx.race_creatures if ctx.race_creatures is not None else filter_same_race(c, ctx.creatures)
         roads = ctx.roads
@@ -376,7 +378,7 @@ class CreatureBrain(WeakOwnerMixin, _TimerTickMixin, _PerceptionMixin, _ReflexMi
         self.child = ChildAI(creature, self.instincts)
         self.older = OlderAI(creature, self.instincts)
 
-    def decide(self, ctx: "WorldFrameContext"):
+    def decide(self, ctx: WorldFrameContext):
         c = self.c
 
         self._tick_timers(ctx.dt)

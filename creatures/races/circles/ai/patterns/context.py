@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+
 
 @dataclass
 class DecisionContext:
@@ -20,8 +20,8 @@ class DecisionContext:
     graveyards: list = field(default_factory=list)
     houses: list = field(default_factory=list)
     dt: float = 0.0
-    other_by_id: Optional[dict] = None
-    road_crossings: Optional[list] = None
+    other_by_id: dict | None = None
+    road_crossings: list | None = None
     visible_child_roads: list = field(default_factory=list)
     all_child_roads: list = field(default_factory=list)
     biome_grid: object = None

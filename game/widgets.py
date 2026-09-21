@@ -1,10 +1,16 @@
-import time
 import math
+import time
+
 import pygame
+
 import settings
 from creatures.all_needed.instruction import (
-    InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
-    wrap_instruction_text, INSTRUCTION_COLOR_DEFAULT,
+    INSTRUCTION_COLOR_DEFAULT,
+    InstructionBullet,
+    InstructionCallout,
+    InstructionHeader,
+    InstructionParagraph,
+    wrap_instruction_text,
 )
 
 TEXT_EDIT_COMMIT = "commit"

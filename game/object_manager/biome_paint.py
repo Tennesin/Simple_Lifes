@@ -4,7 +4,9 @@ import math
 from dataclasses import dataclass
 
 import settings
+
 from .removal import CoreClear
+
 
 @dataclass(frozen=True)
 class _Cascade:

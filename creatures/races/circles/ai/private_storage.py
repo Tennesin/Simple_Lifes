@@ -3,10 +3,11 @@
 import math
 import random
 
-from .. import ci_settings
-from .patterns import Storage, Construction
 from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration
+from .. import ci_settings
+from .patterns import Construction, Storage
+
 
 def same_household(creature, owner_id, other_creatures=None):
     if owner_id is None:

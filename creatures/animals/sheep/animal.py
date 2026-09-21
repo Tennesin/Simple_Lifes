@@ -3,11 +3,9 @@
 import uuid
 
 from game import animal_registry
-from . import sheep
-from . import sheep_objects
-from . import sheep_settings
-from . import sheep_ai
-from . import names
+
+from . import names, sheep, sheep_ai, sheep_objects, sheep_settings
+
 
 def spawn_sheep(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]

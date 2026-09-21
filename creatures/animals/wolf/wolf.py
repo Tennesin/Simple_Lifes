@@ -1,14 +1,12 @@
 """Класс волка - минимальный набор данных + отрисовка."""
 
 import random
+
 import pygame
 
-from ...all_needed import base_creature
-from ...all_needed import instruction
-from ...all_needed import instruction_icons
-from . import wolf_settings
-from . import wolf_objects
-from . import names
+from ...all_needed import base_creature, instruction, instruction_icons
+from . import names, wolf_objects, wolf_settings
+
 
 class Wolf(base_creature.CreatureBase):
     race_name = "wolf"

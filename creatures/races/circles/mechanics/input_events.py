@@ -1,13 +1,14 @@
 """Обработка ввода и мировых событий, связанных с существами расы 'Круг'."""
 
+import math
 import os
 import shutil
-import math
 
 import settings
-from ....all_needed.geometry import footprint_radius
-from .. import ci_settings, ci_info
+
 from ....all_needed import geometry
+from ....all_needed.geometry import footprint_radius
+from .. import ci_info, ci_settings
 
 # =========================================================================
 # Домен: труп сородича — перехват переноски при двойном клике и передача

@@ -1,7 +1,7 @@
 import math
 
-from ... import ci_settings, ci_info
-from .....all_needed.ai.utility import Consideration, scale, GoalComponent
+from .....all_needed.ai.utility import Consideration, GoalComponent, scale
+from ... import ci_info, ci_settings
 
 # =========================================================================
 # Базовые нужды: голод/жажда/сон/санити/выживание

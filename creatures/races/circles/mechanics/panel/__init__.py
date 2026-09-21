@@ -4,13 +4,13 @@
 отдавал единый panel.py — импорты в race.py менять не нужно."""
 
 from .creature_panel import CreaturePanel
-from .graveyard_panel import GraveyardPanel
 from .genealogy import GenealogyTreeOverlay
+from .graveyard_panel import GraveyardPanel
 from .object_extra_lines import circle_object_panel_extra_lines
 
 __all__ = [
     "CreaturePanel",
-    "GraveyardPanel",
     "GenealogyTreeOverlay",
+    "GraveyardPanel",
     "circle_object_panel_extra_lines",
 ]

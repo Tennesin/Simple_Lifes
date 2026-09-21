@@ -1,9 +1,9 @@
 """Единая точка сборки настроек отображения (панель 'Настройки' -> 'Отображение')."""
 
-import settings
 import info
-from game.race_registry import all_display_checkboxes
+import settings
 from game.animal_registry import all_animal_display_checkboxes
+from game.race_registry import all_display_checkboxes
 
 # ---------- Core-чекбоксы вкладки "Техническое" ----------
 CORE_TECHNICAL_CHECKBOXES = (

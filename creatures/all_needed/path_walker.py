@@ -3,6 +3,7 @@
 
 import math
 
+
 class PathProgressTracker:
 
     ARRIVAL_DISTANCE = 14

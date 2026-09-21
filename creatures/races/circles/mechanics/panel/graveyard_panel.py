@@ -1,13 +1,21 @@
 """Панель кладбища конкретно для расы 'Круг'."""
 
 import time
+
 import pygame
 
-import settings
 import info
-from game.widgets import ScrollArea, edit_text_buffer, TEXT_EDIT_COMMIT, TEXT_EDIT_CANCEL
-from ... import ci_settings, ci_info
+import settings
+from game.widgets import (
+    TEXT_EDIT_CANCEL,
+    TEXT_EDIT_COMMIT,
+    ScrollArea,
+    edit_text_buffer,
+)
+
 from .....all_needed.instruction import truncate_text
+from ... import ci_info, ci_settings
+
 
 class GraveyardPanel:
 

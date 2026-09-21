@@ -1,17 +1,16 @@
 """Класс коровы - минимальный набор данных + отрисовка."""
 
 import random
+
 import pygame
 
+import info
 import objects
 import settings
-import info
-from ...all_needed import base_creature
-from ...all_needed import instruction
-from ...all_needed import instruction_icons
-from . import cow_settings
-from . import names
-from . import cow_objects
+
+from ...all_needed import base_creature, instruction, instruction_icons
+from . import cow_objects, cow_settings, names
+
 
 class Cow(base_creature.CreatureBase):
     race_name = "cow"

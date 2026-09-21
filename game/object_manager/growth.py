@@ -4,9 +4,11 @@ import math
 import random
 
 import settings
+
 from . import object_settings as cfg
-from .object_types import object_types, create_object
+from .object_types import create_object, object_types
 from .spatial import SpatialIndex
+
 
 class NaturalGrowth:
 

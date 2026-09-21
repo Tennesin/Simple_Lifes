@@ -5,10 +5,14 @@
 from dataclasses import dataclass
 
 from game.race_registry import (
-    all_road_networks, all_extra_object_collections, all_biome_cascade_specs,
+    all_biome_cascade_specs,
+    all_extra_object_collections,
+    all_road_networks,
     all_secondary_panel_specs,
 )
+
 from .object_types import animal_drop_attrs
+
 
 @dataclass(frozen=True)
 class CoreClear:

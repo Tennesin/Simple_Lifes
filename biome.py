@@ -1,5 +1,6 @@
 import math
 import random
+
 import settings
 
 BIOME_RATIO_MIN = 0.05

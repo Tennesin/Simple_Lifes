@@ -2,6 +2,7 @@
 
 import weakref
 
+
 class WeakOwnerMixin:
     """Для подсистем существа: атрибут-владелец называется 'c' (уже принятое
     в проекте соглашение self.c = creature)."""

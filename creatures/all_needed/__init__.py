@@ -1,37 +1,73 @@
 """Универсальные инструменты и правила, не завязанные на конкретную расу существ."""
 
-from . import geometry
-from . import diet
-from . import instruction
-from .weak_owner import WeakOwnerMixin, WeakEntityMixin
-from .base_entity import BaseEntity, LivingEntity, same_race, filter_same_race
+from . import diet, geometry, instruction
 from .ai import GoalComponent, lookup_creature
-from .navigation import NavGrid, NavGridCache, SpatialGrid, BasePathfinder
+from .base_entity import BaseEntity, LivingEntity, filter_same_race, same_race
 from .diet import (
-    DIET_HERBIVORE, DIET_CARNIVORE, DIET_OMNIVORE,
-    FOOD_CATEGORY_PLANT, FOOD_CATEGORY_RAW_MEAT, FOOD_CATEGORY_COOKED_MEAT,
-    DIET_DISPLAY_MAP, diet_allows_category,
+    DIET_CARNIVORE,
+    DIET_DISPLAY_MAP,
+    DIET_HERBIVORE,
+    DIET_OMNIVORE,
+    FOOD_CATEGORY_COOKED_MEAT,
+    FOOD_CATEGORY_PLANT,
+    FOOD_CATEGORY_RAW_MEAT,
+    diet_allows_category,
 )
 from .instruction import (
-    InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
-    InstructionEntry, InstructionCategory, wrap_instruction_text,
-    INSTRUCTION_COLOR_DEFAULT, INSTRUCTION_COLOR_MALE, INSTRUCTION_COLOR_FEMALE,
-    INSTRUCTION_COLOR_WARNING, INSTRUCTION_COLOR_GOOD,
-    INSTRUCTION_COLOR_NEUTRAL_ACCENT, INSTRUCTION_COLOR_HINT,
+    INSTRUCTION_COLOR_DEFAULT,
+    INSTRUCTION_COLOR_FEMALE,
+    INSTRUCTION_COLOR_GOOD,
+    INSTRUCTION_COLOR_HINT,
+    INSTRUCTION_COLOR_MALE,
+    INSTRUCTION_COLOR_NEUTRAL_ACCENT,
+    INSTRUCTION_COLOR_WARNING,
+    InstructionBullet,
+    InstructionCallout,
+    InstructionCategory,
+    InstructionEntry,
+    InstructionHeader,
+    InstructionParagraph,
+    wrap_instruction_text,
 )
+from .navigation import BasePathfinder, NavGrid, NavGridCache, SpatialGrid
+from .weak_owner import WeakEntityMixin, WeakOwnerMixin
 
 __all__ = [
-    "geometry", "diet", "instruction",
-    "WeakOwnerMixin", "WeakEntityMixin",
-    "BaseEntity", "LivingEntity", "same_race", "filter_same_race",
-    "GoalComponent", "lookup_creature",
-    "NavGrid", "NavGridCache", "SpatialGrid", "BasePathfinder",
-    "DIET_HERBIVORE", "DIET_CARNIVORE", "DIET_OMNIVORE",
-    "FOOD_CATEGORY_PLANT", "FOOD_CATEGORY_RAW_MEAT", "FOOD_CATEGORY_COOKED_MEAT",
-    "DIET_DISPLAY_MAP", "diet_allows_category",
-    "InstructionHeader", "InstructionParagraph", "InstructionBullet", "InstructionCallout",
-    "InstructionEntry", "InstructionCategory", "wrap_instruction_text",
-    "INSTRUCTION_COLOR_DEFAULT", "INSTRUCTION_COLOR_MALE", "INSTRUCTION_COLOR_FEMALE",
-    "INSTRUCTION_COLOR_WARNING", "INSTRUCTION_COLOR_GOOD",
-    "INSTRUCTION_COLOR_NEUTRAL_ACCENT", "INSTRUCTION_COLOR_HINT",
+    "DIET_CARNIVORE",
+    "DIET_DISPLAY_MAP",
+    "DIET_HERBIVORE",
+    "DIET_OMNIVORE",
+    "FOOD_CATEGORY_COOKED_MEAT",
+    "FOOD_CATEGORY_PLANT",
+    "FOOD_CATEGORY_RAW_MEAT",
+    "INSTRUCTION_COLOR_DEFAULT",
+    "INSTRUCTION_COLOR_FEMALE",
+    "INSTRUCTION_COLOR_GOOD",
+    "INSTRUCTION_COLOR_HINT",
+    "INSTRUCTION_COLOR_MALE",
+    "INSTRUCTION_COLOR_NEUTRAL_ACCENT",
+    "INSTRUCTION_COLOR_WARNING",
+    "BaseEntity",
+    "BasePathfinder",
+    "GoalComponent",
+    "InstructionBullet",
+    "InstructionCallout",
+    "InstructionCategory",
+    "InstructionEntry",
+    "InstructionHeader",
+    "InstructionParagraph",
+    "LivingEntity",
+    "NavGrid",
+    "NavGridCache",
+    "SpatialGrid",
+    "WeakEntityMixin",
+    "WeakOwnerMixin",
+    "diet",
+    "diet_allows_category",
+    "filter_same_race",
+    "geometry",
+    "instruction",
+    "lookup_creature",
+    "same_race",
+    "wrap_instruction_text",
 ]

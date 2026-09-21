@@ -2,12 +2,14 @@
 подстраивается под фактическое содержимое, в правом нижнем углу экрана."""
 
 import pygame
-import settings
+
 import info
-from game.animal_registry import all_animal_object_panel_extensions
+import settings
 from creatures.all_needed.base_creature import GENDER_FEMALE
 from creatures.all_needed.diet import DIET_DISPLAY_MAP
+from game.animal_registry import all_animal_object_panel_extensions
 from game.widgets import draw_favorite_star
+
 
 class AnimalPanel:
 

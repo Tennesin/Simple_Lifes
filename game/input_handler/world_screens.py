@@ -4,7 +4,9 @@
 import pygame
 
 import settings
+
 from .common import ScreenLayer
+
 
 class CreateWorldLayer(ScreenLayer):
 

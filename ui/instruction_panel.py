@@ -3,10 +3,15 @@
 
 import pygame
 
-import settings
 import info
-from game.widgets import AccordionList, measure_instruction_blocks, draw_instruction_blocks
+import settings
 from game.instruction_content import core_instruction_icon
+from game.widgets import (
+    AccordionList,
+    draw_instruction_blocks,
+    measure_instruction_blocks,
+)
+
 
 class InstructionPanel:
 

@@ -1,13 +1,15 @@
 """Плашка выбранного объекта (не существа) — core-часть + расовые расширения."""
 
 import time
+
 import pygame
 
-import settings
 import info
-from game.race_registry import all_object_panel_extensions
-from game.animal_registry import all_animal_object_panel_extensions
+import settings
 from creatures.all_needed.instruction import wrap_instruction_text
+from game.animal_registry import all_animal_object_panel_extensions
+from game.race_registry import all_object_panel_extensions
+
 
 class ObjectPanel:
 

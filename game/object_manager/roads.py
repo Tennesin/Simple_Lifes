@@ -4,10 +4,11 @@ import math
 from collections import namedtuple
 
 import settings
-from game.race_registry import all_road_networks, all_landmark_specs
 from creatures.all_needed import geometry
 from creatures.all_needed.geometry import distance_to_footprint
+from game.race_registry import all_landmark_specs, all_road_networks
 from objects import RoadCrossing
+
 from . import object_settings as cfg
 
 # Ориентиры ядра, к которым может быть привязан конец дороги: (тип, коллекция мира).

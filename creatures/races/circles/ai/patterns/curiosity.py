@@ -1,7 +1,7 @@
 import random
 
-from ... import ci_settings
 from .....all_needed.ai.utility import Consideration, GoalComponent
+from ... import ci_settings
 
 # =========================================================================
 # Любопытство к неизвестным объектам - общая часть (роль/скидка на интерес),

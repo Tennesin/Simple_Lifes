@@ -1,6 +1,7 @@
 import settings
 from game.race_registry import all_road_networks
 
+
 class Player:
 
     TOOL_PET = "pet"

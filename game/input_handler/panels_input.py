@@ -7,10 +7,14 @@ import time
 import pygame
 
 import settings
-from player import Player
-from objects import Wall, Fence
-from game.race_registry import all_road_networks, all_secondary_panel_specs, creature_placement_lookup
 from game.animal_registry import animal_classes, animal_placement_lookup, get_animal
+from game.race_registry import (
+    all_road_networks,
+    all_secondary_panel_specs,
+    creature_placement_lookup,
+)
+from objects import Fence, Wall
+from player import Player
 
 from .common import in_world_area, world_point
 

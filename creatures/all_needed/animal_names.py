@@ -3,6 +3,7 @@
 
 import random
 
+
 def make_animal_name_pools(male_names, female_names):
     """Возвращает (pools_dict, random_name_fn)."""
     pools = {"male": male_names, "female": female_names}

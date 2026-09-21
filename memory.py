@@ -4,6 +4,7 @@ import random
 
 import settings
 
+
 class Memory:
     _BUCKET_NEAR, _BUCKET_MEDIUM, _BUCKET_FAR = "near", "medium", "far"
     _BUCKET_DISTANCE_VALUE = {_BUCKET_NEAR: 200, _BUCKET_MEDIUM: 550, _BUCKET_FAR: 1100}

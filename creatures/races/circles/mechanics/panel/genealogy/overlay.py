@@ -1,11 +1,14 @@
 """Древо Родословной - модальный оверлей: отрисовка + обработка ввода."""
 
 import math
+
 import pygame
 
 import settings
-from .... import ci_settings, ci_info
+
+from .... import ci_info, ci_settings
 from .layout import GenealogyLayoutBuilder
+
 
 class GenealogyTreeOverlay:
 

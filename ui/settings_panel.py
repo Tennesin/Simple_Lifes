@@ -2,12 +2,14 @@
 
 import pygame
 
-import settings
 import info
-from game.widgets import ScrollArea
+import settings
 from game.display_settings import (
-    all_display_checkbox_specs, all_technical_checkbox_specs, all_technical_slider_specs
+    all_display_checkbox_specs,
+    all_technical_checkbox_specs,
+    all_technical_slider_specs,
 )
+from game.widgets import ScrollArea
 
 SETTINGS_TABS = (
     ("technical", info.INFO_SETTINGS_TAB_TECHNICAL),

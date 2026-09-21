@@ -2,8 +2,9 @@
 
 import pygame
 
-import settings
 import info
+import settings
+
 
 class ExitConfirmPanel:
 

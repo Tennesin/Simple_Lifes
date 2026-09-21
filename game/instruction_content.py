@@ -5,14 +5,24 @@
 import pygame
 
 import settings
-from creatures.all_needed.instruction_icons import IconCache
 from creatures.all_needed.instruction import (
-    InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
-    InstructionCategory, INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_WARNING,
-    INSTRUCTION_COLOR_HINT, INSTRUCTION_COLOR_NEUTRAL_ACCENT,
+    INSTRUCTION_COLOR_GOOD,
+    INSTRUCTION_COLOR_HINT,
+    INSTRUCTION_COLOR_NEUTRAL_ACCENT,
+    INSTRUCTION_COLOR_WARNING,
+    InstructionBullet,
+    InstructionCallout,
+    InstructionCategory,
+    InstructionHeader,
+    InstructionParagraph,
 )
-from game.race_registry import all_race_instruction_entries, all_player_tools, all_road_networks
+from creatures.all_needed.instruction_icons import IconCache
 from game.animal_registry import all_animal_instruction_entries
+from game.race_registry import (
+    all_player_tools,
+    all_race_instruction_entries,
+    all_road_networks,
+)
 
 # =========================================================================
 # Простые core-иконки: объект = форма + заливка + обводка

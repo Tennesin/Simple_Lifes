@@ -2,11 +2,13 @@
 (по образцу WorldRenderer._build_render_pipeline)."""
 
 import math
+
 import pygame
 
 import settings
-from game.race_registry import all_minimap_layers
 from game.animal_registry import all_animals
+from game.race_registry import all_minimap_layers
+
 
 def _mm_draw_roads(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_roads"]:

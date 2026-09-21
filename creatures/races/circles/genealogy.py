@@ -3,6 +3,7 @@
 import json
 import os
 
+
 class GenealogyRegistry:
 
     def __init__(self):

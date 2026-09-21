@@ -1,28 +1,47 @@
-import os
 import gc
 import json
+import os
+import random
 import shutil
 import time
-import pygame
-import random
 
-import settings
+import pygame
+
 import info
+import settings
+from biome import (
+    BIOME_RATIO_MAX,
+    BIOME_RATIO_MIN,
+    BIOME_RATIO_STEP,
+    DEFAULT_BIOME_RATIOS,
+    adjust_biome_ratio,
+    finalize_biome_ratios,
+)
+from game.animal_registry import all_animal_drop_persistence_entries, all_animals
 from game.race_registry import (
-    get_race, all_races, all_extra_world_save_fns, all_extra_world_load_fns,
+    all_extra_world_load_fns,
+    all_extra_world_save_fns,
+    all_races,
+    get_race,
+)
+from objects import (
+    Bush,
+    Fence,
+    Fruit,
+    Grass,
+    Meat,
+    Road,
+    RoadCrossing,
+    Spike,
+    Stone,
+    Tree,
+    Wall,
+    WaterPuddle,
 )
 from player import Player
-from objects import (
-    Fruit, Spike, WaterPuddle, Bush, Road, RoadCrossing,
-    Wall, Fence, Tree, Stone, Grass, Meat,
-    )
-from game.animal_registry import all_animals, all_animal_drop_persistence_entries
+
+from .widgets import ScrollArea, Slider, TextInputBox
 from .world_context import WorldState
-from .widgets import TextInputBox, ScrollArea, Slider
-from biome import (
-    DEFAULT_BIOME_RATIOS, adjust_biome_ratio, finalize_biome_ratios,
-    BIOME_RATIO_MIN, BIOME_RATIO_MAX, BIOME_RATIO_STEP,
-)
 
 INVALID_NAME_CHARS = '<>:"/\\|?*'
 # ---------- Обязательные поля world.json и обязательные файлы папки мира ----------

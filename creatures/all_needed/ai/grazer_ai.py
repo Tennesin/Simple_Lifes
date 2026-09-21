@@ -2,11 +2,16 @@
 (Consideration + pick_best, по образцу расы 'Круг') - бродит, ест траву,
 пьёт воду, убегает от волков и от шипов."""
 
-from ..simulation_area import tick_frozen_state, should_be_removed, rescue_from_sea_or_kill
+import settings
+
+from ..simulation_area import (
+    rescue_from_sea_or_kill,
+    should_be_removed,
+    tick_frozen_state,
+)
+from ..weak_owner import WeakEntityMixin
 from .roaming_ai import RoamingAnimalMixin
 from .utility import Consideration, pick_best, scale
-from ..weak_owner import WeakEntityMixin
-import settings
 
 # ---------- Веса принятия решений ----------
 SCORE_FLEE_PREDATOR_BASE = 95.0

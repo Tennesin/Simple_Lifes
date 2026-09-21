@@ -1,7 +1,9 @@
 import random
-from . import ci_settings
+
 from ...all_needed import geometry
 from ...all_needed.weak_owner import WeakOwnerMixin
+from . import ci_settings
+
 
 class CreatureSocial(WeakOwnerMixin):
     def __init__(self, creature):

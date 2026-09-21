@@ -5,8 +5,9 @@
 import math
 
 from objects import Bush, WaterPuddle
+
+from ... import ci_info, ci_settings
 from ...circle_objects import Campfire
-from ... import ci_settings, ci_info
 
 
 def circle_object_panel_extra_lines(obj, creatures):

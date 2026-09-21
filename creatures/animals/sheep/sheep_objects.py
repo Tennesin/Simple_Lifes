@@ -3,6 +3,7 @@
 from ...all_needed import animal_drop
 from . import sheep_settings
 
+
 class Wool(animal_drop.AnimalDropResource):
     """Практического применения пока нет."""
 

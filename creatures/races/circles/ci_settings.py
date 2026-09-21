@@ -1,7 +1,11 @@
 """Настройки, специфичные для расы 'Круг'."""
 import settings
+
+from ...all_needed.base_creature import (
+    GENDER_FEMALE,
+    GENDER_MALE,
+)
 from ...all_needed.diet import DIET_OMNIVORE, FOOD_CATEGORY_PLANT
-from ...all_needed.base_creature import GENDER_MALE, GENDER_FEMALE, STAT_ADJUST_STEP_FACTOR
 
 RACE_NAME = "circle"
 RACE_DIET = DIET_OMNIVORE

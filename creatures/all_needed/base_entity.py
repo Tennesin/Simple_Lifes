@@ -1,7 +1,10 @@
 import math
+
 import settings
+
 from . import geometry
 from .diet import diet_allows_category
+
 
 class BaseEntity:
     """Общий базовый класс для любой позиционируемой игровой сущности."""

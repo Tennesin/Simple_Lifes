@@ -4,6 +4,7 @@ import random
 import time
 
 from names import random_name
+
 from .base_entity import LivingEntity
 
 GENDER_MALE = "male"

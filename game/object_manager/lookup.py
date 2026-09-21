@@ -2,11 +2,15 @@
 
 import math
 
-from game.race_registry import (
-    CORE_ROAD_NETWORK, all_races, all_road_networks, all_extra_object_collections,
-)
-from creatures.all_needed.geometry import point_segment_distance, distance_to_footprint
+from creatures.all_needed.geometry import distance_to_footprint, point_segment_distance
 from game.animal_registry import all_animals
+from game.race_registry import (
+    CORE_ROAD_NETWORK,
+    all_extra_object_collections,
+    all_races,
+    all_road_networks,
+)
+
 from . import object_settings as cfg
 from .object_types import animal_collections, animal_drop_attrs
 

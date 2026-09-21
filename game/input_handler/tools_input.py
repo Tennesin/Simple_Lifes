@@ -8,12 +8,12 @@ from collections import namedtuple
 import pygame
 
 import settings
-from player import Player
-from objects import Wall, Fence
 from creatures.all_needed.base_entity import LivingEntity
 from creatures.all_needed.geometry import clamp
-from game.race_registry import all_road_networks
 from game.object_manager.object_types import LANDSCAPE_AFFECTING_TYPES
+from game.race_registry import all_road_networks
+from objects import Fence, Wall
+from player import Player
 
 from .common import in_world_area, world_point
 

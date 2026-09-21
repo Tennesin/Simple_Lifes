@@ -1,12 +1,12 @@
 """Какие типы объектов вообще существуют и где им разрешено стоять."""
 
 import random
-from functools import lru_cache
+from functools import cache
 
 import settings
+from game.animal_registry import all_animal_drop_collections, all_animals
 from game.race_registry import all_races
-from game.animal_registry import all_animals, all_animal_drop_collections
-from objects import Fruit, Spike, WaterPuddle, Bush, Tree, Stone, Grass, Meat
+from objects import Bush, Fruit, Grass, Meat, Spike, Stone, Tree, WaterPuddle
 
 # ---------- Типы объектов ядра: obj_type -> (имя коллекции мира, класс) ----------
 CORE_OBJECT_TYPES = {
@@ -46,7 +46,7 @@ def allowed_biomes(obj_type):
 
 # ---------- Ленивые реестры ----------
 
-@lru_cache(maxsize=None)
+@cache
 def object_types():
     """obj_type -> (имя коллекции мира, класс). Ядро + размещаемые объекты рас."""
     registry = dict(CORE_OBJECT_TYPES)
@@ -55,7 +55,7 @@ def object_types():
             registry[spec.obj_type] = (spec.attr, spec.cls)
     return registry
 
-@lru_cache(maxsize=None)
+@cache
 def _placement_clearances():
     return {
         spec.obj_type: spec.placement_clearance
@@ -67,7 +67,7 @@ def _placement_clearances():
 def placement_clearance(obj_type):
     return _placement_clearances().get(obj_type, 0)
 
-@lru_cache(maxsize=None)
+@cache
 def mutual_additive_attrs():
     """Коллекции, у которых зазоры суммируются (а не берётся максимум)."""
     return frozenset(
@@ -77,23 +77,23 @@ def mutual_additive_attrs():
         if spec.mutual_clearance_additive
     )
 
-@lru_cache(maxsize=None)
+@cache
 def animal_collections():
     return tuple(descriptor.world_collection for descriptor in all_animals())
 
-@lru_cache(maxsize=None)
+@cache
 def animal_drop_attrs():
     return tuple(all_animal_drop_collections())
 
-@lru_cache(maxsize=None)
+@cache
 def creature_like_attrs():
     return ("creatures",) + animal_collections()
 
-@lru_cache(maxsize=None)
+@cache
 def fixed_clearance_attrs():
     return FIXED_CLEARANCE_CORE_ATTRS + animal_collections()
 
-@lru_cache(maxsize=None)
+@cache
 def footprint_clearance_attrs():
     """Коллекции, для которых зазор считается по занимаемому месту объекта."""
     return tuple(dict.fromkeys(
@@ -101,7 +101,7 @@ def footprint_clearance_attrs():
         if attr not in FIXED_CLEARANCE_CORE_ATTRS
     ))
 
-@lru_cache(maxsize=None)
+@cache
 def creature_blocking_attrs():
     race_attrs = tuple(
         spec.attr

@@ -1,13 +1,14 @@
 import importlib
 import pkgutil
-from functools import lru_cache
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable, Optional, Tuple, Type
-import info
+from functools import cache
 
-from creatures.all_needed.instruction import InstructionEntry
 import creatures.races as races_package
+import info
+from creatures.all_needed.instruction import InstructionEntry
 from objects import Road
+
 
 @dataclass(frozen=True)
 class RenderLayer:
@@ -29,10 +30,10 @@ class PlaceableObjectSpec:
     """Описание одного объекта, размещаемого через игровое меню 'Объект'."""
     obj_type: str
     attr: str
-    cls: Type
+    cls: type
     label: str
-    placement_clearance: Optional[float] = None
-    secondary_panel_attr: Optional[str] = None
+    placement_clearance: float | None = None
+    secondary_panel_attr: str | None = None
     blocks_creature_spawn: bool = False
     mutual_clearance_additive: bool = False
     manually_placeable: bool = True
@@ -43,11 +44,11 @@ class RoadNetworkSpec:
     obj_type: str
     road_collection: str
     crossing_collection: str
-    verify_fn: Optional[Callable] = None
-    road_cls: Optional[Type] = None
-    preview_color: Tuple[int, int, int] = (255, 255, 255)
-    menu_label: Optional[str] = None
-    menu_hint: Optional[str] = None
+    verify_fn: Callable | None = None
+    road_cls: type | None = None
+    preview_color: tuple[int, int, int] = (255, 255, 255)
+    menu_label: str | None = None
+    menu_hint: str | None = None
 
 CORE_ROAD_NETWORK = RoadNetworkSpec(
     obj_type="road", road_collection="roads", crossing_collection="road_crossings",
@@ -66,9 +67,9 @@ class SecondaryPanelSpec:
     """Дополнительная боковая панель выбора (по образцу panel_cls для существ,
     но для не-существ - кладбище, и т.п.)."""
     attr_name: str
-    panel_cls: Type
-    is_selected_fn: Optional[Callable] = None
-    popup_draw_fn: Optional[Callable] = None
+    panel_cls: type
+    is_selected_fn: Callable | None = None
+    popup_draw_fn: Callable | None = None
 
 @dataclass(frozen=True)
 class LandmarkSpec:
@@ -83,8 +84,8 @@ class ExtraObjectCollectionSpec:
     (find_object_at) и удалять (delete_object)."""
     attr: str
     hit_margin: float = 6.0
-    on_delete: Optional[Callable] = None  # (game, obj) -> None
-    can_delete_fn: Optional[Callable] = None  # (game, obj) -> bool;
+    on_delete: Callable | None = None  # (game, obj) -> None
+    can_delete_fn: Callable | None = None  # (game, obj) -> bool;
 
 @dataclass(frozen=True)
 class BiomeCascadeSpec:
@@ -92,58 +93,58 @@ class BiomeCascadeSpec:
     attr: str
     clear_on_flood: bool = False
     clear_on_desert: bool = False
-    on_removed: Optional[Callable] = None  # (game, obj) -> None
+    on_removed: Callable | None = None  # (game, obj) -> None
 
 @dataclass(frozen=True)
 class RaceDescriptor:
     """Описание одной расы существ - всё, что нужно движку, чтобы работать с ней."""
 
     race_name: str
-    creature_cls: Type
-    tick_processor_cls: Type
+    creature_cls: type
+    tick_processor_cls: type
 
     loader_fn: Callable
-    panel_cls: Type
+    panel_cls: type
 
-    spawn_manager_cls: Optional[Type] = None
-    spawn_fn: Optional[Callable] = None
-    name_pools: Optional[dict] = None
-    creature_placement_modes: Tuple[Tuple[str, str], ...] = field(default_factory=tuple)
-    world_collections: Tuple[str, ...] = field(default_factory=tuple)
-    persistence_registry: Tuple[Tuple[str, str, Type], ...] = field(default_factory=tuple)
-    placeable_objects: Tuple[PlaceableObjectSpec, ...] = field(default_factory=tuple)
-    render_layers: Tuple[RenderLayer, ...] = field(default_factory=tuple)
-    road_networks: Tuple[RoadNetworkSpec, ...] = field(default_factory=tuple)
+    spawn_manager_cls: type | None = None
+    spawn_fn: Callable | None = None
+    name_pools: dict | None = None
+    creature_placement_modes: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+    world_collections: tuple[str, ...] = field(default_factory=tuple)
+    persistence_registry: tuple[tuple[str, str, type], ...] = field(default_factory=tuple)
+    placeable_objects: tuple[PlaceableObjectSpec, ...] = field(default_factory=tuple)
+    render_layers: tuple[RenderLayer, ...] = field(default_factory=tuple)
+    road_networks: tuple[RoadNetworkSpec, ...] = field(default_factory=tuple)
 
     # ---------- Новое: тик "неживых" объектов расы (не существ) ----------
-    world_tick_fn: Optional[Callable] = None  # (game, dt) -> None
+    world_tick_fn: Callable | None = None  # (game, dt) -> None
     # ---------- Дополнительное сохранение/загрузка мира, специфичное для расы ----------
-    extra_world_save_fn: Optional[Callable] = None  # (game) -> None
-    extra_world_load_fn: Optional[Callable] = None  # (game) -> None
+    extra_world_save_fn: Callable | None = None  # (game) -> None
+    extra_world_load_fn: Callable | None = None  # (game) -> None
 
     # ---------- Новое: генерализация ui ----------
-    player_tools: Tuple[PlayerToolSpec, ...] = field(default_factory=tuple)
-    display_checkboxes: Tuple[Tuple[str, str], ...] = field(default_factory=tuple)
-    minimap_layers: Tuple[MinimapLayer, ...] = field(default_factory=tuple)
-    object_panel_extra_fn: Optional[Callable] = None  # (obj, all_creatures) -> list[(text, color)]
-    secondary_panel_specs: Tuple[SecondaryPanelSpec, ...] = field(default_factory=tuple)
-    landmark_specs: Tuple[LandmarkSpec, ...] = field(default_factory=tuple)
-    extra_object_collections: Tuple[ExtraObjectCollectionSpec, ...] = field(default_factory=tuple)
-    biome_cascade_specs: Tuple[BiomeCascadeSpec, ...] = field(default_factory=tuple)
+    player_tools: tuple[PlayerToolSpec, ...] = field(default_factory=tuple)
+    display_checkboxes: tuple[tuple[str, str], ...] = field(default_factory=tuple)
+    minimap_layers: tuple[MinimapLayer, ...] = field(default_factory=tuple)
+    object_panel_extra_fn: Callable | None = None  # (obj, all_creatures) -> list[(text, color)]
+    secondary_panel_specs: tuple[SecondaryPanelSpec, ...] = field(default_factory=tuple)
+    landmark_specs: tuple[LandmarkSpec, ...] = field(default_factory=tuple)
+    extra_object_collections: tuple[ExtraObjectCollectionSpec, ...] = field(default_factory=tuple)
+    biome_cascade_specs: tuple[BiomeCascadeSpec, ...] = field(default_factory=tuple)
 
     # ---------- Обобщённые крючки мыши. ----------
-    mouse_down_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
-    mouse_up_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
-    mouse_motion_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
-    mouse_wheel_hooks: Tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_down_hooks: tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_up_hooks: tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_motion_hooks: tuple[Callable, ...] = field(default_factory=tuple)
+    mouse_wheel_hooks: tuple[Callable, ...] = field(default_factory=tuple)
 
     # ---------- Инструкция: раса документирует сама себя ----------
-    instruction_title: Optional[str] = None                  # имя в списке ("Круг"); None -> race_name
-    instruction_sections: Tuple = field(default_factory=tuple)
-    instruction_preview_icon: Optional[str] = None           # вариант иконки строки-заголовка
-    instruction_icon_factory: Optional[Callable] = None      # (variant_key, size) -> pygame.Surface|None
+    instruction_title: str | None = None                  # имя в списке ("Круг"); None -> race_name
+    instruction_sections: tuple = field(default_factory=tuple)
+    instruction_preview_icon: str | None = None           # вариант иконки строки-заголовка
+    instruction_icon_factory: Callable | None = None      # (variant_key, size) -> pygame.Surface|None
 
-_RACES_CACHE: Optional[dict] = None
+_RACES_CACHE: dict | None = None
 
 def _discover_races() -> dict:
     registry = {}
@@ -185,10 +186,10 @@ def get_race(race_name: str) -> RaceDescriptor:
             f"с RACE_DESCRIPTOR). Известные расы: {sorted(races.keys())}"
         )
 
-def all_race_names() -> Tuple[str, ...]:
+def all_race_names() -> tuple[str, ...]:
     return tuple(_races().keys())
 
-def all_races() -> Tuple[RaceDescriptor, ...]:
+def all_races() -> tuple[RaceDescriptor, ...]:
     return tuple(_races().values())
 
 def creature_placement_lookup():
@@ -200,40 +201,40 @@ def creature_placement_lookup():
 
 # ---------- Новые агрегирующие хелперы (по аналогии с creature_placement_lookup) ----------
 
-def all_player_tools() -> Tuple[PlayerToolSpec, ...]:
+def all_player_tools() -> tuple[PlayerToolSpec, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.player_tools)
     return tuple(result)
 
-def all_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
+def all_display_checkboxes() -> tuple[tuple[str, str], ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.display_checkboxes)
     return tuple(result)
 
-def all_minimap_layers() -> Tuple[MinimapLayer, ...]:
+def all_minimap_layers() -> tuple[MinimapLayer, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.minimap_layers)
     return tuple(result)
 
-def all_object_panel_extensions() -> Tuple[Callable, ...]:
+def all_object_panel_extensions() -> tuple[Callable, ...]:
     return tuple(d.object_panel_extra_fn for d in all_races() if d.object_panel_extra_fn is not None)
 
-def all_secondary_panel_specs() -> Tuple[SecondaryPanelSpec, ...]:
+def all_secondary_panel_specs() -> tuple[SecondaryPanelSpec, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.secondary_panel_specs)
     return tuple(result)
 
-def all_landmark_specs() -> Tuple[LandmarkSpec, ...]:
+def all_landmark_specs() -> tuple[LandmarkSpec, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.landmark_specs)
     return tuple(result)
 
-def all_race_instruction_entries() -> Tuple[InstructionEntry, ...]:
+def all_race_instruction_entries() -> tuple[InstructionEntry, ...]:
     """Готовые карточки-аккордеоны раздела 'Расы'."""
     entries = []
     for descriptor in all_races():
@@ -250,50 +251,50 @@ def all_race_instruction_entries() -> Tuple[InstructionEntry, ...]:
     entries.sort(key=lambda e: e.title.lower())
     return tuple(entries)
 
-def all_extra_object_collections() -> Tuple[ExtraObjectCollectionSpec, ...]:
+def all_extra_object_collections() -> tuple[ExtraObjectCollectionSpec, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.extra_object_collections)
     return tuple(result)
 
-def all_biome_cascade_specs() -> Tuple[BiomeCascadeSpec, ...]:
+def all_biome_cascade_specs() -> tuple[BiomeCascadeSpec, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.biome_cascade_specs)
     return tuple(result)
 
-def all_mouse_down_hooks() -> Tuple[Callable, ...]:
+def all_mouse_down_hooks() -> tuple[Callable, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.mouse_down_hooks)
     return tuple(result)
 
-def all_mouse_up_hooks() -> Tuple[Callable, ...]:
+def all_mouse_up_hooks() -> tuple[Callable, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.mouse_up_hooks)
     return tuple(result)
 
-def all_mouse_motion_hooks() -> Tuple[Callable, ...]:
+def all_mouse_motion_hooks() -> tuple[Callable, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.mouse_motion_hooks)
     return tuple(result)
 
-def all_mouse_wheel_hooks() -> Tuple[Callable, ...]:
+def all_mouse_wheel_hooks() -> tuple[Callable, ...]:
     result = []
     for descriptor in all_races():
         result.extend(descriptor.mouse_wheel_hooks)
     return tuple(result)
 
-def all_extra_world_save_fns() -> Tuple[Callable, ...]:
+def all_extra_world_save_fns() -> tuple[Callable, ...]:
     return tuple(d.extra_world_save_fn for d in all_races() if d.extra_world_save_fn is not None)
 
-def all_extra_world_load_fns() -> Tuple[Callable, ...]:
+def all_extra_world_load_fns() -> tuple[Callable, ...]:
     return tuple(d.extra_world_load_fn for d in all_races() if d.extra_world_load_fn is not None)
 
-@lru_cache(maxsize=None)
-def all_road_networks() -> Tuple[RoadNetworkSpec, ...]:
+@cache
+def all_road_networks() -> tuple[RoadNetworkSpec, ...]:
     result = [CORE_ROAD_NETWORK]
     for descriptor in all_races():
         result.extend(descriptor.road_networks)

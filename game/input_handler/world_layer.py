@@ -4,17 +4,25 @@
 import pygame
 
 from game.race_registry import (
-    all_secondary_panel_specs, all_mouse_down_hooks, all_mouse_up_hooks,
-    all_mouse_motion_hooks, all_mouse_wheel_hooks,
+    all_mouse_down_hooks,
+    all_mouse_motion_hooks,
+    all_mouse_up_hooks,
+    all_mouse_wheel_hooks,
+    all_secondary_panel_specs,
 )
-from game.widgets import edit_text_buffer, TEXT_EDIT_COMMIT, TEXT_EDIT_CANCEL
+from game.widgets import TEXT_EDIT_CANCEL, TEXT_EDIT_COMMIT, edit_text_buffer
 
-from .common import dispatch_hooks, SelectionService, EscapeStack
-from .top_bar_input import TopBarController
-from .panels_input import SidePanelController, WorldClickController, PlacementController
+from .common import EscapeStack, SelectionService, dispatch_hooks
+from .panels_input import PlacementController, SidePanelController, WorldClickController
 from .tools_input import (
-    ToolModeController, GrabController, DrawingController, BiomeBrushController, PlayerToolController,
+    BiomeBrushController,
+    DrawingController,
+    GrabController,
+    PlayerToolController,
+    ToolModeController,
 )
+from .top_bar_input import TopBarController
+
 
 class HudController:
     """Элементы поверх мира, обрабатываемые раньше режимов инструментов: ручка

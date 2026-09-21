@@ -2,8 +2,9 @@ import math
 import random
 
 import settings
-from .. import ci_settings, ci_info
+
 from ....all_needed import geometry
+from .. import ci_info, ci_settings
 
 # =========================================================================
 # Домен: труп сородича - подход, перенос, выбор кладбища, реакция на тревогу

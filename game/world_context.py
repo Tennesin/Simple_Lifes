@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Optional
 
+from game.animal_registry import all_animal_drop_collections, all_animals
 from game.race_registry import all_races
-from game.animal_registry import all_animals, all_animal_drop_collections
+
 
 def _collect_race_collections():
     names = []
@@ -62,18 +62,18 @@ class WorldFrameContext:
     race_collections: dict = field(default_factory=dict)
     animal_collections: dict = field(default_factory=dict)
 
-    race_creatures: Optional[list] = None
-    creatures_by_id: Optional[dict] = None
+    race_creatures: list | None = None
+    creatures_by_id: dict | None = None
     nav_grid_no_fences: object = None
     nav_grid_with_fences: object = None
     nav_grid_no_fences_fallback: object = None
     nav_grid_with_fences_fallback: object = None
-    spatial_grids: Optional[dict] = None
+    spatial_grids: dict | None = None
     biome_grid: object = None
 
     # ---------- ДОС: границы области полноценной симуляции и набор id внутри неё ----------
-    simulation_bounds: Optional[tuple] = None
-    active_ids: Optional[set] = None
+    simulation_bounds: tuple | None = None
+    active_ids: set | None = None
 
     def __getattr__(self, name):
         race_collections = object.__getattribute__(self, "race_collections")

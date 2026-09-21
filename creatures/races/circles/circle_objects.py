@@ -1,15 +1,16 @@
 """Игровые объекты, специфичные для расы 'Круг'."""
 
 import math
+import random
 import time
 import uuid
-import random
+
 import pygame
 
 from objects import PolylineRoad, WorldObject
-from . import ci_settings
-from . import ci_info
+
 from ...all_needed import geometry
+from . import ci_info, ci_settings
 
 _CAMPFIRE_HALO_CACHE = {}
 

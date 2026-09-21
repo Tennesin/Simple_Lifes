@@ -5,11 +5,17 @@ from contextlib import contextmanager
 
 import settings
 from game.animal_registry import all_animals
+
 from . import object_settings as cfg
 from .object_types import (
-    object_types, create_object, allowed_biomes, ANIMAL_BIOMES, LANDSCAPE_AFFECTING_TYPES,
+    ANIMAL_BIOMES,
+    LANDSCAPE_AFFECTING_TYPES,
+    allowed_biomes,
+    create_object,
+    object_types,
 )
-from .spatial import SpatialIndex, EligibleCells
+from .spatial import EligibleCells, SpatialIndex
+
 
 @contextmanager
 def seeded_global_random(seed):

@@ -4,11 +4,12 @@ import math
 import random
 
 import settings
+
+from ....all_needed.ids import new_id
 from .. import ci_settings
 from ..creature import Creature
-from ..life_cycle import CreatureAging
 from ..genealogy import GenealogyRegistry
-from ....all_needed.ids import new_id
+from ..life_cycle import CreatureAging
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка

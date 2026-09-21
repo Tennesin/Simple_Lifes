@@ -3,6 +3,7 @@
 from ...all_needed import animal_drop
 from . import cow_settings
 
+
 class Leather(animal_drop.AnimalDropResource):
     """Кожа коровы."""
 

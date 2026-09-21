@@ -1,6 +1,8 @@
 import math
 import random
+
 import settings
+
 
 def clamped_point(origin_x, origin_y, angle, dist):
     tx = origin_x + math.cos(angle) * dist
@@ -65,7 +67,7 @@ def clamp(value, lo, hi):
     return max(lo, min(hi, value))
 
 class ObstaclePoint:
-    __slots__ = ("x", "y", "radius")
+    __slots__ = ("radius", "x", "y")
 
     def __init__(self, x, y, radius):
         self.x = x

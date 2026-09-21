@@ -1,8 +1,6 @@
-import settings
-from . import ci_settings
-from . import ci_info
 from ...all_needed import geometry
 from ...all_needed.weak_owner import WeakOwnerMixin
+from . import ci_info, ci_settings
 
 GRAB_EVAL_MAX_HOLD_TIME = 5.0
 

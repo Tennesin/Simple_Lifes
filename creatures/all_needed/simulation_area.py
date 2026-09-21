@@ -4,6 +4,7 @@
 
 import settings
 
+
 def tick_frozen_state(entity, dt, active_ids):
     """Тикает таймер заморозки, если сущность вне активной области ДОС."""
     if active_ids is None or entity.id in active_ids:

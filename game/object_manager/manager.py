@@ -2,17 +2,19 @@
 и сохраняет прежние имена методов, которые вызывает остальной проект."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from game.race_registry import all_races
+
 from .animals import AnimalService
 from .biome_paint import BiomePainter
 from .generation import WorldGenerator
 from .growth import NaturalGrowth
 from .lookup import ObjectLookup
-from .object_types import type_of_instance
 from .object_placement import PlacementService
-from .removal import ObjectRemover, CoreClear
+from .object_types import type_of_instance
+from .removal import CoreClear, ObjectRemover
 from .roads import RoadNetworkService
 
 if TYPE_CHECKING:
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
 
 class ObjectManager:
 
-    def __init__(self, game: "Game"):
+    def __init__(self, game: Game):
         self.game = game
 
         # ---------- Менеджеры спавна рас (их ищут по имени расы: spawn_managers["circle"]) ----------

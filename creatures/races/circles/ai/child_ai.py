@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -8,11 +9,11 @@ if TYPE_CHECKING:
 import math
 import random
 
-from .. import ci_settings, ci_info
-from .private_storage import field_belongs_to
 from ....all_needed import geometry
-from ....all_needed.ai.utility import Consideration, pick_best, scale, lookup_creature
+from ....all_needed.ai.utility import Consideration, lookup_creature, pick_best, scale
 from ....all_needed.path_walker import PathProgressTracker
+from .. import ci_info, ci_settings
+from .private_storage import field_belongs_to
 
 # ---------- Веса принятия решений для детей ----------
 SCORE_CHILD_DISTRESS_BASE = 90.0
@@ -39,8 +40,8 @@ SCORE_CHILD_ROAD_PLAY_ACTIVE = 58.0
 CHILD_PLAY_TERRITORY_PULLBACK = 0.9
 
 class _ChildAIMixinBase:
-    c: "Creature"
-    instincts: "UniversalInstincts"
+    c: Creature
+    instincts: UniversalInstincts
 
 # =========================================================================
 # Общие утилиты без собственного домена: поиск видимого родителя по

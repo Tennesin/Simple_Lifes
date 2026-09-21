@@ -2,7 +2,8 @@
 (x, generation) и список рёбер по записям GenealogyRegistry."""
 
 from ......all_needed import geometry
-from .... import ci_settings, ci_info
+from .... import ci_info, ci_settings
+
 
 class GenealogyLayoutBuilder:
     """Единственная задача - превратить (registry, root_id, живые существа)

@@ -3,15 +3,25 @@
 import math
 
 import settings
+from creatures.all_needed.geometry import distance_to_footprint, footprint_radius
 from game.race_registry import all_road_networks
-from creatures.all_needed.geometry import footprint_radius, distance_to_footprint
+
 from . import object_settings as cfg
 from .object_types import (
-    object_types, create_object, allowed_biomes, placement_clearance, mutual_additive_attrs,
-    creature_like_attrs, creature_blocking_attrs, fixed_clearance_attrs, footprint_clearance_attrs,
-    ANIMAL_BIOMES, LANDSCAPE_AFFECTING_TYPES,
+    ANIMAL_BIOMES,
+    LANDSCAPE_AFFECTING_TYPES,
+    allowed_biomes,
+    create_object,
+    creature_blocking_attrs,
+    creature_like_attrs,
+    fixed_clearance_attrs,
+    footprint_clearance_attrs,
+    mutual_additive_attrs,
+    object_types,
+    placement_clearance,
 )
 from .spatial import LinearSource
+
 
 class PlacementService:
 

@@ -1,15 +1,17 @@
 """Верхняя панель: главное меню + 5 выпадающих подменю."""
 
 import os
+
 import pygame
 
-import settings
 import info
-from game.widgets import Button
-from game.race_registry import all_races, all_player_tools, all_road_networks
+import settings
 from game.animal_registry import all_animals
+from game.race_registry import all_player_tools, all_races, all_road_networks
+from game.widgets import Button
 
-from .constants import _CORE_PLAYER_TOOLS, _CORE_OBJECT_MENU_ITEMS
+from .constants import _CORE_OBJECT_MENU_ITEMS, _CORE_PLAYER_TOOLS
+
 
 class TopBarPanel:
     _MENU_COLORS = {
@@ -275,8 +277,7 @@ class TopBarPanel:
     def _draw_world_name(self, screen):
         game = self.game
         world_name = os.path.basename(game.world_path)
-        if world_name.endswith(settings.WORLD_EXTENSION):
-            world_name = world_name[:-len(settings.WORLD_EXTENSION)]
+        world_name = world_name.removesuffix(settings.WORLD_EXTENSION)
         name_full = info.INFO_WORLD_NAME_TEMPLATE.format(world_name=world_name)
 
         min_x = self.btn_player.rect.right + 20

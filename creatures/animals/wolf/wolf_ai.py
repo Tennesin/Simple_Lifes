@@ -5,10 +5,9 @@
 import math
 
 import settings
-from ...all_needed.ai import roaming_ai
-from ...all_needed.ai import utility
-from ...all_needed import simulation_area
-from ...all_needed import weak_owner
+
+from ...all_needed import simulation_area, weak_owner
+from ...all_needed.ai import roaming_ai, utility
 from . import wolf_settings
 
 _WOLF_AI_CFG = {
@@ -329,6 +328,7 @@ def tick_wolf(game, dt, nav_grid=None, fallback_nav_grid=None, active_ids=None, 
     prey_lists = [spatial_grids.get("cows", world.cows), spatial_grids.get("sheep", world.sheep)]
     meats_source = spatial_grids.get("meats", world.meats)
     water_source = spatial_grids.get("water", world.water_puddles)
+    spikes_source = spatial_grids.get("spikes", world.spikes)
 
     wall_polylines, fence_polylines = game.welded_landscape_polylines()
 

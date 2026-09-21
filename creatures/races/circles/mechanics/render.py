@@ -2,6 +2,7 @@
 
 from .. import ci_settings
 
+
 def draw_campfires(renderer, screen, game, camera, in_view):
     for fire in game.world.campfires:
         if in_view(fire.x, fire.y):

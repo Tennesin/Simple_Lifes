@@ -1,8 +1,13 @@
 import math
 import random
 
-from ... import ci_settings, ci_info
-from .....all_needed.ai.utility import Consideration, scale, GoalComponent, lookup_creature
+from .....all_needed.ai.utility import (
+    Consideration,
+    GoalComponent,
+    lookup_creature,
+    scale,
+)
+from ... import ci_info, ci_settings
 
 # =========================================================================
 # Эмпатия к сородичам (не путать с ElderWardCare - это про своих взрослых)

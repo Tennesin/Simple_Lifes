@@ -1,6 +1,6 @@
 
 class Consideration:
-    __slots__ = ("name", "score", "execute")
+    __slots__ = ("execute", "name", "score")
 
     def __init__(self, name, score, execute):
         self.name = name

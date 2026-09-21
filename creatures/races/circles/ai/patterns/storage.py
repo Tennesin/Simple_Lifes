@@ -1,8 +1,8 @@
 import math
 import random
 
-from ... import ci_settings, ci_info
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
+from ... import ci_info, ci_settings
 
 # =========================================================================
 # Семейный склад запасов

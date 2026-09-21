@@ -1,7 +1,8 @@
 """Гибель животного: либо с выпадением ресурсов (убили/умерло), либо тихо (исчезло вне ДОС)."""
 
-from game.animal_registry import all_animals
 from creatures.all_needed.weak_owner import WeakEntityMixin
+from game.animal_registry import all_animals
+
 
 class AnimalService:
 

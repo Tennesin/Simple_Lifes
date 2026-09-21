@@ -2,14 +2,20 @@
 
 import pygame
 
-from . import ci_settings
-from . import ci_info
-from ...all_needed.instruction_icons import IconCache
 from ...all_needed.instruction import (
-    InstructionHeader, InstructionParagraph, InstructionBullet, InstructionCallout,
-    INSTRUCTION_COLOR_MALE, INSTRUCTION_COLOR_FEMALE, INSTRUCTION_COLOR_WARNING,
-    INSTRUCTION_COLOR_GOOD, INSTRUCTION_COLOR_NEUTRAL_ACCENT, INSTRUCTION_COLOR_HINT,
+    INSTRUCTION_COLOR_FEMALE,
+    INSTRUCTION_COLOR_GOOD,
+    INSTRUCTION_COLOR_HINT,
+    INSTRUCTION_COLOR_MALE,
+    INSTRUCTION_COLOR_NEUTRAL_ACCENT,
+    INSTRUCTION_COLOR_WARNING,
+    InstructionBullet,
+    InstructionCallout,
+    InstructionHeader,
+    InstructionParagraph,
 )
+from ...all_needed.instruction_icons import IconCache
+from . import ci_info, ci_settings
 
 # =========================================================================
 # Иконки: "маленький красный круг", "круг с белым кольцом" и т.д.
@@ -101,8 +107,7 @@ CIRCLE_INSTRUCTION_SECTIONS = (
     InstructionBullet("Голод - падает всегда, восполняется фруктами. На нуле начинает "
                       "отнимать здоровье."),
     InstructionBullet("Жажда - падает быстрее голода, восполняется из водоёмов и рек. "
-                      "На нуле отнимает здоровье в {ratio:.1f} раз быстрее голода.".format(
-                          ratio=ci_settings.DEHYDRATE_HP_DRAIN / ci_settings.STARVE_HP_DRAIN)),
+                      f"На нуле отнимает здоровье в {ci_settings.DEHYDRATE_HP_DRAIN / ci_settings.STARVE_HP_DRAIN:.1f} раз быстрее голода."),
     InstructionBullet("Энергия - тратится на движение и дела. На нуле Круг падает спать "
                       "прямо там, где стоял."),
     InstructionBullet("Здоровье - само восстанавливается, пока Круг сыт. В пустыне жажда "

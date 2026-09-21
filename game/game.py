@@ -1,24 +1,26 @@
+import json
 import os
-import pygame
 import sys
 import time
 import traceback
-import json
 
+import pygame
+
+import settings
+from biome import BiomeManager
+from creatures.all_needed import geometry
+from player import Player
 from renderer import Camera, WorldRenderer
 from ui import UIManager
-from player import Player
-import settings
-from creatures.all_needed import geometry
 
-from biome import BiomeManager
-from .world_manager import WorldManager
-from .object_manager import ObjectManager
 from .input_handler import InputHandler
-from .simulation import Simulation
-from .world_context import WorldState
-from .widgets import ScrollArea, AccordionList
 from .instruction_content import build_instruction_categories
+from .object_manager import ObjectManager
+from .simulation import Simulation
+from .widgets import AccordionList, ScrollArea
+from .world_context import WorldState
+from .world_manager import WorldManager
+
 
 class SettingsScreen:
     def __init__(self, base_settings):

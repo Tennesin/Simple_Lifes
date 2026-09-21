@@ -1,10 +1,11 @@
 """Экраны "Создание мира" / "Загрузка мира" — без изменений (core)."""
 
 import time
+
 import pygame
 
-import settings
 import info
+import settings
 from game.animal_registry import all_animals
 
 from .constants import BIOME_LABELS

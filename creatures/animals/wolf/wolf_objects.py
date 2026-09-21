@@ -3,6 +3,7 @@
 from ...all_needed import animal_drop
 from . import wolf_settings
 
+
 class Hide(animal_drop.AnimalDropResource):
     type_name = "Шкура"
     drop_collection_attr = "hides"

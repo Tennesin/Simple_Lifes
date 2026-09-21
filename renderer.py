@@ -1,11 +1,13 @@
-import pygame
-import random
 import math
-import settings
+import random
+
+import pygame
+
 import info
-from game.race_registry import all_races
-from game.animal_registry import all_animals, all_animal_drop_collections
+import settings
 from creatures.all_needed import geometry
+from game.animal_registry import all_animal_drop_collections, all_animals
+from game.race_registry import all_races
 
 # =========================================================================
 # Ядро конвейера отрисовки мира: (ключ_слоя, функция_отрисовки).

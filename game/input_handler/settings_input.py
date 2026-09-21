@@ -4,6 +4,7 @@ import pygame
 
 from .common import ScreenLayer
 
+
 class SettingsLayer(ScreenLayer):
 
     def is_active(self):

@@ -1,15 +1,24 @@
 import math
 import random
 
-from .. import ci_settings, ci_info
-from .patterns import (
-    GoalComponent, ResourceActions, Roads, SurvivalNeeds, CorpseHandling,
-    EmpathyHelp, Feeding, SocialResponse, PartnerBond,
-    ChildRoadVerification, Curiosity, CuriosityStrategy,
-    )
-from .private_storage import PrivateStorage, PrivateConstruction
-from ..life_cycle import is_blood_relative
 from ....all_needed.ai.utility import Consideration, pick_best
+from .. import ci_info, ci_settings
+from ..life_cycle import is_blood_relative
+from .patterns import (
+    ChildRoadVerification,
+    CorpseHandling,
+    Curiosity,
+    CuriosityStrategy,
+    EmpathyHelp,
+    Feeding,
+    GoalComponent,
+    PartnerBond,
+    ResourceActions,
+    Roads,
+    SocialResponse,
+    SurvivalNeeds,
+)
+from .private_storage import PrivateConstruction, PrivateStorage
 
 # =========================================================================
 # Территориальная защита - только у AdultAI

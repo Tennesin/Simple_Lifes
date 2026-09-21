@@ -1,13 +1,14 @@
 import math
 import random
 
-from objects import Fruit, Tree, Stone, Grass
 import settings
 from creatures.all_needed import navigation
 from creatures.all_needed.navigation import SpatialGrid
-from game.world_context import WorldState, WorldFrameContext
+from game.animal_registry import all_animal_drop_collections, all_animals
 from game.race_registry import all_races
-from game.animal_registry import all_animals, all_animal_drop_collections
+from game.world_context import WorldFrameContext, WorldState
+from objects import Fruit, Grass, Stone, Tree
+
 
 class Simulation:
     STATIC_GRID_REBUILD_INTERVAL = 6

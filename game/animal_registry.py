@@ -2,17 +2,18 @@
 
 import importlib
 import pkgutil
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional, Tuple, Type
 
-from creatures.all_needed.instruction import InstructionEntry
 import creatures.animals as animals_package
+from creatures.all_needed.instruction import InstructionEntry
+
 
 @dataclass(frozen=True)
 class AnimalDescriptor:
 
     animal_name: str
-    animal_cls: Type
+    animal_cls: type
 
     loader_fn: Callable            # (state: dict) -> экземпляр животного
     spawn_fn: Callable             # (object_manager, wx, wy, placement_mode) -> None
@@ -23,25 +24,25 @@ class AnimalDescriptor:
     placement_mode: str            # ключ режима размещения (для будущего меню)
     placement_label: str           # подпись кнопки размещения
 
-    name_pools: Optional[dict] = None
-    tick_fn: Optional[Callable] = None
-    object_panel_extra_fn: Optional[Callable] = None  # (obj, all_creatures) -> list[(text, color)]
+    name_pools: dict | None = None
+    tick_fn: Callable | None = None
+    object_panel_extra_fn: Callable | None = None  # (obj, all_creatures) -> list[(text, color)]
     initial_count: int = 0
 
     # ---------- Дроп-ресурсы животного - generic по образцу world_collections/persistence_registry расы ----------
-    drop_collections: Tuple[str, ...] = ()
-    drop_persistence_registry: Tuple[Tuple[str, str, Type], ...] = ()
+    drop_collections: tuple[str, ...] = ()
+    drop_persistence_registry: tuple[tuple[str, str, type], ...] = ()
 
     # ---------- Индивидуальная настройка отображения на мини-карте ----------
-    minimap_checkbox_label: Optional[str] = None  # текст чекбокса; если None - чекбокса не будет
-    minimap_marker_fn: Optional[Callable] = None  # (screen, pos) -> None; свой маркер вида на мини-карте
+    minimap_checkbox_label: str | None = None  # текст чекбокса; если None - чекбокса не будет
+    minimap_marker_fn: Callable | None = None  # (screen, pos) -> None; свой маркер вида на мини-карте
 
     # ---------- Инструкция ----------
-    instruction_sections: Tuple = ()
-    instruction_preview_icon: Optional[str] = None
-    instruction_icon_factory: Optional[Callable] = None
+    instruction_sections: tuple = ()
+    instruction_preview_icon: str | None = None
+    instruction_icon_factory: Callable | None = None
 
-_ANIMALS_CACHE: Optional[dict] = None
+_ANIMALS_CACHE: dict | None = None
 
 def _discover_animals() -> dict:
     registry = {}
@@ -80,10 +81,10 @@ def get_animal(animal_name: str) -> AnimalDescriptor:
             f"с ANIMAL_DESCRIPTOR). Известные животные: {sorted(animals.keys())}"
         )
 
-def all_animal_names() -> Tuple[str, ...]:
+def all_animal_names() -> tuple[str, ...]:
     return tuple(_animals().keys())
 
-def all_animals() -> Tuple[AnimalDescriptor, ...]:
+def all_animals() -> tuple[AnimalDescriptor, ...]:
     return tuple(_animals().values())
 
 def animal_placement_lookup() -> dict:
@@ -93,7 +94,7 @@ def animal_placement_lookup() -> dict:
         for descriptor in all_animals()
     }
 
-def all_animal_drop_collections() -> Tuple[str, ...]:
+def all_animal_drop_collections() -> tuple[str, ...]:
     result = []
     seen = set()
     for descriptor in all_animals():
@@ -103,7 +104,7 @@ def all_animal_drop_collections() -> Tuple[str, ...]:
                 result.append(name)
     return tuple(result)
 
-def all_animal_drop_persistence_entries() -> Tuple[Tuple[str, str, Type], ...]:
+def all_animal_drop_persistence_entries() -> tuple[tuple[str, str, type], ...]:
     entries = []
     seen_attrs = set()
     for descriptor in all_animals():
@@ -115,10 +116,10 @@ def all_animal_drop_persistence_entries() -> Tuple[Tuple[str, str, Type], ...]:
             entries.append(entry)
     return tuple(entries)
 
-def all_animal_object_panel_extensions() -> Tuple[Callable, ...]:
+def all_animal_object_panel_extensions() -> tuple[Callable, ...]:
     return tuple(d.object_panel_extra_fn for d in all_animals() if d.object_panel_extra_fn is not None)
 
-def all_animal_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
+def all_animal_display_checkboxes() -> tuple[tuple[str, str], ...]:
     """('minimap_show_animal_<name>', label) - для чекбоксов настроек, по образцу
     race_registry.all_display_checkboxes()."""
     result = []
@@ -127,7 +128,7 @@ def all_animal_display_checkboxes() -> Tuple[Tuple[str, str], ...]:
             result.append((f"minimap_show_animal_{d.animal_name}", d.minimap_checkbox_label))
     return tuple(result)
 
-def all_animal_instruction_entries() -> Tuple[InstructionEntry, ...]:
+def all_animal_instruction_entries() -> tuple[InstructionEntry, ...]:
     entries = []
     for descriptor in all_animals():
         if not descriptor.instruction_sections:
@@ -142,9 +143,9 @@ def all_animal_instruction_entries() -> Tuple[InstructionEntry, ...]:
     entries.sort(key=lambda e: e.title.lower())
     return tuple(entries)
 
-def all_animal_persistence_entries() -> Tuple[Tuple[str, str], ...]:
+def all_animal_persistence_entries() -> tuple[tuple[str, str], ...]:
     """(save_filename, world_collection) - аналог _WORLD_OBJECT_REGISTRY."""
     return tuple((d.save_filename, d.world_collection) for d in all_animals())
 
-def animal_classes() -> Tuple[Type, ...]:
+def animal_classes() -> tuple[type, ...]:
     return tuple(d.animal_cls for d in all_animals())

@@ -1,29 +1,31 @@
 import json
-import random
-import pygame
 import os
+import random
+
+import pygame
 
 import settings
 from memory import Memory
 from names import random_name
 
-from . import ci_settings
-from . import ci_info
-from ...all_needed import geometry
-from .life_cycle import CreatureAging, CreatureTerritory, CreatureFamily
-from .physiology import CreatureNeeds, CirclePathfinder
-from .social import CreatureSocial, CreatureCommunication
-from .interactions import CreatureInteractions
-from .player_reactions import PlayerReactionHandler
-from .psyche import CreaturePsyche
+from ...all_needed.base_entity import LivingEntity
+from . import ci_info, ci_settings
 from .ai import CreatureBrain
+from .interactions import CreatureInteractions
+from .life_cycle import CreatureAging, CreatureFamily, CreatureTerritory
 from .mechanics.input_events import (
-    start_corpse_grab as _start_corpse_grab,
-    handle_corpse_release as _handle_corpse_release,
     apply_name_edit as _apply_name_edit,
 )
-
-from ...all_needed.base_entity import LivingEntity
+from .mechanics.input_events import (
+    handle_corpse_release as _handle_corpse_release,
+)
+from .mechanics.input_events import (
+    start_corpse_grab as _start_corpse_grab,
+)
+from .physiology import CirclePathfinder, CreatureNeeds
+from .player_reactions import PlayerReactionHandler
+from .psyche import CreaturePsyche
+from .social import CreatureCommunication, CreatureSocial
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME

@@ -4,8 +4,10 @@
 
 import math
 import random
+
 import settings
 from creatures.all_needed import geometry
+
 
 class RoamingAnimalMixin:
     """Ожидает от наследника: self.entity (существо с .x/.y/.vision_radius),

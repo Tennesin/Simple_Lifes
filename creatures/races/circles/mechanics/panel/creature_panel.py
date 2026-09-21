@@ -2,14 +2,17 @@
 (полоски здоровья/голода/жажды, психика, семья, взаимоотношения)."""
 
 import time
+
 import pygame
 
-import settings
 import info
+import settings
 from game.widgets import Button, draw_favorite_star
-from ... import ci_settings, ci_info
+
 from .....all_needed.diet import DIET_DISPLAY_MAP
-from .....all_needed.instruction import truncate_text, draw_wrapped_text
+from .....all_needed.instruction import draw_wrapped_text, truncate_text
+from ... import ci_info, ci_settings
+
 
 class CreaturePanel:
 

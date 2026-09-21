@@ -1,14 +1,22 @@
 import math
 import random
 
-from .. import ci_settings, ci_info
+from ....all_needed.ai.utility import Consideration, pick_best
+from .. import ci_info, ci_settings
 from .patterns import (
-    GoalComponent, ResourceActions, Roads, SurvivalNeeds, CorpseHandling,
-    Feeding, SocialResponse, PartnerBond, Curiosity, CuriosityStrategy,
+    CorpseHandling,
+    Curiosity,
+    CuriosityStrategy,
+    Feeding,
+    GoalComponent,
+    PartnerBond,
+    ResourceActions,
+    Roads,
+    SocialResponse,
+    SurvivalNeeds,
     lookup_creature,
 )
 from .private_storage import PrivateStorage
-from ....all_needed.ai.utility import Consideration, pick_best
 
 # =========================================================================
 # Опека над случайными (не своими) детьми - только у OlderAI

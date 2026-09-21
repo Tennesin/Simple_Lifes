@@ -3,11 +3,9 @@
 import uuid
 
 from game import animal_registry
-from . import cow
-from . import cow_objects
-from . import cow_settings
-from . import cow_ai
-from . import names
+
+from . import cow, cow_ai, cow_objects, cow_settings, names
+
 
 def spawn_cow(object_manager, wx, wy, placement_mode):
     new_id = str(uuid.uuid4())[:8]

@@ -1,9 +1,11 @@
-import random
 import math
-from . import ci_settings
+import random
+
+from ...all_needed import lookup_creature
 from ...all_needed.base_entity import same_race
 from ...all_needed.weak_owner import WeakOwnerMixin
-from ...all_needed import lookup_creature
+from . import ci_settings
+
 
 def _shares_parent(ids_a, ids_b):
     if not ids_a or not ids_b:

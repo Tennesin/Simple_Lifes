@@ -1,12 +1,10 @@
 """Регистрация животного 'Волк' в animal_registry."""
 
-from game import animal_registry
-from . import wolf
-from . import wolf_objects
-from . import wolf_settings
-from . import wolf_ai
-from . import names
 from creatures.all_needed.ids import new_id
+from game import animal_registry
+
+from . import names, wolf, wolf_ai, wolf_objects, wolf_settings
+
 
 def spawn_wolf(object_manager, wx, wy, placement_mode):
     new_wolf = wolf.Wolf(new_id(), wx, wy)
