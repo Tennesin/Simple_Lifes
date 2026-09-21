@@ -40,10 +40,9 @@ def adjust_biome_ratio(ratios, changed_biome, new_value):
         ratios[b] = round(max(BIOME_RATIO_MIN, min(BIOME_RATIO_MAX, ratios[b])), 2)
     return ratios
 
-
-def finalize_biome_ratios(ratios):
-    """Вызывается прямо перед созданием мира: если сумма долей меньше 1.0,
-    недостающее случайно раздаётся по биомам (с учётом BIOME_RATIO_MAX)."""
+def finalize_biome_ratios(ratios, rng=None):
+    """Вызывается прямо перед созданием мира."""
+    rng = rng if rng is not None else random
     ratios = dict(ratios)
     total = sum(ratios.values())
     remaining_steps = int(round((1.0 - total) / BIOME_RATIO_STEP))
@@ -57,7 +56,7 @@ def finalize_biome_ratios(ratios):
         candidates = [b for b in biomes if ratios[b] + BIOME_RATIO_STEP <= BIOME_RATIO_MAX + 1e-6]
         if not candidates:
             break
-        b = random.choice(candidates)
+        b = rng.choice(candidates)
         ratios[b] = round(ratios[b] + BIOME_RATIO_STEP, 2)
         remaining_steps -= 1
 

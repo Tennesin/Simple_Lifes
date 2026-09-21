@@ -1,3 +1,4 @@
+import random
 from . import ci_settings
 from ...all_needed import geometry
 from ...all_needed.weak_owner import WeakOwnerMixin
@@ -51,6 +52,9 @@ class CreatureSocial(WeakOwnerMixin):
 
     def request_company(self, point):
         c = self.c
+        # ---------- Бросок один раз, на момент запроса, а не каждый кадр в consider() ----------
+        if random.random() > c.psyche.social_response_chance():
+            return
         c.social_request_timer = ci_settings.SOCIAL_REQUEST_HOLD_TIME
         c.social_request_point = point
 

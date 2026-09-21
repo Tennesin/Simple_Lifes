@@ -1,5 +1,6 @@
 import importlib
 import pkgutil
+from functools import lru_cache
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Tuple, Type
 import info
@@ -201,7 +202,6 @@ def creature_placement_lookup():
             lookup[mode] = (descriptor.race_name, descriptor.spawn_fn)
     return lookup
 
-
 # ---------- Новые агрегирующие хелперы (по аналогии с creature_placement_lookup) ----------
 
 def all_player_tools() -> Tuple[PlayerToolSpec, ...]:
@@ -295,3 +295,10 @@ def all_extra_world_save_fns() -> Tuple[Callable, ...]:
 
 def all_extra_world_load_fns() -> Tuple[Callable, ...]:
     return tuple(d.extra_world_load_fn for d in all_races() if d.extra_world_load_fn is not None)
+
+@lru_cache(maxsize=None)
+def all_road_networks() -> Tuple[RoadNetworkSpec, ...]:
+    result = [CORE_ROAD_NETWORK]
+    for descriptor in all_races():
+        result.extend(descriptor.road_networks)
+    return tuple(result)

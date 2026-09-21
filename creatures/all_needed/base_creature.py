@@ -10,6 +10,8 @@ GENDER_MALE = "male"
 GENDER_FEMALE = "female"
 DEFAULT_GENDER_LIST = (GENDER_MALE, GENDER_FEMALE)
 
+STAT_ADJUST_STEP_FACTOR = 0.10
+
 class CreatureBase(LivingEntity):
     """Базовый шаблон."""
     race_name = None
@@ -78,7 +80,7 @@ class CreatureBase(LivingEntity):
         self.player_touched = True
 
     # ---------- Клик игрока по полоске показателя на панели: -10%/+10% от максимума ----------
-    STAT_ADJUST_STEP_FACTOR = 0.10
+    STAT_ADJUST_STEP_FACTOR = STAT_ADJUST_STEP_FACTOR
     _STAT_MAX_ATTR = {
         "hp": "hp_max",
         "hunger": "hunger_max",

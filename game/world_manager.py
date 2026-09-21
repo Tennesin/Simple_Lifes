@@ -264,11 +264,20 @@ class WorldManager:
                 if os.path.isfile(os.path.join(creatures_dir, f, "state.json"))
             )
 
+        # ---------- НОВОЕ: имена файлов больше не переписаны вручную, а берутся
+        # из тех же реестров, что и реальное сохранение/загрузка ----------
         file_key_map = (
             ("fruits.json", "fruits"), ("spikes.json", "spikes"),
             ("water.json", "water"), ("bushes.json", "bushes"),
-            ("campfires.json", "campfires"), ("roads.json", "roads"),
+            ("roads.json", "roads"),
         )
+        campfire_filename = next(
+            (filename for filename, attr, _cls in self._WORLD_OBJECT_REGISTRY if attr == "campfires"),
+            None
+        )
+        if campfire_filename is not None:
+            file_key_map = file_key_map + ((campfire_filename, "campfires"),)
+
         for filename, key in file_key_map:
             path = os.path.join(entry.folder_path, filename)
             if os.path.exists(path):
@@ -332,7 +341,7 @@ class WorldManager:
         if seed is None:
             seed = random.randint(0, 2 ** 31 - 1)
 
-        biome_ratios = finalize_biome_ratios(biome_ratios or DEFAULT_BIOME_RATIOS)
+        biome_ratios = finalize_biome_ratios(biome_ratios or DEFAULT_BIOME_RATIOS, rng=random.Random(seed))
 
         meta = {
             "name": sanitize_world_name(name),

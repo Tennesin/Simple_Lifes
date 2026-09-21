@@ -374,8 +374,7 @@ class _MouseDownMixin:
             if mouse_y > settings.UI_HEIGHT and not (mods & pygame.KMOD_SHIFT):
                 wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                 biome_type = BIOME_TOOL_MAP[game.player.tool]
-                game.object_manager.paint_biome(wx, wy, biome_type, game.player.brush_radius)
-                self.biome_paint.last_pos = (wx, wy)
+                self._paint_biome_stroke(wx, wy, biome_type, game.player.brush_radius)
             return True
 
         return False
@@ -607,9 +606,7 @@ class _MouseDownMixin:
         if game.editing_name:
             game.finish_name_editing()
 
-        if (game.world_loaded and mouse_y > settings.UI_HEIGHT and not game.show_game_menu
-                and not game.show_lifes_menu and not game.show_objects_menu
-                and not game.show_player_menu):
+        if (game.world_loaded and mouse_y > settings.UI_HEIGHT and not game.any_menu_open()):
             now = time.time()
             wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
             obj_here = game.object_manager.find_object_at(wx, wy)
@@ -794,7 +791,7 @@ class _MouseMotionMixin:
                 if mouse_y > settings.UI_HEIGHT and not game.ui.exit_placement_btn.collidepoint(mouse_x, mouse_y):
                     wx, wy = game.camera.world_from_screen(mouse_x, mouse_y)
                     biome_type = BIOME_TOOL_MAP[game.player.tool]
-                    game.object_manager.paint_biome(wx, wy, biome_type, game.player.brush_radius)
+                    self._paint_biome_stroke(wx, wy, biome_type, game.player.brush_radius)
 
         if game.player.grabbed_creature is not None:
             if mouse_y > settings.UI_HEIGHT:
@@ -824,6 +821,8 @@ class _MouseMotionMixin:
                             wx, wy, obj_type=obj_type, exclude=obj)
                         obj.x, obj.y = wx, wy
                         game.player.grabbed_object_valid = valid
+                        if obj_type == "spike":
+                            game.world.landscape_version += 1
 
                 if hasattr(obj, "on_object_moved"):
                     obj.on_object_moved(game)
@@ -1026,6 +1025,12 @@ class _SettingsScreenEventMixin:
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             game.close_settings_screen()
+            return
+
+        if event.type == pygame.MOUSEWHEEL:
+            scroll = panel.scrolls.get(state.active_tab)
+            if scroll is not None:
+                scroll.scroll_by_wheel(event.y)
             return
 
         if event.type == pygame.MOUSEBUTTONUP and event.button == 1:

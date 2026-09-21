@@ -1,17 +1,15 @@
 """Регистрация животного 'Волк' в animal_registry."""
 
-import uuid
-
 from game import animal_registry
 from . import wolf
 from . import wolf_objects
 from . import wolf_settings
 from . import wolf_ai
 from . import names
+from creatures.all_needed.ids import new_id
 
 def spawn_wolf(object_manager, wx, wy, placement_mode):
-    new_id = str(uuid.uuid4())[:8]
-    new_wolf = wolf.Wolf(new_id, wx, wy)
+    new_wolf = wolf.Wolf(new_id(), wx, wy)
     object_manager.game.world.wolves.append(new_wolf)
 
 ANIMAL_DESCRIPTOR = animal_registry.AnimalDescriptor(

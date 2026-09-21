@@ -223,6 +223,7 @@ class WorldRenderer:
         self._render_pipeline = self._build_render_pipeline()
         self._name_surface_cache = {}
         self._vision_cache = {}
+        self._shade_surface_cache = {}
 
     @staticmethod
     def _build_render_pipeline():
@@ -360,6 +361,16 @@ class WorldRenderer:
         if len(polygon_screen) >= 2:
             pygame.draw.lines(screen, settings.VISION_CIRCLE_COLOR, True, polygon_screen, 2)
 
+    def _get_shade_surfaces(self, diameter):
+        surfaces = self._shade_surface_cache.get(diameter)
+        if surfaces is None:
+            # ---------- НОВОЕ: поверхности выделяются один раз на diameter и переиспользуются----------
+            shade = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+            mask = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+            surfaces = (shade, mask)
+            self._shade_surface_cache[diameter] = surfaces
+        return surfaces
+
     def _draw_vision_shadow(self, screen, pos, radius, polygon_screen):
         diameter = int(radius * 2) + 4
         if diameter <= 0:
@@ -367,12 +378,13 @@ class WorldRenderer:
         origin_x = pos[0] - radius - 2
         origin_y = pos[1] - radius - 2
 
-        shade = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+        shade, mask = self._get_shade_surfaces(diameter)
+        shade.fill((0, 0, 0, 0))
         pygame.draw.circle(shade, (0, 0, 0, settings.VISION_SHADOW_ALPHA),
                            (diameter // 2, diameter // 2), int(radius))
 
         if len(polygon_screen) >= 3:
-            mask = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+            mask.fill((0, 0, 0, 0))
             local_poly = [(px - origin_x, py - origin_y) for px, py in polygon_screen]
             pygame.draw.polygon(mask, (255, 255, 255, 255), local_poly)
             shade.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)

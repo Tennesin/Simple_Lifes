@@ -1,4 +1,4 @@
-import time
+import settings
 from . import ci_settings
 from . import ci_info
 from ...all_needed import geometry
@@ -21,7 +21,7 @@ class PlayerReactionHandler(WeakOwnerMixin):
 
     def add_memory(self, action, **extra):
         c = self.c
-        entry = {"action": action, "timestamp": time.time()}
+        entry = {"action": action, "timestamp": c.age}
         entry.update(extra)
         c.player_memory.append(entry)
         if len(c.player_memory) > ci_settings.MAX_PLAYER_MEMORY:
@@ -74,7 +74,7 @@ class PlayerReactionHandler(WeakOwnerMixin):
         c = self.c
         if c.is_dead:
             return
-        c.grab_before_state = {"wellbeing": c.needs.wellbeing_score(), "started_at": time.time()}
+        c.grab_before_state = {"wellbeing": c.needs.wellbeing_score(), "started_at": c.age}
         c.is_grabbed = True
         c.target = None
         c.panic_active = False
@@ -90,10 +90,10 @@ class PlayerReactionHandler(WeakOwnerMixin):
         if c.grab_before_state is None:
             return
         before = c.grab_before_state["wellbeing"]
-        started_at = c.grab_before_state.get("started_at", time.time())
+        started_at = c.grab_before_state.get("started_at", c.age)
         after = c.needs.wellbeing_score()
         delta = after - before
-        hold_duration = time.time() - started_at
+        hold_duration = c.age - started_at
         c.grab_before_state = None
 
         if c.is_dead:

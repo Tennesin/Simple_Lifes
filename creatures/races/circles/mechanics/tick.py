@@ -32,7 +32,7 @@ def _storage_priority(creature):
 class CircleTickProcessor:
     """Единственная точка входа - process(ctx). Всё остальное - детали."""
 
-    race_name = "circle"
+    race_name = ci_settings.RACE_NAME
     CAMPFIRE_OCCUPANCY_REBUILD_INTERVAL = 30
 
     def __init__(self, game):
@@ -41,7 +41,7 @@ class CircleTickProcessor:
         self._cached_campfire_occupancy = None
 
     def process(self, ctx):
-        genealogy = self.game.object_manager.spawn_managers["circle"].genealogy
+        genealogy = self.game.object_manager.spawn_managers[ci_settings.RACE_NAME].genealogy
         race_creatures = self._race_creatures()
         ctx.race_creatures = race_creatures
 
@@ -308,7 +308,7 @@ class CircleTickProcessor:
         game = self.game
         world = game.world
         ready_for_interact = []
-        wall_polylines, _fence_polylines = game.welded_landscape_polylines()
+        wall_polylines, fence_polylines = game.welded_landscape_polylines()
 
         for creature in race_creatures:
             if creature.is_dead:
@@ -381,9 +381,11 @@ class CircleTickProcessor:
                         cleanup_area_for_new_construction(
                             game, new_object, footprint_radius(new_object) + 10)
 
+            blocking_polylines = (wall_polylines if creature.can_jump_fences()
+                                  else wall_polylines + fence_polylines)
             creature.pathfinder.move_towards(
                 target, ctx.dt, biome_grid=game.biome_manager.grid,
-                wall_polylines=wall_polylines)
+                wall_polylines=blocking_polylines)
             ready_for_interact.append(creature)
 
         return ready_for_interact

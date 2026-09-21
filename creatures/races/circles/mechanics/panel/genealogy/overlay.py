@@ -57,7 +57,7 @@ class GenealogyTreeOverlay:
         self._dragging = False
 
     def _registry(self):
-        manager = self.game.object_manager.spawn_managers.get("circle")
+        manager = self.game.object_manager.spawn_managers.get(ci_settings.RACE_NAME)
         return manager.genealogy if manager is not None else None
 
     # ---------- Ввод ----------

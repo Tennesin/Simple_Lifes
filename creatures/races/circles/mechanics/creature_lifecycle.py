@@ -2,13 +2,13 @@
 
 import math
 import random
-import uuid
 
 import settings
 from .. import ci_settings
 from ..creature import Creature
 from ..life_cycle import CreatureAging
 from ..genealogy import GenealogyRegistry
+from ...all_needed.ids import new_id
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -16,7 +16,7 @@ from ..genealogy import GenealogyRegistry
 
 def circle_spawn_dispatch(object_manager, wx, wy, placement_mode):
     gender = ci_settings.GENDER_MALE if placement_mode == "creature_male" else ci_settings.GENDER_FEMALE
-    object_manager.spawn_managers["circle"].create_creature_at(wx, wy, gender)
+    object_manager.spawn_managers[ci_settings.RACE_NAME].create_creature_at(wx, wy, gender)
 
 class CircleSpawnManager:
     def __init__(self, game, descriptor=None):
@@ -26,9 +26,9 @@ class CircleSpawnManager:
 
     def create_creature_at(self, wx, wy, gender):
         game = self.game
-        new_id = str(uuid.uuid4())[:8]
+        new_creature_id = new_id()
         pools = self.descriptor.name_pools if self.descriptor else None
-        creature = Creature(new_id, gender=gender, name_pools=pools)
+        creature = Creature(new_creature_id, gender=gender, name_pools=pools)
         creature.x = wx
         creature.y = wy
         creature.comfort_point = (wx, wy)
@@ -98,6 +98,8 @@ class CircleSpawnManager:
 # Домен: загрузка существа из сохранённого состояния (state.json)
 # =========================================================================
 
+_KEEP_CONSTRUCTOR_DEFAULT = object()
+
 _CREATURE_SIMPLE_FIELDS = (
     ("hp", "hp", ci_settings.HP_MAX),
     ("hunger", "hunger", ci_settings.HUNGER_MAX),
@@ -141,6 +143,9 @@ _CREATURE_SIMPLE_FIELDS = (
     ("gather_needed_amount", "gather_needed_amount", None),
     ("known_campfire_id", "known_campfire_id", None),
     ("known_graveyard_id", "known_graveyard_id", None),
+    ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
+    ("is_sleeping", "is_sleeping", False),
+    ("fear_timer", "fear_timer", 0.0),
 )
 
 _CREATURE_TUPLE_FIELDS = (
@@ -161,7 +166,7 @@ def _load_creature_simple_fields(creature, state):
     for key, attr, default in _CREATURE_SIMPLE_FIELDS:
         if key in state:
             setattr(creature, attr, state[key])
-        else:
+        elif default is not _KEEP_CONSTRUCTOR_DEFAULT:
             setattr(creature, attr, default() if callable(default) else default)
 
 def _load_creature_tuple_fields(creature, state):
@@ -182,12 +187,12 @@ def _load_creature_age_and_stage(creature, state):
     creature.aging.sync_stage_modifiers()
 
 def _load_creature_puberty(creature, state):
-    creature.puberty_trigger_age = state["puberty_trigger_age"]
-    creature.puberty_done = state["puberty_done"]
-    creature.puberty_active = state["puberty_active"]
-    creature.puberty_timer = state["puberty_timer"]
-    creature._puberty_speed_bonus = state["puberty_speed_bonus"]
-    creature._puberty_orig_curiosity = state["puberty_orig_curiosity"]
+    creature.puberty_trigger_age = state.get("puberty_trigger_age", creature.puberty_trigger_age)
+    creature.puberty_done = state.get("puberty_done", False)
+    creature.puberty_active = state.get("puberty_active", False)
+    creature.puberty_timer = state.get("puberty_timer", 0.0)
+    creature._puberty_speed_bonus = state.get("puberty_speed_bonus", 0.0)
+    creature._puberty_orig_curiosity = state.get("puberty_orig_curiosity")
     creature.aging.sync_puberty_state()
 
 def _load_creature_psyche(creature, state):
@@ -213,13 +218,13 @@ def load_creature_from_state(state):
 # =========================================================================
 
 def save_circle_genealogy(game):
-    manager = game.object_manager.spawn_managers.get("circle")
+    manager = game.object_manager.spawn_managers.get(ci_settings.RACE_NAME)
     if manager is not None and game.world_path:
         manager.genealogy.save(game.world_path)
 
 
 def load_circle_genealogy(game):
-    manager = game.object_manager.spawn_managers.get("circle")
+    manager = game.object_manager.spawn_managers.get(ci_settings.RACE_NAME)
     if manager is not None:
         manager.genealogy = GenealogyRegistry()
         if game.world_path:

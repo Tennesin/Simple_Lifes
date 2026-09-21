@@ -40,7 +40,7 @@ from .mechanics.render import (
 )
 
 RACE_DESCRIPTOR = RaceDescriptor(
-    race_name="circle",
+    race_name=ci_settings.RACE_NAME,
     creature_cls=Creature,
     tick_processor_cls=CircleTickProcessor,
     loader_fn=load_circle_creature,

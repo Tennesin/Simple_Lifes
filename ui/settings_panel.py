@@ -4,6 +4,7 @@ import pygame
 
 import settings
 import info
+from game.widgets import ScrollArea
 from game.display_settings import (
     all_display_checkbox_specs, all_technical_checkbox_specs, all_technical_slider_specs
 )
@@ -38,6 +39,7 @@ class SettingsPanel:
         self.settings_checkbox_rows = {}
         self.settings_slider_rows = {}
         self._slider_dragging_key = None
+        self.scrolls = {"display": ScrollArea(), "technical": ScrollArea()}
 
     def _layout_panel(self, screen):
         window_w, window_h = screen.get_width(), screen.get_height()
@@ -115,35 +117,39 @@ class SettingsPanel:
         else:
             return
 
-        y = body_rect.y
+        scroll = self.scrolls[state.active_tab]
+        content_height = len(checkboxes) * self.ROW_HEIGHT
+        if sliders:
+            content_height += 12 + len(sliders) * 60
+        scroll.update_bounds(content_height, body_rect.height)
+
+        prev_clip = screen.get_clip()
+        screen.set_clip(body_rect)
+
+        y = body_rect.y - int(scroll.offset)
         for key, label in checkboxes:
             row_rect = pygame.Rect(body_rect.x, y, body_rect.width, self.ROW_HEIGHT)
-            self.settings_checkbox_rows[key] = row_rect
-
-            cb_y = row_rect.y + (row_rect.height - self.CHECKBOX_SIZE) // 2
-            cb_rect = pygame.Rect(row_rect.x, cb_y, self.CHECKBOX_SIZE, self.CHECKBOX_SIZE)
-
-            hovered = row_rect.collidepoint(mouse_pos)
-            box_bg = (55, 55, 55) if hovered else (40, 40, 40)
-            pygame.draw.rect(screen, box_bg, cb_rect)
-            pygame.draw.rect(screen, settings.WORLD_SCREEN_TEXT, cb_rect, 1)
-            if state.draft.get(key):
-                pygame.draw.line(screen, (120, 230, 120),
-                                 (cb_rect.x + 3, cb_rect.y + 9), (cb_rect.x + 7, cb_rect.y + 13), 2)
-                pygame.draw.line(screen, (120, 230, 120),
-                                 (cb_rect.x + 7, cb_rect.y + 13), (cb_rect.x + 15, cb_rect.y + 3), 2)
-
-            label_txt = self.font.render(label, True, settings.TEXT_COLOR)
-            screen.blit(label_txt, (cb_rect.right + 10,
-                                    row_rect.y + (row_rect.height - label_txt.get_height()) // 2))
-
+            if row_rect.bottom >= body_rect.y and row_rect.y <= body_rect.bottom:
+                self._draw_checkbox_row(screen, state, key, label, row_rect, mouse_pos)
+                clipped = row_rect.clip(body_rect)
+                if clipped.width > 0 and clipped.height > 0:
+                    self.settings_checkbox_rows[key] = clipped
             y += self.ROW_HEIGHT
 
         if sliders:
             y += 12
             for key, label_template, min_v, max_v, step in sliders:
-                y = self._draw_slider_row(screen, state, key, label_template, min_v, max_v, step,
-                                          body_rect.x, y, body_rect.width, mouse_pos)
+                row_bottom = self._draw_slider_row(screen, state, key, label_template, min_v, max_v, step,
+                                                   body_rect.x, y, body_rect.width, mouse_pos)
+                slider_rect = self.settings_slider_rows.get(key)
+                if slider_rect is not None:
+                    clipped = slider_rect.clip(body_rect)
+                    self.settings_slider_rows[key] = clipped if clipped.height > 0 else None
+                y = row_bottom
+
+        screen.set_clip(prev_clip)
+        if scroll.max_scroll > 0:
+            scroll.draw_scrollbar(screen, body_rect)
 
     def _draw_slider_row(self, screen, state, key, label_template, min_v, max_v, step, x, y, width, mouse_pos):
         value = state.draft.get(key, min_v)
@@ -167,6 +173,24 @@ class SettingsPanel:
 
         self.settings_slider_rows[key] = bar_rect
         return bar_rect.bottom + 16
+
+    def _draw_checkbox_row(self, screen, state, key, label, row_rect, mouse_pos):
+        cb_y = row_rect.y + (row_rect.height - self.CHECKBOX_SIZE) // 2
+        cb_rect = pygame.Rect(row_rect.x, cb_y, self.CHECKBOX_SIZE, self.CHECKBOX_SIZE)
+
+        hovered = row_rect.collidepoint(mouse_pos)
+        box_bg = (55, 55, 55) if hovered else (40, 40, 40)
+        pygame.draw.rect(screen, box_bg, cb_rect)
+        pygame.draw.rect(screen, settings.WORLD_SCREEN_TEXT, cb_rect, 1)
+        if state.draft.get(key):
+            pygame.draw.line(screen, (120, 230, 120),
+                             (cb_rect.x + 3, cb_rect.y + 9), (cb_rect.x + 7, cb_rect.y + 13), 2)
+            pygame.draw.line(screen, (120, 230, 120),
+                             (cb_rect.x + 7, cb_rect.y + 13), (cb_rect.x + 15, cb_rect.y + 3), 2)
+
+        label_txt = self.font.render(label, True, settings.TEXT_COLOR)
+        screen.blit(label_txt, (cb_rect.right + 10,
+                                row_rect.y + (row_rect.height - label_txt.get_height()) // 2))
 
     def slider_value_from_mouse(self, key, mouse_x):
         for spec_key, _label, min_v, max_v, step in self._technical_sliders:

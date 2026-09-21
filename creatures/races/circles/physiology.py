@@ -39,9 +39,9 @@ class CreatureNeeds(WeakOwnerMixin):
         c.thirst -= dt / thirst_interval
 
         if c.hunger <= 0:
-            c.hp -= 2 * dt
+            c.hp -= ci_settings.STARVE_HP_DRAIN * dt
         if c.thirst <= 0:
-            c.hp -= 5 * dt
+            c.hp -= ci_settings.DEHYDRATE_HP_DRAIN * dt
 
         c.hunger = max(0, min(c.hunger, ci_settings.HUNGER_MAX))
         c.thirst = max(0, min(c.thirst, ci_settings.THIRST_MAX))

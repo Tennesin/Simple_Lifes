@@ -105,11 +105,6 @@ class SocialResponse(GoalComponent):
         if c.social_request_timer <= 0 or c.social_request_point is None:
             return [None]
 
-        if random.random() > c.psyche.social_response_chance():
-            c.social_request_timer = 0.0
-            c.social_request_point = None
-            return [None]
-
         def execute():
             return self._respond()
 

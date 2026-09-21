@@ -88,7 +88,6 @@ class _CorpseHandlingInstinctMixin:
     def _investigate_alert(self):
         c = self.c
         c.state = ci_settings.STATE_SEEKING
-        c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_ALERT
         if math.hypot(c.x - c.graveyard_alert_pos[0], c.y - c.graveyard_alert_pos[1]) < ci_settings.CORPSE_APPROACH_DISTANCE * 2:
             c.graveyard_alert_pos = None

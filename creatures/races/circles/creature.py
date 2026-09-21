@@ -26,7 +26,7 @@ from .mechanics.input_events import (
 from ...all_needed.base_entity import LivingEntity
 
 class Creature(LivingEntity):
-    race_name = "circle"
+    race_name = ci_settings.RACE_NAME
     diet = ci_settings.RACE_DIET
     food_category_map = ci_settings.RACE_FOOD_CATEGORY_MAP
 
@@ -543,6 +543,9 @@ class Creature(LivingEntity):
             "puberty_timer": self.puberty_timer,
             "puberty_speed_bonus": self._puberty_speed_bonus,
             "puberty_orig_curiosity": self._puberty_orig_curiosity,
+            "curiosity": self.curiosity,
+            "is_sleeping": self.is_sleeping,
+            "fear_timer": self.fear_timer,
             "psyche_joy": self.psyche.joy,
             "psyche_satisfaction": self.psyche.satisfaction,
             "psyche_calmness": self.psyche.calmness,

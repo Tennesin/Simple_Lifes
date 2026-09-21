@@ -11,6 +11,19 @@ from . import ci_settings
 from . import ci_info
 from ...all_needed import geometry
 
+_CAMPFIRE_HALO_CACHE = {}
+
+def _get_campfire_halo(effect_radius):
+    """Ореол костра одинаков для всех костров с одним effect_radius -
+    кэшируем один раз вместо Surface(1300x1300) на каждый костёр каждый кадр."""
+    surf = _CAMPFIRE_HALO_CACHE.get(effect_radius)
+    if surf is None:
+        surf = pygame.Surface((effect_radius * 2, effect_radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surf, (255, 170, 60, 18),
+                           (effect_radius, effect_radius), effect_radius)
+        _CAMPFIRE_HALO_CACHE[effect_radius] = surf
+    return surf
+
 class Campfire(WorldObject):
     type_name = ci_info.INFO_OBJECT_CAMPFIRE
 
@@ -21,9 +34,7 @@ class Campfire(WorldObject):
 
     def draw(self, screen, screen_pos):
         sx, sy = int(screen_pos[0]), int(screen_pos[1])
-        halo = pygame.Surface((self.effect_radius * 2, self.effect_radius * 2), pygame.SRCALPHA)
-        pygame.draw.circle(halo, (255, 170, 60, 18),
-                           (self.effect_radius, self.effect_radius), self.effect_radius)
+        halo = _get_campfire_halo(self.effect_radius)
         screen.blit(halo, (sx - self.effect_radius, sy - self.effect_radius))
 
         pygame.draw.circle(screen, (90, 70, 60), (sx, sy), self.radius + 3)
@@ -124,23 +135,19 @@ class StorageField:
         half_w, half_h = self.width // 2, self.height // 2
         rect = pygame.Rect(sx - half_w, sy - half_h, self.width, self.height)
 
-        # ---------- Полупрозрачная заливка ----------
         fill_surf = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         fill_surf.fill((*ci_settings.STORAGE_FIELD_COLOR_BORDER, ci_settings.STORAGE_FIELD_FILL_ALPHA))
         screen.blit(fill_surf, rect.topleft)
 
-        # ---------- Основная рамка ----------
         pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_COLOR_BORDER, rect, 3)
 
-        # ---------- Угловые столбы - лёгкая деталировка ----------
         post_size = 5
         for corner in (rect.topleft, rect.topright, rect.bottomleft, rect.bottomright):
             post_rect = pygame.Rect(0, 0, post_size, post_size)
             post_rect.center = corner
             pygame.draw.rect(screen, ci_settings.STORAGE_FIELD_COLOR_BORDER, post_rect)
 
-            # ---------- Внутренние полые кубы (светло-коричневые) - вместо полок и крыши ----------
-            self._draw_inner_boxes(screen, rect)
+        self._draw_inner_boxes(screen, rect)
 
     def _draw_inner_boxes(self, screen, rect):
         box_count = 2
@@ -250,7 +257,6 @@ class Graveyard:
         gy.archive = data.get("archive", [])
         gy.records = data.get("records", [])
         return gy
-
 
 class ConstructionSite:
     def __init__(self, x, y, build_type, campfire_pos=None, site_id=None):

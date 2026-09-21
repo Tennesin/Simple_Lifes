@@ -151,6 +151,11 @@ class Game:
         self.show_player_menu = False
         self.show_nature_menu = False
 
+    def any_menu_open(self):
+        return (self.show_game_menu or self.show_landscape_menu or self.show_lifes_menu
+                or self.show_animals_menu or self.show_objects_menu or self.show_player_menu
+                or self.show_nature_menu)
+
     def toggle_pause(self):
         self.paused = not self.paused
 
@@ -378,7 +383,7 @@ class Game:
 
     def run(self):
         while self.running:
-            dt = self.clock.tick(settings.FPS) / 1000.0
+            dt = min(self.clock.tick(settings.FPS) / 1000.0, settings.MAX_FRAME_DT)
             try:
                 self.input_handler.handle_events()
                 if not self.crashed:

@@ -1,5 +1,4 @@
 import json
-import time
 import math
 import random
 
@@ -23,13 +22,18 @@ class Memory:
         self._position_cache = {}
         self._version = 0
 
+        # ---------- НОВОЕ: собственные игровые часы памяти, не зависящие
+        # от time.time() - иначе пауза/загрузка мира портят забывание ----------
+        self._now = 0.0
+
     def maybe_prune(self, dt):
+        self._now += dt
         self._prune_timer += dt
         if self._prune_timer < self._prune_interval:
             return
         self._prune_timer = 0.0
 
-        now = time.time()
+        now = self._now
         self.memories = [m for m in self.memories if now - m["timestamp"] < self.decay_time]
         self._memories_by_type = {}
         for m in self.memories:
@@ -39,7 +43,7 @@ class Memory:
             m for m in self.intuitive_memories
             if now - m["timestamp"] < self.intuitive_decay_time
         ]
-        self._version += 1   # НОВОЕ
+        self._version += 1
 
     # ---------- Точная память ----------
 
@@ -49,7 +53,7 @@ class Memory:
             if abs(mem["x"] - x) < 5 and abs(mem["y"] - y) < 5:
                 if abs(importance) > abs(mem["importance"]):
                     mem["importance"] = importance
-                mem["timestamp"] = time.time()
+                mem["timestamp"] = self._now
                 self._version += 1
                 return
         entry = {
@@ -57,15 +61,16 @@ class Memory:
             "x": x,
             "y": y,
             "importance": importance,
-            "timestamp": time.time()
+            "timestamp": self._now
         }
         self.memories.append(entry)
         bucket.append(entry)
         self._version += 1
 
     def _get_positions(self, mem_type, allow_negative=False):
-        now = time.time()
-        cached = self._position_cache.get(mem_type)
+        now = self._now
+        cache_key = (mem_type, allow_negative)
+        cached = self._position_cache.get(cache_key)
         if cached is not None:
             version, cache_time, positions = cached
             if version == self._version and now - cache_time < 0.5:
@@ -83,7 +88,7 @@ class Memory:
                 if effective_imp > 0.1:
                     result.append((mem["x"], mem["y"]))
 
-        self._position_cache[mem_type] = (self._version, now, result)
+        self._position_cache[cache_key] = (self._version, now, result)
         return result
 
     def get_food_memories(self):
@@ -110,7 +115,7 @@ class Memory:
         return self._get_positions("graveyard")
 
     def get_best_memory(self, mem_type, allow_negative=False):
-        now = time.time()
+        now = self._now
         best = None
         best_score = 0.1
         for mem in self._memories_by_type.get(mem_type, []):
@@ -127,7 +132,6 @@ class Memory:
 
     @staticmethod
     def _compass_sector(dx, dy):
-        """Индекс сектора 0..7 (шаг 45°), а не локализованная строка."""
         angle = math.degrees(math.atan2(-dy, dx)) % 360
         return int((angle + 22.5) // 45) % 8
 
@@ -150,7 +154,7 @@ class Memory:
         for mem in self.intuitive_memories:
             if mem["type"] == mem_type and mem["direction"] == sector and mem["distance_bucket"] == bucket:
                 mem["importance"] = max(mem["importance"], importance)
-                mem["timestamp"] = time.time()
+                mem["timestamp"] = self._now
                 mem["origin_x"] = origin_x
                 mem["origin_y"] = origin_y
                 return
@@ -159,13 +163,13 @@ class Memory:
             "direction": sector,
             "distance_bucket": bucket,
             "importance": importance,
-            "timestamp": time.time(),
+            "timestamp": self._now,
             "origin_x": origin_x,
             "origin_y": origin_y,
         })
 
     def get_intuitive_target(self, mem_type, origin_x, origin_y):
-        now = time.time()
+        now = self._now
         best = None
         best_imp = 0.1
         for mem in self.intuitive_memories:
@@ -205,6 +209,7 @@ class Memory:
             json.dump({
                 "memories": self.memories,
                 "intuitive_memories": self.intuitive_memories,
+                "now": self._now,
             }, f, indent=2)
 
     def load(self, path):
@@ -212,6 +217,7 @@ class Memory:
             data = json.load(f)
         self.memories = data["memories"]
         self.intuitive_memories = data["intuitive_memories"]
+        self._now = data.get("now", 0.0)
         self._memories_by_type = {}
         for m in self.memories:
             self._memories_by_type.setdefault(m["type"], []).append(m)

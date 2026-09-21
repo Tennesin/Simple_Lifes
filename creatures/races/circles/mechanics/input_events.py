@@ -153,7 +153,7 @@ def cleanup_area_for_new_construction(game, obj, radius):
 
 def _is_circle_panel_active(game):
     creature = game.selected_creature
-    return creature is not None and getattr(creature, "race_name", None) == "circle"
+    return creature is not None and getattr(creature, "race_name", None) == ci_settings.RACE_NAME
 
 def circle_handle_relationships_scrollbar_down(game, event, mouse_x, mouse_y):
     if event.button != 1 or not game.world_loaded or game.right_panel_collapsed:

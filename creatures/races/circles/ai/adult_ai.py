@@ -86,6 +86,8 @@ class TerritoryDefense(GoalComponent):
         intruder, obj = intrusion
 
         if random.random() > c.psyche.territory_boldness():
+            c.territory.confront_cooldowns[intruder.id] = random.uniform(
+                *ci_settings.TERRITORY_CONFRONT_COOLDOWN) * 0.3
             return None
         c.territory.confront(intruder)
 

@@ -196,15 +196,6 @@ class ScrollArea:
     def end_drag(self):
         self._dragging = False
 
-    def drag_to(self, mouse_y):
-        if self.track_rect is None or self.max_scroll <= 0:
-            return
-        thumb_h = self.thumb_rect.height if self.thumb_rect is not None else 20
-        usable = max(1, self.track_rect.height - thumb_h)
-        ratio = (mouse_y - self.track_rect.y - thumb_h / 2) / usable
-        ratio = max(0.0, min(1.0, ratio))
-        self.offset = int(round(ratio * self.max_scroll))
-
 class Slider:
     def __init__(self, rect, value=0.5, min_value=0.0, max_value=1.0, step=0.05):
         self.rect = pygame.Rect(rect)
