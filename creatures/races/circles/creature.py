@@ -33,37 +33,58 @@ class Creature(LivingEntity):
     food_category_map = ci_settings.RACE_FOOD_CATEGORY_MAP
 
     def __init__(self, creature_id, name=None, temperament=None, gender=None, name_pools=None):
+        # =====================================================================
+        # Идентификация
+        # =====================================================================
         self.id = creature_id
         self.gender = gender if gender in ci_settings.GENDER_LIST else random.choice(ci_settings.GENDER_LIST)
         self.name = name if name else random_name(self.gender, pools=name_pools)
         self.player_named = False
+
+        # =====================================================================
+        # Базовые потребности / физическое тело
+        # =====================================================================
         self.hp = ci_settings.HP_MAX
         self.hunger = ci_settings.HUNGER_MAX
         self.thirst = ci_settings.THIRST_MAX
         self.consciousness = ci_settings.SANITY_MAX
         self.sanity_decay_timer = ci_settings.SANITY_DECAY_INTERVAL
+        self.energy = ci_settings.ENERGY_MAX
         self.x = random.uniform(50, settings.WORLD_WIDTH - 50)
         self.y = random.uniform(50, settings.WORLD_HEIGHT - 50)
+        self.radius = 10
         self.memory = Memory()
-        self.energy = ci_settings.ENERGY_MAX
 
+        # =====================================================================
+        # Текущее состояние / отображаемая цель
+        # =====================================================================
         self.state = ci_settings.STATE_CALM
         self.goal_text = ci_info.INFO_CREATURE_STATE_CALM
         self.panic_active = False
         self.is_talking = False
 
+        # =====================================================================
+        # Смерть
+        # =====================================================================
         self.is_dead = False
         self.death_timer = 0.0
         self.death_cause = None
         self._pending_grief = False
-        self.radius = 10
 
+        # =====================================================================
+        # Характер / скорость / любопытство
+        # =====================================================================
         self.temperament = (temperament if temperament in ci_settings.TEMPERAMENT_LIST
                             else random.choice(ci_settings.TEMPERAMENT_LIST))
         self.base_speed_multiplier = ci_settings.SPEED_MULTIPLIER[self.temperament]
         self.curiosity = random.uniform(*ci_settings.CURIOSITY_RANGE.get(self.temperament, (0.3, 0.6)))
         self.curiosity_active = False
+        self.curiosity_rolled = set()
+        self.curiosity_interested = set()
 
+        # =====================================================================
+        # Социальные запросы / помощь сородичам
+        # =====================================================================
         self.social_request_timer = 0.0
         self.share_info_timer = 0.0
         self.social_request_point = None
@@ -71,54 +92,80 @@ class Creature(LivingEntity):
         self._helping_target_id = None
         self.helping_commit_timer = 0.0
 
+        # =====================================================================
+        # Зона комфорта / знакомый костёр / место сна
+        # =====================================================================
         self.comfort_point = (self.x, self.y)
         self.known_campfire = None
         self.known_campfire_id = None
         self.sleep_spot = None
         self.sleep_spot_campfire = None
+
+        # =====================================================================
+        # Цель движения / троттлинг принятия решений (ИИ решает не каждый кадр)
+        # =====================================================================
         self.target = None
         self.decision_timer = 0.0
-        # ---------- Троттлинг мозга: накопленное время, последняя цель, валидность плана ----------
         self.ai_dt_debt = random.uniform(0.0, ci_settings.AI_DECISION_INTERVAL)
         self.ai_last_goal = None
         self.ai_plan_valid = False
 
+        # =====================================================================
+        # Движение / застревание
+        # =====================================================================
         self.speed_factor = 1.0
         self.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
         self.position_at_last_check = (self.x, self.y)
         self.stuck_level = 0
         self.stuck_last_nav_index = 0
 
+        # =====================================================================
+        # Флаги активного поиска ресурсов
+        # =====================================================================
         self.seeking_food = False
         self.seeking_water = False
         self.seeking_sanity = False
 
+        # =====================================================================
+        # Неуязвимость / заморозка
+        # =====================================================================
         self.freeze_timer = 0.0
         self.spike_invuln_timer = 0.0
 
+        # =====================================================================
+        # Память об игроке / базовое знакомство с типами объектов
+        # =====================================================================
         self.player_memory = []
         self.knowledge = {"fruit": False, "spike": False, "water": False,
                           "bush": False, "campfire": False}
 
+        # =====================================================================
+        # Память о еде/воде (точные цели поиска)
+        # =====================================================================
         self.food_memory_target = None
         self.water_memory_target = None
 
-        # ---------- Глобальная навигация (A* по клеточной карте, creatures/navigation.py) ----------
+        # =====================================================================
+        # Глобальная навигация (A* по клеточной карте, creatures/navigation.py)
+        # =====================================================================
         self.nav_path = []
         self.nav_path_index = 0
         self.nav_goal = None
         self.nav_recalc_timer = 0.0
         self.nav_search_failed = False
 
+        # =====================================================================
+        # Сон
+        # =====================================================================
         self.wake_threshold = random.uniform(
             *ci_settings.WAKE_ENERGY_THRESHOLD.get(self.temperament, (85, 90)))
         self.seeking_sleep = False
         self.is_sleeping = False
         self.sleep_forced = False
 
-        self.curiosity_rolled = set()
-        self.curiosity_interested = set()
-
+        # =====================================================================
+        # Отношение к игроку / реакции на прикосновения
+        # =====================================================================
         self.player_relationship = 0.0
         self.calm_timer = 0.0
         self.fear_timer = 0.0
@@ -128,9 +175,15 @@ class Creature(LivingEntity):
         self.is_grabbed = False
         self.grab_before_state = None
 
+        # =====================================================================
+        # Возраст / стадия жизни
+        # =====================================================================
         self.age = 0.0
         self.life_stage = ci_settings.LIFE_STAGE_ADULT
-        # ---------- Гормональный бум (переходный возраст) ----------
+
+        # =====================================================================
+        # Гормональный бум (переходный возраст) и ухаживание
+        # =====================================================================
         self.puberty_trigger_age = random.uniform(
             ci_settings.PUBERTY_TRIGGER_AGE_MIN, ci_settings.PUBERTY_TRIGGER_AGE_MAX)
         self.puberty_done = False
@@ -145,11 +198,18 @@ class Creature(LivingEntity):
         self.puberty_courtship_fail_streak = 0
         self.puberty_courtship_avoid = {}
 
+        # =====================================================================
+        # Поведение ребёнка: испуг, игры-догонялки
+        # =====================================================================
         self.child_distress_timer = 0.0
         self.play_target_id = None
         self.play_role = None
         self.play_timer = 0.0
         self.play_cooldown = random.uniform(2.0, 4.0)
+
+        # =====================================================================
+        # Дороги игрока
+        # =====================================================================
         self.known_roads = {}
         self.known_road_links = {}
         self.following_road = None
@@ -159,18 +219,20 @@ class Creature(LivingEntity):
         self.road_entry_reached = False
         self.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
 
-        # ---------- Детские дороги ----------
+        # =====================================================================
+        # Детские дороги: игра
+        # =====================================================================
         self.following_child_road = None
         self.child_road_progress = 0
         self.child_road_direction = 1
         self.child_road_entry_reached = False
         self.child_road_play_cooldown = random.uniform(1.0, 3.0)
-
-        # ---------- Детские дороги: скука от повторов ----------
         self.child_road_play_counts = {}
         self.child_road_disinterest = {}
 
-        # ---------- Детские дороги: физическая проверка взрослым ----------
+        # =====================================================================
+        # Детские дороги: физическая проверка взрослым
+        # =====================================================================
         self.child_road_verify_target_id = None
         self.child_road_verify_progress = 0
         self.child_road_verify_direction = 1
@@ -178,6 +240,9 @@ class Creature(LivingEntity):
         self.child_road_verify_found_danger = False
         self.child_road_verify_check_timer = random.uniform(*ci_settings.CHILD_ROAD_VERIFY_CHECK_INTERVAL)
 
+        # =====================================================================
+        # Семья / размножение
+        # =====================================================================
         self.partner_id = None
         self.is_pregnant = False
         self.pregnancy_timer = 0.0
@@ -187,27 +252,36 @@ class Creature(LivingEntity):
         self.partner_reunite_cooldown = 0.0
         self.landmark_register_timer = random.uniform(0.0, 1.5)
 
-        # ---------- Устойчивая погоня за территориальным нарушителем ----------
+        # =====================================================================
+        # Устойчивая погоня за территориальным нарушителем
+        # =====================================================================
         self.territory_pursuit_target_id = None
         self.territory_pursuit_obj = None
         self.territory_pursuit_last_pos = None
         self.territory_pursuit_commit_timer = 0.0
-        # ---------- Опека стариков над случайными детьми ----------
+
+        # =====================================================================
+        # Опека стариков над случайными детьми
+        # =====================================================================
         self.elder_ward_id = None
         self.elder_ward_check_timer = random.uniform(*ci_settings.ELDER_WARD_CHECK_INTERVAL)
 
-        # ---------- Кладбище: перенос трупов ----------
-        self.being_carried_by = None  # (для трупов) id несущего
-        self.burial_claimant_id = None  # (для трупов) id "хозяина" похорон
-        self.burial_target_id = None  # (для живых) id трупа, который несём
-        self.graveyard_target_id = None  # (для живых) id кладбища-цели
-        self.is_dragging_corpse = False  # True, только пока реально тащит труп (не просто идёт к нему)
-        self.known_graveyard = None  # (x, y) - как known_campfire
+        # =====================================================================
+        # Труп / кладбище: перенос тела
+        # =====================================================================
+        self.being_carried_by = None       # (для трупов) id несущего
+        self.burial_claimant_id = None     # (для трупов) id "хозяина" похорон
+        self.burial_target_id = None       # (для живых) id трупа, который несём
+        self.graveyard_target_id = None    # (для живых) id кладбища-цели
+        self.is_dragging_corpse = False    # True, только пока реально тащит труп
+        self.known_graveyard = None
         self.known_graveyard_id = None
-        self.graveyard_alert_pos = None  # координаты трупа, о котором сообщили старику
+        self.graveyard_alert_pos = None    # координаты трупа, о котором сообщили старику
         self.graveyard_alert_timer = 0.0
 
-        # ---------- Донашивание еды/воды детям ----------
+        # =====================================================================
+        # Донашивание еды/воды детям и сородичам
+        # =====================================================================
         self.carried_fruit = False
         self.carried_water = False
         self.feed_target_id = None
@@ -215,30 +289,38 @@ class Creature(LivingEntity):
         self.urgent_child_id = None
         self.urgent_child_timer = 0.0
 
-        # ---------- Семейный склад запасов ----------
+        # =====================================================================
+        # Семейный склад запасов
+        # =====================================================================
         self.storage_supply_check_timer = random.uniform(*ci_settings.STORAGE_SUPPLY_CHECK_INTERVAL)
         self.storage_supply_mode = False
 
-        # ---------- Жильё ----------
+        # =====================================================================
+        # Жильё
+        # =====================================================================
         self.home_id = None
         self.home_eviction_timer = 0.0
         self.at_home = False
 
-        # ---------- Добыча ресурсов и строительство ----------
+        # =====================================================================
+        # Добыча ресурсов и строительство
+        # =====================================================================
         self.carry_capacity = random.randint(*ci_settings.CREATURE_CARRY_CAPACITY_RANGE)
         self.carried_resources = {"wood": 0, "stone": 0}
         self.gather_target_id = None
-        self.gather_type = None  # "wood" | "stone"
+        self.gather_type = None            # "wood" | "stone"
         self.gather_progress = 0.0
         self.construction_target_id = None
-        self.construction_phase = None  # None | "deposit" | "build"
+        self.construction_phase = None     # None | "deposit" | "build"
         self.gather_needed_amount = None
         self.pending_construction_cleanup = None
         self.pending_site_cleanup = None
         self.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
         self.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
 
-        # ---------- Специализированные подсистемы ----------
+        # =====================================================================
+        # Специализированные подсистемы
+        # =====================================================================
         self.needs = CreatureNeeds(self)
         self.social = CreatureSocial(self)
         self.pathfinder = CirclePathfinder(self)
@@ -251,7 +333,9 @@ class Creature(LivingEntity):
         self.family = CreatureFamily(self)
         self.territory = CreatureTerritory(self)
 
-    # ---------- Геометрия / общие утилиты ----------
+    # =====================================================================
+    # Геометрия / общие утилиты
+    # =====================================================================
 
     def carried_total(self):
         return self.carried_resources["wood"] + self.carried_resources["stone"]
@@ -297,11 +381,17 @@ class Creature(LivingEntity):
     def on_grab_release(self, game):
         return _handle_corpse_release(self, game)
 
+    # =====================================================================
+    # Реакции на игрока
+    # =====================================================================
+
     def receive_pet(self):
         self.player_reactions.pet()
+        self.invalidate_plan()
 
     def receive_hit(self):
         self.player_reactions.hit()
+        self.invalidate_plan()
 
     def on_marked_favorite(self):
         self.player_reactions.mark_favorite()
@@ -314,8 +404,11 @@ class Creature(LivingEntity):
 
     def release_by_player(self):
         self.player_reactions.finish_grab()
+        self.invalidate_plan()
 
-    # ---------- Жизненный цикл ----------
+    # =====================================================================
+    # Жизненный цикл
+    # =====================================================================
 
     def die(self, cause):
         self.is_dead = True
@@ -378,18 +471,47 @@ class Creature(LivingEntity):
         self.graveyard_alert_pos = None
         self.graveyard_alert_timer = 0.0
         self.pathfinder.reset_navigation()
+        # ---------- Троттлинг ИИ: мёртвое существо больше не решает ----------
+        self.ai_plan_valid = False
+        self.ai_last_goal = None
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
 
-    # ---------- Тонкие делегирующие методы (публичный API не меняется) ----------
+    # =====================================================================
+    # Тонкие делегирующие методы (публичный API не меняется)
+    # =====================================================================
 
     def update_needs(self, dt, other_creatures=None, biome_grid=None):
         self.needs.update(dt, other_creatures, biome_grid)
         self.psyche.update(dt)
 
     def decide(self, ctx):
-        return self.brain.decide(ctx)
+        """Троттлинг принятия решений: мозг реально считает раз в
+        ci_settings.AI_DECISION_INTERVAL секунд, а не каждый кадр."""
+        interval = ci_settings.AI_DECISION_INTERVAL
+        if interval <= 0:
+            return self.brain.decide(ctx)
+
+        self.ai_dt_debt += ctx.dt
+        if self.ai_plan_valid and self.ai_dt_debt < interval:
+            return self.ai_last_goal
+
+        frame_dt = ctx.dt
+        ctx.dt = self.ai_dt_debt
+        try:
+            goal = self.brain.decide(ctx)
+        finally:
+            ctx.dt = frame_dt
+
+        self.ai_dt_debt = 0.0
+        self.ai_last_goal = goal
+        self.ai_plan_valid = True
+        return goal
+
+    def invalidate_plan(self):
+        """Заставить мозг пересчитать решение на ближайшем кадре."""
+        self.ai_plan_valid = False
 
     def interact(self, fruits, spikes, water_puddles, bushes, campfires, other_creatures,
                 storage_fields, dt, walls=None, biome_grid=None):
@@ -403,6 +525,10 @@ class Creature(LivingEntity):
     def can_verify_child_road_safety(self):
         return self.life_stage == ci_settings.LIFE_STAGE_ADULT
 
+    # =====================================================================
+    # Реакция на исчезновение/изменение дорог
+    # =====================================================================
+
     def on_road_deleted(self, road_obj_type, road):
         if road_obj_type == "road":
             if self.following_road is road:
@@ -410,6 +536,7 @@ class Creature(LivingEntity):
                 self.following_road_active = False
                 self.road_entry_reached = False
                 self.road_progress = 0
+                self.invalidate_plan()
             return
 
         if road_obj_type != "child_road":
@@ -425,6 +552,7 @@ class Creature(LivingEntity):
             self.child_road_verify_found_danger = False
             self.child_road_verify_entry_reached = False
             self.following_road_active = False
+        self.invalidate_plan()
 
     def on_road_progress_shift(self, obj_type, road, inserted_index):
         if obj_type == "road":
@@ -433,6 +561,9 @@ class Creature(LivingEntity):
         elif obj_type == "child_road":
             if self.following_child_road is road and self.child_road_progress >= inserted_index:
                 self.child_road_progress += 1
+            # ---------- Взрослый, проверяющий именно эту дорогу, тоже должен
+            # сдвинуть свой индекс - иначе вставка новой точки перекрёстка
+            # заставляет его пропустить участок или вернуться назад ----------
             if (self.child_road_verify_target_id == road.id
                     and self.child_road_verify_progress >= inserted_index):
                 self.child_road_verify_progress += 1
@@ -446,6 +577,7 @@ class Creature(LivingEntity):
                 self.sleep_spot_campfire = None
                 self.sleep_spot = None
             self.memory.forget_memory("campfire", position[0], position[1])
+            self.invalidate_plan()
         elif landmark_type == "graveyard":
             if self.graveyard_target_id == landmark_id:
                 self.graveyard_target_id = None
@@ -462,8 +594,11 @@ class Creature(LivingEntity):
                 if abs(wx - position[0]) < 8 and abs(wy - position[1]) < 8:
                     self.water_memory_target = None
             self.memory.forget_memory("water", position[0], position[1])
+            self.invalidate_plan()
 
-    # ---------- Отрисовка ----------
+    # =====================================================================
+    # Отрисовка
+    # =====================================================================
 
     def draw_minimap_color(self):
         if self.gender == ci_settings.GENDER_FEMALE:
@@ -503,7 +638,9 @@ class Creature(LivingEntity):
                 pygame.draw.circle(screen, ci_settings.PUBERTY_RING_COLOR,
                                    (int(sx), int(sy)), draw_radius + 3, 1)
 
-    # ---------- Сохранение ----------
+    # =====================================================================
+    # Сохранение
+    # =====================================================================
 
     def save(self, base_path):
         folder_path = os.path.join(base_path, self.id)
@@ -577,8 +714,6 @@ class Creature(LivingEntity):
             "gather_progress": self.gather_progress,
             "gather_needed_amount": self.gather_needed_amount,
         }
-        with open(os.path.join(folder_path, "state.json"), 'w') as f:
-            json.dump(state, f, indent=2)
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))
 
