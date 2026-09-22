@@ -230,7 +230,8 @@ class UIManager:
         if game.player.grabbed_creature is not None:
             hint = info.INFO_TOOL_GRAB_RELEASE_HINT
         elif game.player.grabbed_object is not None:
-            hint = info.INFO_TOOL_GRAB_OBJECT_HINT
+            hint = (info.INFO_TOOL_GRAB_OBJECT_HINT if game.player.grabbed_object_valid
+                    else info.INFO_TOOL_GRAB_OBJECT_INVALID_HINT)
         else:
             hint = hint_map.get(game.player.tool, "")
         if hint:

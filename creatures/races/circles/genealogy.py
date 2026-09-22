@@ -2,7 +2,7 @@
 
 import json
 import os
-
+from ...all_needed.safe_io import write_json_atomic
 
 class GenealogyRegistry:
 
@@ -70,8 +70,7 @@ class GenealogyRegistry:
         return reg
 
     def save(self, world_path):
-        with open(os.path.join(world_path, "genealogy.json"), "w", encoding="utf-8") as f:
-            json.dump(self.to_dict(), f, indent=2, ensure_ascii=False)
+        write_json_atomic(os.path.join(world_path, "genealogy.json"), self.to_dict(), indent=2)
 
     def load(self, world_path):
         path = os.path.join(world_path, "genealogy.json")

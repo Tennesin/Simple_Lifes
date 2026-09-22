@@ -25,6 +25,7 @@ class Player:
         self.grabbed_creature = None
         self.grabbed_object = None
         self.grabbed_object_valid = True
+        self.grabbed_object_origin = None
         self.last_click_time = 0.0
         self.last_click_pos = (0, 0)
         self.last_click_target = None

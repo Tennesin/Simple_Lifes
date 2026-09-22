@@ -342,7 +342,7 @@ class CircleTickProcessor:
         game = self.game
         world = game.world
         ready_for_interact = []
-        wall_polylines, fence_polylines = game.welded_landscape_polylines()
+        wall_polylines, walls_and_fences = game.welded_blocking_polylines()
 
         for creature in race_creatures:
             if creature.is_dead:
@@ -415,8 +415,7 @@ class CircleTickProcessor:
                         cleanup_area_for_new_construction(
                             game, new_object, footprint_radius(new_object) + 10)
 
-            blocking_polylines = (wall_polylines if creature.can_jump_fences()
-                                  else wall_polylines + fence_polylines)
+            blocking_polylines = wall_polylines if creature.can_jump_fences() else walls_and_fences
             creature.pathfinder.move_towards(
                 target, ctx.dt, biome_grid=game.biome_manager.grid,
                 wall_polylines=blocking_polylines)

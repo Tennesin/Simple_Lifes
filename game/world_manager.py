@@ -39,7 +39,7 @@ from objects import (
     WaterPuddle,
 )
 from player import Player
-
+from creatures.all_needed.safe_io import write_json_atomic
 from .widgets import ScrollArea, Slider, TextInputBox
 from .world_context import WorldState
 
@@ -178,6 +178,7 @@ def _collect_animal_drop_object_registry():
 class WorldManager:
     def __init__(self, game):
         self.game = game
+        self._autosave_timer = 0.0
 
     _WORLD_OBJECT_REGISTRY = (
             _CORE_OBJECT_REGISTRY + _collect_race_object_registry()
@@ -351,6 +352,7 @@ class WorldManager:
             return
         entry = screen.entries[screen.selected_index]
         shutil.rmtree(entry.folder_path, ignore_errors=True)
+        shutil.rmtree(entry.folder_path + ".bak", ignore_errors=True)
         screen.entries = self._scan_worlds()
         screen.selected_index = None
         screen.confirm_delete = False
@@ -459,7 +461,9 @@ class WorldManager:
             self.save_world()
         else:
             self.load_world_data()
+            self._make_session_backup(world_path)
 
+        self._autosave_timer = 0.0
         game.world_loaded = True
 
     def load_world_data(self):
@@ -521,11 +525,11 @@ class WorldManager:
 
         for filename, attr, _cls in self._WORLD_OBJECT_REGISTRY:
             items = getattr(game.world, attr)
-            with open(os.path.join(game.world_path, filename), "w", encoding="utf-8") as f:
-                json.dump([obj.to_dict() for obj in items], f, indent=2)
+            write_json_atomic(os.path.join(game.world_path, filename),
+                              [obj.to_dict() for obj in items], indent=2)
         if game.biome_manager.grid is not None:
-            with open(os.path.join(game.world_path, settings.WORLD_BIOME_FILENAME), "w", encoding="utf-8") as f:
-                json.dump(game.biome_manager.to_dict(), f)
+            write_json_atomic(os.path.join(game.world_path, settings.WORLD_BIOME_FILENAME),
+                              game.biome_manager.to_dict())
         self._save_player_state()
         for fn in all_extra_world_save_fns():
             fn(game)
@@ -554,8 +558,7 @@ class WorldManager:
         game = self.game
         path = os.path.join(game.world_path, "player_state.json")
         try:
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump({"favorite_id": game.favorite_id}, f, indent=2, ensure_ascii=False)
+            write_json_atomic(path, {"favorite_id": game.favorite_id}, indent=2)
         except OSError:
             pass
 
@@ -564,8 +567,33 @@ class WorldManager:
         if not game.world_loaded:
             return
         self.save_world()
+        self._autosave_timer = 0.0
         game.last_manual_save_time = time.time()
         game.show_game_menu = False
+
+    def _make_session_backup(self, world_path):
+        """Копия мира в том виде, в каком его открыли."""
+        backup_path = world_path + ".bak"
+        try:
+            shutil.rmtree(backup_path, ignore_errors=True)
+            shutil.copytree(world_path, backup_path, ignore=shutil.ignore_patterns("*.tmp"))
+        except OSError:
+            pass
+
+    def tick_autosave(self, dt):
+        """Фоновое автосохранение. Вызывается каждый кадр из Game.run."""
+        game = self.game
+        if not game.world_loaded or not game.display_settings.get("autosave_enabled", True):
+            self._autosave_timer = 0.0
+            return
+        self._autosave_timer += dt
+        if self._autosave_timer < settings.AUTOSAVE_INTERVAL_SECONDS:
+            return
+        self._autosave_timer = 0.0
+        try:
+            self.save_world()
+        except OSError:
+            pass    # диск полон/файл занят - не роняем игру, попробуем в следующий раз
 
     def close_world(self, save=None):
         game = self.game
@@ -595,6 +623,7 @@ class WorldManager:
         game.world_loaded = False
         game.world_path = None
         game.world_version = None
+        self._autosave_timer = 0.0
 
         settings.WORLD_WIDTH, settings.WORLD_HEIGHT = settings.WORLD_DEFAULT_SIZE
         game.restore_default_window()

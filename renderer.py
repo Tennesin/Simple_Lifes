@@ -225,7 +225,7 @@ class WorldRenderer:
         self._render_pipeline = self._build_render_pipeline()
         self._name_surface_cache = {}
         self._vision_cache = {}
-        self._shade_surface_cache = {}
+        self._shade_surface_cache = None
 
     @staticmethod
     def _build_render_pipeline():
@@ -363,35 +363,44 @@ class WorldRenderer:
         if len(polygon_screen) >= 2:
             pygame.draw.lines(screen, settings.VISION_CIRCLE_COLOR, True, polygon_screen, 2)
 
-    def _get_shade_surfaces(self, diameter):
-        surfaces = self._shade_surface_cache.get(diameter)
-        if surfaces is None:
-            # ---------- НОВОЕ: поверхности выделяются один раз на diameter и переиспользуются----------
-            shade = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
-            mask = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
-            surfaces = (shade, mask)
-            self._shade_surface_cache[diameter] = surfaces
-        return surfaces
+    def _get_shade_surfaces(self, size):
+        """Одна пара поверхностей размером с окно; пересоздаётся только при смене размера."""
+        cached = self._shade_surface_cache
+        if cached is None or cached[0] != size:
+            cached = (size, pygame.Surface(size, pygame.SRCALPHA), pygame.Surface(size, pygame.SRCALPHA))
+            self._shade_surface_cache = cached
+        return cached[1], cached[2]
 
     def _draw_vision_shadow(self, screen, pos, radius, polygon_screen):
         diameter = int(radius * 2) + 4
         if diameter <= 0:
             return
-        origin_x = pos[0] - radius - 2
-        origin_y = pos[1] - radius - 2
+        origin_x = int(pos[0] - radius - 2)
+        origin_y = int(pos[1] - radius - 2)
 
-        shade, mask = self._get_shade_surfaces(diameter)
+        # ---------- Считаем только ту часть тени, что попадает в игровое поле на экране ----------
+        world_view = pygame.Rect(0, settings.UI_HEIGHT,
+                                 screen.get_width(), screen.get_height() - settings.UI_HEIGHT)
+        area = pygame.Rect(origin_x, origin_y, diameter, diameter).clip(world_view)
+        if area.width <= 0 or area.height <= 0:
+            return
+
+        full_shade, full_mask = self._get_shade_surfaces(screen.get_size())
+        local_rect = pygame.Rect(0, 0, area.width, area.height)
+        shade = full_shade.subsurface(local_rect)
+        mask = full_mask.subsurface(local_rect)
+
         shade.fill((0, 0, 0, 0))
-        pygame.draw.circle(shade, (0, 0, 0, settings.VISION_SHADOW_ALPHA),
-                           (diameter // 2, diameter // 2), int(radius))
+        center = (int(pos[0] - area.x), int(pos[1] - area.y))
+        pygame.draw.circle(shade, (0, 0, 0, settings.VISION_SHADOW_ALPHA), center, int(radius))
 
         if len(polygon_screen) >= 3:
             mask.fill((0, 0, 0, 0))
-            local_poly = [(px - origin_x, py - origin_y) for px, py in polygon_screen]
+            local_poly = [(px - area.x, py - area.y) for px, py in polygon_screen]
             pygame.draw.polygon(mask, (255, 255, 255, 255), local_poly)
             shade.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
 
-        screen.blit(shade, (origin_x, origin_y))
+        screen.blit(shade, area.topleft)
 
     def draw_empty_state(self, screen):
         txt = self.font.render(info.INFO_EMPTY_STATE_HINT, True, settings.TEXT_COLOR)

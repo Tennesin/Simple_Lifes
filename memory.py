@@ -3,7 +3,7 @@ import math
 import random
 
 import settings
-
+from creatures.all_needed.safe_io import write_json_atomic
 
 class Memory:
     _BUCKET_NEAR, _BUCKET_MEDIUM, _BUCKET_FAR = "near", "medium", "far"
@@ -206,12 +206,11 @@ class Memory:
     # ---------- Сохранение/загрузка ----------
 
     def save(self, path):
-        with open(path, 'w', encoding="utf-8") as f:
-            json.dump({
-                "memories": self.memories,
-                "intuitive_memories": self.intuitive_memories,
-                "now": self._now,
-            }, f, indent=2)
+        write_json_atomic(path, {
+            "memories": self.memories,
+            "intuitive_memories": self.intuitive_memories,
+            "now": self._now,
+        }, indent=2)
 
     def load(self, path):
         with open(path, 'r', encoding="utf-8") as f:

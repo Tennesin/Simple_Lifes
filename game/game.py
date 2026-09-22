@@ -20,7 +20,7 @@ from .simulation import Simulation
 from .widgets import AccordionList, ScrollArea
 from .world_context import WorldState
 from .world_manager import WorldManager
-
+from creatures.all_needed.safe_io import write_json_atomic
 
 class SettingsScreen:
     def __init__(self, base_settings):
@@ -90,6 +90,7 @@ class Game:
         self.selected_object_click_pos = None
         self.editing_name = False
         self.name_edit_buffer = ""
+        self._wall_geometry_cache = (None, [], [], [])
 
         self.dragging = False
         self.drag_start = (0, 0)
@@ -199,8 +200,7 @@ class Game:
     def _save_display_settings(self):
         os.makedirs(settings.BASE_WORLDS_DIR, exist_ok=True)
         try:
-            with open(self._settings_file_path(), "w", encoding="utf-8") as f:
-                json.dump(self.display_settings, f, indent=2, ensure_ascii=False)
+            write_json_atomic(self._settings_file_path(), self.display_settings, indent=2)
         except OSError:
             pass
 
@@ -231,20 +231,26 @@ class Game:
             if entity is not None:
                 entity.on_marked_favorite()
 
-    def welded_landscape_polylines(self):
+    def _refresh_wall_geometry(self):
         version = self.world.landscape_version
-        cached_version, cached_walls, cached_fences = self._wall_geometry_cache
-        if cached_version == version:
-            return cached_walls, cached_fences
-
+        if self._wall_geometry_cache[0] == version:
+            return
         wall_points = [w.points for w in self.world.walls if w.points]
         fence_points = [f.points for f in self.world.fences if f.points]
 
-        welded_walls = geometry.weld_polyline_endpoints(wall_points, tolerance=settings.WALL_WELD_TOLERANCE)
-        welded_fences = geometry.weld_polyline_endpoints(fence_points, tolerance=settings.WALL_WELD_TOLERANCE)
+        welded_walls = [geometry.BoundedPolyline(p) for p in
+                        geometry.weld_polyline_endpoints(wall_points, tolerance=settings.WALL_WELD_TOLERANCE)]
+        welded_fences = [geometry.BoundedPolyline(p) for p in
+                         geometry.weld_polyline_endpoints(fence_points, tolerance=settings.WALL_WELD_TOLERANCE)]
+        self._wall_geometry_cache = (version, welded_walls, welded_fences, welded_walls + welded_fences)
 
-        self._wall_geometry_cache = (version, welded_walls, welded_fences)
-        return welded_walls, welded_fences
+    def welded_landscape_polylines(self):
+        self._refresh_wall_geometry()
+        return self._wall_geometry_cache[1], self._wall_geometry_cache[2]
+
+    def welded_blocking_polylines(self):
+        self._refresh_wall_geometry()
+        return self._wall_geometry_cache[1], self._wall_geometry_cache[3]
 
     def resize_for_world(self, world_w, world_h):
         screen_limit_w = self.desktop_w - settings.WINDOW_SCREEN_MARGIN
@@ -390,6 +396,7 @@ class Game:
                 self.input_handler.handle_events()
                 if not self.crashed:
                     self.simulation.update(dt)
+                    self.world_manager.tick_autosave(dt)
                 self.draw()
             except Exception:
                 self._handle_crash(traceback.format_exc())

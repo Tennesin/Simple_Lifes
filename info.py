@@ -83,6 +83,7 @@ INFO_TOOL_WALL_HINT = "Зажмите и ведите ЛКМ — рисоват�
 INFO_TOOL_FENCE_HINT = "Зажмите и ведите ЛКМ — рисовать забор"
 INFO_TOOL_GRAB_RELEASE_HINT = "ЛКМ — отпустить существо"
 INFO_TOOL_GRAB_OBJECT_HINT = "ЛКМ — опустить объект"
+INFO_TOOL_GRAB_OBJECT_INVALID_HINT = "Сюда нельзя. Esc — вернуть на прежнее место"
 INFO_EMPTY_STATE_HINT = "Создайте или Откройте мир"
 INFO_PAUSE_OVERLAY = "ПАУЗА"
 INFO_WORLD_NAME_TEMPLATE = "Мир: {world_name}"

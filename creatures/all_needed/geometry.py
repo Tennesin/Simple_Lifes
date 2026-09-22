@@ -3,13 +3,11 @@ import random
 
 import settings
 
-
 def clamped_point(origin_x, origin_y, angle, dist):
     tx = origin_x + math.cos(angle) * dist
     ty = origin_y + math.sin(angle) * dist
     return (max(20, min(tx, settings.WORLD_WIDTH - 20)),
             max(20, min(ty, settings.WORLD_HEIGHT - 20)))
-
 
 def flee_point(x, y, from_pos, distance):
     dx = x - from_pos[0]
@@ -39,15 +37,39 @@ def closest_point_on_segment(px, py, ax, ay, bx, by):
     t = max(0.0, min(1.0, (apx * abx + apy * aby) / ab_len_sq))
     return (ax + t * abx, ay + t * aby)
 
+class BoundedPolyline(list):
+    """Список точек ломаной + рамка (min_x, min_y, max_x, max_y), посчитанная один раз."""
+    __slots__ = ("bounds",)
+
+    def __init__(self, points=()):
+        super().__init__(points)
+        if self:
+            xs = [p[0] for p in self]
+            ys = [p[1] for p in self]
+            self.bounds = (min(xs), min(ys), max(xs), max(ys))
+        else:
+            self.bounds = None
+
 def resolve_circle_vs_polylines(x, y, radius, polylines, thickness, iterations=2):
     clearance = radius + thickness / 2
     for _ in range(iterations):
         closest = None
         closest_dist = clearance
+        left, right = x - clearance, x + clearance
+        top, bottom = y - clearance, y + clearance
         for points in polylines:
+            # ---------- Ломаная целиком далеко - пропускаем без разбора сегментов ----------
+            bounds = getattr(points, "bounds", None)
+            if bounds is not None and (bounds[2] < left or bounds[0] > right
+                                       or bounds[3] < top or bounds[1] > bottom):
+                continue
             for i in range(len(points) - 1):
                 ax, ay = points[i]
                 bx, by = points[i + 1]
+                # ---------- Дешёвое отсечение сегмента по рамке ----------
+                if ((ax < left and bx < left) or (ax > right and bx > right)
+                        or (ay < top and by < top) or (ay > bottom and by > bottom)):
+                    continue
                 cx, cy = closest_point_on_segment(x, y, ax, ay, bx, by)
                 d = math.hypot(x - cx, y - cy)
                 if d < closest_dist:

@@ -9,7 +9,6 @@ import settings
 from game.animal_registry import all_animals
 from game.race_registry import all_minimap_layers
 
-
 def _mm_draw_roads(panel, screen, game, to_minimap, scale, display):
     if display["minimap_show_roads"]:
         for road in game.world.roads:
@@ -96,6 +95,9 @@ _CORE_MINIMAP_LAYERS = (
     ("animals", _mm_draw_animals),
 )
 
+# Слои, которые двигаются каждый кадр. Всё остальное кэшируется в отдельную поверхность
+_DYNAMIC_MINIMAP_LAYER_KEYS = ("creatures", "animals")
+
 class MinimapPanel:
 
     def __init__(self, game, font):
@@ -104,24 +106,54 @@ class MinimapPanel:
         self.rect = pygame.Rect(0, 0, settings.MINIMAP_MAX_WIDTH, settings.MINIMAP_MAX_HEIGHT)
         self._biome_layer = None
         self._biome_layer_key = None
-        self._pipeline = self._build_pipeline()
+        self._static_pipeline, self._dynamic_pipeline = self._build_pipelines()
+        self._static_surface = None
+        self._static_key = None
+        self._static_built_at = 0
         self._dos_overlay_surface = None
         self._dos_cut_surface = None
         self._dos_surfaces_size = None
         self.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     @staticmethod
-    def _build_pipeline():
+    def _build_pipelines():
         race_layers_by_anchor = {}
         for layer in all_minimap_layers():
             race_layers_by_anchor.setdefault(layer.insert_after, []).append(layer)
 
-        pipeline = []
+        static, dynamic = [], []
         for key, fn in _CORE_MINIMAP_LAYERS:
-            pipeline.append(fn)
+            target = dynamic if key in _DYNAMIC_MINIMAP_LAYER_KEYS else static
+            target.append(fn)
             for layer in race_layers_by_anchor.get(key, []):
-                pipeline.append(layer.draw_fn)
-        return pipeline
+                target.append(layer.draw_fn)
+        return static, dynamic
+
+    def _get_static_surface(self, game, rect, scale, display):
+        now = pygame.time.get_ticks()
+        key = (rect.size, game.world.landscape_version, tuple(sorted(display.items())))
+        fresh = (self._static_surface is not None and key == self._static_key
+                 and now - self._static_built_at < settings.MINIMAP_STATIC_REFRESH_MS)
+        if fresh:
+            return self._static_surface
+
+        if self._static_surface is None or self._static_surface.get_size() != rect.size:
+            self._static_surface = pygame.Surface(rect.size)
+        surface = self._static_surface
+        surface.fill(settings.MINIMAP_BG_COLOR)
+        self._draw_biomes(surface, pygame.Rect(0, 0, rect.width, rect.height))
+
+        scale_x, scale_y = scale
+
+        def to_local(wx, wy):
+            return (wx * scale_x, wy * scale_y)
+
+        for draw_fn in self._static_pipeline:
+            draw_fn(self, surface, game, to_local, scale, display)
+
+        self._static_key = key
+        self._static_built_at = now
+        return surface
 
     def rebuild_layout(self, window_w, window_h):
         world_w = self.game.camera.world_w
@@ -182,18 +214,17 @@ class MinimapPanel:
         game = self.game
         display = game.display_settings
         rect = self.rect
-        pygame.draw.rect(screen, settings.MINIMAP_BG_COLOR, rect)
-
-        self._draw_biomes(screen, rect)
-
         scale_x = rect.width / game.camera.world_w
         scale_y = rect.height / game.camera.world_h
+        scale = (scale_x, scale_y)
+
+        screen.blit(self._get_static_surface(game, rect, scale, display), rect.topleft)
 
         def to_minimap(wx, wy):
             return (rect.x + wx * scale_x, rect.y + wy * scale_y)
 
-        for draw_fn in self._pipeline:
-            draw_fn(self, screen, game, to_minimap, (scale_x, scale_y), display)
+        for draw_fn in self._dynamic_pipeline:
+            draw_fn(self, screen, game, to_minimap, scale, display)
 
         favorite = self._find_favorite_entity(game.favorite_id)
         self._draw_dos_overlay(screen, rect, (scale_x, scale_y), favorite)

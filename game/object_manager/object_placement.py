@@ -22,7 +22,6 @@ from .object_types import (
 )
 from .spatial import LinearSource
 
-
 class PlacementService:
 
     def __init__(self, game):
@@ -69,6 +68,16 @@ class PlacementService:
     # Проверки. index - SpatialIndex (быстро, для массовой генерации) или None
     # =====================================================================
 
+    @staticmethod
+    def _excluded_ids(exclude):
+        """exclude - один объект или набор объектов, которые не считаются помехой
+        (например, дом вместе с жителями, которые переезжают вместе с ним)."""
+        if exclude is None:
+            return frozenset()
+        if isinstance(exclude, (list, tuple, set, frozenset)):
+            return frozenset(id(o) for o in exclude)
+        return frozenset((id(exclude),))
+
     def creature_position_valid(self, wx, wy, index=None):
         game = self.game
         source = index if index is not None else LinearSource(game)
@@ -95,6 +104,7 @@ class PlacementService:
         game = self.game
         obj_type = obj_type if obj_type is not None else game.placement_mode
         source = index if index is not None else LinearSource(game)
+        excluded = self._excluded_ids(exclude)
 
         if not self._inside_world(wx, wy, cfg.WORLD_EDGE_MARGIN_OBJECT):
             return False
@@ -107,7 +117,7 @@ class PlacementService:
         fixed_radius = max(cfg.FIXED_CLEARANCE_MIN, clearance)
         for attr in fixed_clearance_attrs():
             for obj in source.candidates(attr, wx, wy, fixed_radius):
-                if obj is exclude:
+                if id(obj) in excluded:
                     continue
                 if attr == "fruits" and not obj.active:
                     continue
@@ -120,7 +130,7 @@ class PlacementService:
         for attr in footprint_clearance_attrs():
             additive = attr in additive_attrs
             for obj in source.candidates(attr, wx, wy, search_radius):
-                if obj is exclude:
+                if id(obj) in excluded:
                     continue
                 own_clearance = footprint_radius(obj) + cfg.FOOTPRINT_EXTRA_GAP
                 required = (own_clearance + clearance) if additive else max(own_clearance, clearance)

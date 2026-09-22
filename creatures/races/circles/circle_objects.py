@@ -441,6 +441,12 @@ class House:
     def remove_resident(self, creature_id):
         self.resident_ids.discard(creature_id)
 
+    def carried_entities(self, game):
+        """Существа внутри дома: они переезжают вместе с ним и не мешают его размещению."""
+        return [c for c in game.world.creatures
+                if not c.is_dead and getattr(c, "home_id", None) == self.id
+                and getattr(c, "at_home", False)]
+
     # ---------- Склад: физическая привязка к дому ----------
 
     def attach_storage(self, field):
@@ -467,10 +473,8 @@ class House:
             else:
                 field.x, field.y = self._compute_storage_position()
 
-        for creature in game.world.creatures:
-            if (not creature.is_dead and getattr(creature, "home_id", None) == self.id
-                    and getattr(creature, "at_home", False)):
-                creature.x, creature.y = self.x, self.y
+        for creature in self.carried_entities(game):
+            creature.x, creature.y = self.x, self.y
 
     def storage_field(self, storage_fields):
         if self.storage_id is not None:

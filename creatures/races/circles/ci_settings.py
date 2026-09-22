@@ -386,6 +386,9 @@ ACTIVE_SEARCH_TIMER = (1.0, 2.0)
 
 CORPSE_LIFETIME = 30.0
 
+# ---------- Частота принятия решений ----------
+AI_DECISION_INTERVAL = 0.1   # сек между решениями одного существа; 0 - решать каждый кадр (как раньше)
+
 # ---------- Насыщение потребностей / сознание ----------
 HUNGER_SATISFY_THRESHOLD = 20.0
 THIRST_SATISFY_THRESHOLD = 20.0

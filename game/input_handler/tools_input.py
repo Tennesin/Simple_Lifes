@@ -72,6 +72,7 @@ class GrabController:
             obj.on_grab_start(game.world)
         player.grabbed_object = obj
         player.grabbed_object_valid = True      # объект пока стоит там, где стоял
+        player.grabbed_object_origin = (obj.x, obj.y)
         player.last_click_target = None
         game.close_all_menus()
         self._selection.clear()
@@ -96,6 +97,7 @@ class GrabController:
         game = self.game
         obj = game.player.grabbed_object
         game.player.grabbed_object = None
+        game.player.grabbed_object_origin = None
 
         if game.object_manager.resolve_obj_type_for_instance(obj) in LANDSCAPE_AFFECTING_TYPES:
             game.world.landscape_version += 1
@@ -111,6 +113,17 @@ class GrabController:
             self._selection.select_in_secondary_panel(panel_attr, obj)
         else:
             self._selection.select_object(obj, (obj.x, obj.y))
+
+    def _return_object_to_origin(self):
+        """Аварийный выход: вернуть объект туда, откуда его взяли."""
+        game, player = self.game, self.game.player
+        obj, origin = player.grabbed_object, player.grabbed_object_origin
+        if obj is None or origin is None:
+            return
+        obj.x, obj.y = origin
+        if hasattr(obj, "on_object_moved"):
+            obj.on_object_moved(game)
+        player.grabbed_object_valid = True
 
     def on_motion(self, event):
         player = self.game.player
@@ -143,8 +156,13 @@ class GrabController:
         if obj_type is None:
             player.grabbed_object_valid = True
         else:
+            # ---------- Всё, что едет вместе с объектом, помехой ему быть не может ----------
+            ignored = [obj]
+            carried_fn = getattr(obj, "carried_entities", None)
+            if carried_fn is not None:
+                ignored.extend(carried_fn(game))
             player.grabbed_object_valid = game.object_manager.check_object_placement_valid(
-                wx, wy, obj_type=obj_type, exclude=obj)
+                wx, wy, obj_type=obj_type, exclude=ignored)
         obj.x, obj.y = wx, wy
         if hasattr(obj, "on_object_moved"):
             obj.on_object_moved(game)
@@ -156,8 +174,10 @@ class GrabController:
             player.grabbed_creature = None
             return True
         if player.grabbed_object is not None:
-            if player.grabbed_object_valid:
-                self.release_object()
+            # ---------- Нельзя поставить здесь - Esc возвращает на прежнее место, а не молчит ----------
+            if not player.grabbed_object_valid:
+                self._return_object_to_origin()
+            self.release_object()
             return True
         return False
 

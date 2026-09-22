@@ -1,4 +1,3 @@
-import json
 import os
 import random
 
@@ -9,6 +8,7 @@ from memory import Memory
 from names import random_name
 
 from ...all_needed.base_entity import LivingEntity
+from ...all_needed.safe_io import write_json_atomic
 from . import ci_info, ci_settings
 from .ai import CreatureBrain
 from .interactions import CreatureInteractions
@@ -78,6 +78,11 @@ class Creature(LivingEntity):
         self.sleep_spot_campfire = None
         self.target = None
         self.decision_timer = 0.0
+        # ---------- Троттлинг мозга: накопленное время, последняя цель, валидность плана ----------
+        self.ai_dt_debt = random.uniform(0.0, ci_settings.AI_DECISION_INTERVAL)
+        self.ai_last_goal = None
+        self.ai_plan_valid = False
+
         self.speed_factor = 1.0
         self.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
         self.position_at_last_check = (self.x, self.y)
@@ -574,6 +579,7 @@ class Creature(LivingEntity):
         }
         with open(os.path.join(folder_path, "state.json"), 'w') as f:
             json.dump(state, f, indent=2)
+        write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))
 
     def release_references(self):
