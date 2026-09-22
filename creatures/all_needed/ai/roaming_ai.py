@@ -42,8 +42,8 @@ class RoamingAnimalMixin:
                 dx, dy = e.x - spike.x, e.y - spike.y
                 dist = math.hypot(dx, dy)
                 if dist != 0:
-                    new_x = e.x + dx / dist * 30
-                    new_y = e.y + dy / dist * 30
+                    new_x = e.x + dx / dist * settings.SPIKE_KNOCKBACK_DISTANCE
+                    new_y = e.y + dy / dist * settings.SPIKE_KNOCKBACK_DISTANCE
                     if biome_grid is None or biome_grid.get_at(new_x, new_y) != settings.BIOME_SEA:
                         e.x = max(15, min(new_x, settings.WORLD_WIDTH - 15))
                         e.y = max(15, min(new_y, settings.WORLD_HEIGHT - 15))

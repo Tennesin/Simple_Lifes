@@ -14,6 +14,7 @@ DEFAULT_SCROLL_SPEED = 25
 DEFAULT_VISION_RADIUS = 900
 SPIKE_NAV_BLOCK_RADIUS = 35
 SPIKE_NAV_SOFT_MARGIN = 20
+SPIKE_KNOCKBACK_DISTANCE = 30   # px - на сколько существо/животное отбрасывает от шипа при ударе
 
 # ---------- Дополнительная область симуляции (ДОС) ----------
 SIMULATION_AREA_MIN_UNITS = 1

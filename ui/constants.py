@@ -6,10 +6,10 @@ from game.race_registry import PlayerToolSpec
 from player import Player
 
 BIOME_PREVIEW_COLOR = {
-    "biome_plains": settings.COLOR_LIGHT,
-    "biome_desert": settings.BIOME_BASE_COLOR[settings.BIOME_DESERT],
-    "biome_river": settings.BIOME_BASE_COLOR[settings.BIOME_RIVER],
-    "biome_sea": settings.BIOME_BASE_COLOR[settings.BIOME_SEA],
+    Player.TOOL_BIOME_PLAINS: settings.COLOR_LIGHT,
+    Player.TOOL_BIOME_DESERT: settings.BIOME_BASE_COLOR[settings.BIOME_DESERT],
+    Player.TOOL_BIOME_RIVER: settings.BIOME_BASE_COLOR[settings.BIOME_RIVER],
+    Player.TOOL_BIOME_SEA: settings.BIOME_BASE_COLOR[settings.BIOME_SEA],
 }
 
 BIOME_LABELS = {
@@ -32,10 +32,10 @@ _CORE_PLAYER_TOOLS = (
 )
 
 _CORE_TOOL_HINTS = {
-    "wall": info.INFO_TOOL_WALL_HINT,
-    "fence": info.INFO_TOOL_FENCE_HINT,
-    "biome_plains": info.INFO_TOOL_BIOME_HINT,
-    "biome_desert": info.INFO_TOOL_BIOME_HINT,
-    "biome_river": info.INFO_TOOL_BIOME_HINT,
-    "biome_sea": info.INFO_TOOL_BIOME_HINT,
+    Player.TOOL_WALL: info.INFO_TOOL_WALL_HINT,
+    Player.TOOL_FENCE: info.INFO_TOOL_FENCE_HINT,
+    Player.TOOL_BIOME_PLAINS: info.INFO_TOOL_BIOME_HINT,
+    Player.TOOL_BIOME_DESERT: info.INFO_TOOL_BIOME_HINT,
+    Player.TOOL_BIOME_RIVER: info.INFO_TOOL_BIOME_HINT,
+    Player.TOOL_BIOME_SEA: info.INFO_TOOL_BIOME_HINT,
 }

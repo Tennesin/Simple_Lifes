@@ -120,8 +120,8 @@ class CreatureInteractions(WeakOwnerMixin):
                 dy = c.y - spike.y
                 dist = math.hypot(dx, dy)
                 if dist != 0:
-                    new_x = c.x + dx / dist * 30
-                    new_y = c.y + dy / dist * 30
+                    new_x = c.x + dx / dist * settings.SPIKE_KNOCKBACK_DISTANCE
+                    new_y = c.y + dy / dist * settings.SPIKE_KNOCKBACK_DISTANCE
                     blocked_by_wall = wall_polylines and geometry.segment_blocked_by_polylines(
                         c.x, c.y, new_x, new_y, wall_polylines)
                     blocked_by_sea = (biome_grid is not None

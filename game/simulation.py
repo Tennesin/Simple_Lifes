@@ -362,7 +362,8 @@ class Simulation:
             expired = [obj for obj in collection if obj.tick(dt)]
             if not expired:
                 continue
-            setattr(world, attr, [obj for obj in collection if obj not in expired])
+            expired_ids = {id(obj) for obj in expired}
+            setattr(world, attr, [obj for obj in collection if id(obj) not in expired_ids])
             if game.selected_object in expired:
                 game.selected_object = None
             if game.player.grabbed_object in expired:
@@ -408,7 +409,8 @@ class Simulation:
         alive = [obj for obj in collection if alive_check(obj)]
         if len(alive) == len(collection):
             return
-        removed = [obj for obj in collection if obj not in alive]
+        alive_ids = {id(obj) for obj in alive}
+        removed = [obj for obj in collection if id(obj) not in alive_ids]
         setattr(world, attr, alive)
 
         if game.selected_object in removed:
@@ -421,7 +423,8 @@ class Simulation:
         alive = [w for w in world.water_puddles if w.has_water()]
         if len(alive) == len(world.water_puddles):
             return
-        removed = [w for w in world.water_puddles if w not in alive]
+        alive_ids = {id(w) for w in alive}
+        removed = [w for w in world.water_puddles if id(w) not in alive_ids]
         world.water_puddles = alive
 
         for water in removed:

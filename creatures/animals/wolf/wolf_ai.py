@@ -56,6 +56,7 @@ class WolfAI(weak_owner.WeakEntityMixin, roaming_ai.RoamingAnimalMixin):
         self.seeking_food = False
         self.seeking_water = False
         self.is_urgent = False
+        self._hunting_prey_ref = None
 
         self._spike_flee_commit_timer = 0.0
         self._last_spike_threat = None
@@ -217,10 +218,14 @@ class WolfAI(weak_owner.WeakEntityMixin, roaming_ai.RoamingAnimalMixin):
 
     def _refresh_hunt_target(self, prey_lists, dt):
         if self.hunting_target_id is None:
+            self._hunting_prey_ref = None
             return
         w, cfg = self.entity, self.cfg
 
-        current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+        current = self._hunting_prey_ref
+        if current is None or current.id != self.hunting_target_id:
+            current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+
         if current is not None and current.hp > 0:
             dist = math.hypot(w.x - current.x, w.y - current.y)
             if dist > cfg["bite_distance"]:
@@ -230,22 +235,25 @@ class WolfAI(weak_owner.WeakEntityMixin, roaming_ai.RoamingAnimalMixin):
             too_long = self.hunt_timer > cfg["hunt_max_duration"]
             too_far = dist > cfg["hunt_giveup_distance"]
             if not too_long and not too_far:
+                self._hunting_prey_ref = current
                 return
 
         # ---------- Жертва убита/исчезла/оторвалась - цель снимается ----------
         self.hunting_target_id = None
         self.hunt_timer = 0.0
+        self._hunting_prey_ref = None
 
     def _resolve_hunt_target(self, prey_lists, radius):
         w = self.entity
 
         # ---------- Актуальность уже проверена в _refresh_hunt_target ----------
         if self.hunting_target_id is not None:
-            current = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+            current = self._hunting_prey_ref
             if current is not None and current.hp > 0:
                 return current
             self.hunting_target_id = None
             self.hunt_timer = 0.0
+            self._hunting_prey_ref = None
 
         best, best_dist = None, radius
         for prey_source in prey_lists:
@@ -260,6 +268,7 @@ class WolfAI(weak_owner.WeakEntityMixin, roaming_ai.RoamingAnimalMixin):
                     best = prey
         if best is not None:
             self.hunt_timer = 0.0
+            self._hunting_prey_ref = best
         return best
 
     @staticmethod
@@ -284,8 +293,9 @@ class WolfAI(weak_owner.WeakEntityMixin, roaming_ai.RoamingAnimalMixin):
 
         bit = False
         if self.hunting_target_id is not None and self.bite_cooldown <= 0:
-            # ---------- prey_lists - это SpatialGrid, а не списки: ищем цель через общий хелпер ----------
-            prey = self._find_prey_by_id(prey_lists, self.hunting_target_id)
+            prey = self._hunting_prey_ref
+            if prey is None or prey.id != self.hunting_target_id:
+                prey = self._find_prey_by_id(prey_lists, self.hunting_target_id)
             if (prey is not None and prey.hp > 0
                     and math.hypot(w.x - prey.x, w.y - prey.y) < cfg["bite_distance"]):
                 prey.hp = max(0.0, prey.hp - cfg["bite_damage"])

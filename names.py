@@ -52,7 +52,6 @@ FEMALE_NAMES = [
     "Karin", "Elsa", "Liv", "Saga", "Maja", "Siobhan", "Niamh", "Aoife",
     "Ciara", "Maeve", "Roisin", "Fiona", "Deirdre", "Bridget", "Selene", "Athena",
     "Daphne", "Iris", "Calliope", "Thalia",
-    # Новые добавления
     "Mila", "Aria", "Ellie", "Samantha", "Maya", "Willow", "Kinsley", "Naomi",
     "Aaliyah", "Elena", "Sarah", "Ariana", "Allison", "Madelyn", "Alice", "Hailey",
     "Eva", "Clara", "Vivian", "Eliana", "Lyla", "Ruby", "Serenity", "Ivy",
@@ -66,6 +65,10 @@ FEMALE_NAMES = [
     "Luise", "Johanna", "Annika", "Ebba", "Hedda", "Ronja", "Linnea", "Freja",
     "Saoirse", "Orla", "Eimear", "Grainne", "Cassandra", "Hebe", "Clio", "Althea"
 ]
+
+# ---------- Уборка случайных дублей: они молча завышают шанс конкретного имени ----------
+MALE_NAMES = list(dict.fromkeys(MALE_NAMES))
+FEMALE_NAMES = list(dict.fromkeys(FEMALE_NAMES))
 
 DEFAULT_NAME_POOLS = {
     "male": MALE_NAMES,

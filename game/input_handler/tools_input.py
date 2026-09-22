@@ -313,7 +313,8 @@ class BiomeBrushController:
 
     def __init__(self, game):
         self.game = game
-        self._last_pos = None       # предыдущая точка мазка - для интерполяции без "дырок"
+        self._last_pos = None
+        self._stroke_dirty = False
 
     def _is_active(self):
         return self.game.player.tool in BIOME_TOOL_MAP
@@ -335,7 +336,7 @@ class BiomeBrushController:
         player = self.game.player
         if self._shift_held():
             self._adjust_radius(event.pos[1])
-            return True                     # пока меняем радиус - остальное не обрабатываем
+            return True
         player.brush_adjust_start_y = None
         player.brush_adjust_start_radius = None
         if (event.buttons[0] and in_world_area(event.pos[1])
@@ -344,7 +345,13 @@ class BiomeBrushController:
         return False
 
     def reset_stroke(self):
+        """Вызывается на отпускание ЛКМ - здесь и только здесь бампаем
+        landscape_version, чтобы nav-сетки пересобирались один раз на
+        весь мазок, а не на каждое событие движения мыши внутри него."""
         self._last_pos = None
+        if self._stroke_dirty:
+            self.game.world.landscape_version += 1
+            self._stroke_dirty = False
 
     def _adjust_radius(self, mouse_y):
         player = self.game.player
@@ -363,7 +370,7 @@ class BiomeBrushController:
         radius = game.player.brush_radius
         last = self._last_pos
         if last is None:
-            game.object_manager.paint_biome(wx, wy, biome_type, radius)
+            game.object_manager.paint_biome(wx, wy, biome_type, radius, bump_version=False)
         else:
             dist = math.hypot(wx - last[0], wy - last[1])
             step = max(settings.BIOME_BRUSH_MIN_STEP, radius * settings.BIOME_BRUSH_STEP_RADIUS_RATIO)
@@ -373,7 +380,8 @@ class BiomeBrushController:
                 game.object_manager.paint_biome(
                     last[0] + (wx - last[0]) * t, last[1] + (wy - last[1]) * t,
                     biome_type, radius, bump_version=False)
-            game.world.landscape_version += 1       # одна версия на мазок, а не на каждый шаг
+        # ---------- Версия ландшафта откладывается до reset_stroke() ----------
+        self._stroke_dirty = True
         self._last_pos = (wx, wy)
 
 # =========================================================================
