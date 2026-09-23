@@ -27,6 +27,8 @@ from .player_reactions import PlayerReactionHandler
 from .psyche import CreaturePsyche
 from .social import CreatureCommunication, CreatureSocial
 
+from .state.puberty_state import PubertyState
+
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
     diet = ci_settings.RACE_DIET
@@ -184,19 +186,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Гормональный бум (переходный возраст) и ухаживание
         # =====================================================================
-        self.puberty_trigger_age = random.uniform(
-            ci_settings.PUBERTY_TRIGGER_AGE_MIN, ci_settings.PUBERTY_TRIGGER_AGE_MAX)
-        self.puberty_done = False
-        self.puberty_active = False
-        self.puberty_timer = 0.0
-        self._puberty_speed_bonus = 0.0
-        self._puberty_orig_curiosity = None
-        self.puberty_courtship_cooldown = 0.0
-        self.puberty_courtship_target_id = None
-        self.puberty_courtship_timer = 0.0
-        self.puberty_courtship_deadline = 0.0
-        self.puberty_courtship_fail_streak = 0
-        self.puberty_courtship_avoid = {}
+        self.puberty = PubertyState.rolled()
 
         # =====================================================================
         # Поведение ребёнка: испуг, игры-догонялки
@@ -332,6 +322,110 @@ class Creature(LivingEntity):
         self.communication = CreatureCommunication(self)
         self.family = CreatureFamily(self)
         self.territory = CreatureTerritory(self)
+
+    # =====================================================================
+    # Фасады совместимости: домен "Пубертат" (state/puberty_state.py)
+    # Временные property поверх self.puberty - остаются, пока
+    # creature_refs_stages.txt для этапа 1 не станет пустым по всем файлам,
+    # кроме adult_ai.py/life_cycle.py/brain.py (они уже переведены на
+    # c.puberty.xxx напрямую).
+    # =====================================================================
+
+    @property
+    def puberty_trigger_age(self):
+        return self.puberty.trigger_age
+
+    @puberty_trigger_age.setter
+    def puberty_trigger_age(self, value):
+        self.puberty.trigger_age = value
+
+    @property
+    def puberty_done(self):
+        return self.puberty.done
+
+    @puberty_done.setter
+    def puberty_done(self, value):
+        self.puberty.done = value
+
+    @property
+    def puberty_active(self):
+        return self.puberty.active
+
+    @puberty_active.setter
+    def puberty_active(self, value):
+        self.puberty.active = value
+
+    @property
+    def puberty_timer(self):
+        return self.puberty.timer
+
+    @puberty_timer.setter
+    def puberty_timer(self, value):
+        self.puberty.timer = value
+
+    @property
+    def _puberty_speed_bonus(self):
+        return self.puberty.speed_bonus
+
+    @_puberty_speed_bonus.setter
+    def _puberty_speed_bonus(self, value):
+        self.puberty.speed_bonus = value
+
+    @property
+    def _puberty_orig_curiosity(self):
+        return self.puberty.orig_curiosity
+
+    @_puberty_orig_curiosity.setter
+    def _puberty_orig_curiosity(self, value):
+        self.puberty.orig_curiosity = value
+
+    @property
+    def puberty_courtship_cooldown(self):
+        return self.puberty.courtship_cooldown
+
+    @puberty_courtship_cooldown.setter
+    def puberty_courtship_cooldown(self, value):
+        self.puberty.courtship_cooldown = value
+
+    @property
+    def puberty_courtship_target_id(self):
+        return self.puberty.courtship_target_id
+
+    @puberty_courtship_target_id.setter
+    def puberty_courtship_target_id(self, value):
+        self.puberty.courtship_target_id = value
+
+    @property
+    def puberty_courtship_timer(self):
+        return self.puberty.courtship_timer
+
+    @puberty_courtship_timer.setter
+    def puberty_courtship_timer(self, value):
+        self.puberty.courtship_timer = value
+
+    @property
+    def puberty_courtship_deadline(self):
+        return self.puberty.courtship_deadline
+
+    @puberty_courtship_deadline.setter
+    def puberty_courtship_deadline(self, value):
+        self.puberty.courtship_deadline = value
+
+    @property
+    def puberty_courtship_fail_streak(self):
+        return self.puberty.fail_streak
+
+    @puberty_courtship_fail_streak.setter
+    def puberty_courtship_fail_streak(self, value):
+        self.puberty.fail_streak = value
+
+    @property
+    def puberty_courtship_avoid(self):
+        return self.puberty.avoid
+
+    @puberty_courtship_avoid.setter
+    def puberty_courtship_avoid(self, value):
+        self.puberty.avoid = value
 
     # =====================================================================
     # Геометрия / общие утилиты
@@ -688,12 +782,7 @@ class Creature(LivingEntity):
             "feed_target_id": self.feed_target_id,
             "urgent_child_id": self.urgent_child_id,
             "urgent_child_timer": self.urgent_child_timer,
-            "puberty_trigger_age": self.puberty_trigger_age,
-            "puberty_done": self.puberty_done,
-            "puberty_active": self.puberty_active,
-            "puberty_timer": self.puberty_timer,
-            "puberty_speed_bonus": self._puberty_speed_bonus,
-            "puberty_orig_curiosity": self._puberty_orig_curiosity,
+            **self.puberty.to_persisted_dict(),
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
             "sleep_forced": self.sleep_forced,

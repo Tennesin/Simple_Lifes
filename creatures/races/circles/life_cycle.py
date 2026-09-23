@@ -54,7 +54,7 @@ class CreatureAging(WeakOwnerMixin):
         c = self.c
         if new_stage == ci_settings.LIFE_STAGE_OLD:
             self._apply_old_modifiers()
-            if c.puberty_active:
+            if c.puberty.active:
                 self._end_puberty()
         elif old_stage == ci_settings.LIFE_STAGE_CHILD and new_stage == ci_settings.LIFE_STAGE_ADULT:
             c.child_distress_timer = 0.0
@@ -91,44 +91,47 @@ class CreatureAging(WeakOwnerMixin):
 
     def _update_puberty(self, dt):
         c = self.c
-        if c.puberty_done:
+        puberty = c.puberty
+        if puberty.done:
             return
-        if c.puberty_active:
-            c.puberty_timer -= dt
-            if c.puberty_timer <= 0:
+        if puberty.active:
+            puberty.timer -= dt
+            if puberty.timer <= 0:
                 self._end_puberty()
             return
         if c.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return
-        if c.age >= c.puberty_trigger_age:
+        if c.age >= puberty.trigger_age:
             self._start_puberty()
 
     def _start_puberty(self):
         c = self.c
-        if c.puberty_active or c.puberty_done:
+        puberty = c.puberty
+        if puberty.active or puberty.done:
             return
-        c.puberty_active = True
-        c.puberty_timer = random.uniform(*ci_settings.PUBERTY_DURATION_RANGE)
+        puberty.active = True
+        puberty.timer = random.uniform(*ci_settings.PUBERTY_DURATION_RANGE)
 
-        c._puberty_speed_bonus = random.uniform(*ci_settings.PUBERTY_SPEED_BONUS_RANGE)
-        c.base_speed_multiplier *= (1.0 + c._puberty_speed_bonus)
+        puberty.speed_bonus = random.uniform(*ci_settings.PUBERTY_SPEED_BONUS_RANGE)
+        c.base_speed_multiplier *= (1.0 + puberty.speed_bonus)
 
-        c._puberty_orig_curiosity = c.curiosity
+        puberty.orig_curiosity = c.curiosity
         c.curiosity = random.uniform(*ci_settings.PUBERTY_CURIOSITY_RANGE)
 
     def _end_puberty(self):
         c = self.c
-        c.puberty_active = False
-        c.puberty_done = True
-        c.puberty_timer = 0.0
+        puberty = c.puberty
+        puberty.active = False
+        puberty.done = True
+        puberty.timer = 0.0
 
-        if c._puberty_speed_bonus:
-            c.base_speed_multiplier /= (1.0 + c._puberty_speed_bonus)
-            c._puberty_speed_bonus = 0.0
+        if puberty.speed_bonus:
+            c.base_speed_multiplier /= (1.0 + puberty.speed_bonus)
+            puberty.speed_bonus = 0.0
 
-        if c._puberty_orig_curiosity is not None:
-            c.curiosity = c._puberty_orig_curiosity
-            c._puberty_orig_curiosity = None
+        if puberty.orig_curiosity is not None:
+            c.curiosity = puberty.orig_curiosity
+            puberty.orig_curiosity = None
 
     def sync_puberty_state(self):
         c = self.c
@@ -136,10 +139,10 @@ class CreatureAging(WeakOwnerMixin):
             return
         self._puberty_synced = True
 
-        if not c.puberty_active:
+        if not c.puberty.active:
             return
 
-        c.base_speed_multiplier *= (1.0 + c._puberty_speed_bonus)
+        c.base_speed_multiplier *= (1.0 + c.puberty.speed_bonus)
         c.curiosity = random.uniform(*ci_settings.PUBERTY_CURIOSITY_RANGE)
 
     def effective_vision_radius(self):

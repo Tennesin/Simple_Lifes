@@ -10,6 +10,7 @@ from .. import ci_settings
 from ..creature import Creature
 from ..genealogy import GenealogyRegistry
 from ..life_cycle import CreatureAging
+from ..state.puberty_state import PubertyState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -189,12 +190,7 @@ def _load_creature_age_and_stage(creature, state):
     creature.aging.sync_stage_modifiers()
 
 def _load_creature_puberty(creature, state):
-    creature.puberty_trigger_age = state.get("puberty_trigger_age", creature.puberty_trigger_age)
-    creature.puberty_done = state.get("puberty_done", False)
-    creature.puberty_active = state.get("puberty_active", False)
-    creature.puberty_timer = state.get("puberty_timer", 0.0)
-    creature._puberty_speed_bonus = state.get("puberty_speed_bonus", 0.0)
-    creature._puberty_orig_curiosity = state.get("puberty_orig_curiosity")
+    creature.puberty = PubertyState.from_persisted_dict(state)
     creature.aging.sync_puberty_state()
 
 def _load_creature_psyche(creature, state):

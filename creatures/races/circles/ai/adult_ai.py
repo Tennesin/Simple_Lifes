@@ -125,16 +125,17 @@ class PubertyCourtship(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        if not c.puberty_active or c.partner_id is not None:
+        puberty = c.puberty
+        if not puberty.active or c.partner_id is not None:
             self._reset_courtship()
-            c.puberty_courtship_fail_streak = 0
+            puberty.fail_streak = 0
             return [None]
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return [None]
         wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
         if c.needs.wellbeing_score() < wellbeing_threshold:
             return [None]
-        if c.puberty_courtship_cooldown > 0:
+        if puberty.courtship_cooldown > 0:
             return [None]
 
         def execute():
@@ -145,18 +146,19 @@ class PubertyCourtship(GoalComponent):
     # ---------- Сброс состояния ухаживания ----------
 
     def _reset_courtship(self):
-        c = self.c
-        c.puberty_courtship_target_id = None
-        c.puberty_courtship_timer = 0.0
-        c.puberty_courtship_deadline = 0.0
+        puberty = self.c.puberty
+        puberty.courtship_target_id = None
+        puberty.courtship_timer = 0.0
+        puberty.courtship_deadline = 0.0
 
     # ---------- Выбор/удержание цели ----------
 
     def _resolve_committed_target(self, visible_companions):
         c = self.c
-        if c.puberty_courtship_target_id is None:
+        target_id = c.puberty.courtship_target_id
+        if target_id is None:
             return None
-        target = next((o for o in visible_companions if o.id == c.puberty_courtship_target_id), None)
+        target = next((o for o in visible_companions if o.id == target_id), None)
         if (target is None or target.is_dead or target.partner_id is not None
                 or target.is_sleeping or target.panic_active or target.fear_timer > 0):
             self._reset_courtship()
@@ -168,6 +170,7 @@ class PubertyCourtship(GoalComponent):
         wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
         my_threshold = (ci_settings.FAMILY_MIN_RELATIONSHIP - ci_settings.PUBERTY_PAIR_RELATIONSHIP_DISCOUNT
                         - c.psyche.pairing_relationship_discount())
+        avoid = c.puberty.avoid
 
         candidates = [
             o for o in ctx.visible_companions
@@ -176,7 +179,7 @@ class PubertyCourtship(GoalComponent):
                and o.partner_id is None
                and not o.is_dead and not o.is_sleeping
                and not o.panic_active and o.fear_timer <= 0
-               and o.id not in c.puberty_courtship_avoid
+               and o.id not in avoid
                and not is_blood_relative(c, o)
                and o.needs.wellbeing_score() >= wellbeing_threshold
                and c.social.get_relationship(o) >= my_threshold
@@ -186,24 +189,25 @@ class PubertyCourtship(GoalComponent):
         return min(candidates, key=lambda o: c.social.pairing_score(o, ctx.storage_fields))
 
     def _give_up_on(self, target_id):
-        c = self.c
-        c.puberty_courtship_avoid[target_id] = random.uniform(*ci_settings.PUBERTY_COURTSHIP_REJECT_COOLDOWN)
-        c.puberty_courtship_fail_streak += 1
+        puberty = self.c.puberty
+        puberty.avoid[target_id] = random.uniform(*ci_settings.PUBERTY_COURTSHIP_REJECT_COOLDOWN)
+        puberty.fail_streak += 1
         self._reset_courtship()
 
-        if c.puberty_courtship_fail_streak >= ci_settings.PUBERTY_COURTSHIP_MAX_FAIL_STREAK:
-            c.puberty_courtship_fail_streak = 0
-            c.puberty_courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_LONG_COOLDOWN)
+        if puberty.fail_streak >= ci_settings.PUBERTY_COURTSHIP_MAX_FAIL_STREAK:
+            puberty.fail_streak = 0
+            puberty.courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_LONG_COOLDOWN)
         else:
-            c.puberty_courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+            puberty.courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_RECHECK_INTERVAL)
 
     # ---------- Основная логика тика ----------
 
     def _pursue(self, ctx):
         c = self.c
+        puberty = c.puberty
         dt = ctx.dt
 
-        if not c.puberty_active or c.partner_id is not None:
+        if not puberty.active or c.partner_id is not None:
             self._reset_courtship()
             return None
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
@@ -217,14 +221,14 @@ class PubertyCourtship(GoalComponent):
         if target is None:
             target = self._pick_new_target(ctx)
             if target is None:
-                c.puberty_courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_RECHECK_INTERVAL)
+                puberty.courtship_cooldown = random.uniform(*ci_settings.PUBERTY_COURTSHIP_RECHECK_INTERVAL)
                 return None
-            c.puberty_courtship_target_id = target.id
-            c.puberty_courtship_timer = 0.0
-            c.puberty_courtship_deadline = random.uniform(*ci_settings.PUBERTY_COURTSHIP_ATTEMPT_DURATION)
+            puberty.courtship_target_id = target.id
+            puberty.courtship_timer = 0.0
+            puberty.courtship_deadline = random.uniform(*ci_settings.PUBERTY_COURTSHIP_ATTEMPT_DURATION)
 
-        c.puberty_courtship_timer += dt
-        if c.puberty_courtship_timer > c.puberty_courtship_deadline:
+        puberty.courtship_timer += dt
+        if puberty.courtship_timer > puberty.courtship_deadline:
             self._give_up_on(target.id)
             return None
 

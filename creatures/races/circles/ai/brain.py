@@ -73,14 +73,7 @@ class _TimerTickMixin(_BrainMixinBase):
             c.partner_reunite_cooldown -= dt
         if c.graveyard_alert_timer > 0:
             c.graveyard_alert_timer -= dt
-        if c.puberty_courtship_cooldown > 0:
-            c.puberty_courtship_cooldown -= dt
-        if c.puberty_courtship_avoid:
-            c.puberty_courtship_avoid = {
-                target_id: remaining - dt
-                for target_id, remaining in c.puberty_courtship_avoid.items()
-                if remaining - dt > 0
-            }
+        c.puberty.tick_cooldowns(dt)
 
 # =========================================================================
 # Домен: восприятие мира - что существо реально видит прямо сейчас
