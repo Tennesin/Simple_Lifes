@@ -2,4 +2,3 @@
 __pycache__/ 
 *.pyc
 err/
-text_maker.py
