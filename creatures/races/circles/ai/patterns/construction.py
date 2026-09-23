@@ -40,7 +40,7 @@ class Construction(GoalComponent):
             return [None]
 
         score = self.SCORE_COMMITTED if committed else self.SCORE_NEW
-        if c.puberty_active and not self._owns_any_storage(ctx.storage_fields):
+        if c.puberty.active and not self._owns_any_storage(ctx.storage_fields):
             score += ci_settings.CONSTRUCTION_PUBERTY_DRIVE_BONUS
 
         def execute():

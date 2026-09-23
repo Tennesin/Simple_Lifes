@@ -228,7 +228,7 @@ class CreatureFamily(WeakOwnerMixin):
             return
 
         chance = ci_settings.PREGNANCY_CHANCE_PER_SEC
-        if c.puberty_active or partner.puberty_active:
+        if c.puberty.active or partner.puberty.active:
             chance *= ci_settings.PUBERTY_PREGNANCY_CHANCE_MULTIPLIER
 
         if random.random() < chance * dt:
@@ -255,7 +255,7 @@ class CreatureFamily(WeakOwnerMixin):
             return
 
         my_threshold = ci_settings.FAMILY_MIN_RELATIONSHIP - (
-            ci_settings.PUBERTY_PAIR_RELATIONSHIP_DISCOUNT if c.puberty_active else 0.0)
+            ci_settings.PUBERTY_PAIR_RELATIONSHIP_DISCOUNT if c.puberty.active else 0.0)
         my_threshold -= c.psyche.pairing_relationship_discount()
 
         candidate_pool = (
@@ -282,7 +282,7 @@ class CreatureFamily(WeakOwnerMixin):
             if other.needs.wellbeing_score() < ci_settings.FAMILY_MIN_WELLBEING:
                 continue
             other_threshold = ci_settings.FAMILY_MIN_RELATIONSHIP - (
-                ci_settings.PUBERTY_PAIR_RELATIONSHIP_DISCOUNT if other.puberty_active else 0.0)
+                ci_settings.PUBERTY_PAIR_RELATIONSHIP_DISCOUNT if other.puberty.active else 0.0)
             other_threshold -= other.psyche.pairing_relationship_discount()
             if c.social.get_relationship(other) < my_threshold:
                 continue
@@ -415,7 +415,7 @@ class CreatureTerritory(WeakOwnerMixin):
             return True
         if other.gender == ci_settings.GENDER_FEMALE and other.is_pregnant:
             return True
-        if getattr(other, "is_dragging_corpse", False):
+        if other.burial.is_dragging_corpse:
             return True
         return False
 

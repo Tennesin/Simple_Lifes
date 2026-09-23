@@ -148,7 +148,7 @@ class _ChildFeedInterruptMixin(_ChildAIMixinBase):
         c = self.c
         if c.play_target_id is not None:
             self._end_child_tag_game()
-        if c.following_child_road is not None:
+        if c.child_road_play.road is not None:
             self._end_child_road_play()
 
         c.state = ci_settings.STATE_SEEKING

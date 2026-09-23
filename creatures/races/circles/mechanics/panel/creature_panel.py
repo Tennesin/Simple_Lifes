@@ -300,7 +300,7 @@ class CreaturePanel:
             screen.blit(pregnant_txt, (panel.x + 10, y))
             y += 24
 
-        if creature.puberty_active:
+        if creature.puberty.active:
             puberty_txt = self.font.render(
                 ci_info.INFO_INFO_PUBERTY_ACTIVE, True, ci_settings.PUBERTY_RING_COLOR)
             screen.blit(puberty_txt, (panel.x + 10, y))

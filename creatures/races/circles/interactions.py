@@ -145,8 +145,8 @@ class CreatureInteractions(WeakOwnerMixin):
                     c.road_entry_reached = False
                     c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_DEADLY
 
-                if c.following_child_road is not None:
-                    self._mark_child_road_dangerous(c.following_child_road, other_creatures)
+                if c.child_road_play.road is not None:
+                    self._mark_child_road_dangerous(c.child_road_play.road, other_creatures)
 
                 break
 
@@ -234,7 +234,7 @@ class CreatureInteractions(WeakOwnerMixin):
 
                 if rel < ci_settings.QUARREL_THRESHOLD:
                     quarrel_chance = ci_settings.QUARREL_CHANCE_PER_SEC * c.psyche.quarrel_modifier()
-                    if c.puberty_active:
+                    if c.puberty.active:
                         quarrel_chance *= ci_settings.PUBERTY_QUARREL_CHANCE_MULTIPLIER
                     if random.random() < quarrel_chance * dt:
                         c.social.adjust_mutual_relationship(other, ci_settings.QUARREL_PENALTY)

@@ -74,7 +74,7 @@ class CreatureNeeds(WeakOwnerMixin):
         if not c.is_talking and not self._has_sanity_support(other_creatures):
             decay_interval = ci_settings.SANITY_DECAY_INTERVAL * (
                 ci_settings.NAMED_SANITY_DECAY_MULTIPLIER if c.player_named else 1.0)
-            if c.puberty_active:
+            if c.puberty.active:
                 decay_interval /= ci_settings.PUBERTY_SANITY_DECAY_MULTIPLIER
             state_mult = ci_settings.SANITY_STATE_DECAY_MULTIPLIER.get(c.state, 1.0)
             if state_mult > 0:
