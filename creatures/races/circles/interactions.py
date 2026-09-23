@@ -154,9 +154,7 @@ class CreatureInteractions(WeakOwnerMixin):
         c = self.c
         road.rating = "dangerous"
 
-        c.following_child_road = None
-        c.child_road_entry_reached = False
-        c.child_road_progress = 0
+        c.child_road_play.stop_playing()
         c.following_road_active = False
         c.fear_timer = max(c.fear_timer, ci_settings.CHILD_ROAD_DANGER_FEAR_DURATION)
         c.fear_source = (c.x, c.y)
@@ -165,10 +163,8 @@ class CreatureInteractions(WeakOwnerMixin):
         for other in other_creatures:
             if other is c or other.is_dead:
                 continue
-            if other.following_child_road is road:
-                other.following_child_road = None
-                other.child_road_entry_reached = False
-                other.child_road_progress = 0
+            if other.child_road_play.road is road:
+                other.child_road_play.stop_playing()
                 other.following_road_active = False
                 other.fear_timer = max(other.fear_timer, ci_settings.CHILD_ROAD_DANGER_FEAR_DURATION)
                 other.fear_source = (c.x, c.y)
@@ -229,7 +225,7 @@ class CreatureInteractions(WeakOwnerMixin):
                 rate = ci_settings.SANITY_TALK_RATE.get(other.temperament, 0.2) * gender_bonus
                 c.consciousness = min(c.consciousness + rate * dt, ci_settings.SANITY_MAX)
 
-                talk_mult = ci_settings.PUBERTY_TALK_RATE_MULTIPLIER if c.puberty_active else 1.0
+                talk_mult = ci_settings.PUBERTY_TALK_RATE_MULTIPLIER if c.puberty.active else 1.0
                 c.social.adjust_relationship(
                     other, ci_settings.RELATIONSHIP_TALK_RATE * gender_bonus * talk_mult * dt)
 

@@ -255,16 +255,17 @@ class ChildRoadVerification(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
+        verify = c.road_verify
 
-        if c.child_road_verify_target_id is not None:
+        if verify.target_id is not None:
             def execute():
                 return self._pursue(ctx)
             return [Consideration("child_road_verify", self.SCORE_COMMITTED, execute)]
 
-        if c.child_road_verify_check_timer > 0:
-            c.child_road_verify_check_timer -= ctx.dt
+        if verify.check_timer > 0:
+            verify.check_timer -= ctx.dt
             return [None]
-        c.child_road_verify_check_timer = random.uniform(*ci_settings.CHILD_ROAD_VERIFY_CHECK_INTERVAL)
+        verify.check_timer = random.uniform(*ci_settings.CHILD_ROAD_VERIFY_CHECK_INTERVAL)
 
         pending_roads = [r for r in ctx.visible_child_roads
                          if r.rating == "pending" and len(r.points) >= 2
@@ -284,77 +285,72 @@ class ChildRoadVerification(GoalComponent):
         claimant = next((o for o in other_creatures if o.id == road.verifier_id), None)
         if claimant is None or claimant.is_dead:
             return False
-        return claimant.child_road_verify_target_id == road.id
+        return claimant.road_verify.target_id == road.id
 
     def _start(self, pending_roads):
         c = self.c
+        verify = c.road_verify
         road = min(pending_roads, key=lambda r: min(
             math.hypot(c.x - r.points[0][0], c.y - r.points[0][1]),
             math.hypot(c.x - r.points[-1][0], c.y - r.points[-1][1])
         ))
         road.verifier_id = c.id
 
-        c.child_road_verify_target_id = road.id
-        c.child_road_verify_found_danger = False
-        c.child_road_verify_entry_reached = False
-        c.child_road_verify_progress, c.child_road_verify_direction = PathProgressTracker.start(
-            road.points, c.x, c.y)
+        verify.target_id = road.id
+        verify.found_danger = False
+        verify.entry_reached = False
+        verify.progress, verify.direction = PathProgressTracker.start(road.points, c.x, c.y)
 
         c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
-        c.target = road.points[c.child_road_verify_progress]
+        c.target = road.points[verify.progress]
         return c.target
 
     def _pursue(self, ctx):
         c = self.c
-        road = next((r for r in ctx.all_child_roads if r.id == c.child_road_verify_target_id), None)
+        verify = c.road_verify
+        road = next((r for r in ctx.all_child_roads if r.id == verify.target_id), None)
         if road is None or road.rating != "pending" or not road.points:
             self._cancel(road)
             return None
 
         if any(math.hypot(c.x - s.x, c.y - s.y) < ci_settings.CHILD_ROAD_SAFETY_CHECK_RADIUS
                for s in ctx.visible_spikes):
-            c.child_road_verify_found_danger = True
+            verify.found_danger = True
 
-        if c.child_road_verify_progress < 0 or c.child_road_verify_progress >= len(road.points):
+        if verify.progress < 0 or verify.progress >= len(road.points):
             self._finish(road)
             return None
 
-        target_point = PathProgressTracker.target_point(road.points, c.child_road_verify_progress)
-        if PathProgressTracker.has_arrived(road.points, c.child_road_verify_progress, c.x, c.y):
-            c.child_road_verify_entry_reached = True
-            c.child_road_verify_progress, finished = PathProgressTracker.advance(
-                road.points, c.child_road_verify_progress, c.child_road_verify_direction)
+        target_point = PathProgressTracker.target_point(road.points, verify.progress)
+        if PathProgressTracker.has_arrived(road.points, verify.progress, c.x, c.y):
+            verify.entry_reached = True
+            verify.progress, finished = PathProgressTracker.advance(road.points, verify.progress, verify.direction)
             if finished:
                 self._finish(road)
                 return None
-            target_point = PathProgressTracker.target_point(road.points, c.child_road_verify_progress)
+            target_point = PathProgressTracker.target_point(road.points, verify.progress)
 
         c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
         c.target = target_point
-        c.following_road_active = c.child_road_verify_entry_reached
+        c.following_road_active = verify.entry_reached
         return target_point
 
     def _finish(self, road):
         c = self.c
-        road.rating = "dangerous" if c.child_road_verify_found_danger else "safe"
+        verify = c.road_verify
+        road.rating = "dangerous" if verify.found_danger else "safe"
         road.checked_by = c.id
         road.verifier_id = None
-        c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER if c.child_road_verify_found_danger
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER if verify.found_danger
                        else ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE)
-        c.child_road_verify_target_id = None
-        c.child_road_verify_progress = 0
-        c.child_road_verify_found_danger = False
-        c.child_road_verify_entry_reached = False
+        verify.reset()
         c.following_road_active = False
 
     def _cancel(self, road=None):
         c = self.c
         if road is not None and road.verifier_id == c.id:
             road.verifier_id = None
-        c.child_road_verify_target_id = None
-        c.child_road_verify_progress = 0
-        c.child_road_verify_found_danger = False
-        c.child_road_verify_entry_reached = False
+        c.road_verify.reset()
         c.following_road_active = False

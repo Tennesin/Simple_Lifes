@@ -503,20 +503,21 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
 
     def _consider_child_road_play(self, visible_child_roads, dt):
         c = self.c
+        play = c.child_road_play
 
         self._tick_child_road_disinterest(dt)
-        if c.following_child_road is not None:
+        if play.road is not None:
             def execute():
                 return self._pursue_child_road_play(dt)
 
             return Consideration("child_road_play", SCORE_CHILD_ROAD_PLAY_ACTIVE, execute)
 
-        if c.child_road_play_cooldown > 0:
-            c.child_road_play_cooldown -= dt
+        if play.play_cooldown > 0:
+            play.play_cooldown -= dt
             return None
 
         safe_roads = [r for r in visible_child_roads
-                      if r.rating == "safe" and c.child_road_disinterest.get(r.id, 0.0) <= 0.0]
+                      if r.rating == "safe" and play.disinterest.get(r.id, 0.0) <= 0.0]
         if not safe_roads:
             return None
 
@@ -527,83 +528,66 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
 
     def _start_child_road_play(self, safe_roads):
         c = self.c
+        play = c.child_road_play
         road = min(safe_roads, key=lambda r: min(
             math.hypot(c.x - r.points[0][0], c.y - r.points[0][1]),
             math.hypot(c.x - r.points[-1][0], c.y - r.points[-1][1])
         ))
-        c.following_child_road = road
-        c.child_road_progress, c.child_road_direction = PathProgressTracker.start(road.points, c.x, c.y)
-        c.child_road_entry_reached = False
+        progress, direction = PathProgressTracker.start(road.points, c.x, c.y)
+        play.start(road, progress, direction)
         c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH
-        c.target = road.points[c.child_road_progress]
+        c.target = road.points[play.progress]
         return c.target
 
     def _pursue_child_road_play(self, dt):
         c = self.c
-        road = c.following_child_road
+        play = c.child_road_play
+        road = play.road
 
         if road is None or not road.points or road.rating != "safe":
             self._end_child_road_play()
             return None
-        if c.child_road_progress < 0 or c.child_road_progress >= len(road.points):
+        if play.progress < 0 or play.progress >= len(road.points):
             self._end_child_road_play()
             return None
 
-        target_point = PathProgressTracker.target_point(road.points, c.child_road_progress)
-        if PathProgressTracker.has_arrived(road.points, c.child_road_progress, c.x, c.y):
-            c.child_road_entry_reached = True
-            c.child_road_progress, finished = PathProgressTracker.advance(
-                road.points, c.child_road_progress, c.child_road_direction)
+        target_point = PathProgressTracker.target_point(road.points, play.progress)
+        if PathProgressTracker.has_arrived(road.points, play.progress, c.x, c.y):
+            play.entry_reached = True
+            play.progress, finished = PathProgressTracker.advance(road.points, play.progress, play.direction)
             if finished:
                 self._end_child_road_play()
                 return None
-            target_point = PathProgressTracker.target_point(road.points, c.child_road_progress)
+            target_point = PathProgressTracker.target_point(road.points, play.progress)
 
         c.state = ci_settings.STATE_SEEKING
         c.target = target_point
-        c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_PLAY if c.child_road_entry_reached
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_PLAY if play.entry_reached
                        else ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH)
-        c.following_road_active = c.child_road_entry_reached
+        c.following_road_active = play.entry_reached
 
-        if c.child_road_entry_reached:
+        if play.entry_reached:
             c.psyche.on_child_road_play(dt)
 
         return target_point
 
     def _end_child_road_play(self):
         c = self.c
-        road = c.following_child_road
-        if road is not None and c.child_road_entry_reached:
+        play = c.child_road_play
+        road = play.road
+        if road is not None and play.entry_reached:
             self._register_child_road_play_session(road)
 
-        c.following_child_road = None
-        c.child_road_progress = 0
-        c.child_road_entry_reached = False
+        play.stop_playing()
         c.following_road_active = False
-        c.child_road_play_cooldown = random.uniform(*ci_settings.CHILD_ROAD_PLAY_COOLDOWN)
+        play.play_cooldown = random.uniform(*ci_settings.CHILD_ROAD_PLAY_COOLDOWN)
 
     def _register_child_road_play_session(self, road):
-        c = self.c
-        count = c.child_road_play_counts.get(road.id, 0) + 1
-        if count >= ci_settings.CHILD_ROAD_DISINTEREST_THRESHOLD:
-            c.child_road_disinterest[road.id] = ci_settings.CHILD_ROAD_DISINTEREST_DURATION
-            c.child_road_play_counts[road.id] = 0
-        else:
-            c.child_road_play_counts[road.id] = count
+        self.c.child_road_play.register_play_session(road)
 
     def _tick_child_road_disinterest(self, dt):
-        c = self.c
-        if not c.child_road_disinterest:
-            return
-        expired = []
-        for road_id in list(c.child_road_disinterest.keys()):
-            c.child_road_disinterest[road_id] -= dt
-            if c.child_road_disinterest[road_id] <= 0:
-                expired.append(road_id)
-        for road_id in expired:
-            del c.child_road_disinterest[road_id]
-            c.child_road_play_counts.pop(road_id, None)
+        self.c.child_road_play.tick_disinterest(dt)
 
 # =========================================================================
 # Итоговый класс: композиция доменов + единственная точка входа decide()

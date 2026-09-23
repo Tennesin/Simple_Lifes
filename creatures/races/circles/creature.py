@@ -29,6 +29,8 @@ from .social import CreatureCommunication, CreatureSocial
 
 from .state.puberty_state import PubertyState
 from .state.burial_state import BurialState
+from .state.child_road_play_state import ChildRoadPlayState
+from .state.road_verify_state import RoadVerifyState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -211,25 +213,10 @@ class Creature(LivingEntity):
         self.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
 
         # =====================================================================
-        # Детские дороги: игра
+        # Детские дороги: игра + физическая проверка взрослым
         # =====================================================================
-        self.following_child_road = None
-        self.child_road_progress = 0
-        self.child_road_direction = 1
-        self.child_road_entry_reached = False
-        self.child_road_play_cooldown = random.uniform(1.0, 3.0)
-        self.child_road_play_counts = {}
-        self.child_road_disinterest = {}
-
-        # =====================================================================
-        # Детские дороги: физическая проверка взрослым
-        # =====================================================================
-        self.child_road_verify_target_id = None
-        self.child_road_verify_progress = 0
-        self.child_road_verify_direction = 1
-        self.child_road_verify_entry_reached = False
-        self.child_road_verify_found_danger = False
-        self.child_road_verify_check_timer = random.uniform(*ci_settings.CHILD_ROAD_VERIFY_CHECK_INTERVAL)
+        self.child_road_play = ChildRoadPlayState.rolled()
+        self.road_verify = RoadVerifyState.rolled()
 
         # =====================================================================
         # Семья / размножение
@@ -526,6 +513,118 @@ class Creature(LivingEntity):
         self.territory.pursuit_commit_timer = value
 
     # =====================================================================
+    # Фасады совместимости: домен "Детские дороги: игра" (state/child_road_play_state.py)
+    # =====================================================================
+
+    @property
+    def following_child_road(self):
+        return self.child_road_play.road
+
+    @following_child_road.setter
+    def following_child_road(self, value):
+        self.child_road_play.road = value
+
+    @property
+    def child_road_progress(self):
+        return self.child_road_play.progress
+
+    @child_road_progress.setter
+    def child_road_progress(self, value):
+        self.child_road_play.progress = value
+
+    @property
+    def child_road_direction(self):
+        return self.child_road_play.direction
+
+    @child_road_direction.setter
+    def child_road_direction(self, value):
+        self.child_road_play.direction = value
+
+    @property
+    def child_road_entry_reached(self):
+        return self.child_road_play.entry_reached
+
+    @child_road_entry_reached.setter
+    def child_road_entry_reached(self, value):
+        self.child_road_play.entry_reached = value
+
+    @property
+    def child_road_play_cooldown(self):
+        return self.child_road_play.play_cooldown
+
+    @child_road_play_cooldown.setter
+    def child_road_play_cooldown(self, value):
+        self.child_road_play.play_cooldown = value
+
+    @property
+    def child_road_play_counts(self):
+        return self.child_road_play.play_counts
+
+    @child_road_play_counts.setter
+    def child_road_play_counts(self, value):
+        self.child_road_play.play_counts = value
+
+    @property
+    def child_road_disinterest(self):
+        return self.child_road_play.disinterest
+
+    @child_road_disinterest.setter
+    def child_road_disinterest(self, value):
+        self.child_road_play.disinterest = value
+
+    # =====================================================================
+    # Фасады совместимости: домен "Детские дороги: проверка взрослым" (state/road_verify_state.py)
+    # =====================================================================
+
+    @property
+    def child_road_verify_target_id(self):
+        return self.road_verify.target_id
+
+    @child_road_verify_target_id.setter
+    def child_road_verify_target_id(self, value):
+        self.road_verify.target_id = value
+
+    @property
+    def child_road_verify_progress(self):
+        return self.road_verify.progress
+
+    @child_road_verify_progress.setter
+    def child_road_verify_progress(self, value):
+        self.road_verify.progress = value
+
+    @property
+    def child_road_verify_direction(self):
+        return self.road_verify.direction
+
+    @child_road_verify_direction.setter
+    def child_road_verify_direction(self, value):
+        self.road_verify.direction = value
+
+    @property
+    def child_road_verify_entry_reached(self):
+        return self.road_verify.entry_reached
+
+    @child_road_verify_entry_reached.setter
+    def child_road_verify_entry_reached(self, value):
+        self.road_verify.entry_reached = value
+
+    @property
+    def child_road_verify_found_danger(self):
+        return self.road_verify.found_danger
+
+    @child_road_verify_found_danger.setter
+    def child_road_verify_found_danger(self, value):
+        self.road_verify.found_danger = value
+
+    @property
+    def child_road_verify_check_timer(self):
+        return self.road_verify.check_timer
+
+    @child_road_verify_check_timer.setter
+    def child_road_verify_check_timer(self, value):
+        self.road_verify.check_timer = value
+
+    # =====================================================================
     # Геометрия / общие утилиты
     # =====================================================================
 
@@ -634,12 +733,8 @@ class Creature(LivingEntity):
         self.following_road = None
         self.following_road_active = False
         self.road_entry_reached = False
-        self.following_child_road = None
-        self.child_road_entry_reached = False
-        self.child_road_verify_target_id = None
-        self.child_road_verify_progress = 0
-        self.child_road_verify_found_danger = False
-        self.child_road_verify_entry_reached = False
+        self.child_road_play.reset()
+        self.road_verify.reset()
         self.play_target_id = None
         self.play_role = None
         self.is_grabbed = False
@@ -728,16 +823,9 @@ class Creature(LivingEntity):
 
         if road_obj_type != "child_road":
             return
-        if self.following_child_road is road:
-            self.following_child_road = None
-            self.child_road_entry_reached = False
-            self.child_road_progress = 0
-            self.following_road_active = False
-        if self.child_road_verify_target_id == road.id:
-            self.child_road_verify_target_id = None
-            self.child_road_verify_progress = 0
-            self.child_road_verify_found_danger = False
-            self.child_road_verify_entry_reached = False
+        play_matched = self.child_road_play.on_deleted(road)
+        verify_matched = self.road_verify.on_deleted(road)
+        if play_matched or verify_matched:
             self.following_road_active = False
         self.invalidate_plan()
 
@@ -746,14 +834,8 @@ class Creature(LivingEntity):
             if self.following_road is road and self.road_progress >= inserted_index:
                 self.road_progress += 1
         elif obj_type == "child_road":
-            if self.following_child_road is road and self.child_road_progress >= inserted_index:
-                self.child_road_progress += 1
-            # ---------- Взрослый, проверяющий именно эту дорогу, тоже должен
-            # сдвинуть свой индекс - иначе вставка новой точки перекрёстка
-            # заставляет его пропустить участок или вернуться назад ----------
-            if (self.child_road_verify_target_id == road.id
-                    and self.child_road_verify_progress >= inserted_index):
-                self.child_road_verify_progress += 1
+            self.child_road_play.on_progress_shift(road, inserted_index)
+            self.road_verify.on_progress_shift(road, inserted_index)
 
     def on_landmark_removed(self, landmark_type, landmark_id, position):
         if landmark_type == "campfire":

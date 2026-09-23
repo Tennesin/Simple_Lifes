@@ -235,14 +235,12 @@ class _ReflexMixin(_BrainMixinBase):
 
     def _interrupt_child_road_play(self):
         c = self.c
-        if c.following_child_road is None:
+        play = c.child_road_play
+        if play.road is None:
             return
-        c.following_child_road = None
-        c.child_road_progress = 0
-        c.child_road_entry_reached = False
+        play.stop_playing()
         c.following_road_active = False
-        c.child_road_play_cooldown = max(c.child_road_play_cooldown, 1.0)
-
+        play.play_cooldown = max(play.play_cooldown, 1.0)
 
 # =========================================================================
 # Домен: маршрутизация по стадии жизни + запасной вариант (заморозка/исследование)
