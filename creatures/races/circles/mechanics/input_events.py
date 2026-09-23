@@ -117,9 +117,9 @@ def on_delete_house(game, house):
 
 def on_delete_construction_site(game, site):
     for creature in game.world.creatures:
-        if creature.construction_target_id == site.id:
-            creature.construction_target_id = None
-            creature.construction_phase = None
+        if creature.construction.construction_target_id == site.id:
+            creature.construction.construction_target_id = None
+            creature.construction.construction_phase = None
 
 # =========================================================================
 # Домен: расчистка территории под новую постройку

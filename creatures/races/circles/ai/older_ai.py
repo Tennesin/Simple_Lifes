@@ -60,15 +60,15 @@ class ElderWardCare(GoalComponent):
                 ward = None
 
             if ward is not None:
-                if c.carried_fruit or c.carried_water:
+                if c.feeding.carried_fruit or c.feeding.carried_water:
                     result = self.actions.deliver_resource_to(ward)
                     if result is not None:
                         return result
                 elif self._child_needs_help(ward, visible_companions, other_creatures):
                     return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt, biome_grid=ctx.biome_grid)
             c.elder_ward_id = None
-            c.carried_fruit = False
-            c.carried_water = False
+            c.feeding.carried_fruit = False
+            c.feeding.carried_water = False
 
         if c.elder_ward_check_timer > 0:
             c.elder_ward_check_timer -= dt

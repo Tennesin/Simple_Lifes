@@ -30,14 +30,14 @@ class Storage(GoalComponent):
         c = self.c
         field = self.instincts.find_storage_field(ctx.storage_fields, houses=ctx.houses)
         if field is None:
-            if c.storage_supply_mode and (c.carried_fruit or c.carried_water):
+            if c.storage_supply_mode and (c.feeding.carried_fruit or c.feeding.carried_water):
                 c.storage_supply_mode = False
             return None
         return self._pursue_supply(field, ctx)
 
     def _pursue_supply(self, field, ctx):
         c = self.c
-        if c.carried_fruit or c.carried_water:
+        if c.feeding.carried_fruit or c.feeding.carried_water:
             return self._deposit(field, ctx)
 
         if not field.has_space_for_fruit() and not field.has_space_for_water():
@@ -70,11 +70,11 @@ class Storage(GoalComponent):
         c = self.c
         other_creatures, other_by_id = ctx.other_creatures, ctx.other_by_id
 
-        if not ((c.carried_fruit and field.has_space_for_fruit()) or
-                (c.carried_water and field.has_space_for_water())):
+        if not ((c.feeding.carried_fruit and field.has_space_for_fruit()) or
+                (c.feeding.carried_water and field.has_space_for_water())):
             urgent_child = None
-            if c.urgent_child_id is not None and c.urgent_child_timer > 0:
-                candidate = lookup_creature(other_creatures, c.urgent_child_id, other_by_id)
+            if c.feeding.urgent_child_id is not None and c.feeding.urgent_child_timer > 0:
+                candidate = lookup_creature(other_creatures, c.feeding.urgent_child_id, other_by_id)
                 if (candidate is not None and not candidate.is_dead
                         and candidate.life_stage == ci_settings.LIFE_STAGE_CHILD
                         and candidate.parent_ids and c.id in candidate.parent_ids):
@@ -82,10 +82,10 @@ class Storage(GoalComponent):
             needy = urgent_child if urgent_child is not None else self.actions.find_needy_friend(ctx.visible_companions)
             if needy:
                 c.storage_supply_mode = False
-                c.feed_target_id = needy.id
+                c.feeding.feed_target_id = needy.id
                 return self.actions.deliver_resource_to(needy)
-            c.carried_fruit = False
-            c.carried_water = False
+            c.feeding.carried_fruit = False
+            c.feeding.carried_water = False
             c.storage_supply_mode = False
             return None
 
@@ -96,12 +96,12 @@ class Storage(GoalComponent):
             c.target = (field.x, field.y)
             return c.target
 
-        if c.carried_fruit and field.has_space_for_fruit():
+        if c.feeding.carried_fruit and field.has_space_for_fruit():
             field.fruits += 1
-            c.carried_fruit = False
-        if c.carried_water and field.has_space_for_water():
+            c.feeding.carried_fruit = False
+        if c.feeding.carried_water and field.has_space_for_water():
             field.water += 1
-            c.carried_water = False
+            c.feeding.carried_water = False
 
         c.storage_supply_mode = False
         c.goal_text = ci_info.INFO_CREATURE_GOAL_STORAGE_STOCKED

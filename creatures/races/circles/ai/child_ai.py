@@ -128,8 +128,8 @@ class _ChildFeedInterruptMixin(_ChildAIMixinBase):
     def _find_incoming_feeder(visible_companions, child_id):
         return next(
             (o for o in visible_companions
-             if getattr(o, "feed_target_id", None) == child_id
-             and (o.carried_fruit or o.carried_water)),
+             if getattr(o.feeding, "feed_target_id", None) == child_id
+             and (o.feeding.carried_fruit or o.feeding.carried_water)),
             None
         )
 

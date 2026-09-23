@@ -65,8 +65,8 @@ class _TimerTickMixin(_BrainMixinBase):
             c.player_fear_timer -= dt
         if c.social_request_timer > 0:
             c.social_request_timer -= dt
-        if c.urgent_child_timer > 0:
-            c.urgent_child_timer -= dt
+        if c.feeding.urgent_child_timer > 0:
+            c.feeding.urgent_child_timer -= dt
         if c.reunite_commit_timer > 0:
             c.reunite_commit_timer -= dt
         if c.partner_reunite_cooldown > 0:

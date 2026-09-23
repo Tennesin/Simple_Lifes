@@ -399,15 +399,15 @@ class CircleTickProcessor:
                 continue
 
             target = creature.decide(ctx)
-            if creature.pending_site_cleanup is not None:
-                new_site = creature.pending_site_cleanup
-                creature.pending_site_cleanup = None
+            if creature.construction.pending_site_cleanup is not None:
+                new_site = creature.construction.pending_site_cleanup
+                creature.construction.pending_site_cleanup = None
                 if new_site in world.construction_sites:
                     cleanup_area_for_new_construction(game, new_site, footprint_radius(new_site) + 10)
 
-            if creature.pending_construction_cleanup is not None:
-                build_type, new_object = creature.pending_construction_cleanup
-                creature.pending_construction_cleanup = None
+            if creature.construction.pending_construction_cleanup is not None:
+                build_type, new_object = creature.construction.pending_construction_cleanup
+                creature.construction.pending_construction_cleanup = None
                 if new_object is not None:
                     if build_type == "graveyard":
                         cleanup_area_for_new_graveyard(game, new_object)

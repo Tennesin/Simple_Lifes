@@ -12,6 +12,8 @@ from ..genealogy import GenealogyRegistry
 from ..life_cycle import CreatureAging
 from ..state.puberty_state import PubertyState
 from ..state.burial_state import BurialState
+from ..state.construction_state import ConstructionState
+from ..state.feeding_state import FeedingState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -124,29 +126,15 @@ _CREATURE_SIMPLE_FIELDS = (
     ("partner_id", "partner_id", None),
     ("is_pregnant", "is_pregnant", False),
     ("pregnancy_timer", "pregnancy_timer", 0.0),
-    ("carried_fruit", "carried_fruit", False),
-    ("carried_water", "carried_water", False),
     ("storage_supply_mode", "storage_supply_mode", False),
-    ("carry_capacity", "carry_capacity",
-     lambda: random.randint(*ci_settings.CREATURE_CARRY_CAPACITY_RANGE)),
-    ("carried_resources", "carried_resources", lambda: {"wood": 0, "stone": 0}),
     ("elder_ward_id", "elder_ward_id", None),
-    ("feed_target_id", "feed_target_id", None),
-    ("urgent_child_id", "urgent_child_id", None),
     ("urgent_child_timer", "urgent_child_timer", 0.0),
     ("home_id", "home_id", None),
     ("home_eviction_timer", "home_eviction_timer", 0.0),
-    ("construction_target_id", "construction_target_id", None),
-    ("construction_phase", "construction_phase", None),
-    ("gather_target_id", "gather_target_id", None),
-    ("gather_type", "gather_type", None),
-    ("gather_progress", "gather_progress", 0.0),
-    ("gather_needed_amount", "gather_needed_amount", None),
     ("known_campfire_id", "known_campfire_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
     ("is_sleeping", "is_sleeping", False),
     ("sleep_forced", "sleep_forced", False),
-    ("fear_timer", "fear_timer", 0.0),
 )
 
 _CREATURE_TUPLE_FIELDS = (
@@ -193,6 +181,12 @@ def _load_creature_puberty(creature, state):
 def _load_creature_burial(creature, state):
     creature.burial = BurialState.from_persisted_dict(state)
 
+def _load_creature_construction(creature, state):
+    creature.construction = ConstructionState.from_persisted_dict(state)
+
+def _load_creature_feeding(creature, state):
+    creature.feeding = FeedingState.from_persisted_dict(state)
+
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:
         setattr(creature.psyche, attr, state.get(key, 0.0))
@@ -209,6 +203,8 @@ def load_creature_from_state(state):
     _load_creature_puberty(creature, state)
     _load_creature_burial(creature, state)
     _load_creature_psyche(creature, state)
+    _load_creature_construction(creature, state)
+    _load_creature_feeding(creature, state)
     return creature
 
 # =========================================================================

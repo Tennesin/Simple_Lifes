@@ -41,7 +41,7 @@ class ResourceActions:
         if target_fruit is not None:
             if c.distance_to(target_fruit) < ci_settings.EAT_DISTANCE:
                 target_fruit.active = False
-                c.carried_fruit = True
+                c.feeding.carried_fruit = True
                 c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
@@ -82,7 +82,7 @@ class ResourceActions:
         if target_water is not None:
             if c.distance_to(target_water) < ci_settings.EAT_DISTANCE + target_water.radius:
                 if target_water.take_charge():
-                    c.carried_water = True
+                    c.feeding.carried_water = True
                     c.goal_text = carry_text
                     c.target = (c.x, c.y)
                     return c.target
@@ -103,7 +103,7 @@ class ResourceActions:
 
         if biome_grid is not None:
             if biome_grid.get_at(c.x, c.y) == settings.BIOME_RIVER:
-                c.carried_water = True
+                c.feeding.carried_water = True
                 c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
@@ -119,11 +119,11 @@ class ResourceActions:
 
     def deliver_resource_to(self, target):
         c = self.c
-        still_needs_food = c.carried_fruit and target.hunger < ci_settings.HUNGER_SATISFY_THRESHOLD
-        still_needs_water = c.carried_water and target.thirst < ci_settings.THIRST_SATISFY_THRESHOLD
+        still_needs_food = c.feeding.carried_fruit and target.hunger < ci_settings.HUNGER_SATISFY_THRESHOLD
+        still_needs_water = c.feeding.carried_water and target.thirst < ci_settings.THIRST_SATISFY_THRESHOLD
 
         if not still_needs_food and not still_needs_water:
-            c.feed_target_id = None
+            c.feeding.feed_target_id = None
             return None
 
         is_adult_recipient = target.life_stage != ci_settings.LIFE_STAGE_CHILD
@@ -141,21 +141,20 @@ class ResourceActions:
         if still_needs_food:
             target.hunger = min(target.hunger + ci_settings.FRUIT_HUNGER_BONUS, ci_settings.HUNGER_MAX)
             target.hp = min(target.hp + ci_settings.FRUIT_HP_BONUS, ci_settings.HP_MAX)
-            c.carried_fruit = False
+            c.feeding.carried_fruit = False
         if still_needs_water:
             target.thirst = min(target.thirst + ci_settings.PARENT_CARRY_WATER_HYDRATION, ci_settings.THIRST_MAX)
-            c.carried_water = False
+            c.feeding.carried_water = False
 
         bonus = (ci_settings.FAMILY_FEED_RELATIONSHIP_BONUS if target.life_stage == ci_settings.LIFE_STAGE_CHILD
                  else ci_settings.FAMILY_FEED_RELATIONSHIP_BONUS_ADULT)
         c.social.adjust_mutual_relationship(target, bonus)
         c.psyche.on_help_given()
         target.psyche.on_help_received()
-        c.feed_target_id = None
+        c.feeding.feed_target_id = None
         c.goal_text = done_text
         c.target = (c.x, c.y)
         return c.target
-
 
 # =========================================================================
 # Донашивание еды/воды детям и друзьям
@@ -172,8 +171,9 @@ class Feeding(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        urgent_child_active = c.urgent_child_id is not None and c.urgent_child_timer > 0
-        already_committed = c.feed_target_id is not None or c.carried_fruit or c.carried_water
+        urgent_child_active = c.feeding.urgent_child_id is not None and c.feeding.urgent_child_timer > 0
+        already_committed = (c.feeding.feed_target_id is not None
+                             or c.feeding.carried_fruit or c.feeding.carried_water)
         if not (urgent_child_active or already_committed
                 or c.needs.wellbeing_score() >= ci_settings.PARENT_FEED_MIN_WELLBEING):
             return [None]
@@ -192,44 +192,45 @@ class Feeding(GoalComponent):
 
     def _pursue(self, ctx):
         c = self.c
+        feeding = c.feeding
         other_creatures, other_by_id, dt = ctx.other_creatures, ctx.other_by_id, ctx.dt
 
         urgent_child = None
-        if c.urgent_child_id is not None and c.urgent_child_timer > 0:
-            candidate = lookup_creature(other_creatures, c.urgent_child_id, other_by_id)
+        if feeding.urgent_child_id is not None and feeding.urgent_child_timer > 0:
+            candidate = lookup_creature(other_creatures, feeding.urgent_child_id, other_by_id)
             if (candidate is not None and not candidate.is_dead
                     and candidate.life_stage == ci_settings.LIFE_STAGE_CHILD
                     and candidate.parent_ids and c.id in candidate.parent_ids):
                 urgent_child = candidate
 
-        already_committed = c.feed_target_id is not None or c.carried_fruit or c.carried_water
+        already_committed = feeding.feed_target_id is not None or feeding.carried_fruit or feeding.carried_water
         if (urgent_child is None and not already_committed
                 and c.needs.wellbeing_score() < ci_settings.PARENT_FEED_MIN_WELLBEING):
             return None
 
-        if urgent_child is not None and c.feed_target_id != urgent_child.id:
-            c.feed_target_id = urgent_child.id
+        if urgent_child is not None and feeding.feed_target_id != urgent_child.id:
+            feeding.feed_target_id = urgent_child.id
 
-        if c.carried_fruit or c.carried_water:
+        if feeding.carried_fruit or feeding.carried_water:
             if c.storage_supply_mode and urgent_child is None:
                 return None
 
             recipient = urgent_child
-            if recipient is None and c.feed_target_id is not None:
-                recipient = lookup_creature(other_creatures, c.feed_target_id, other_by_id, alive_only=True)
+            if recipient is None and feeding.feed_target_id is not None:
+                recipient = lookup_creature(other_creatures, feeding.feed_target_id, other_by_id, alive_only=True)
             if recipient is None:
                 recipient = self.actions.find_needy_friend(other_creatures)
             if recipient:
                 c.storage_supply_mode = False
-                c.feed_target_id = recipient.id
+                feeding.feed_target_id = recipient.id
                 return self.actions.deliver_resource_to(recipient)
-            c.carried_fruit = False
-            c.carried_water = False
-            c.feed_target_id = None
+            feeding.carried_fruit = False
+            feeding.carried_water = False
+            feeding.feed_target_id = None
             return None
 
-        if c.feed_target_id is not None:
-            recipient = lookup_creature(other_creatures, c.feed_target_id, other_by_id, alive_only=True)
+        if feeding.feed_target_id is not None:
+            recipient = lookup_creature(other_creatures, feeding.feed_target_id, other_by_id, alive_only=True)
             if recipient is not None and (recipient.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
                                           or recipient.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD):
                 if recipient.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD:
@@ -241,22 +242,22 @@ class Feeding(GoalComponent):
                                                        recipient=recipient)
                     if goal:
                         return goal
-            c.feed_target_id = None
+            feeding.feed_target_id = None
 
         if urgent_child is not None:
             needy = urgent_child
         else:
             if c.reuniting_with_partner:
                 return None
-            if c.parent_feed_check_timer > 0:
-                c.parent_feed_check_timer -= dt
+            if feeding.parent_feed_check_timer > 0:
+                feeding.parent_feed_check_timer -= dt
                 return None
-            c.parent_feed_check_timer = random.uniform(*ci_settings.PARENT_FEED_CHECK_INTERVAL)
+            feeding.parent_feed_check_timer = random.uniform(*ci_settings.PARENT_FEED_CHECK_INTERVAL)
             needy = self.actions.find_needy_friend(ctx.visible_companions)
             if needy is None:
                 return None
 
-        c.feed_target_id = needy.id
+        feeding.feed_target_id = needy.id
         if needy.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD:
             goal = self.actions.go_fetch_fruit(ctx.visible_fruits, recipient=needy)
             if goal:
@@ -266,5 +267,5 @@ class Feeding(GoalComponent):
             if goal:
                 return goal
 
-        c.feed_target_id = None
+        feeding.feed_target_id = None
         return None

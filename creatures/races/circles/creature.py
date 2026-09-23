@@ -31,6 +31,8 @@ from .state.puberty_state import PubertyState
 from .state.burial_state import BurialState
 from .state.child_road_play_state import ChildRoadPlayState
 from .state.road_verify_state import RoadVerifyState
+from .state.construction_state import ConstructionState
+from .state.feeding_state import FeedingState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -244,12 +246,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Донашивание еды/воды детям и сородичам
         # =====================================================================
-        self.carried_fruit = False
-        self.carried_water = False
-        self.feed_target_id = None
-        self.parent_feed_check_timer = random.uniform(*ci_settings.PARENT_FEED_CHECK_INTERVAL)
-        self.urgent_child_id = None
-        self.urgent_child_timer = 0.0
+        self.feeding = FeedingState.rolled()
 
         # =====================================================================
         # Семейный склад запасов
@@ -267,18 +264,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Добыча ресурсов и строительство
         # =====================================================================
-        self.carry_capacity = random.randint(*ci_settings.CREATURE_CARRY_CAPACITY_RANGE)
-        self.carried_resources = {"wood": 0, "stone": 0}
-        self.gather_target_id = None
-        self.gather_type = None            # "wood" | "stone"
-        self.gather_progress = 0.0
-        self.construction_target_id = None
-        self.construction_phase = None     # None | "deposit" | "build"
-        self.gather_needed_amount = None
-        self.pending_construction_cleanup = None
-        self.pending_site_cleanup = None
-        self.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
-        self.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
+        self.construction = ConstructionState.rolled()
 
         # =====================================================================
         # Специализированные подсистемы
@@ -300,10 +286,10 @@ class Creature(LivingEntity):
     # =====================================================================
 
     def carried_total(self):
-        return self.carried_resources["wood"] + self.carried_resources["stone"]
+        return self.construction.carried_resources["wood"] + self.construction.carried_resources["stone"]
 
     def carry_free_space(self):
-        return max(0, self.carry_capacity - self.carried_total())
+        return max(0, self.construction.carry_capacity - self.carried_total())
 
     def can_handle_corpses(self):
         if self.life_stage == ci_settings.LIFE_STAGE_OLD:
@@ -396,37 +382,30 @@ class Creature(LivingEntity):
         self.reuniting_with_partner = False
         self.reunite_commit_timer = 0.0
         self.partner_reunite_cooldown = 0.0
-        self.carried_fruit = False
-        self.carried_water = False
-        self.feed_target_id = None
-        self.urgent_child_id = None
         self.fear_source = None
         self.following_road = None
         self.following_road_active = False
         self.road_entry_reached = False
-        self.child_road_play.reset()
-        self.road_verify.reset()
         self.play_target_id = None
         self.play_role = None
         self.is_grabbed = False
         self.grab_before_state = None
         self.social_request_timer = 0.0
         self.social_request_point = None
-        self.carried_resources = {"wood": 0, "stone": 0}
-        self.gather_target_id = None
-        self.gather_type = None
-        self.gather_progress = 0.0
-        self.construction_target_id = None
-        self.construction_phase = None
         self.storage_supply_mode = False
         self.state = ci_settings.STATE_CALM
         self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
         self.elder_ward_id = None
-        # ---------- Кладбище ----------
-        self.burial.reset()
         # ---------- Троттлинг ИИ: мёртвое существо больше не решает ----------
         self.ai_plan_valid = False
         self.ai_last_goal = None
+
+        self.burial.reset()
+        self.construction.reset()
+        self.puberty.reset()
+        self.feeding.reset()
+        self.child_road_play.reset()
+        self.road_verify.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -617,15 +596,8 @@ class Creature(LivingEntity):
             "is_pregnant": self.is_pregnant,
             "pregnancy_timer": self.pregnancy_timer,
             "parent_ids": list(self.parent_ids) if self.parent_ids else None,
-            "carried_fruit": self.carried_fruit,
-            "carried_water": self.carried_water,
             "storage_supply_mode": self.storage_supply_mode,
             "elder_ward_id": self.elder_ward_id,
-            "feed_target_id": self.feed_target_id,
-            "urgent_child_id": self.urgent_child_id,
-            "urgent_child_timer": self.urgent_child_timer,
-            **self.puberty.to_persisted_dict(),
-            **self.burial.to_persisted_dict(),
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
             "sleep_forced": self.sleep_forced,
@@ -635,16 +607,12 @@ class Creature(LivingEntity):
             "psyche_calmness": self.psyche.calmness,
             "psyche_confidence": self.psyche.confidence,
             "psyche_attachment": self.psyche.attachment,
-            "carry_capacity": self.carry_capacity,
-            "carried_resources": self.carried_resources,
             "home_id": self.home_id,
             "home_eviction_timer": self.home_eviction_timer,
-            "construction_target_id": self.construction_target_id,
-            "construction_phase": self.construction_phase,
-            "gather_target_id": self.gather_target_id,
-            "gather_type": self.gather_type,
-            "gather_progress": self.gather_progress,
-            "gather_needed_amount": self.gather_needed_amount,
+            **self.puberty.to_persisted_dict(),
+            **self.burial.to_persisted_dict(),
+            **self.feeding.to_persisted_dict(),
+            **self.construction.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

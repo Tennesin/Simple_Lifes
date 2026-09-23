@@ -35,7 +35,7 @@ class Construction(GoalComponent):
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return [None]
 
-        committed = c.construction_target_id is not None or c.gather_target_id is not None
+        committed = c.construction.construction_target_id is not None or c.construction.gather_target_id is not None
         if not committed and c.needs.wellbeing_score() < ci_settings.PARENT_FEED_MIN_WELLBEING:
             return [None]
 
@@ -55,30 +55,30 @@ class Construction(GoalComponent):
     def _pursue(self, ctx):
         c = self.c
 
-        if c.gather_target_id is not None:
+        if c.construction.gather_target_id is not None:
             return self._continue_gathering(ctx)
 
-        if c.construction_target_id is not None:
-            site = next((s for s in ctx.construction_sites if s.id == c.construction_target_id), None)
+        if c.construction.construction_target_id is not None:
+            site = next((s for s in ctx.construction_sites if s.id == c.construction.construction_target_id), None)
             if site is not None:
                 return self._work_on(site, ctx)
-            c.construction_target_id = None
-            c.construction_phase = None
+            c.construction.construction_target_id = None
+            c.construction.construction_phase = None
 
         orphan_site = self._find_orphaned_site(ctx)
         if orphan_site is not None:
-            c.construction_target_id = orphan_site.id
-            c.construction_phase = "build" if orphan_site.is_building else "deposit"
+            c.construction.construction_target_id = orphan_site.id
+            c.construction.construction_phase = "build" if orphan_site.is_building else "deposit"
             return self._work_on(orphan_site, ctx)
 
         help_goal = self._try_join_help(ctx)
         if help_goal is not None:
             return help_goal
 
-        if c.construction_check_timer > 0:
-            c.construction_check_timer -= ctx.dt
+        if c.construction.construction_check_timer > 0:
+            c.construction.construction_check_timer -= ctx.dt
             return None
-        c.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
+        c.construction.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
 
         campfire_pos = c.known_campfire
         build_type = self._determine_need(campfire_pos, ctx)
@@ -88,8 +88,8 @@ class Construction(GoalComponent):
         site = self._find_or_create_site(build_type, campfire_pos, ctx)
         if site is None:
             return None
-        c.construction_target_id = site.id
-        c.construction_phase = "deposit"
+        c.construction.construction_target_id = site.id
+        c.construction.construction_phase = "deposit"
         return self._work_on(site, ctx)
 
     # ---------- Добыча дерева/камня ----------
@@ -104,64 +104,65 @@ class Construction(GoalComponent):
 
     def _start_gathering(self, res_type, source, needed_amount=None):
         c = self.c
-        c.gather_type = res_type
-        c.gather_target_id = source.id
-        c.gather_progress = 0.0
-        c.gather_needed_amount = needed_amount
+        c.construction.gather_type = res_type
+        c.construction.gather_target_id = source.id
+        c.construction.gather_progress = 0.0
+        c.construction.gather_needed_amount = needed_amount
 
     def _cancel_gathering(self):
         c = self.c
-        c.gather_target_id = None
-        c.gather_type = None
-        c.gather_progress = 0.0
-        c.gather_needed_amount = None
+        c.construction.gather_target_id = None
+        c.construction.gather_type = None
+        c.construction.gather_progress = 0.0
+        c.construction.gather_needed_amount = None
 
     def _continue_gathering(self, ctx):
         c = self.c
-        pool = ctx.all_trees if c.gather_type == "wood" else ctx.all_stones
-        source = next((o for o in pool if o.id == c.gather_target_id), None)
+        cs = c.construction
+        pool = ctx.all_trees if cs.gather_type == "wood" else ctx.all_stones
+        source = next((o for o in pool if o.id == cs.gather_target_id), None)
 
         if source is None:
             self._cancel_gathering()
             return None
 
-        has_resource = source.has_wood() if c.gather_type == "wood" else source.has_stone()
+        has_resource = source.has_wood() if cs.gather_type == "wood" else source.has_stone()
         if not has_resource or c.carry_free_space() <= 0:
             self._cancel_gathering()
             return None
 
-        if (c.gather_needed_amount is not None
-                and c.carried_resources[c.gather_type] >= c.gather_needed_amount):
+        if (cs.gather_needed_amount is not None
+                and cs.carried_resources[cs.gather_type] >= cs.gather_needed_amount):
             self._cancel_gathering()
             return None
 
         if c.distance_to(source) > ci_settings.GATHER_APPROACH_DISTANCE:
             c.state = ci_settings.STATE_SEEKING
-            c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHER_WOOD if c.gather_type == "wood"
+            c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHER_WOOD if cs.gather_type == "wood"
                            else ci_info.INFO_CREATURE_GOAL_GATHER_STONE)
             c.target = (source.x, source.y)
             return c.target
 
         c.state = ci_settings.STATE_SEEKING
-        c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHERING_WOOD if c.gather_type == "wood"
+        c.goal_text = (ci_info.INFO_CREATURE_GOAL_GATHERING_WOOD if cs.gather_type == "wood"
                        else ci_info.INFO_CREATURE_GOAL_GATHERING_STONE)
         c.target = (c.x, c.y)
 
-        c.gather_progress += ctx.dt
+        cs.gather_progress += ctx.dt
         tick = 1.0 / ci_settings.RESOURCE_GATHER_RATE
-        while (c.gather_progress >= tick and c.carry_free_space() > 0 and has_resource
-               and (c.gather_needed_amount is None
-                    or c.carried_resources[c.gather_type] < c.gather_needed_amount)):
-            c.gather_progress -= tick
-            if c.gather_type == "wood":
+        while (cs.gather_progress >= tick and c.carry_free_space() > 0 and has_resource
+               and (cs.gather_needed_amount is None
+                    or cs.carried_resources[cs.gather_type] < cs.gather_needed_amount)):
+            cs.gather_progress -= tick
+            if cs.gather_type == "wood":
                 source.wood -= 1
             else:
                 source.stone -= 1
-            c.carried_resources[c.gather_type] += 1
-            has_resource = source.has_wood() if c.gather_type == "wood" else source.has_stone()
+            cs.carried_resources[cs.gather_type] += 1
+            has_resource = source.has_wood() if cs.gather_type == "wood" else source.has_stone()
 
-        reached_needed = (c.gather_needed_amount is not None
-                          and c.carried_resources[c.gather_type] >= c.gather_needed_amount)
+        reached_needed = (cs.gather_needed_amount is not None
+                          and cs.carried_resources[cs.gather_type] >= cs.gather_needed_amount)
         if not has_resource or c.carry_free_space() <= 0 or reached_needed:
             self._cancel_gathering()
 
@@ -435,20 +436,20 @@ class Construction(GoalComponent):
             c.target = (site.x, site.y)
             return c.target
 
-        wood_to_deposit = min(c.carried_resources["wood"], site.needed("wood"))
-        stone_to_deposit = min(c.carried_resources["stone"], site.needed("stone"))
+        wood_to_deposit = min(c.construction.carried_resources["wood"], site.needed("wood"))
+        stone_to_deposit = min(c.construction.carried_resources["stone"], site.needed("stone"))
         site.deposited_wood += wood_to_deposit
         site.deposited_stone += stone_to_deposit
-        c.carried_resources["wood"] -= wood_to_deposit
-        c.carried_resources["stone"] -= stone_to_deposit
+        c.construction.carried_resources["wood"] -= wood_to_deposit
+        c.construction.carried_resources["stone"] -= stone_to_deposit
 
         if wood_to_deposit > 0 or stone_to_deposit > 0:
             site.contributor_ids.add(c.id)
 
         if site.needed("wood") == 0:
-            c.carried_resources["wood"] = 0
+            c.construction.carried_resources["wood"] = 0
         if site.needed("stone") == 0:
-            c.carried_resources["stone"] = 0
+            c.construction.carried_resources["stone"] = 0
 
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_DEPOSIT
         c.target = (c.x, c.y)
@@ -456,7 +457,7 @@ class Construction(GoalComponent):
         if site.resources_complete():
             site.is_building = True
             site.builder_ids.add(c.id)
-            c.construction_phase = "build"
+            c.construction.construction_phase = "build"
 
         return c.target
 
@@ -464,7 +465,7 @@ class Construction(GoalComponent):
         c = self.c
         site.builder_ids.add(c.id)
         site.contributor_ids.add(c.id)
-        c.construction_phase = "build"
+        c.construction.construction_phase = "build"
         c.state = ci_settings.STATE_SEEKING
 
         if math.hypot(c.x - site.x, c.y - site.y) > ci_settings.CONSTRUCTION_APPROACH_DISTANCE:
@@ -557,9 +558,9 @@ class Construction(GoalComponent):
         self._react_to_player_construction_help(site, c, ctx)
 
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CONSTRUCTION_DONE
-        c.construction_target_id = None
-        c.construction_phase = None
-        c.pending_construction_cleanup = (site.build_type, new_object)
+        c.construction.construction_target_id = None
+        c.construction.construction_phase = None
+        c.construction.pending_construction_cleanup = (site.build_type, new_object)
 
     def _work_on(self, site, ctx):
         c = self.c
@@ -568,10 +569,10 @@ class Construction(GoalComponent):
         if site.resources_complete():
             site.is_building = True
             site.builder_ids.add(c.id)
-            c.construction_phase = "build"
+            c.construction.construction_phase = "build"
             return self._perform_build_phase(site, ctx)
 
-        if c.carried_resources["wood"] > 0 or c.carried_resources["stone"] > 0:
+        if c.construction.carried_resources["wood"] > 0 or c.construction.carried_resources["stone"] > 0:
             return self._deliver(site)
 
         needed_wood = site.needed("wood")
@@ -614,8 +615,8 @@ class Construction(GoalComponent):
         if not ctx.construction_sites:
             return None
 
-        claimed_ids = {o.construction_target_id for o in ctx.other_creatures
-                       if not o.is_dead and o.construction_target_id is not None}
+        claimed_ids = {o.construction.construction_target_id for o in ctx.other_creatures
+                       if not o.is_dead and o.construction.construction_target_id is not None}
 
         search_radius = (ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS
                          * ci_settings.ORPHAN_SITE_SEARCH_RADIUS_FACTOR)
@@ -629,10 +630,10 @@ class Construction(GoalComponent):
 
     def _try_join_help(self, ctx):
         c = self.c
-        if c.build_help_check_timer > 0:
-            c.build_help_check_timer -= ctx.dt
+        if c.construction.build_help_check_timer > 0:
+            c.construction.build_help_check_timer -= ctx.dt
             return None
-        c.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
+        c.construction.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
 
         own_need = self._determine_need(c.known_campfire, ctx)
         if own_need in ("house", "storage"):
@@ -643,10 +644,11 @@ class Construction(GoalComponent):
         candidates = [
             o for o in ctx.visible_companions
             if o.gender == ci_settings.GENDER_MALE and o.life_stage == ci_settings.LIFE_STAGE_ADULT
-               and o.construction_target_id is not None and o.construction_phase in ("deposit", "build")
+               and o.construction.construction_target_id is not None
+               and o.construction.construction_phase in ("deposit", "build")
                and c.social.get_relationship(o) >= ci_settings.BUILD_HELP_MIN_RELATIONSHIP
-               and sites_by_id.get(o.construction_target_id) is not None
-               and sites_by_id[o.construction_target_id].build_type not in ("house", "storage")
+               and sites_by_id.get(o.construction.construction_target_id) is not None
+               and sites_by_id[o.construction.construction_target_id].build_type not in ("house", "storage")
         ]
         if not candidates:
             return None
@@ -654,8 +656,8 @@ class Construction(GoalComponent):
             return None
 
         target_worker = c.social.best_companion(candidates)
-        c.construction_target_id = target_worker.construction_target_id
-        c.construction_phase = "deposit"
+        c.construction.construction_target_id = target_worker.construction.construction_target_id
+        c.construction.construction_phase = "deposit"
         c.social.adjust_mutual_relationship(target_worker, ci_settings.BUILD_HELP_RELATIONSHIP_BONUS)
 
         c.state = ci_settings.STATE_SEEKING
