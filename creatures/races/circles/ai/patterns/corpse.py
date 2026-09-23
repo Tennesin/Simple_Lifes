@@ -16,8 +16,8 @@ class CorpseHandling(GoalComponent):
         c = self.c
         if not c.can_handle_corpses():
             return [None]
-        committed = c.burial_target_id is not None
-        has_alert = c.graveyard_alert_timer > 0
+        committed = c.burial.burial_target_id is not None
+        has_alert = c.burial.graveyard_alert_timer > 0
         if not ctx.visible_corpses and not committed and not has_alert:
             return [None]
         score = self.SCORE_COMMITTED if committed else self.SCORE_NEW

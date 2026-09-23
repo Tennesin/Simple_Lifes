@@ -8,7 +8,6 @@ from ....all_needed.ai.utility import Consideration
 from .. import ci_settings
 from .patterns import Construction, Storage
 
-
 def same_household(creature, owner_id, other_creatures=None):
     if owner_id is None:
         return False
@@ -108,10 +107,10 @@ class PrivateConstruction(Construction):
             if owned_site is None:
                 return "storage"
 
-        if c.known_graveyard is None:
+        if c.burial.known_graveyard is None:
             linked = self._find_campfire_linked_graveyard(campfire_pos, ctx.graveyards)
             if linked is not None:
-                c.known_graveyard = (linked.x, linked.y)
+                c.burial.known_graveyard = (linked.x, linked.y)
             elif not any(s.build_type == "graveyard" for s in sites):
                 return "graveyard"
         return None

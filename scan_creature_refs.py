@@ -40,10 +40,9 @@ IGNORED_DIR_NAMES = {"__pycache__", ".git", ".idea"}
 PLAN_STAGES = {
     0: (
         # Шаг 0 - подготовка state/, StateBlock и т.п.
-        # Полей Creature ещё не касается - список пуст намеренно.
     ),
     1: (
-        # Шаг 1 - домен "Пубертат" (PubertyState)
+        # Шаг 1 - домен "Пубертат" (PubertyState) - УЖЕ СМИГРИРОВАН
         "puberty_trigger_age",
         "puberty_done",
         "puberty_active",
@@ -69,8 +68,39 @@ PLAN_STAGES = {
         "graveyard_alert_pos",
         "graveyard_alert_timer",
     ),
-}
+    3: (
+        # Шаг 3 - домен "Территория" (переезжает ВНУТРЬ уже существующего
+        # CreatureTerritory в life_cycle.py, отдельный StateBlock не нужен)
+        "territory_pursuit_target_id",
+        "territory_pursuit_obj",
+        "territory_pursuit_last_pos",
+        "territory_pursuit_commit_timer",
+    ),
+    4: (
+        # Шаг 4 - домен "Детские дороги": следование (ChildRoadPlayState,
+        # владелец - child_ai.py:_ChildRoadPlayMixin) + физическая проверка
+        # взрослым (RoadVerifyState, владелец - patterns/roads.py:ChildRoadVerification).
+        # Один общий скан, но на выходе - ДВА отдельных StateBlock.
 
+        # --- следование (игра) ---
+        "following_child_road",
+        "child_road_progress",
+        "child_road_direction",
+        "child_road_entry_reached",
+        "child_road_play_cooldown",
+        "child_road_play_counts",
+        "child_road_disinterest",
+
+        # --- проверка безопасности взрослым ---
+        "child_road_verify_target_id",
+        "child_road_verify_progress",
+        "child_road_verify_direction",
+        "child_road_verify_entry_reached",
+        "child_road_verify_found_danger",
+        "child_road_verify_check_timer",
+    ),
+}
+ACTIVE_STAGE = 4
 
 def base_expr(node):
     """Возвращает строковый 'путь' выражения слева от точки: для `c` -> 'c',
@@ -84,7 +114,6 @@ def base_expr(node):
             return None
         return f"{base}.{node.attr}"
     return None
-
 
 def add_parents(tree):
     """Простановка .parent у каждого узла - нужно, чтобы отличить
@@ -258,9 +287,9 @@ def main():
                         help=f"Какие 'базовые' имена считать существом (по умолчанию: {DEFAULT_TARGETS})")
     parser.add_argument("--fields", nargs="+", default=None,
                         help="Точечный поиск только этих полей (игнорирует PLAN_STAGES)")
-    parser.add_argument("--stages", nargs="+", type=int, default=sorted(PLAN_STAGES.keys()),
-                        help=f"Какие этапы плана включить в отчёт (по умолчанию все описанные: "
-                             f"{sorted(PLAN_STAGES.keys())})")
+    parser.add_argument("--stages", nargs="+", type=int, default=[ACTIVE_STAGE],
+                        help=f"Какие этапы плана включить в отчёт "
+                             f"(по умолчанию: [{ACTIVE_STAGE}] - см. ACTIVE_STAGE в начале файла)")
     parser.add_argument("--all", action="store_true",
                         help="Полная инвентаризация ВСЕХ полей без фильтра по PLAN_STAGES "
                              "(даёт большой файл - использовать только осознанно)")
@@ -277,7 +306,7 @@ def main():
         out_path = args.out or "creature_refs_full.txt"
         run_full_inventory(args.root, targets, out_path)
     else:
-        out_path = args.out or "creature_refs_stages.txt"
+        out_path = args.out or f"creature_refs_stage{'_'.join(map(str, sorted(set(args.stages))))}.txt"
         run_staged_inventory(args.root, targets, sorted(set(args.stages)), out_path)
 
 if __name__ == "__main__":

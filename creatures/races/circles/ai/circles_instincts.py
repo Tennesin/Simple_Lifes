@@ -13,36 +13,36 @@ from .. import ci_info, ci_settings
 class _CorpseHandlingInstinctMixin:
 
     def notify_elders_of_corpse(self, corpse, visible_companions):
-        if corpse.being_carried_by is not None or corpse.burial_claimant_id is not None:
+        if corpse.burial.being_carried_by is not None or corpse.burial.burial_claimant_id is not None:
             return
         for other in visible_companions:
             if other.life_stage == ci_settings.LIFE_STAGE_OLD:
-                other.graveyard_alert_pos = (corpse.x, corpse.y)
-                other.graveyard_alert_timer = ci_settings.GRAVEYARD_ALERT_HOLD_TIME
+                other.burial.graveyard_alert_pos = (corpse.x, corpse.y)
+                other.burial.graveyard_alert_timer = ci_settings.GRAVEYARD_ALERT_HOLD_TIME
 
     def pursue_corpse_burial(self, visible_corpses, graveyards):
         c = self.c
 
-        if c.burial_target_id is not None:
-            corpse = next((o for o in visible_corpses if o.id == c.burial_target_id), None)
-            if corpse is None or corpse.burial_claimant_id != c.id:
-                c.burial_target_id = None
-                c.graveyard_target_id = None
-                c.is_dragging_corpse = False
-            elif corpse.being_carried_by == c.id:
+        if c.burial.burial_target_id is not None:
+            corpse = next((o for o in visible_corpses if o.id == c.burial.burial_target_id), None)
+            if corpse is None or corpse.burial.burial_claimant_id != c.id:
+                c.burial.burial_target_id = None
+                c.burial.graveyard_target_id = None
+                c.burial.is_dragging_corpse = False
+            elif corpse.burial.being_carried_by == c.id:
                 return self._continue_carrying(corpse, graveyards)
             else:
                 return self._approach_claimed_corpse(corpse, graveyards)
 
         candidates = [o for o in visible_corpses
-                      if o.burial_claimant_id is None and o.being_carried_by is None]
+                      if o.burial.burial_claimant_id is None and o.burial.being_carried_by is None]
         if candidates:
             target_corpse = min(candidates, key=c.distance_to)
-            target_corpse.burial_claimant_id = c.id
-            c.burial_target_id = target_corpse.id
+            target_corpse.burial.burial_claimant_id = c.id
+            c.burial.burial_target_id = target_corpse.id
             return self._approach_claimed_corpse(target_corpse, graveyards)
 
-        if c.graveyard_alert_timer > 0 and c.graveyard_alert_pos is not None:
+        if c.burial.graveyard_alert_timer > 0 and c.burial.graveyard_alert_pos is not None:
             return self._investigate_alert()
 
         return None
@@ -55,20 +55,20 @@ class _CorpseHandlingInstinctMixin:
             c.target = (corpse.x, corpse.y)
             return c.target
 
-        corpse.being_carried_by = c.id
+        corpse.burial.being_carried_by = c.id
         return self._continue_carrying(corpse, graveyards)
 
     def _continue_carrying(self, corpse, graveyards):
         c = self.c
-        c.is_dragging_corpse = True
+        c.burial.is_dragging_corpse = True
         c.state = ci_settings.STATE_SEEKING
         c.speed_factor = ci_settings.CORPSE_DRAG_SPEED_FACTOR
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_CARRY
 
-        target_graveyard = next((g for g in graveyards if g.id == c.graveyard_target_id), None)
+        target_graveyard = next((g for g in graveyards if g.id == c.burial.graveyard_target_id), None)
         if target_graveyard is None:
             target_graveyard = self._choose_graveyard(graveyards)
-            c.graveyard_target_id = target_graveyard.id if target_graveyard else None
+            c.burial.graveyard_target_id = target_graveyard.id if target_graveyard else None
 
         if target_graveyard is None:
             c.target = self.pursue_search_target()
@@ -90,24 +90,12 @@ class _CorpseHandlingInstinctMixin:
         c = self.c
         c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_ALERT
-        if math.hypot(c.x - c.graveyard_alert_pos[0], c.y - c.graveyard_alert_pos[1]) < ci_settings.CORPSE_APPROACH_DISTANCE * 2:
-            c.graveyard_alert_pos = None
-            c.graveyard_alert_timer = 0.0
+        if math.hypot(c.x - c.burial.graveyard_alert_pos[0],
+                      c.y - c.burial.graveyard_alert_pos[1]) < ci_settings.CORPSE_APPROACH_DISTANCE * 2:
+            c.burial.graveyard_alert_pos = None
+            c.burial.graveyard_alert_timer = 0.0
             return None
-        c.target = c.graveyard_alert_pos
-        return c.target
-
-    def flee_to_campfire(self, threat_pos):
-        c = self.c
-        c.state = ci_settings.STATE_PANIC
-        c.panic_active = True
-        campfire_pos = self.nearest_known_campfire()
-        if campfire_pos:
-            c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_FLEE_FIRE
-            c.target = campfire_pos
-            return campfire_pos
-        c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_FLEE_BLIND
-        c.target = c.flee_point(threat_pos, ci_settings.PANIC_SCAN_DISTANCE)
+        c.target = c.burial.graveyard_alert_pos
         return c.target
 
 # =========================================================================
@@ -212,7 +200,7 @@ class _LandmarkLookupMixin:
         memories = c.memory.get_graveyard_memories()
         if memories:
             return geometry.nearest_point(c.x, c.y, memories)
-        return c.known_graveyard
+        return c.burial.known_graveyard
 
     def find_storage_field(self, storage_fields, houses=None):
         c = self.c
@@ -258,13 +246,13 @@ class _LandmarkLookupMixin:
         for gy in (visible_graveyards or []):
             c.memory.add_intuitive_memory("graveyard", *c.comfort_point, gy.x, gy.y, importance=1.2)
             c.memory.add_memory("graveyard", gy.x, gy.y, importance=1.5)
-            if c.known_graveyard is None:
-                c.known_graveyard = (gy.x, gy.y)
-                c.known_graveyard_id = gy.id
-            elif c.known_graveyard_id is None and math.hypot(
-                    c.known_graveyard[0] - gy.x,
-                    c.known_graveyard[1] - gy.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
-                c.known_graveyard_id = gy.id
+            if c.burial.known_graveyard is None:
+                c.burial.known_graveyard = (gy.x, gy.y)
+                c.burial.known_graveyard_id = gy.id
+            elif c.burial.known_graveyard_id is None and math.hypot(
+                    c.burial.known_graveyard[0] - gy.x,
+                    c.burial.known_graveyard[1] - gy.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
+                c.burial.known_graveyard_id = gy.id
 
 # =========================================================================
 # Домен: навигационные инстинкты - застревание и активный поиск без цели

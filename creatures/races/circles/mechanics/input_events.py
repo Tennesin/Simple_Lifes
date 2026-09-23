@@ -16,14 +16,14 @@ from .. import ci_info, ci_settings
 # =========================================================================
 
 def start_corpse_grab(corpse, world):
-    if corpse.being_carried_by is not None:
-        carrier = next((c for c in world.creatures if c.id == corpse.being_carried_by), None)
+    if corpse.burial.being_carried_by is not None:
+        carrier = next((c for c in world.creatures if c.id == corpse.burial.being_carried_by), None)
         if carrier is not None:
-            carrier.burial_target_id = None
-            carrier.graveyard_target_id = None
-            carrier.is_dragging_corpse = False
-        corpse.being_carried_by = None
-    corpse.burial_claimant_id = None
+            carrier.burial.burial_target_id = None
+            carrier.burial.graveyard_target_id = None
+            carrier.burial.is_dragging_corpse = False
+        corpse.burial.being_carried_by = None
+    corpse.burial.burial_claimant_id = None
 
 def handle_corpse_release(corpse, game):
     game.selected_object = None

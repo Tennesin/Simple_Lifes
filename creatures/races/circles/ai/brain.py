@@ -71,8 +71,8 @@ class _TimerTickMixin(_BrainMixinBase):
             c.reunite_commit_timer -= dt
         if c.partner_reunite_cooldown > 0:
             c.partner_reunite_cooldown -= dt
-        if c.graveyard_alert_timer > 0:
-            c.graveyard_alert_timer -= dt
+        if c.burial.graveyard_alert_timer > 0:
+            c.burial.graveyard_alert_timer -= dt
         c.puberty.tick_cooldowns(dt)
 
 # =========================================================================

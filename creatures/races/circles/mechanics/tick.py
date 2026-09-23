@@ -308,24 +308,24 @@ class CircleTickProcessor:
                 continue
 
             genealogy.mark_dead(creature.id, creature)
-            if creature.being_carried_by is not None:
-                carrier = next((cc for cc in race_creatures if cc.id == creature.being_carried_by), None)
+            if creature.burial.being_carried_by is not None:
+                carrier = next((cc for cc in race_creatures if cc.id == creature.burial.being_carried_by), None)
                 valid_carry = (carrier is not None and not carrier.is_dead
-                               and carrier.burial_target_id == creature.id)
+                               and carrier.burial.burial_target_id == creature.id)
                 if not valid_carry:
-                    creature.being_carried_by = None
-                    creature.burial_claimant_id = None
+                    creature.burial.being_carried_by = None
+                    creature.burial.burial_claimant_id = None
                 else:
                     creature.x, creature.y = carrier.x, carrier.y
                     target_graveyard = next(
-                        (g for g in world.graveyards if g.id == carrier.graveyard_target_id), None)
+                        (g for g in world.graveyards if g.id == carrier.burial.graveyard_target_id), None)
                     if (target_graveyard is not None and
                             target_graveyard.distance_to_point(creature.x, creature.y)
                             < ci_settings.GRAVEYARD_BURIAL_DISTANCE):
                         target_graveyard.bury(creature)
-                        carrier.burial_target_id = None
-                        carrier.graveyard_target_id = None
-                        carrier.is_dragging_corpse = False
+                        carrier.burial.burial_target_id = None
+                        carrier.burial.graveyard_target_id = None
+                        carrier.burial.is_dragging_corpse = False
                         corpses_to_remove.append(creature)
                     continue
 

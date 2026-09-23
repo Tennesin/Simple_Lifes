@@ -371,6 +371,12 @@ class CreatureTerritory(WeakOwnerMixin):
         self.claims_count = {"bush": 0, "water": 0}
         self.confront_cooldowns = {}    # other_id -> оставшееся время до следующей реакции
 
+        # ---------- Устойчивая погоня за территориальным нарушителем) ----------
+        self.pursuit_target_id = None
+        self.pursuit_obj = None
+        self.pursuit_last_pos = None
+        self.pursuit_commit_timer = 0.0
+
     # ---------- Накопление времени использования ----------
 
     def register_use(self, obj, resource_type, dt, campfires=None):

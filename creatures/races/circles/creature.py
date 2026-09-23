@@ -28,6 +28,7 @@ from .psyche import CreaturePsyche
 from .social import CreatureCommunication, CreatureSocial
 
 from .state.puberty_state import PubertyState
+from .state.burial_state import BurialState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -243,14 +244,6 @@ class Creature(LivingEntity):
         self.landmark_register_timer = random.uniform(0.0, 1.5)
 
         # =====================================================================
-        # Устойчивая погоня за территориальным нарушителем
-        # =====================================================================
-        self.territory_pursuit_target_id = None
-        self.territory_pursuit_obj = None
-        self.territory_pursuit_last_pos = None
-        self.territory_pursuit_commit_timer = 0.0
-
-        # =====================================================================
         # Опека стариков над случайными детьми
         # =====================================================================
         self.elder_ward_id = None
@@ -259,15 +252,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Труп / кладбище: перенос тела
         # =====================================================================
-        self.being_carried_by = None       # (для трупов) id несущего
-        self.burial_claimant_id = None     # (для трупов) id "хозяина" похорон
-        self.burial_target_id = None       # (для живых) id трупа, который несём
-        self.graveyard_target_id = None    # (для живых) id кладбища-цели
-        self.is_dragging_corpse = False    # True, только пока реально тащит труп
-        self.known_graveyard = None
-        self.known_graveyard_id = None
-        self.graveyard_alert_pos = None    # координаты трупа, о котором сообщили старику
-        self.graveyard_alert_timer = 0.0
+        self.burial = BurialState()
 
         # =====================================================================
         # Донашивание еды/воды детям и сородичам
@@ -428,6 +413,119 @@ class Creature(LivingEntity):
         self.puberty.avoid = value
 
     # =====================================================================
+    # Фасады совместимости: домен "Труп/кладбище" (state/burial_state.py)
+    # =====================================================================
+
+    @property
+    def being_carried_by(self):
+        return self.burial.being_carried_by
+
+    @being_carried_by.setter
+    def being_carried_by(self, value):
+        self.burial.being_carried_by = value
+
+    @property
+    def burial_claimant_id(self):
+        return self.burial.burial_claimant_id
+
+    @burial_claimant_id.setter
+    def burial_claimant_id(self, value):
+        self.burial.burial_claimant_id = value
+
+    @property
+    def burial_target_id(self):
+        return self.burial.burial_target_id
+
+    @burial_target_id.setter
+    def burial_target_id(self, value):
+        self.burial.burial_target_id = value
+
+    @property
+    def graveyard_target_id(self):
+        return self.burial.graveyard_target_id
+
+    @graveyard_target_id.setter
+    def graveyard_target_id(self, value):
+        self.burial.graveyard_target_id = value
+
+    @property
+    def is_dragging_corpse(self):
+        return self.burial.is_dragging_corpse
+
+    @is_dragging_corpse.setter
+    def is_dragging_corpse(self, value):
+        self.burial.is_dragging_corpse = value
+
+    @property
+    def known_graveyard(self):
+        return self.burial.known_graveyard
+
+    @known_graveyard.setter
+    def known_graveyard(self, value):
+        self.burial.known_graveyard = value
+
+    @property
+    def known_graveyard_id(self):
+        return self.burial.known_graveyard_id
+
+    @known_graveyard_id.setter
+    def known_graveyard_id(self, value):
+        self.burial.known_graveyard_id = value
+
+    @property
+    def graveyard_alert_pos(self):
+        return self.burial.graveyard_alert_pos
+
+    @graveyard_alert_pos.setter
+    def graveyard_alert_pos(self, value):
+        self.burial.graveyard_alert_pos = value
+
+    @property
+    def graveyard_alert_timer(self):
+        return self.burial.graveyard_alert_timer
+
+    @graveyard_alert_timer.setter
+    def graveyard_alert_timer(self, value):
+        self.burial.graveyard_alert_timer = value
+
+    # =====================================================================
+    # Фасады совместимости: домен "Территория" (жёстко привязаны к тому,
+    # что CreatureTerritory создаётся в конце __init__)
+    # =====================================================================
+
+    @property
+    def territory_pursuit_target_id(self):
+        return self.territory.pursuit_target_id
+
+    @territory_pursuit_target_id.setter
+    def territory_pursuit_target_id(self, value):
+        self.territory.pursuit_target_id = value
+
+    @property
+    def territory_pursuit_obj(self):
+        return self.territory.pursuit_obj
+
+    @territory_pursuit_obj.setter
+    def territory_pursuit_obj(self, value):
+        self.territory.pursuit_obj = value
+
+    @property
+    def territory_pursuit_last_pos(self):
+        return self.territory.pursuit_last_pos
+
+    @territory_pursuit_last_pos.setter
+    def territory_pursuit_last_pos(self, value):
+        self.territory.pursuit_last_pos = value
+
+    @property
+    def territory_pursuit_commit_timer(self):
+        return self.territory.pursuit_commit_timer
+
+    @territory_pursuit_commit_timer.setter
+    def territory_pursuit_commit_timer(self, value):
+        self.territory.pursuit_commit_timer = value
+
+    # =====================================================================
     # Геометрия / общие утилиты
     # =====================================================================
 
@@ -559,12 +657,7 @@ class Creature(LivingEntity):
         self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
         self.elder_ward_id = None
         # ---------- Кладбище ----------
-        self.burial_target_id = None
-        self.graveyard_target_id = None
-        self.is_dragging_corpse = False
-        self.graveyard_alert_pos = None
-        self.graveyard_alert_timer = 0.0
-        self.pathfinder.reset_navigation()
+        self.burial.reset()
         # ---------- Троттлинг ИИ: мёртвое существо больше не решает ----------
         self.ai_plan_valid = False
         self.ai_last_goal = None
@@ -673,14 +766,14 @@ class Creature(LivingEntity):
             self.memory.forget_memory("campfire", position[0], position[1])
             self.invalidate_plan()
         elif landmark_type == "graveyard":
-            if self.graveyard_target_id == landmark_id:
-                self.graveyard_target_id = None
-            if self.known_graveyard_id == landmark_id or self.known_graveyard == position:
-                self.known_graveyard = None
-                self.known_graveyard_id = None
-            if self.graveyard_alert_pos == position:
-                self.graveyard_alert_pos = None
-                self.graveyard_alert_timer = 0.0
+            if self.burial.graveyard_target_id == landmark_id:
+                self.burial.graveyard_target_id = None
+            if self.burial.known_graveyard_id == landmark_id or self.burial.known_graveyard == position:
+                self.burial.known_graveyard = None
+                self.burial.known_graveyard_id = None
+            if self.burial.graveyard_alert_pos == position:
+                self.burial.graveyard_alert_pos = None
+                self.burial.graveyard_alert_timer = 0.0
             self.memory.forget_memory("graveyard", position[0], position[1])
         elif landmark_type == "water":
             if self.water_memory_target is not None:
@@ -754,8 +847,6 @@ class Creature(LivingEntity):
             "comfort_point": list(self.comfort_point),
             "known_campfire": list(self.known_campfire) if self.known_campfire else None,
             "known_campfire_id": self.known_campfire_id,
-            "known_graveyard": list(self.known_graveyard) if self.known_graveyard else None,
-            "known_graveyard_id": self.known_graveyard_id,
             "player_memory": self.player_memory,
             "is_dead": self.is_dead,
             "death_timer": self.death_timer,
@@ -777,12 +868,11 @@ class Creature(LivingEntity):
             "carried_water": self.carried_water,
             "storage_supply_mode": self.storage_supply_mode,
             "elder_ward_id": self.elder_ward_id,
-            "burial_target_id": self.burial_target_id,
-            "graveyard_target_id": self.graveyard_target_id,
             "feed_target_id": self.feed_target_id,
             "urgent_child_id": self.urgent_child_id,
             "urgent_child_timer": self.urgent_child_timer,
             **self.puberty.to_persisted_dict(),
+            **self.burial.to_persisted_dict(),
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
             "sleep_forced": self.sleep_forced,

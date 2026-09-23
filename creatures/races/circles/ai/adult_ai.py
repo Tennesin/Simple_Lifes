@@ -37,7 +37,7 @@ class TerritoryDefense(GoalComponent):
             return [None]
 
         cached_intrusion = None
-        if c.territory_pursuit_target_id is not None:
+        if c.territory.pursuit_target_id is not None:
             score = self.SCORE_COMMITTED
         else:
             cached_intrusion = c.territory.find_intrusion(
@@ -56,13 +56,13 @@ class TerritoryDefense(GoalComponent):
         visible_bushes, visible_water, visible_companions, dt = (
             ctx.visible_bushes, ctx.visible_water, ctx.visible_companions, ctx.dt)
 
-        if c.territory_pursuit_commit_timer > 0:
-            c.territory_pursuit_commit_timer -= dt
+        if c.territory.pursuit_commit_timer > 0:
+            c.territory.pursuit_commit_timer -= dt
 
-        if c.territory_pursuit_target_id is not None:
+        if c.territory.pursuit_target_id is not None:
             intruder = next((o for o in visible_companions
-                             if o.id == c.territory_pursuit_target_id), None)
-            obj = c.territory_pursuit_obj
+                             if o.id == c.territory.pursuit_target_id), None)
+            obj = c.territory.pursuit_obj
 
             still_near_object = False
             if intruder is not None and obj is not None:
@@ -70,23 +70,23 @@ class TerritoryDefense(GoalComponent):
                         math.hypot(intruder.x - obj.x, intruder.y - obj.y)
                         < ci_settings.TERRITORY_INTRUSION_RADIUS * ci_settings.TERRITORY_PURSUIT_EXIT_RADIUS_FACTOR
                 )
-                c.territory_pursuit_last_pos = (intruder.x, intruder.y)
+                c.territory.pursuit_last_pos = (intruder.x, intruder.y)
 
-            keep_pursuing = still_near_object or c.territory_pursuit_commit_timer > 0
+            keep_pursuing = still_near_object or c.territory.pursuit_commit_timer > 0
 
-            if keep_pursuing and c.territory_pursuit_last_pos is not None:
+            if keep_pursuing and c.territory.pursuit_last_pos is not None:
                 c.state = ci_settings.STATE_SEEKING
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_TERRITORY_GUARD
-                target_pos = c.territory_pursuit_last_pos
+                target_pos = c.territory.pursuit_last_pos
                 if math.hypot(c.x - target_pos[0], c.y - target_pos[1]) > ci_settings.TERRITORY_GUARD_APPROACH_DISTANCE:
                     c.target = target_pos
                 else:
                     c.target = (c.x, c.y)
                 return c.target
 
-            c.territory_pursuit_target_id = None
-            c.territory_pursuit_obj = None
-            c.territory_pursuit_last_pos = None
+            c.territory.pursuit_target_id = None
+            c.territory.pursuit_obj = None
+            c.territory.pursuit_last_pos = None
 
         intrusion = cached_intrusion if cached_intrusion is not None else c.territory.find_intrusion(
             visible_bushes, visible_water, visible_companions)
@@ -100,10 +100,10 @@ class TerritoryDefense(GoalComponent):
             return None
         c.territory.confront(intruder)
 
-        c.territory_pursuit_target_id = intruder.id
-        c.territory_pursuit_obj = obj
-        c.territory_pursuit_last_pos = (intruder.x, intruder.y)
-        c.territory_pursuit_commit_timer = ci_settings.TERRITORY_PURSUIT_COMMIT_TIME
+        c.territory.pursuit_target_id = intruder.id
+        c.territory.pursuit_obj = obj
+        c.territory.pursuit_last_pos = (intruder.x, intruder.y)
+        c.territory.pursuit_commit_timer = ci_settings.TERRITORY_PURSUIT_COMMIT_TIME
 
         c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_TERRITORY_GUARD

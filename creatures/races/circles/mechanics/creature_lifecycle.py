@@ -11,6 +11,7 @@ from ..creature import Creature
 from ..genealogy import GenealogyRegistry
 from ..life_cycle import CreatureAging
 from ..state.puberty_state import PubertyState
+from ..state.burial_state import BurialState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -130,8 +131,6 @@ _CREATURE_SIMPLE_FIELDS = (
      lambda: random.randint(*ci_settings.CREATURE_CARRY_CAPACITY_RANGE)),
     ("carried_resources", "carried_resources", lambda: {"wood": 0, "stone": 0}),
     ("elder_ward_id", "elder_ward_id", None),
-    ("burial_target_id", "burial_target_id", None),
-    ("graveyard_target_id", "graveyard_target_id", None),
     ("feed_target_id", "feed_target_id", None),
     ("urgent_child_id", "urgent_child_id", None),
     ("urgent_child_timer", "urgent_child_timer", 0.0),
@@ -144,7 +143,6 @@ _CREATURE_SIMPLE_FIELDS = (
     ("gather_progress", "gather_progress", 0.0),
     ("gather_needed_amount", "gather_needed_amount", None),
     ("known_campfire_id", "known_campfire_id", None),
-    ("known_graveyard_id", "known_graveyard_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
     ("is_sleeping", "is_sleeping", False),
     ("sleep_forced", "sleep_forced", False),
@@ -153,7 +151,6 @@ _CREATURE_SIMPLE_FIELDS = (
 
 _CREATURE_TUPLE_FIELDS = (
     ("known_campfire", "known_campfire"),
-    ("known_graveyard", "known_graveyard"),
     ("parent_ids", "parent_ids"),
 )
 
@@ -193,6 +190,9 @@ def _load_creature_puberty(creature, state):
     creature.puberty = PubertyState.from_persisted_dict(state)
     creature.aging.sync_puberty_state()
 
+def _load_creature_burial(creature, state):
+    creature.burial = BurialState.from_persisted_dict(state)
+
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:
         setattr(creature.psyche, attr, state.get(key, 0.0))
@@ -207,6 +207,7 @@ def load_creature_from_state(state):
     _load_creature_knowledge(creature, state)
     _load_creature_age_and_stage(creature, state)
     _load_creature_puberty(creature, state)
+    _load_creature_burial(creature, state)
     _load_creature_psyche(creature, state)
     return creature
 

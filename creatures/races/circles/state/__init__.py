@@ -4,6 +4,7 @@
 from_dict(), владеющий одним доменом (пубертат, труп/кладбище и т.д.)."""
 
 from .base import StateBlock
+from .burial_state import BurialState
 from .puberty_state import PubertyState
 
-__all__ = ["StateBlock", "PubertyState"]
+__all__ = ["StateBlock", "BurialState", "PubertyState"]
