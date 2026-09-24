@@ -13,7 +13,7 @@ from ....all_needed import geometry
 from ....all_needed.ai.utility import Consideration, lookup_creature, pick_best, scale
 from ....all_needed.path_walker import PathProgressTracker
 from .. import ci_info, ci_settings
-from .private_storage import field_belongs_to
+from ..life_cycle import field_belongs_to
 
 # ---------- Веса принятия решений для детей ----------
 SCORE_CHILD_DISTRESS_BASE = 90.0

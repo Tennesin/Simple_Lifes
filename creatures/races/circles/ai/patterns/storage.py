@@ -3,6 +3,7 @@ import random
 
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 from ... import ci_info, ci_settings
+from ...life_cycle import field_belongs_to
 
 # =========================================================================
 # Семейный склад запасов
@@ -107,3 +108,36 @@ class Storage(GoalComponent):
         c.goal_text = ci_info.INFO_CREATURE_GOAL_STORAGE_STOCKED
         c.target = (c.x, c.y)
         return c.target
+
+# =========================================================================
+# Приватный вариант: чужой склад никогда не считается общим
+# =========================================================================
+
+class PrivateStorage(Storage):
+    """Складское поведение, которое никогда не считает чужой домашний склад общим."""
+
+    def _owned_field(self, ctx):
+        c = self.c
+        house = next((h for h in ctx.houses if c.id in h.owner_ids or c.housing.home_id == h.id), None)
+        if house is not None:
+            return house.storage_field(ctx.storage_fields)
+        campfire_pos = self.instincts.nearest_known_campfire()
+        if campfire_pos is None:
+            return None
+        for field in ctx.storage_fields:
+            if field.is_owned_by_campfire(campfire_pos) and field_belongs_to(c, field, ctx.other_creatures):
+                return field
+        return None
+
+    def consider(self, ctx):
+        if self._owned_field(ctx) is None:
+            return [None]
+        return [Consideration("storage", self.SCORE, lambda: self._pursue(ctx))]
+
+    def _pursue(self, ctx):
+        c = self.c
+        field = self._owned_field(ctx)
+        if field is None:
+            c.storage_supply.mode = False
+            return None
+        return self._pursue_supply(field, ctx)

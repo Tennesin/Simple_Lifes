@@ -7,6 +7,7 @@ from .....all_needed import geometry
 from .....all_needed.ai.utility import Consideration, GoalComponent, lookup_creature
 from ... import ci_info, ci_settings
 from ...circle_objects import Campfire, ConstructionSite, Graveyard, House, StorageField
+from ...life_cycle import same_household
 
 # =========================================================================
 # Добыча ресурсов и строительство
@@ -689,3 +690,150 @@ class Construction(GoalComponent):
         target.psyche.on_player_construction_help(share)
         target.player_reactions.add_memory(
             "construction_help", share=round(share, 2), relationship_after=target.player_relationship)
+
+# =========================================================================
+# Приватный вариант: домохозяйство не путает свою и чужую стройку
+# =========================================================================
+
+class PrivateConstruction(Construction):
+    _OWNER_ATTR_BY_TYPE = {"storage": "storage_owner_id", "house": "house_owner_id"}
+    CAMPFIRE_ANCHOR_MERGE_RADIUS = ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE
+
+    def _site_belongs_to(self, site, ctx):
+        owner_attr = self._OWNER_ATTR_BY_TYPE.get(site.build_type)
+        if owner_attr is None:
+            return True
+        owner_id = getattr(site, owner_attr, None)
+        if owner_id is None:
+            return True
+        return same_household(self.c, owner_id, ctx.other_creatures)
+
+    def _determine_need(self, campfire_pos, ctx):
+        c = self.c
+        sites = ctx.construction_sites
+
+        if campfire_pos is None:
+            nearby_campfire_site = any(
+                s.build_type == "campfire"
+                and math.hypot(c.x - s.x, c.y - s.y) < ci_settings.NEW_CAMPFIRE_JOIN_SEARCH_RADIUS
+                for s in sites
+            )
+            if not nearby_campfire_site:
+                return "campfire"
+            return None
+
+        owns_house = any(c.id in h.owner_ids for h in ctx.houses)
+        if not owns_house:
+            already_building = any(
+                s.build_type == "house" and self._site_belongs_to(s, ctx)
+                for s in sites
+            )
+            if already_building:
+                return None  # дом уже в процессе - на остальное пока не отвлекаемся
+            return "house"
+
+        house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+        owned_field = next((f for f in ctx.storage_fields
+                            if house is not None and f.house_id == house.id), None)
+        if owned_field is None:
+            owned_site = next((s for s in sites
+                               if s.build_type == "storage"
+                               and math.hypot(c.x - s.x, c.y - s.y) < ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS
+                               and self._site_belongs_to(s, ctx)), None)
+            if owned_site is None:
+                return "storage"
+
+        if c.burial.known_graveyard is None:
+            linked = self._find_campfire_linked_graveyard(campfire_pos, ctx.graveyards)
+            if linked is not None:
+                c.burial.known_graveyard = (linked.x, linked.y)
+            elif not any(s.build_type == "graveyard" for s in sites):
+                return "graveyard"
+        return None
+
+    # =====================================================================
+    # Домен: место для дома - сперва пробуем "встроиться в общество" рядом
+    # с уже существующим или строящимся костром. Если анкеров нет вообще
+    # (костров ещё не построено) или ни у одного не нашлось свободного
+    # места - _find_or_create_site ниже сам переключит самца на постройку
+    # нового костра в другом месте.
+    # =====================================================================
+
+    def _collect_campfire_anchors(self, campfire_pos, ctx):
+        c = self.c
+        anchors = []
+
+        def _add(pos):
+            if pos is None:
+                return
+            if any(math.hypot(pos[0] - a[0], pos[1] - a[1]) < self.CAMPFIRE_ANCHOR_MERGE_RADIUS
+                   for a in anchors):
+                return
+            anchors.append(pos)
+
+        _add(campfire_pos)
+        for fire in ctx.campfires:
+            _add((fire.x, fire.y))
+        for site in ctx.construction_sites:
+            if site.build_type == "campfire":
+                _add((site.x, site.y))
+
+        if not anchors:
+            anchors.append((c.x, c.y))
+        return anchors
+
+    def _score_best_house_site_near(self, anchor, biome_grid, ctx):
+        best_point, best_score = None, None
+        for _ in range(ci_settings.HOUSE_SITE_SCORE_ATTEMPTS):
+            angle = random.uniform(0, 2 * math.pi)
+            dist = random.uniform(*ci_settings.HOUSE_BUILD_OFFSET_RANGE)
+            point = geometry.clamped_point(anchor[0], anchor[1], angle, dist)
+            if not self._point_clear(point, "house", biome_grid, ctx):
+                continue
+            score = self._score_house_site(point, anchor, biome_grid, ctx)
+            if best_score is None or score > best_score:
+                best_score, best_point = score, point
+        return best_point, best_score
+
+    def _pick_house_point(self, campfire_pos, biome_grid, ctx):
+        anchors = self._collect_campfire_anchors(campfire_pos, ctx)
+
+        best_point, best_score = None, None
+        for anchor in anchors:
+            point, score = self._score_best_house_site_near(anchor, biome_grid, ctx)
+            if point is None:
+                continue
+            if best_score is None or score > best_score:
+                best_score, best_point = score, point
+        return best_point
+
+    _PUBLIC_ORPHAN_TYPES = frozenset(("campfire", "graveyard"))
+
+    def _find_or_create_site(self, build_type, campfire_pos, ctx):
+        owner_attr = self._OWNER_ATTR_BY_TYPE.get(build_type)
+        if owner_attr is None:
+            return super()._find_or_create_site(build_type, campfire_pos, ctx)
+
+        c = self.c
+        # ---------- Ищем только свою (или бесхозную) площадку ----------
+        for site in ctx.construction_sites:
+            if site.build_type != build_type:
+                continue
+            if math.hypot(c.x - site.x, c.y - site.y) >= ci_settings.CONSTRUCTION_SITE_SEARCH_RADIUS:
+                continue
+            if self._site_belongs_to(site, ctx):
+                if getattr(site, owner_attr, None) is None:
+                    setattr(site, owner_attr, c.id)
+                return site
+
+        # ---------- Своей нет - создаём новую, а не подбираем чужую через базовый поиск ----------
+        site = self._create_site(build_type, campfire_pos, ctx)
+        if site is None:
+            return None
+
+        setattr(site, owner_attr, c.id)
+        if build_type == "storage":
+            house = next((h for h in ctx.houses if c.id in h.owner_ids), None)
+            if house is not None:
+                site.linked_house_id = house.id
+        return site

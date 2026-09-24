@@ -10,13 +10,13 @@ from .patterns import (
     Feeding,
     GoalComponent,
     PartnerBond,
+    PrivateStorage,
     ResourceActions,
     Roads,
     SocialResponse,
     SurvivalNeeds,
     lookup_creature,
 )
-from .private_storage import PrivateStorage
 
 # =========================================================================
 # Опека над случайными (не своими) детьми - только у OlderAI

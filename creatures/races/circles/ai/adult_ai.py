@@ -13,12 +13,13 @@ from .patterns import (
     Feeding,
     GoalComponent,
     PartnerBond,
+    PrivateConstruction,
+    PrivateStorage,
     ResourceActions,
     Roads,
     SocialResponse,
     SurvivalNeeds,
 )
-from .private_storage import PrivateConstruction, PrivateStorage
 
 # =========================================================================
 # Территориальная защита - только у AdultAI

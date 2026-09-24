@@ -21,6 +21,32 @@ def is_blood_relative(a, b):
         return True
     return _shares_parent(a.parent_ids, b.parent_ids)
 
+# ---------- Принадлежность к одному "домохозяйству" (владение складом/домом) ----------
+
+def same_household(creature, owner_id, other_creatures=None):
+    """owner_id - сам creature, его партнёр, либо (для ребёнка) один из родителей-владельцев."""
+    if owner_id is None:
+        return False
+    if creature.id == owner_id:
+        return True
+    if creature.partner_id == owner_id:
+        return True
+    if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.parent_ids
+            and owner_id in creature.parent_ids):
+        return True
+    for other in other_creatures or ():
+        if (other.id == owner_id and other.life_stage == ci_settings.LIFE_STAGE_CHILD
+                and other.parent_ids and creature.id in other.parent_ids):
+            return True
+    return False
+
+def field_belongs_to(creature, field, other_creatures=None):
+    """Публичный склад (без owner_ids) доступен всем; частный - только своему домохозяйству."""
+    owner_ids = getattr(field, "owner_ids", None)
+    if not owner_ids:
+        return True
+    return any(same_household(creature, owner_id, other_creatures) for owner_id in owner_ids)
+
 class CreatureAging(WeakOwnerMixin):
     def __init__(self, creature):
         super().__init__(creature)
