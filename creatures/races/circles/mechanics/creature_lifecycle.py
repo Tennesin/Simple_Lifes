@@ -128,7 +128,6 @@ _CREATURE_SIMPLE_FIELDS = (
     ("pregnancy_timer", "pregnancy_timer", 0.0),
     ("storage_supply_mode", "storage_supply_mode", False),
     ("elder_ward_id", "elder_ward_id", None),
-    ("urgent_child_timer", "urgent_child_timer", 0.0),
     ("home_id", "home_id", None),
     ("home_eviction_timer", "home_eviction_timer", 0.0),
     ("known_campfire_id", "known_campfire_id", None),

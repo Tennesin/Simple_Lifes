@@ -197,8 +197,8 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             return
         parent = self._find_visible_parent(c.parent_ids, visible_companions)
         if parent is not None:
-            parent.urgent_child_id = c.id
-            parent.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
+            parent.feeding.urgent_child_id = c.id
+            parent.feeding.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
             return
 
         guardian = next(
@@ -207,8 +207,8 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             None
         )
         if guardian is not None:
-            guardian.urgent_child_id = c.id
-            guardian.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
+            guardian.feeding.urgent_child_id = c.id
+            guardian.feeding.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
 
     def _consider_hunger_signal(self, visible_companions, other_creatures, storage_fields, houses,
                                  biome_grid=None):

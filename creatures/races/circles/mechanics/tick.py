@@ -16,7 +16,6 @@ from .input_events import (
     cleanup_area_for_new_graveyard,
 )
 
-
 def tick_circle_world(game, dt):
     for gy in game.world.graveyards:
         gy.update(dt)

@@ -423,7 +423,7 @@ class Construction(GoalComponent):
 
         site = ConstructionSite(point[0], point[1], build_type, campfire_pos=campfire_pos)
         ctx.construction_sites.append(site)
-        c.pending_site_cleanup = site
+        c.construction.pending_site_cleanup = site
         return site
 
     # ---------- Доставка материалов / стройка ----------
