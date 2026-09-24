@@ -77,7 +77,7 @@ def _draw_creatures(renderer, screen, game, camera, in_view):
     show_status_rings = game.display_settings["show_status_rings"]
     show_creature_names = game.display_settings["show_creature_names"]
     for creature in game.world.creatures:
-        if not creature.is_dead and getattr(creature, "at_home", False):
+        if not creature.is_dead and getattr(getattr(creature, "housing", None), "at_home", False):
             continue
         if in_view(creature.x, creature.y):
             pos = camera.apply_pos((creature.x, creature.y))

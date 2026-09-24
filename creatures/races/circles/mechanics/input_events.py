@@ -105,7 +105,7 @@ def on_delete_house(game, house):
                  if not c.is_dead and (c.id in house.owner_ids or c.id in house.resident_ids)]
 
     for creature in residents:
-        creature.home_id = None
+        creature.housing.home_id = None
         creature.fear_timer = max(creature.fear_timer, ci_settings.HOUSE_DESTRUCTION_PANIC_DURATION)
         creature.fear_source = (house.x, house.y)
         creature.player_relationship = geometry.clamp(

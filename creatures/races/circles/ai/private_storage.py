@@ -35,7 +35,7 @@ class PrivateStorage(Storage):
 
     def _owned_field(self, ctx):
         c = self.c
-        house = next((h for h in ctx.houses if c.id in h.owner_ids or c.home_id == h.id), None)
+        house = next((h for h in ctx.houses if c.id in h.owner_ids or c.housing.home_id == h.id), None)
         if house is not None:
             return house.storage_field(ctx.storage_fields)
         campfire_pos = self.instincts.nearest_known_campfire()
@@ -55,7 +55,7 @@ class PrivateStorage(Storage):
         c = self.c
         field = self._owned_field(ctx)
         if field is None:
-            c.storage_supply_mode = False
+            c.storage_supply.mode = False
             return None
         return self._pursue_supply(field, ctx)
 

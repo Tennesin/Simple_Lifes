@@ -119,7 +119,7 @@ class CreatureNeeds(WeakOwnerMixin):
                 drain_multiplier *= ci_settings.PREGNANCY_ENERGY_MULTIPLIER
             if biome == settings.BIOME_DESERT:
                 drain_multiplier *= ci_settings.DESERT_ENERGY_DRAIN_MULTIPLIER
-            if getattr(c, "at_home", False):
+            if c.housing.at_home:
                 drain_multiplier *= ci_settings.HOME_ENERGY_DRAIN_MULTIPLIER
             c.energy -= (dt / ci_settings.ENERGY_DRAIN_INTERVAL) * drain_multiplier
             if c.energy <= 0:

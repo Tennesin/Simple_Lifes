@@ -76,8 +76,8 @@ def circle_object_panel_extra_lines(obj, creatures):
                       (200, 200, 200)))
 
         inside_now = [c for c in creatures
-                      if not c.is_dead and getattr(c, "home_id", None) == obj.id
-                      and hasattr(c, "is_in_own_house") and c.is_in_own_house([obj])]
+                      if not c.is_dead and hasattr(c, "is_in_own_house")
+                      and c.housing.home_id == obj.id and c.is_in_own_house([obj])]
         if inside_now:
             names = ", ".join(c.name if c.name else c.id for c in inside_now)
             lines.append((ci_info.INFO_INFO_HOUSE_INSIDE_NOW.format(names=names), (150, 220, 150)))

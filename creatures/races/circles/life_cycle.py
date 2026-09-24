@@ -62,8 +62,8 @@ class CreatureAging(WeakOwnerMixin):
             c.play_role = None
             c.play_timer = 0.0
             # ---------- Сыновья получают отсрочку перед выселением из родного дома ----------
-            if c.gender == ci_settings.GENDER_MALE and c.home_id is not None:
-                c.home_eviction_timer = ci_settings.HOUSE_SON_GRACE_PERIOD
+            if c.gender == ci_settings.GENDER_MALE and c.housing.home_id is not None:
+                c.housing.home_eviction_timer = ci_settings.HOUSE_SON_GRACE_PERIOD
 
     def _apply_old_modifiers(self):
         c = self.c

@@ -163,13 +163,13 @@ class _SleepInstinctMixin:
 
     def _resolve_home_house(self, houses):
         c = self.c
-        if not houses or c.home_id is None:
+        if not houses or c.housing.home_id is None:
             return None
-        house = next((h for h in houses if h.id == c.home_id), None)
+        house = next((h for h in houses if h.id == c.housing.home_id), None)
         if house is None:
             return None
         if c.id not in house.resident_ids:
-            c.home_id = None
+            c.housing.home_id = None
             return None
         return house
 
@@ -205,7 +205,7 @@ class _LandmarkLookupMixin:
     def find_storage_field(self, storage_fields, houses=None):
         c = self.c
         if houses:
-            house = next((h for h in houses if c.id in h.owner_ids or c.home_id == h.id), None)
+            house = next((h for h in houses if c.id in h.owner_ids or c.housing.home_id == h.id), None)
             if house is not None:
                 field = next((f for f in storage_fields if getattr(f, "house_id", None) == house.id), None)
                 if field is not None:

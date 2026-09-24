@@ -212,7 +212,7 @@ class Feeding(GoalComponent):
             feeding.feed_target_id = urgent_child.id
 
         if feeding.carried_fruit or feeding.carried_water:
-            if c.storage_supply_mode and urgent_child is None:
+            if c.storage_supply.mode and urgent_child is None:
                 return None
 
             recipient = urgent_child
@@ -221,7 +221,7 @@ class Feeding(GoalComponent):
             if recipient is None:
                 recipient = self.actions.find_needy_friend(other_creatures)
             if recipient:
-                c.storage_supply_mode = False
+                c.storage_supply.mode = False
                 feeding.feed_target_id = recipient.id
                 return self.actions.deliver_resource_to(recipient)
             feeding.carried_fruit = False

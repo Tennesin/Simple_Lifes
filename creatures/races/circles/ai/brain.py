@@ -253,7 +253,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
         c.state = ci_settings.STATE_CALM
 
         houses = ctx.race_collections.get("houses", []) if ctx is not None else []
-        house = next((h for h in houses if h.id == c.home_id), None) if c.home_id is not None else None
+        house = next((h for h in houses if h.id == c.housing.home_id), None) if c.housing.home_id is not None else None
         if house is not None:
             if not c.is_in_own_house(houses):
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_IDLE_GO_HOME

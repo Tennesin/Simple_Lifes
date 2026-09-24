@@ -500,7 +500,6 @@ class Construction(GoalComponent):
             new_object = Campfire(site.x, site.y)
             ctx.campfires.append(new_object)
 
-
         elif site.build_type == "storage":
             new_object = StorageField(site.x, site.y, owner_campfire_pos=site.campfire_pos)
             primary_owner_id = getattr(site, "storage_owner_id", None) or c.id
@@ -532,7 +531,7 @@ class Construction(GoalComponent):
             primary_owner_id = getattr(site, "house_owner_id", None) or c.id
             new_object.owner_ids.add(primary_owner_id)
             new_object.resident_ids.add(primary_owner_id)
-            c.home_id = new_object.id
+            c.housing.home_id = new_object.id
 
             primary_owner = lookup_creature(ctx.other_creatures, primary_owner_id, ctx.other_by_id)
             partner_id = primary_owner.partner_id if primary_owner is not None else c.partner_id
@@ -541,14 +540,14 @@ class Construction(GoalComponent):
                 if new_object.add_resident(partner_id):
                     partner = next((o for o in ctx.other_creatures if o.id == partner_id), None)
                     if partner is not None:
-                        partner.home_id = new_object.id
+                        partner.housing.home_id = new_object.id
 
             # ---------- Ещё не расселённые дети переезжают вместе с семьёй ----------
             for child in ctx.other_creatures:
                 if (not child.is_dead and child.home_id is None
                         and child.parent_ids and primary_owner_id in child.parent_ids):
                     if new_object.add_resident(child.id):
-                        child.home_id = new_object.id
+                        child.housing.home_id = new_object.id
 
             ctx.houses.append(new_object)
 

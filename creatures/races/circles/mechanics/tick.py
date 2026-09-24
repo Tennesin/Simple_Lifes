@@ -356,7 +356,7 @@ class CircleTickProcessor:
                     and not creature.is_grabbed):
                 continue
 
-            creature.at_home = creature.is_in_own_house(world.houses)
+            creature.housing.at_home = creature.is_in_own_house(world.houses)
             creature.update_needs(ctx.dt, world.creatures, biome_grid=game.biome_manager.grid)
             if creature.is_dead:
                 if game.player.grabbed_creature is creature:
@@ -370,14 +370,14 @@ class CircleTickProcessor:
                 continue
 
             # ---------- Выселение сына по истечении отсрочки ----------
-            if creature.home_eviction_timer > 0:
-                creature.home_eviction_timer -= ctx.dt
-                if creature.home_eviction_timer <= 0 and creature.home_id is not None:
-                    house = next((h for h in world.houses if h.id == creature.home_id), None)
+            if creature.housing.home_eviction_timer > 0:
+                creature.housing.home_eviction_timer -= ctx.dt
+                if creature.housing.home_eviction_timer <= 0 and creature.housing.home_id is not None:
+                    house = next((h for h in world.houses if h.id == creature.housing.home_id), None)
                     if house is not None:
                         house.remove_resident(creature.id)
-                    creature.home_id = None
-                    creature.home_eviction_timer = 0.0
+                    creature.housing.home_id = None
+                    creature.housing.home_eviction_timer = 0.0
                     creature.goal_text = ci_info.INFO_CREATURE_GOAL_HOUSE_EVICTED
 
             if (game.biome_manager.grid is not None

@@ -444,8 +444,8 @@ class House:
     def carried_entities(self, game):
         """Существа внутри дома: они переезжают вместе с ним и не мешают его размещению."""
         return [c for c in game.world.creatures
-                if not c.is_dead and getattr(c, "home_id", None) == self.id
-                and getattr(c, "at_home", False)]
+                if not c.is_dead and getattr(c, "race_name", None) == ci_settings.RACE_NAME
+                and c.housing.home_id == self.id and c.housing.at_home]
 
     # ---------- Склад: физическая привязка к дому ----------
 

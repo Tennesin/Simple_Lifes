@@ -304,8 +304,8 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         if not houses:
             return None
 
-        if c.home_id is not None:
-            house = next((h for h in houses if h.id == c.home_id), None)
+        if c.housing.home_id is not None:
+            house = next((h for h in houses if h.id == c.housing.home_id), None)
             if house is not None:
                 return house
 
@@ -359,9 +359,9 @@ class _ChildHomeMixin(_ChildAIMixinBase):
 
     def _consider_go_home(self, houses):
         c = self.c
-        if not houses or c.home_id is None:
+        if not houses or c.housing.home_id is None:
             return None
-        house = next((h for h in houses if h.id == c.home_id), None)
+        house = next((h for h in houses if h.id == c.housing.home_id), None)
         if house is None:
             return None
 

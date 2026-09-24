@@ -11,6 +11,8 @@ from .construction_state import ConstructionState
 from .feeding_state import FeedingState
 from .puberty_state import PubertyState
 from .road_verify_state import RoadVerifyState
+from .storage_supply_state import StorageSupplyState
+from .housing_state import HousingState
 
 __all__ = [
     "StateBlock", "BurialState", "ChildRoadPlayState", "ConstructionState",

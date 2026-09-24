@@ -33,6 +33,8 @@ from .state.child_road_play_state import ChildRoadPlayState
 from .state.road_verify_state import RoadVerifyState
 from .state.construction_state import ConstructionState
 from .state.feeding_state import FeedingState
+from .state.storage_supply_state import StorageSupplyState
+from .state.housing_state import HousingState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -251,15 +253,12 @@ class Creature(LivingEntity):
         # =====================================================================
         # Семейный склад запасов
         # =====================================================================
-        self.storage_supply_check_timer = random.uniform(*ci_settings.STORAGE_SUPPLY_CHECK_INTERVAL)
-        self.storage_supply_mode = False
+        self.storage_supply = StorageSupplyState.rolled()
 
         # =====================================================================
         # Жильё
         # =====================================================================
-        self.home_id = None
-        self.home_eviction_timer = 0.0
-        self.at_home = False
+        self.housing = HousingState()
 
         # =====================================================================
         # Добыча ресурсов и строительство
@@ -307,9 +306,9 @@ class Creature(LivingEntity):
         return True
 
     def is_in_own_house(self, houses):
-        if self.home_id is None:
+        if self.housing.home_id is None:
             return False
-        house = next((h for h in houses if h.id == self.home_id), None)
+        house = next((h for h in houses if h.id == self.housing.home_id), None)
         if house is None:
             return False
         if self.id not in house.resident_ids:
@@ -370,7 +369,6 @@ class Creature(LivingEntity):
         self.seeking_food = False
         self.seeking_water = False
         self.seeking_sanity = False
-        self.at_home = False
         self.freeze_timer = 0.0
         self.spike_invuln_timer = 0.0
         self.calm_timer = 0.0
@@ -392,7 +390,6 @@ class Creature(LivingEntity):
         self.grab_before_state = None
         self.social_request_timer = 0.0
         self.social_request_point = None
-        self.storage_supply_mode = False
         self.state = ci_settings.STATE_CALM
         self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
         self.elder_ward_id = None
@@ -406,6 +403,8 @@ class Creature(LivingEntity):
         self.feeding.reset()
         self.child_road_play.reset()
         self.road_verify.reset()
+        self.storage_supply.reset()
+        self.housing.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -596,7 +595,6 @@ class Creature(LivingEntity):
             "is_pregnant": self.is_pregnant,
             "pregnancy_timer": self.pregnancy_timer,
             "parent_ids": list(self.parent_ids) if self.parent_ids else None,
-            "storage_supply_mode": self.storage_supply_mode,
             "elder_ward_id": self.elder_ward_id,
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
@@ -607,12 +605,12 @@ class Creature(LivingEntity):
             "psyche_calmness": self.psyche.calmness,
             "psyche_confidence": self.psyche.confidence,
             "psyche_attachment": self.psyche.attachment,
-            "home_id": self.home_id,
-            "home_eviction_timer": self.home_eviction_timer,
             **self.puberty.to_persisted_dict(),
             **self.burial.to_persisted_dict(),
             **self.feeding.to_persisted_dict(),
             **self.construction.to_persisted_dict(),
+            **self.storage_supply.to_persisted_dict(),
+            **self.housing.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

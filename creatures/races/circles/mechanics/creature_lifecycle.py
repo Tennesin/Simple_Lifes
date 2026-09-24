@@ -10,10 +10,13 @@ from .. import ci_settings
 from ..creature import Creature
 from ..genealogy import GenealogyRegistry
 from ..life_cycle import CreatureAging
+
 from ..state.puberty_state import PubertyState
 from ..state.burial_state import BurialState
 from ..state.construction_state import ConstructionState
 from ..state.feeding_state import FeedingState
+from ..state.storage_supply_state import StorageSupplyState
+from ..state.housing_state import HousingState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -126,10 +129,7 @@ _CREATURE_SIMPLE_FIELDS = (
     ("partner_id", "partner_id", None),
     ("is_pregnant", "is_pregnant", False),
     ("pregnancy_timer", "pregnancy_timer", 0.0),
-    ("storage_supply_mode", "storage_supply_mode", False),
     ("elder_ward_id", "elder_ward_id", None),
-    ("home_id", "home_id", None),
-    ("home_eviction_timer", "home_eviction_timer", 0.0),
     ("known_campfire_id", "known_campfire_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
     ("is_sleeping", "is_sleeping", False),
@@ -173,6 +173,8 @@ def _load_creature_age_and_stage(creature, state):
     creature.life_stage = CreatureAging.compute_stage(creature.age)
     creature.aging.sync_stage_modifiers()
 
+# ---------- state-блок ----------
+
 def _load_creature_puberty(creature, state):
     creature.puberty = PubertyState.from_persisted_dict(state)
     creature.aging.sync_puberty_state()
@@ -185,6 +187,12 @@ def _load_creature_construction(creature, state):
 
 def _load_creature_feeding(creature, state):
     creature.feeding = FeedingState.from_persisted_dict(state)
+
+def _load_creature_storage_supply(creature, state):
+    creature.storage_supply = StorageSupplyState.from_persisted_dict(state)
+
+def _load_creature_housing(creature, state):
+    creature.housing = HousingState.from_persisted_dict(state)
 
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:
@@ -204,6 +212,8 @@ def load_creature_from_state(state):
     _load_creature_psyche(creature, state)
     _load_creature_construction(creature, state)
     _load_creature_feeding(creature, state)
+    _load_creature_storage_supply(creature, state)
+    _load_creature_housing(creature, state)
     return creature
 
 # =========================================================================

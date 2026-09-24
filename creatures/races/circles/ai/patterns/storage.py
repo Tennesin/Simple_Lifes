@@ -30,8 +30,8 @@ class Storage(GoalComponent):
         c = self.c
         field = self.instincts.find_storage_field(ctx.storage_fields, houses=ctx.houses)
         if field is None:
-            if c.storage_supply_mode and (c.feeding.carried_fruit or c.feeding.carried_water):
-                c.storage_supply_mode = False
+            if c.storage_supply.mode and (c.feeding.carried_fruit or c.feeding.carried_water):
+                c.storage_supply.mode = False
             return None
         return self._pursue_supply(field, ctx)
 
@@ -47,10 +47,10 @@ class Storage(GoalComponent):
         if c.reuniting_with_partner:
             return None
 
-        if c.storage_supply_check_timer > 0:
-            c.storage_supply_check_timer -= ctx.dt
+        if c.storage_supply.check_timer > 0:
+            c.storage_supply.check_timer -= ctx.dt
             return None
-        c.storage_supply_check_timer = random.uniform(*ci_settings.STORAGE_SUPPLY_CHECK_INTERVAL)
+        c.storage_supply.check_timer = random.uniform(*ci_settings.STORAGE_SUPPLY_CHECK_INTERVAL)
 
         fetch_fruit = (self.actions.go_fetch_fruit, ctx.visible_fruits, field.has_space_for_fruit)
         fetch_water = (
@@ -62,7 +62,7 @@ class Storage(GoalComponent):
             if has_space_fn():
                 goal = fetch_fn(visible_objs)
                 if goal:
-                    c.storage_supply_mode = True
+                    c.storage_supply.mode = True
                     return goal
         return None
 
@@ -81,12 +81,12 @@ class Storage(GoalComponent):
                     urgent_child = candidate
             needy = urgent_child if urgent_child is not None else self.actions.find_needy_friend(ctx.visible_companions)
             if needy:
-                c.storage_supply_mode = False
+                c.storage_supply.mode = False
                 c.feeding.feed_target_id = needy.id
                 return self.actions.deliver_resource_to(needy)
             c.feeding.carried_fruit = False
             c.feeding.carried_water = False
-            c.storage_supply_mode = False
+            c.storage_supply.mode = False
             return None
 
         c.state = ci_settings.STATE_SEEKING
@@ -103,7 +103,7 @@ class Storage(GoalComponent):
             field.water += 1
             c.feeding.carried_water = False
 
-        c.storage_supply_mode = False
+        c.storage_supply.mode = False
         c.goal_text = ci_info.INFO_CREATURE_GOAL_STORAGE_STOCKED
         c.target = (c.x, c.y)
         return c.target
