@@ -148,7 +148,7 @@ class CirclePathfinder(BasePathfinder):
         c = self.c
         multiplier = ci_settings.PANIC_SPEED_MULTIPLIER if c.panic_active else c.base_speed_multiplier
 
-        if getattr(c, "is_pregnant", False) and not c.panic_active:
+        if c.family.is_pregnant and not c.panic_active:
             multiplier *= ci_settings.PREGNANCY_SPEED_MULTIPLIER
 
         psyche = getattr(c, "psyche", None)
