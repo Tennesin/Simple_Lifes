@@ -45,7 +45,7 @@ class Storage(GoalComponent):
             return None
         if c.needs.wellbeing_score() < ci_settings.PARENT_FEED_MIN_WELLBEING:
             return None
-        if c.reuniting_with_partner:
+        if c.family.reuniting_with_partner:
             return None
 
         if c.storage_supply.check_timer > 0:

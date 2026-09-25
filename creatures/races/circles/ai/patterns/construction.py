@@ -535,7 +535,7 @@ class Construction(GoalComponent):
             c.housing.home_id = new_object.id
 
             primary_owner = lookup_creature(ctx.other_creatures, primary_owner_id, ctx.other_by_id)
-            partner_id = primary_owner.partner_id if primary_owner is not None else c.partner_id
+            partner_id = primary_owner.family.partner_id if primary_owner is not None else c.family.partner_id
             if partner_id is not None:
                 new_object.owner_ids.add(partner_id)
                 if new_object.add_resident(partner_id):
@@ -545,8 +545,8 @@ class Construction(GoalComponent):
 
             # ---------- Ещё не расселённые дети переезжают вместе с семьёй ----------
             for child in ctx.other_creatures:
-                if (not child.is_dead and child.home_id is None
-                        and child.parent_ids and primary_owner_id in child.parent_ids):
+                if (not child.is_dead and child.housing.home_id is None
+                        and child.family.parent_ids and primary_owner_id in child.family.parent_ids):
                     if new_object.add_resident(child.id):
                         child.housing.home_id = new_object.id
 

@@ -95,9 +95,9 @@ class CreatureNeeds(WeakOwnerMixin):
                 continue
             if c.distance_to(other) > vision_radius:
                 continue
-            if c.partner_id is not None and other.id == c.partner_id:
+            if c.family.partner_id is not None and other.id == c.family.partner_id:
                 return True
-            if other.parent_ids and c.id in other.parent_ids:
+            if other.family.parent_ids and c.id in other.family.parent_ids:
                 return True
             if c.social.get_relationship(other) >= ci_settings.CLOSE_FRIEND_SANITY_RELATIONSHIP:
                 return True

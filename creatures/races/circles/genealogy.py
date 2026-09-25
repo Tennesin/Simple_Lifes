@@ -19,7 +19,7 @@ class GenealogyRegistry:
         self.records[creature.id] = {
             "name": creature.name,
             "gender": creature.gender,
-            "parent_ids": list(creature.parent_ids) if creature.parent_ids else None,
+            "parent_ids": list(creature.family.parent_ids) if creature.family.parent_ids else None,
             "partner_ids": [],
             "is_dead": creature.is_dead,
         }

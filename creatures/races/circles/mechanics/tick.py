@@ -228,25 +228,25 @@ class CircleTickProcessor:
         house.remove_resident(owner_id)
 
         heir_id = None
-        partner = next((c for c in world.creatures if not c.is_dead and c.partner_id == owner_id), None)
+        partner = next((c for c in world.creatures if not c.is_dead and c.family.partner_id == owner_id), None)
         if partner is not None and partner.id in house.resident_ids:
             heir_id = partner.id
         else:
             sons = [c for c in world.creatures
-                    if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
+                    if not c.is_dead and c.family.parent_ids and owner_id in c.family.parent_ids
                     and c.gender == ci_settings.GENDER_MALE and c.id in house.resident_ids]
             if sons:
                 heir_id = min(sons, key=lambda s: s.age).id
             else:
                 unmarried_daughters = [c for c in world.creatures
-                                       if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
-                                       and c.gender == ci_settings.GENDER_FEMALE and c.partner_id is None
+                                       if not c.is_dead and c.family.parent_ids and owner_id in c.family.parent_ids
+                                       and c.gender == ci_settings.GENDER_FEMALE and c.family.partner_id is None
                                        and c.id in house.resident_ids]
                 if unmarried_daughters:
                     heir_id = random.choice(unmarried_daughters).id
                 else:
                     any_children = [c for c in world.creatures
-                                    if not c.is_dead and c.parent_ids and owner_id in c.parent_ids
+                                    if not c.is_dead and c.family.parent_ids and owner_id in c.family.parent_ids
                                     and c.id in house.resident_ids]
                     if any_children:
                         heir_id = random.choice(any_children).id
@@ -274,14 +274,14 @@ class CircleTickProcessor:
 
     def _transfer_storage_owner(self, field, owner_id, world):
         field.owner_ids.discard(owner_id)
-        partner = next((c for c in world.creatures if not c.is_dead and c.partner_id == owner_id), None)
+        partner = next((c for c in world.creatures if not c.is_dead and c.family.partner_id == owner_id), None)
 
         heir_id = None
         if partner is not None:
             heir_id = partner.id
         else:
             children = [c for c in world.creatures
-                       if not c.is_dead and c.parent_ids and owner_id in c.parent_ids]
+                       if not c.is_dead and c.family.parent_ids and owner_id in c.family.parent_ids]
             daughters = [c for c in children if c.gender == ci_settings.GENDER_FEMALE]
             sons = [c for c in children if c.gender == ci_settings.GENDER_MALE]
             if daughters:
@@ -349,8 +349,8 @@ class CircleTickProcessor:
 
             genealogy.register_creature(creature)
             genealogy.update_name(creature.id, creature.name)
-            if creature.partner_id is not None:
-                genealogy.register_pair(creature.id, creature.partner_id)
+            if creature.family.partner_id is not None:
+                genealogy.register_pair(creature.id, creature.family.partner_id)
 
             if (ctx.active_ids is not None and creature.id not in ctx.active_ids
                     and not creature.is_grabbed):

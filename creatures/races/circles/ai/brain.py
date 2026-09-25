@@ -67,10 +67,10 @@ class _TimerTickMixin(_BrainMixinBase):
             c.social_request_timer -= dt
         if c.feeding.urgent_child_timer > 0:
             c.feeding.urgent_child_timer -= dt
-        if c.reunite_commit_timer > 0:
-            c.reunite_commit_timer -= dt
-        if c.partner_reunite_cooldown > 0:
-            c.partner_reunite_cooldown -= dt
+        if c.family.reunite_commit_timer > 0:
+            c.family.reunite_commit_timer -= dt
+        if c.family.partner_reunite_cooldown > 0:
+            c.family.partner_reunite_cooldown -= dt
         if c.burial.graveyard_alert_timer > 0:
             c.burial.graveyard_alert_timer -= dt
         c.puberty.tick_cooldowns(dt)

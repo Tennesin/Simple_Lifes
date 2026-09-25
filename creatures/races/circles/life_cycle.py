@@ -6,7 +6,6 @@ from ...all_needed.base_entity import same_race
 from ...all_needed.weak_owner import WeakOwnerMixin
 from . import ci_settings
 
-
 def _shares_parent(ids_a, ids_b):
     if not ids_a or not ids_b:
         return False
@@ -15,28 +14,27 @@ def _shares_parent(ids_a, ids_b):
     return bool(set_a & set_b)
 
 def is_blood_relative(a, b):
-    if a.parent_ids and b.id in a.parent_ids:
+    if a.family.parent_ids and b.id in a.family.parent_ids:
         return True
-    if b.parent_ids and a.id in b.parent_ids:
+    if b.family.parent_ids and a.id in b.family.parent_ids:
         return True
-    return _shares_parent(a.parent_ids, b.parent_ids)
+    return _shares_parent(a.family.parent_ids, b.family.parent_ids)
 
 # ---------- Принадлежность к одному "домохозяйству" (владение складом/домом) ----------
 
 def same_household(creature, owner_id, other_creatures=None):
-    """owner_id - сам creature, его партнёр, либо (для ребёнка) один из родителей-владельцев."""
     if owner_id is None:
         return False
     if creature.id == owner_id:
         return True
-    if creature.partner_id == owner_id:
+    if creature.family.partner_id == owner_id:
         return True
-    if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.parent_ids
-            and owner_id in creature.parent_ids):
+    if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.family.parent_ids
+            and owner_id in creature.family.parent_ids):
         return True
     for other in other_creatures or ():
         if (other.id == owner_id and other.life_stage == ci_settings.LIFE_STAGE_CHILD
-                and other.parent_ids and creature.id in other.parent_ids):
+                and other.family.parent_ids and creature.id in other.family.parent_ids):
             return True
     return False
 
@@ -178,10 +176,37 @@ class CreatureAging(WeakOwnerMixin):
         return ci_settings.VISION_RADIUS
 
 class CreatureFamily(WeakOwnerMixin):
-    def __init__(self, creature):
+    def __init__(self, creature, parent_ids=None):
         super().__init__(creature)
         self.pair_check_timer = random.uniform(*ci_settings.FAMILY_PAIR_CHECK_INTERVAL)
         self.birth_cooldown = 0.0
+
+        # ---------- Партнёрство / потомство (этап 8) ----------
+        self.partner_id = None
+        self.is_pregnant = False
+        self.pregnancy_timer = 0.0
+        self.parent_ids = parent_ids
+        self.reuniting_with_partner = False
+        self.reunite_commit_timer = 0.0
+        self.partner_reunite_cooldown = 0.0
+
+    def reset(self):
+        """Смерть существа: сбрасывается только активная семейная жизнь.
+        parent_ids НЕ трогаем - родословная не стирается смертью."""
+        self.partner_id = None
+        self.is_pregnant = False
+        self.pregnancy_timer = 0.0
+        self.reuniting_with_partner = False
+        self.reunite_commit_timer = 0.0
+        self.partner_reunite_cooldown = 0.0
+
+    def to_persisted_dict(self):
+        return {
+            "partner_id": self.partner_id,
+            "is_pregnant": self.is_pregnant,
+            "pregnancy_timer": self.pregnancy_timer,
+            "parent_ids": list(self.parent_ids) if self.parent_ids else None,
+        }
 
     def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None, houses=None,
                nearby_creatures_grid=None):
@@ -192,18 +217,18 @@ class CreatureFamily(WeakOwnerMixin):
         if self.birth_cooldown > 0:
             self.birth_cooldown -= dt
 
-        partner = self._find_partner(other_creatures, c.partner_id, creatures_by_id)
+        partner = self._find_partner(other_creatures, self.partner_id, creatures_by_id)
         self._validate_partner(partner)
 
         self.pair_check_timer -= dt
-        if (c.partner_id is None and c.life_stage == ci_settings.LIFE_STAGE_ADULT
+        if (self.partner_id is None and c.life_stage == ci_settings.LIFE_STAGE_ADULT
                 and self.pair_check_timer <= 0):
             self.pair_check_timer = random.uniform(*ci_settings.FAMILY_PAIR_CHECK_INTERVAL)
             self._try_form_pair(other_creatures, storage_fields, houses, nearby_creatures_grid)
-            if c.partner_id is not None and (partner is None or partner.id != c.partner_id):
-                partner = self._find_partner(other_creatures, c.partner_id, creatures_by_id)
+            if self.partner_id is not None and (partner is None or partner.id != self.partner_id):
+                partner = self._find_partner(other_creatures, self.partner_id, creatures_by_id)
 
-        if c.is_pregnant:
+        if self.is_pregnant:
             return self._update_pregnancy(dt)
 
         self._try_conceive(dt, partner, houses)
@@ -216,14 +241,14 @@ class CreatureFamily(WeakOwnerMixin):
 
     def _validate_partner(self, partner):
         c = self.c
-        if c.partner_id is None:
+        if self.partner_id is None:
             return
         if partner is None or partner.is_dead:
-            c.partner_id = None
-            c.is_pregnant = False
-            c.pregnancy_timer = 0.0
-            c.reuniting_with_partner = False
-            c.reunite_commit_timer = 0.0
+            self.partner_id = None
+            self.is_pregnant = False
+            self.pregnancy_timer = 0.0
+            self.reuniting_with_partner = False
+            self.reunite_commit_timer = 0.0
             c.psyche.on_partner_lost()
 
     # ---------- Зачатие ----------
@@ -234,7 +259,7 @@ class CreatureFamily(WeakOwnerMixin):
             return
         if c.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return
-        if c.partner_id is None or self.birth_cooldown > 0:
+        if self.partner_id is None or self.birth_cooldown > 0:
             return
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
             return
@@ -258,8 +283,8 @@ class CreatureFamily(WeakOwnerMixin):
             chance *= ci_settings.PUBERTY_PREGNANCY_CHANCE_MULTIPLIER
 
         if random.random() < chance * dt:
-            c.is_pregnant = True
-            c.pregnancy_timer = random.uniform(*ci_settings.PREGNANCY_DURATION)
+            self.is_pregnant = True
+            self.pregnancy_timer = random.uniform(*ci_settings.PREGNANCY_DURATION)
 
     @staticmethod
     def _family_house_has_space(c, partner, houses):
@@ -299,7 +324,7 @@ class CreatureFamily(WeakOwnerMixin):
                 continue
             if other.gender == c.gender or other.life_stage != ci_settings.LIFE_STAGE_ADULT:
                 continue
-            if other.partner_id is not None:
+            if other.family.partner_id is not None:
                 continue
             if c.distance_to(other) > ci_settings.FAMILY_BOND_DISTANCE:
                 continue
@@ -320,8 +345,8 @@ class CreatureFamily(WeakOwnerMixin):
             return
 
         partner = min(candidates, key=lambda o: c.social.pairing_score(o, storage_fields))
-        c.partner_id = partner.id
-        partner.partner_id = c.id
+        self.partner_id = partner.id
+        partner.family.partner_id = c.id
         c.social.adjust_mutual_relationship(partner, ci_settings.FAMILY_PAIR_BOND_BONUS)
         c.psyche.on_pair_formed()
         partner.psyche.on_pair_formed()
@@ -335,20 +360,18 @@ class CreatureFamily(WeakOwnerMixin):
         male_house = next((h for h in houses if male.id in h.owner_ids), None)
 
         if male_house is not None and male_house.has_space():
-            if female.home_id and female.home_id != male_house.id:
-                old = next((h for h in houses if h.id == female.home_id), None)
+            if female.housing.home_id and female.housing.home_id != male_house.id:
+                old = next((h for h in houses if h.id == female.housing.home_id), None)
                 if old is not None:
                     old.remove_resident(female.id)
             if male_house.add_resident(female.id):
-                female.home_id = male_house.id
+                female.housing.home_id = male_house.id
         else:
-            # ---------- У жениха своего дома пока нет - невеста покидает отчий дом,
-            # переедет, когда муж построит жильё ----------
-            if female.home_id:
-                old = next((h for h in houses if h.id == female.home_id), None)
+            if female.housing.home_id:
+                old = next((h for h in houses if h.id == female.housing.home_id), None)
                 if old is not None:
                     old.remove_resident(female.id)
-                female.home_id = None
+                female.housing.home_id = None
 
     def _is_blood_relative(self, other):
         return is_blood_relative(self.c, other)
@@ -358,25 +381,24 @@ class CreatureFamily(WeakOwnerMixin):
     def _update_pregnancy(self, dt):
         c = self.c
         if c.needs.wellbeing_score() < ci_settings.PREGNANCY_MIN_WELLBEING_TO_CARRY:
-            c.is_pregnant = False
-            c.pregnancy_timer = 0.0
+            self.is_pregnant = False
+            self.pregnancy_timer = 0.0
             self.birth_cooldown = ci_settings.FAMILY_COOLDOWN_AFTER_BIRTH * 0.5
             return None
 
-        c.pregnancy_timer -= dt
-        if c.pregnancy_timer <= 0:
-            c.is_pregnant = False
-            c.pregnancy_timer = 0.0
+        self.pregnancy_timer -= dt
+        if self.pregnancy_timer <= 0:
+            self.is_pregnant = False
+            self.pregnancy_timer = 0.0
             self.birth_cooldown = ci_settings.FAMILY_COOLDOWN_AFTER_BIRTH
             c.psyche.on_birth()
-            return c.partner_id
+            return self.partner_id
         return None
 
     def has_living_parent(self, other_creatures):
-        c = self.c
-        if not c.parent_ids:
+        if not self.parent_ids:
             return False
-        for pid in c.parent_ids:
+        for pid in self.parent_ids:
             if pid is None:
                 continue
             parent = lookup_creature(other_creatures, pid)
@@ -385,10 +407,10 @@ class CreatureFamily(WeakOwnerMixin):
         return False
 
     def has_family(self, other_creatures):
-        c = self.c
-        if c.partner_id is not None:
+        if self.partner_id is not None:
             return True
-        return any(o.parent_ids and c.id in o.parent_ids and not o.is_dead for o in other_creatures)
+        return any(o.family.parent_ids and self.c.id in o.family.parent_ids and not o.is_dead
+                   for o in other_creatures)
 
 class CreatureTerritory(WeakOwnerMixin):
     def __init__(self, creature):
@@ -433,9 +455,9 @@ class CreatureTerritory(WeakOwnerMixin):
 
     def is_exempt(self, other):
         c = self.c
-        if other.id == c.partner_id:
+        if other.id == c.family.partner_id:
             return True
-        if other.parent_ids and c.id in other.parent_ids:
+        if other.family.parent_ids and c.id in other.family.parent_ids:
             return True
         if ci_settings.TERRITORY_EXEMPT_ALL_CHILDREN and other.life_stage == ci_settings.LIFE_STAGE_CHILD:
             return True
@@ -516,14 +538,14 @@ def _grief_mourner_age_multiplier(life_stage):
     return 1.0
 
 def _grief_kinship_penalty(deceased, mourner):
-    if mourner.partner_id == deceased.id:
+    if mourner.family.partner_id == deceased.id:
         return 0.0
 
-    if mourner.parent_ids and deceased.id in mourner.parent_ids:
+    if mourner.family.parent_ids and deceased.id in mourner.family.parent_ids:
         return ci_settings.GRIEF_BASE_PENALTY["parent_child"]
-    if deceased.parent_ids and mourner.id in deceased.parent_ids:
+    if deceased.family.parent_ids and mourner.id in deceased.family.parent_ids:
         return ci_settings.GRIEF_BASE_PENALTY["parent_child"]
-    if _shares_parent(mourner.parent_ids, deceased.parent_ids):
+    if _shares_parent(mourner.family.parent_ids, deceased.family.parent_ids):
         return ci_settings.GRIEF_BASE_PENALTY["sibling"]
 
     relationship = mourner.relationships.get(deceased.id, 0.0)

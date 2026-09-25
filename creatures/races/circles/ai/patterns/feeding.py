@@ -247,7 +247,7 @@ class Feeding(GoalComponent):
         if urgent_child is not None:
             needy = urgent_child
         else:
-            if c.reuniting_with_partner:
+            if c.family.reuniting_with_partner:
                 return None
             if feeding.parent_feed_check_timer > 0:
                 feeding.parent_feed_check_timer -= dt

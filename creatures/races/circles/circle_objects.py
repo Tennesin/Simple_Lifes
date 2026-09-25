@@ -95,10 +95,10 @@ class StorageField:
         if creature.id in self.owner_ids:
             return True
         for owner_id in self.owner_ids:
-            if creature.partner_id == owner_id:
+            if creature.family.partner_id == owner_id:
                 return True
-            if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.parent_ids
-                    and owner_id in creature.parent_ids):
+            if (creature.life_stage == ci_settings.LIFE_STAGE_CHILD and creature.family.parent_ids
+                    and owner_id in creature.family.parent_ids):
                 return True
         return False
 

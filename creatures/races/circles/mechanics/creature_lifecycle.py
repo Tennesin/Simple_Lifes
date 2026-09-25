@@ -65,7 +65,7 @@ class CircleSpawnManager:
 
         child.age = 0.0
         child.life_stage = ci_settings.LIFE_STAGE_CHILD
-        child.parent_ids = (mother.id, father.id if father is not None else None)
+        child.family.parent_ids = (mother.id, father.id if father is not None else None)
 
         if mother.known_campfire is not None:
             child.known_campfire = mother.known_campfire
@@ -77,10 +77,10 @@ class CircleSpawnManager:
             child.relationships[father.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
             father.relationships[child.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
 
-        if mother.home_id is not None:
-            house = next((h for h in game.world.houses if h.id == mother.home_id), None)
+        if mother.housing.home_id is not None:
+            house = next((h for h in game.world.houses if h.id == mother.housing.home_id), None)
             if house is not None and house.add_resident(child.id):
-                child.home_id = house.id
+                child.housing.home_id = house.id
 
         game.world.creatures.append(child)
 
@@ -126,9 +126,6 @@ _CREATURE_SIMPLE_FIELDS = (
     ("known_road_links", "known_road_links", dict),
     ("relationships", "relationships", dict),
     ("energy", "energy", ci_settings.ENERGY_MAX),
-    ("partner_id", "partner_id", None),
-    ("is_pregnant", "is_pregnant", False),
-    ("pregnancy_timer", "pregnancy_timer", 0.0),
     ("elder_ward_id", "elder_ward_id", None),
     ("known_campfire_id", "known_campfire_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
@@ -138,7 +135,6 @@ _CREATURE_SIMPLE_FIELDS = (
 
 _CREATURE_TUPLE_FIELDS = (
     ("known_campfire", "known_campfire"),
-    ("parent_ids", "parent_ids"),
 )
 
 _CREATURE_PSYCHE_FIELDS = (
@@ -182,6 +178,13 @@ def _load_creature_puberty(creature, state):
 def _load_creature_burial(creature, state):
     creature.burial = BurialState.from_persisted_dict(state)
 
+def _load_creature_family(creature, state):
+    creature.family.partner_id = state.get("partner_id")
+    creature.family.is_pregnant = state.get("is_pregnant", False)
+    creature.family.pregnancy_timer = state.get("pregnancy_timer", 0.0)
+    parent_ids = state.get("parent_ids")
+    creature.family.parent_ids = tuple(parent_ids) if parent_ids else None
+
 def _load_creature_construction(creature, state):
     creature.construction = ConstructionState.from_persisted_dict(state)
 
@@ -199,7 +202,6 @@ def _load_creature_psyche(creature, state):
         setattr(creature.psyche, attr, state.get(key, 0.0))
 
 def load_creature_from_state(state):
-    """Точка входа для game/race_registry.py: RaceDescriptor.loader_fn расы 'circle'."""
     creature = Creature(state["id"], name=state.get("name"),
                         temperament=state.get("temperament"),
                         gender=state.get("gender"))
@@ -209,6 +211,7 @@ def load_creature_from_state(state):
     _load_creature_age_and_stage(creature, state)
     _load_creature_puberty(creature, state)
     _load_creature_burial(creature, state)
+    _load_creature_family(creature, state)
     _load_creature_psyche(creature, state)
     _load_creature_construction(creature, state)
     _load_creature_feeding(creature, state)

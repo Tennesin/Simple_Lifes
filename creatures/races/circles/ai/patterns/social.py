@@ -147,17 +147,17 @@ class PartnerBond(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        if c.partner_id is None:
+        if c.family.partner_id is None:
             return [None]
 
-        if c.reuniting_with_partner:
+        if c.family.reuniting_with_partner:
             score = self.SCORE_COMMITTED
         else:
-            partner = lookup_creature(ctx.other_creatures, c.partner_id, ctx.other_by_id, alive_only=True)
+            partner = lookup_creature(ctx.other_creatures, c.family.partner_id, ctx.other_by_id, alive_only=True)
             if partner is None:
                 return [None]
             dist = c.distance_to(partner)
-            if dist <= ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE or c.partner_reunite_cooldown > 0:
+            if dist <= ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE or c.family.partner_reunite_cooldown > 0:
                 return [None]
             over = scale(dist - ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE,
                          0, ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE)
@@ -170,28 +170,28 @@ class PartnerBond(GoalComponent):
 
     def _pursue(self, ctx):
         c = self.c
-        partner = lookup_creature(ctx.other_creatures, c.partner_id, ctx.other_by_id, alive_only=True)
+        partner = lookup_creature(ctx.other_creatures, c.family.partner_id, ctx.other_by_id, alive_only=True)
 
         if partner is None:
-            c.reuniting_with_partner = False
-            c.reunite_commit_timer = 0.0
+            c.family.reuniting_with_partner = False
+            c.family.reunite_commit_timer = 0.0
             return None
 
         dist = c.distance_to(partner)
 
-        if c.reuniting_with_partner:
-            if dist <= ci_settings.FAMILY_REUNITE_EXIT_DISTANCE and c.reunite_commit_timer <= 0:
-                c.reuniting_with_partner = False
-                c.partner_reunite_cooldown = random.uniform(*ci_settings.PARTNER_REUNITE_COOLDOWN)
-        elif dist > ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE and c.partner_reunite_cooldown <= 0:
-            c.reuniting_with_partner = True
-            c.reunite_commit_timer = ci_settings.FAMILY_REUNITE_MIN_DURATION
+        if c.family.reuniting_with_partner:
+            if dist <= ci_settings.FAMILY_REUNITE_EXIT_DISTANCE and c.family.reunite_commit_timer <= 0:
+                c.family.reuniting_with_partner = False
+                c.family.partner_reunite_cooldown = random.uniform(*ci_settings.PARTNER_REUNITE_COOLDOWN)
+        elif dist > ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE and c.family.partner_reunite_cooldown <= 0:
+            c.family.reuniting_with_partner = True
+            c.family.reunite_commit_timer = ci_settings.FAMILY_REUNITE_MIN_DURATION
             if c.following_road is not None:
                 c.following_road = None
                 c.following_road_active = False
                 c.road_entry_reached = False
 
-        if c.reuniting_with_partner:
+        if c.family.reuniting_with_partner:
             c.state = ci_settings.STATE_SEEKING
             c.goal_text = ci_info.INFO_CREATURE_GOAL_FAMILY_REUNITE
             c.target = (partner.x, partner.y)

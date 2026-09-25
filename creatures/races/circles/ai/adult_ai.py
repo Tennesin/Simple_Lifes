@@ -127,7 +127,7 @@ class PubertyCourtship(GoalComponent):
     def consider(self, ctx):
         c = self.c
         puberty = c.puberty
-        if not puberty.active or c.partner_id is not None:
+        if not puberty.active or c.family.partner_id is not None:
             self._reset_courtship()
             puberty.fail_streak = 0
             return [None]
@@ -160,7 +160,7 @@ class PubertyCourtship(GoalComponent):
         if target_id is None:
             return None
         target = next((o for o in visible_companions if o.id == target_id), None)
-        if (target is None or target.is_dead or target.partner_id is not None
+        if (target is None or target.is_dead or target.family.partner_id is not None
                 or target.is_sleeping or target.panic_active or target.fear_timer > 0):
             self._reset_courtship()
             return None
@@ -177,7 +177,7 @@ class PubertyCourtship(GoalComponent):
             o for o in ctx.visible_companions
             if o.gender != c.gender
                and o.life_stage == ci_settings.LIFE_STAGE_ADULT
-               and o.partner_id is None
+               and o.family.partner_id is None
                and not o.is_dead and not o.is_sleeping
                and not o.panic_active and o.fear_timer <= 0
                and o.id not in avoid
@@ -208,7 +208,7 @@ class PubertyCourtship(GoalComponent):
         puberty = c.puberty
         dt = ctx.dt
 
-        if not puberty.active or c.partner_id is not None:
+        if not puberty.active or c.family.partner_id is not None:
             self._reset_courtship()
             return None
         if c.panic_active or c.fear_timer > 0 or c.is_sleeping:

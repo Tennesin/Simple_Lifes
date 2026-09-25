@@ -89,9 +89,9 @@ class CreatureInteractions(WeakOwnerMixin):
 
     def _check_jealousy(self, other_creatures, dt):
         c = self.c
-        if c.partner_id is None:
+        if c.family.partner_id is None:
             return
-        partner = next((o for o in other_creatures if o.id == c.partner_id and not o.is_dead), None)
+        partner = next((o for o in other_creatures if o.id == c.family.partner_id and not o.is_dead), None)
         if partner is None:
             return
         if c.distance_to(partner) > ci_settings.JEALOUSY_CHECK_DISTANCE:

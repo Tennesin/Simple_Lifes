@@ -223,15 +223,8 @@ class Creature(LivingEntity):
         self.road_verify = RoadVerifyState.rolled()
 
         # =====================================================================
-        # Семья / размножение
+        # Ориентиры (см. также CreatureFamily ниже - семья/размножение)
         # =====================================================================
-        self.partner_id = None
-        self.is_pregnant = False
-        self.pregnancy_timer = 0.0
-        self.parent_ids = None
-        self.reuniting_with_partner = False
-        self.reunite_commit_timer = 0.0
-        self.partner_reunite_cooldown = 0.0
         self.landmark_register_timer = random.uniform(0.0, 1.5)
 
         # =====================================================================
@@ -301,7 +294,7 @@ class Creature(LivingEntity):
     def can_jump_fences(self):
         if self.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return False
-        if self.gender == ci_settings.GENDER_FEMALE and self.is_pregnant:
+        if self.gender == ci_settings.GENDER_FEMALE and self.family.is_pregnant:
             return False
         return True
 
@@ -374,12 +367,6 @@ class Creature(LivingEntity):
         self.calm_timer = 0.0
         self.fear_timer = 0.0
         self.player_fear_timer = 0.0
-        self.partner_id = None
-        self.is_pregnant = False
-        self.pregnancy_timer = 0.0
-        self.reuniting_with_partner = False
-        self.reunite_commit_timer = 0.0
-        self.partner_reunite_cooldown = 0.0
         self.fear_source = None
         self.following_road = None
         self.following_road_active = False
@@ -405,6 +392,7 @@ class Creature(LivingEntity):
         self.road_verify.reset()
         self.storage_supply.reset()
         self.housing.reset()
+        self.family.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -591,10 +579,6 @@ class Creature(LivingEntity):
             "gender": self.gender,
             "age": self.age,
             "player_named": self.player_named,
-            "partner_id": self.partner_id,
-            "is_pregnant": self.is_pregnant,
-            "pregnancy_timer": self.pregnancy_timer,
-            "parent_ids": list(self.parent_ids) if self.parent_ids else None,
             "elder_ward_id": self.elder_ward_id,
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
@@ -611,6 +595,7 @@ class Creature(LivingEntity):
             **self.construction.to_persisted_dict(),
             **self.storage_supply.to_persisted_dict(),
             **self.housing.to_persisted_dict(),
+            **self.family.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

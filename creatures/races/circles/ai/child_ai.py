@@ -96,7 +96,7 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         c.panic_active = True
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_DISTRESS
 
-        parent = self._find_visible_parent(c.parent_ids, visible_companions)
+        parent = self._find_visible_parent(c.family.parent_ids, visible_companions)
         if parent is not None:
             c.target = (parent.x, parent.y)
             return c.target
@@ -114,7 +114,6 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
         c.target = self.instincts.pursue_search_target(biome_grid=biome_grid)
         return c.target
-
 
 # =========================================================================
 # Домен: перехват кормления - если взрослый уже несёт еду/воду именно
@@ -156,7 +155,6 @@ class _ChildFeedInterruptMixin(_ChildAIMixinBase):
         c.target = (c.x, c.y)
         return c.target
 
-
 # =========================================================================
 # Домен: сон ребёнка
 # =========================================================================
@@ -195,7 +193,7 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         if not (c.hunger < ci_settings.CHILD_FEED_HUNGER_THRESHOLD
                 or c.thirst < ci_settings.CHILD_FEED_THIRST_THRESHOLD):
             return
-        parent = self._find_visible_parent(c.parent_ids, visible_companions)
+        parent = self._find_visible_parent(c.family.parent_ids, visible_companions)
         if parent is not None:
             parent.feeding.urgent_child_id = c.id
             parent.feeding.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
@@ -226,7 +224,7 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         deficit = max(hunger_deficit, thirst_deficit)
         score = SCORE_CHILD_HUNGER_BASE + deficit * SCORE_CHILD_HUNGER_MAX_BONUS
 
-        parent = self._find_visible_parent(c.parent_ids, visible_companions)
+        parent = self._find_visible_parent(c.family.parent_ids, visible_companions)
         if parent is not None and c.distance_to(parent) < ci_settings.TALK_DISTANCE:
             score = max(score, SCORE_CHILD_FREE_TIME + 5.0)
 
@@ -253,7 +251,7 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
                 c.target = (field.x, field.y)
                 return c.target
 
-        parent = self._find_visible_parent(c.parent_ids, visible_companions)
+        parent = self._find_visible_parent(c.family.parent_ids, visible_companions)
         if parent is not None and c.distance_to(parent) < ci_settings.TALK_DISTANCE:
             c.state = ci_settings.STATE_SEEKING
             c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_HUNGER_SIGNAL
@@ -309,18 +307,18 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             if house is not None:
                 return house
 
-        if c.parent_ids:
-            for pid in c.parent_ids:
+        if c.family.parent_ids:
+            for pid in c.family.parent_ids:
                 if pid is None:
                     continue
                 parent = next((o for o in other_creatures if o.id == pid and not o.is_dead), None)
-                if parent is not None and parent.home_id is not None:
-                    house = next((h for h in houses if h.id == parent.home_id), None)
+                if parent is not None and parent.housing.home_id is not None:
+                    house = next((h for h in houses if h.id == parent.housing.home_id), None)
                     if house is not None:
                         return house
 
-        if guardian is not None and guardian.home_id is not None:
-            house = next((h for h in houses if h.id == guardian.home_id), None)
+        if guardian is not None and guardian.housing.home_id is not None:
+            house = next((h for h in houses if h.id == guardian.housing.home_id), None)
             if house is not None:
                 return house
 
@@ -610,7 +608,7 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
         near_fire = self.instincts.is_near_known_campfire()
         near_parent = False
         if not near_fire:
-            near_parent = self._find_visible_parent(c.parent_ids, visible_companions) is not None
+            near_parent = self._find_visible_parent(c.family.parent_ids, visible_companions) is not None
 
         near_caretaker = False
         if not near_fire and not near_parent:

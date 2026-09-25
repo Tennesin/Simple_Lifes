@@ -1,5 +1,7 @@
 """Бывший circles_adult_patterns.py, разбитый на пакет."""
 
+from .....all_needed.ai.utility import GoalComponent, lookup_creature
+
 from .construction import Construction, PrivateConstruction
 from .context import DecisionContext
 from .corpse import CorpseHandling

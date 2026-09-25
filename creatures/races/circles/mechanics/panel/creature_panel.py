@@ -295,7 +295,7 @@ class CreaturePanel:
         screen.blit(state_txt, (panel.x + 10, y))
         y += 24
 
-        if creature.gender == ci_settings.GENDER_FEMALE and creature.is_pregnant:
+        if creature.gender == ci_settings.GENDER_FEMALE and creature.family.is_pregnant:
             pregnant_txt = self.font.render(ci_info.INFO_INFO_PREGNANT, True, (255, 170, 210))
             screen.blit(pregnant_txt, (panel.x + 10, y))
             y += 24
@@ -335,10 +335,10 @@ class CreaturePanel:
         return ci_info.INFO_INFO_UNKNOWN_PARENT
 
     def _draw_parent_line(self, screen, creature, label_template, index, x, y):
-        if creature.parent_ids is None:
+        if creature.family.parent_ids is None:
             name = ci_info.INFO_INFO_HEAVEN
         else:
-            parent_id = creature.parent_ids[index] if index < len(creature.parent_ids) else None
+            parent_id = creature.family.parent_ids[index] if index < len(creature.family.parent_ids) else None
             name = (ci_info.INFO_INFO_UNKNOWN_PARENT if parent_id is None
                     else self._resolve_parent_name(parent_id))
         txt = self.font.render(label_template.format(name=name), True, settings.TEXT_COLOR)
@@ -352,9 +352,9 @@ class CreaturePanel:
         y = self._draw_parent_line(screen, creature, ci_info.INFO_INFO_FATHER, 1, x, y)
 
         partner = None
-        if creature.partner_id:
+        if creature.family.partner_id:
             partner = next((c for c in game.world.creatures
-                            if c.id == creature.partner_id and not c.is_dead), None)
+                            if c.id == creature.family.partner_id and not c.is_dead), None)
         partner_label = (partner.name if partner and partner.name
                          else (partner.id if partner else ci_info.INFO_INFO_PARTNER_NONE))
         partner_txt = self.font.render(
@@ -363,10 +363,10 @@ class CreaturePanel:
         y += 24
 
         sons = [c for c in game.world.creatures
-                if c.parent_ids and creature.id in c.parent_ids and not c.is_dead
+                if c.family.parent_ids and creature.id in c.family.parent_ids and not c.is_dead
                 and c.gender == ci_settings.GENDER_MALE]
         daughters = [c for c in game.world.creatures
-                     if c.parent_ids and creature.id in c.parent_ids and not c.is_dead
+                     if c.family.parent_ids and creature.id in c.family.parent_ids and not c.is_dead
                      and c.gender == ci_settings.GENDER_FEMALE]
 
         if not sons and not daughters:
@@ -483,9 +483,9 @@ class CreaturePanel:
             if other is None or other is creature:
                 continue
             is_close = (
-                    other.id == creature.partner_id or
-                    (other.parent_ids and creature.id in other.parent_ids) or
-                    (creature.parent_ids and other.id in creature.parent_ids)
+                    other.id == creature.family.partner_id or
+                    (other.family.parent_ids and creature.id in other.family.parent_ids) or
+                    (creature.family.parent_ids and other.id in creature.family.parent_ids)
             )
             entry = (other, value, is_close)
             (females if other.gender == ci_settings.GENDER_FEMALE else males).append(entry)
