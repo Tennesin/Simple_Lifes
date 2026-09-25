@@ -20,7 +20,7 @@ def analyze_python_file(filepath: str) -> tuple[int, list[str]]:
         except Exception:
             return 0, []
 
-def collect_statistics(main_dir: str, script_name: str, allowed_subdirs: set) -> tuple[int, int, int]:
+def collect_statistics(main_dir: str, ignored_files: set, allowed_subdirs: set) -> tuple[int, int, int]:
     """
     Собирает суммарную статистику по проекту:
     - total_loc: суммарное количество строк во всех .py файлах
@@ -40,8 +40,7 @@ def collect_statistics(main_dir: str, script_name: str, allowed_subdirs: set) ->
         total_dirs += len(dirs)
 
         for file in files:
-            # Пропускаем сам скрипт, если он лежит в корне
-            if root == main_dir and file == script_name:
+            if root == main_dir and file in ignored_files:
                 continue
             if file.endswith(".py"):
                 loc, classes = analyze_python_file(os.path.join(root, file))
@@ -54,6 +53,7 @@ def main():
     main_dir = os.path.dirname(os.path.abspath(__file__))
     script_name = os.path.basename(__file__)
 
+    ignored_files = {script_name, "scan_creature_refs.py"}
     base_target_dir = r"d:\Akmal\Personal\AI developed Mini-games\Simple Lifes\temporary"
     os.makedirs(base_target_dir, exist_ok=True)
 
@@ -68,7 +68,7 @@ def main():
         target_subdir = base_target_dir if rel_path == "." else os.path.join(base_target_dir, rel_path)
 
         for file in files:
-            if root == main_dir and file == script_name:
+            if root == main_dir and file in ignored_files:
                 continue
             if file.endswith(".py"):
                 source_path = os.path.join(root, file)
@@ -111,7 +111,7 @@ def main():
                 if os.path.isdir(full) and (dir_path != main_dir or entry in allowed_subdirs):
                     subdirs.append(entry)
                 elif os.path.isfile(full) and entry.endswith(".py"):
-                    if dir_path == main_dir and entry == script_name:
+                    if dir_path == main_dir and entry in ignored_files:
                         continue
                     py_files.append(entry)
         except PermissionError:
@@ -151,7 +151,7 @@ def main():
     print(f"Файл-скелет создан: {skeleton_path}")
 
     # СКЕЛЕТ_ПРОДВИНУТЫЙ с суммарной статистикой в начале
-    total_loc, total_classes, total_dirs = collect_statistics(main_dir, script_name, allowed_subdirs)
+    total_loc, total_classes, total_dirs = collect_statistics(main_dir, ignored_files, allowed_subdirs)
 
     stats_header = [
         "СУММАРНЫЕ ДАННЫЕ:",

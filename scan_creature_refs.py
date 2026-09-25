@@ -50,6 +50,7 @@ import os
 import sys
 
 DEFAULT_ROOT = "creatures/races/circles"
+DEFAULT_OUT_DIR = r"d:\Akmal\Personal\AI developed Mini-games\Simple Lifes\temporary\1_scan_results"
 DEFAULT_TARGETS = ("c", "self.c", "creature", "self.creature")
 IGNORED_DIR_NAMES = {"__pycache__", ".git", ".idea"}
 
@@ -486,6 +487,18 @@ def run_targeted_search(root, targets, self_classes, fields, out_path):
 
     print(f"Готово: {out_path} ({total} совпадений)")
 
+def resolve_out_path(out_arg, default_name):
+    """Если --out не задан - кладём файл в DEFAULT_OUT_DIR с именем по умолчанию.
+    Если --out задан и это абсолютный путь - используем как есть.
+    Если --out задан относительным - тоже кладём в DEFAULT_OUT_DIR."""
+    if out_arg:
+        path = out_arg if os.path.isabs(out_arg) else os.path.join(DEFAULT_OUT_DIR, out_arg)
+    else:
+        path = os.path.join(DEFAULT_OUT_DIR, default_name)
+
+    out_dir = os.path.dirname(path) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    return path
 
 def run_staged_inventory(root, targets, self_classes, stage_numbers, out_path):
     """Обращения только к полям из PLAN_STAGES, сгруппированные по этапу, а
@@ -584,7 +597,8 @@ def main():
                         help="Полная инвентаризация ВСЕХ полей без фильтра по PLAN_STAGES "
                              "(даёт большой файл - использовать только осознанно)")
     parser.add_argument("--out", default=None,
-                        help="Имя выходного файла (по умолчанию подбирается по режиму)")
+                        help=f"Имя/путь выходного файла. Относительный путь или имя без пути "
+                             f"кладётся в {DEFAULT_OUT_DIR} (по умолчанию имя подбирается по режиму).")
     args = parser.parse_args()
 
     targets = set(args.targets)
@@ -595,15 +609,15 @@ def main():
         targets |= set(STAGE_EXTRA_TARGETS.get(args.stages[0], ()))
 
     if args.fields:
-        out_path = args.out or "creature_refs_search.txt"
+        out_path = resolve_out_path(args.out, "creature_refs_search.txt")
         run_targeted_search(args.root, targets, self_classes, args.fields, out_path)
     elif args.all:
-        out_path = args.out or "creature_refs_full.txt"
+        out_path = resolve_out_path(args.out, "creature_refs_full.txt")
         run_full_inventory(args.root, targets, self_classes, out_path)
     else:
-        out_path = args.out or f"creature_refs_stage{'_'.join(map(str, sorted(set(args.stages))))}.txt"
+        default_name = f"creature_refs_stage{'_'.join(map(str, sorted(set(args.stages))))}.txt"
+        out_path = resolve_out_path(args.out, default_name)
         run_staged_inventory(args.root, targets, self_classes, sorted(set(args.stages)), out_path)
-
 
 if __name__ == "__main__":
     main()

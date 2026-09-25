@@ -461,7 +461,7 @@ class CreatureTerritory(WeakOwnerMixin):
             return True
         if ci_settings.TERRITORY_EXEMPT_ALL_CHILDREN and other.life_stage == ci_settings.LIFE_STAGE_CHILD:
             return True
-        if other.gender == ci_settings.GENDER_FEMALE and other.is_pregnant:
+        if other.gender == ci_settings.GENDER_FEMALE and other.family.is_pregnant:
             return True
         if other.burial.is_dragging_corpse:
             return True
