@@ -186,10 +186,10 @@ class PartnerBond(GoalComponent):
         elif dist > ci_settings.PARTNER_REUNITE_TRIGGER_DISTANCE and c.family.partner_reunite_cooldown <= 0:
             c.family.reuniting_with_partner = True
             c.family.reunite_commit_timer = ci_settings.FAMILY_REUNITE_MIN_DURATION
-            if c.following_road is not None:
-                c.following_road = None
-                c.following_road_active = False
-                c.road_entry_reached = False
+            if c.roads.following_road is not None:
+                c.roads.following_road = None
+                c.roads.following_road_active = False
+                c.roads.road_entry_reached = False
 
         if c.family.reuniting_with_partner:
             c.state = ci_settings.STATE_SEEKING

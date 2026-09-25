@@ -22,7 +22,7 @@ class Roads(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        if c.following_road is not None:
+        if c.roads.following_road is not None:
             score = self.SCORE_COMMITTED
         else:
             if not ctx.visible_roads:
@@ -35,24 +35,22 @@ class Roads(GoalComponent):
         return [Consideration("road", score, execute)]
 
     def pursue_known_link(self, resource_type, ctx):
-        """Публичный вход для SurvivalNeeds - дойти до ресурса по уже
-        известной дороге, минуя обычный цикл consider()."""
         c = self.c
-        link = c.known_road_links.get(resource_type)
+        link = c.roads.known_road_links.get(resource_type)
         if link is None:
             return None
         road = next((r for r in ctx.all_roads if r.id == link["road_id"]), None)
         if road is None or not road.points:
-            c.known_road_links.pop(resource_type, None)
+            c.roads.known_road_links.pop(resource_type, None)
             return None
-        if c.known_roads.get(road.id) == "dangerous":
-            c.known_road_links.pop(resource_type, None)
+        if c.roads.known_roads.get(road.id) == "dangerous":
+            c.roads.known_road_links.pop(resource_type, None)
             return None
         endpoint = road.endpoint_a if link["target_end"] == "a" else road.endpoint_b
         if endpoint is None or ci_settings.ROAD_LINK_RESOURCE_MAP.get(endpoint["type"]) != resource_type:
-            c.known_road_links.pop(resource_type, None)
+            c.roads.known_road_links.pop(resource_type, None)
             return None
-        if c.following_road is not road:
+        if c.roads.following_road is not road:
             target_index = 0 if link["target_end"] == "a" else len(road.points) - 1
             self._start_following(road, target_index=target_index)
             c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_KNOWN_ROUTE
@@ -61,14 +59,14 @@ class Roads(GoalComponent):
 
     def _pursue(self, ctx):
         c = self.c
-        if c.following_road is not None:
+        if c.roads.following_road is not None:
             return self._continue_following(ctx)
 
-        if c.road_follow_check_timer > 0:
+        if c.roads.road_follow_check_timer > 0:
             return None
-        c.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
+        c.roads.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
 
-        candidates = [r for r in ctx.visible_roads if c.known_roads.get(r.id) not in ("useless", "dangerous")]
+        candidates = [r for r in ctx.visible_roads if c.roads.known_roads.get(r.id) not in ("useless", "dangerous")]
         if not candidates:
             return None
 
@@ -87,48 +85,48 @@ class Roads(GoalComponent):
 
     def _start_following(self, road, target_index=None, entry_already_reached=False):
         c = self.c
-        c.following_road = road
-        c.road_progress, c.road_direction = PathProgressTracker.start(
+        c.roads.following_road = road
+        c.roads.road_progress, c.roads.road_direction = PathProgressTracker.start(
             road.points, c.x, c.y, target_index=target_index)
-        c.road_entry_reached = entry_already_reached
+        c.roads.road_entry_reached = entry_already_reached
         c.state = ci_settings.STATE_SEEKING
-        c.following_road_active = entry_already_reached
-        c.target = road.points[c.road_progress]
+        c.roads.following_road_active = entry_already_reached
+        c.target = road.points[c.roads.road_progress]
 
     def _continue_following(self, ctx):
         c = self.c
-        road = c.following_road
+        road = c.roads.following_road
         if not road.points:
-            c.following_road = None
-            c.following_road_active = False
-            c.road_entry_reached = False
+            c.roads.following_road = None
+            c.roads.following_road_active = False
+            c.roads.road_entry_reached = False
             return None
-        if c.road_progress < 0 or c.road_progress >= len(road.points):
+        if c.roads.road_progress < 0 or c.roads.road_progress >= len(road.points):
             self._evaluate_end(road, ctx)
             return None
 
-        target_point = PathProgressTracker.target_point(road.points, c.road_progress)
-        if PathProgressTracker.has_arrived(road.points, c.road_progress, c.x, c.y):
-            c.road_entry_reached = True
+        target_point = PathProgressTracker.target_point(road.points, c.roads.road_progress)
+        if PathProgressTracker.has_arrived(road.points, c.roads.road_progress, c.x, c.y):
+            c.roads.road_entry_reached = True
             switched = self._maybe_switch_at_crossing(road, target_point, ctx)
             if switched:
-                road = c.following_road
+                road = c.roads.following_road
             else:
-                c.road_progress, finished = PathProgressTracker.advance(
-                    road.points, c.road_progress, c.road_direction)
+                c.roads.road_progress, finished = PathProgressTracker.advance(
+                    road.points, c.roads.road_progress, c.roads.road_direction)
                 if finished:
                     self._evaluate_end(road, ctx)
                     return None
-            target_point = PathProgressTracker.target_point(road.points, c.road_progress)
+            target_point = PathProgressTracker.target_point(road.points, c.roads.road_progress)
 
         c.state = ci_settings.STATE_SEEKING
         c.target = target_point
-        if c.road_entry_reached:
+        if c.roads.road_entry_reached:
             c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_FOLLOW
-            c.following_road_active = True
+            c.roads.following_road_active = True
         else:
             c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_APPROACH
-            c.following_road_active = False
+            c.roads.following_road_active = False
         return target_point
 
     def _active_seeking_resource(self):
@@ -155,7 +153,7 @@ class Roads(GoalComponent):
 
         target_resource = self._active_seeking_resource()
         if target_resource is not None:
-            link = c.known_road_links.get(target_resource)
+            link = c.roads.known_road_links.get(target_resource)
             if link and link["road_id"] in other_road_ids:
                 candidate_road = next((r for r in all_roads if r.id == link["road_id"]), None)
                 if candidate_road is not None and candidate_road.points:
@@ -177,7 +175,7 @@ class Roads(GoalComponent):
 
     def _evaluate_end(self, road, ctx):
         c = self.c
-        ex, ey = road.points[-1] if c.road_direction > 0 else road.points[0]
+        ex, ey = road.points[-1] if c.roads.road_direction > 0 else road.points[0]
         self._learn_link_on_arrival(road)
 
         useful_objects = (ctx.visible_fruits + ctx.visible_water + ctx.visible_bushes
@@ -218,23 +216,23 @@ class Roads(GoalComponent):
             verdict = "useful"
             c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_USEFUL_SIMPLE
 
-        c.known_roads[road.id] = verdict
+        c.roads.known_roads[road.id] = verdict
         road.rating = verdict
-        c.following_road = None
-        c.following_road_active = False
-        c.road_entry_reached = False
-        c.road_progress = 0
+        c.roads.following_road = None
+        c.roads.following_road_active = False
+        c.roads.road_entry_reached = False
+        c.roads.road_progress = 0
 
     def _learn_link_on_arrival(self, road):
         c = self.c
-        reached_end_key = "b" if c.road_direction > 0 else "a"
-        endpoint = road.endpoint_b if c.road_direction > 0 else road.endpoint_a
+        reached_end_key = "b" if c.roads.road_direction > 0 else "a"
+        endpoint = road.endpoint_b if c.roads.road_direction > 0 else road.endpoint_a
         if endpoint is None:
             return
         resource = ci_settings.ROAD_LINK_RESOURCE_MAP.get(endpoint["type"])
         if resource is None:
             return
-        c.known_road_links[resource] = {"road_id": road.id, "target_end": reached_end_key}
+        c.roads.known_road_links[resource] = {"road_id": road.id, "target_end": reached_end_key}
 
     @staticmethod
     def _distance_to_structure(obj, px, py):
@@ -334,7 +332,7 @@ class ChildRoadVerification(GoalComponent):
         c.state = ci_settings.STATE_SEEKING
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY
         c.target = target_point
-        c.following_road_active = verify.entry_reached
+        c.roads.following_road_active = verify.entry_reached
         return target_point
 
     def _finish(self, road):
@@ -346,11 +344,11 @@ class ChildRoadVerification(GoalComponent):
         c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_DANGER if verify.found_danger
                        else ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_VERIFY_SAFE)
         verify.reset()
-        c.following_road_active = False
+        c.roads.following_road_active = False
 
     def _cancel(self, road=None):
         c = self.c
         if road is not None and road.verifier_id == c.id:
             road.verifier_id = None
         c.road_verify.reset()
-        c.following_road_active = False
+        c.roads.following_road_active = False

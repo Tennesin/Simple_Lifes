@@ -396,7 +396,7 @@ class BasePathfinder(WeakOwnerMixin):
             self.reset_navigation()
             return None
 
-        if c.following_road_active:
+        if c.roads.following_road_active:
             clearance = settings.NAV_OBSTACLE_INFLATE
             keeps_clearance = (not wall_polylines) or geometry.segment_keeps_clearance(
                 c.x, c.y, goal[0], goal[1], wall_polylines, clearance)

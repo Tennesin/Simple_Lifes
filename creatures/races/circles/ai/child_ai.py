@@ -410,7 +410,7 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
                     return self._pursue_child_tag_game(visible_companions, dt, biome_grid=biome_grid)
 
             if not started_tag and visible_roads and random.random() < ci_settings.CHILD_ROAD_RUN_CHANCE:
-                safe_roads = [r for r in visible_roads if c.known_roads.get(r.id) != "dangerous"]
+                safe_roads = [r for r in visible_roads if c.roads.known_roads.get(r.id) != "dangerous"]
                 if safe_roads:
                     road = random.choice(safe_roads)
                     c.state = ci_settings.STATE_SEEKING
@@ -563,7 +563,7 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
         c.target = target_point
         c.goal_text = (ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_PLAY if play.entry_reached
                        else ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_APPROACH)
-        c.following_road_active = play.entry_reached
+        c.roads.following_road_active = play.entry_reached
 
         if play.entry_reached:
             c.psyche.on_child_road_play(dt)
@@ -578,7 +578,7 @@ class _ChildRoadPlayMixin(_ChildAIMixinBase):
             self._register_child_road_play_session(road)
 
         play.stop_playing()
-        c.following_road_active = False
+        c.roads.following_road_active = False
         play.play_cooldown = random.uniform(*ci_settings.CHILD_ROAD_PLAY_COOLDOWN)
 
     def _register_child_road_play_session(self, road):

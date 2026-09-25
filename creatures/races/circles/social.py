@@ -110,9 +110,9 @@ class CreatureCommunication(WeakOwnerMixin):
 
     def _share_road_links(self, other):
         c = self.c
-        for resource, link in other.known_road_links.items():
-            if resource not in c.known_road_links:
-                c.known_road_links[resource] = dict(link)
+        for resource, link in other.roads.known_road_links.items():
+            if resource not in c.roads.known_road_links:
+                c.roads.known_road_links[resource] = dict(link)
 
     # ---------- Опасность (шипы) ----------
 
@@ -131,9 +131,9 @@ class CreatureCommunication(WeakOwnerMixin):
 
     def _share_road_knowledge(self, other):
         c = self.c
-        for road_id, verdict in other.known_roads.items():
-            current = c.known_roads.get(road_id)
+        for road_id, verdict in other.roads.known_roads.items():
+            current = c.roads.known_roads.get(road_id)
             if current == verdict:
                 continue
             if self._ROAD_VERDICT_PRIORITY.get(verdict, -1) > self._ROAD_VERDICT_PRIORITY.get(current, -1):
-                c.known_roads[road_id] = verdict
+                c.roads.known_roads[road_id] = verdict

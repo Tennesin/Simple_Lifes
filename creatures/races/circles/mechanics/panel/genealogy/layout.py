@@ -4,7 +4,6 @@
 from ......all_needed import geometry
 from .... import ci_info, ci_settings
 
-
 class GenealogyLayoutBuilder:
     """Единственная задача - превратить (registry, root_id, живые существа)
     в (nodes_list, edges, bbox). name_font нужен только для расчёта

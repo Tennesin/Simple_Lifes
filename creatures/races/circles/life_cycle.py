@@ -514,9 +514,9 @@ class CreatureTerritory(WeakOwnerMixin):
 
         intruder.fear_timer = max(intruder.fear_timer, ci_settings.TERRITORY_CONFRONT_FEAR_DURATION)
         intruder.fear_source = (c.x, c.y)
-        intruder.following_road = None
-        intruder.following_road_active = False
-        intruder.road_entry_reached = False
+        intruder.roads.following_road = None
+        intruder.roads.following_road_active = False
+        intruder.roads.road_entry_reached = False
         intruder.psyche.on_territory_intruded()
         c.psyche.on_territory_defended()
 

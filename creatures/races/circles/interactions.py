@@ -136,13 +136,13 @@ class CreatureInteractions(WeakOwnerMixin):
                 c.psyche.on_hazard_encountered()
                 c.pathfinder.reset_navigation()
 
-                if c.following_road is not None:
-                    c.known_roads[c.following_road.id] = "dangerous"
-                    c.following_road.rating = "dangerous"
-                    c.following_road = None
-                    c.following_road_active = False
-                    c.road_progress = 0
-                    c.road_entry_reached = False
+                if c.roads.following_road is not None:
+                    c.roads.known_roads[c.roads.following_road.id] = "dangerous"
+                    c.roads.following_road.rating = "dangerous"
+                    c.roads.following_road = None
+                    c.roads.following_road_active = False
+                    c.roads.road_progress = 0
+                    c.roads.road_entry_reached = False
                     c.goal_text = ci_info.INFO_CREATURE_GOAL_ROAD_DEADLY
 
                 if c.child_road_play.road is not None:
@@ -155,7 +155,7 @@ class CreatureInteractions(WeakOwnerMixin):
         road.rating = "dangerous"
 
         c.child_road_play.stop_playing()
-        c.following_road_active = False
+        c.roads.following_road_active = False
         c.fear_timer = max(c.fear_timer, ci_settings.CHILD_ROAD_DANGER_FEAR_DURATION)
         c.fear_source = (c.x, c.y)
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CHILD_ROAD_DANGER
@@ -165,7 +165,7 @@ class CreatureInteractions(WeakOwnerMixin):
                 continue
             if other.child_road_play.road is road:
                 other.child_road_play.stop_playing()
-                other.following_road_active = False
+                other.roads.following_road_active = False
                 other.fear_timer = max(other.fear_timer, ci_settings.CHILD_ROAD_DANGER_FEAR_DURATION)
                 other.fear_source = (c.x, c.y)
 

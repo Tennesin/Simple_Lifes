@@ -327,6 +327,8 @@ NEVER_MIGRATE = {
     "consciousness", "sanity_decay_timer",
 }
 
+FULLY_COMPLETED_STAGES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
 def base_expr(node):
     """Возвращает строковый 'путь' выражения слева от точки: для `c` -> 'c',
     для `self.c` -> 'self.c', для чего-то незнакомого (вызов функции,

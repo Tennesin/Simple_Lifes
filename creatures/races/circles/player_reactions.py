@@ -54,9 +54,9 @@ class PlayerReactionHandler(WeakOwnerMixin):
         c.fear_timer = ci_settings.PLAYER_FEAR_DURATION
         c.player_fear_timer = ci_settings.PLAYER_FEAR_DURATION
         c.fear_source = (c.x, c.y)
-        c.following_road = None
-        c.following_road_active = False
-        c.road_entry_reached = False
+        c.roads.following_road = None
+        c.roads.following_road_active = False
+        c.roads.road_entry_reached = False
         c.child_road_play.stop_playing()
         c.player_relationship = geometry.clamp(
             c.player_relationship + ci_settings.PLAYER_HIT_RELATIONSHIP, -100.0, 100.0)
@@ -75,9 +75,9 @@ class PlayerReactionHandler(WeakOwnerMixin):
         c.target = None
         c.panic_active = False
         c.fear_timer = 0.0
-        c.following_road = None
-        c.following_road_active = False
-        c.road_entry_reached = False
+        c.roads.following_road = None
+        c.roads.following_road_active = False
+        c.roads.road_entry_reached = False
         c.goal_text = ci_info.INFO_CREATURE_GOAL_GRABBED
 
     def finish_grab(self):

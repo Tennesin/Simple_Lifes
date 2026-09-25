@@ -18,6 +18,7 @@ from ..state.feeding_state import FeedingState
 from ..state.storage_supply_state import StorageSupplyState
 from ..state.housing_state import HousingState
 from ..state.elder_care_state import ElderCareState
+from ..state.road_state import RoadState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -123,8 +124,6 @@ _CREATURE_SIMPLE_FIELDS = (
     ("player_relationship", "player_relationship", 0.0),
     ("favorite_bonus_applied", "favorite_bonus_applied", False),
     ("player_named", "player_named", False),
-    ("known_roads", "known_roads", dict),
-    ("known_road_links", "known_road_links", dict),
     ("relationships", "relationships", dict),
     ("energy", "energy", ci_settings.ENERGY_MAX),
     ("known_campfire_id", "known_campfire_id", None),
@@ -200,6 +199,9 @@ def _load_creature_housing(creature, state):
 def _load_creature_elder_care(creature, state):
     creature.elder_care = ElderCareState.from_persisted_dict(state)
 
+def _load_creature_roads(creature, state):
+    creature.roads = RoadState.from_persisted_dict(state)
+
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:
         setattr(creature.psyche, attr, state.get(key, 0.0))
@@ -221,6 +223,7 @@ def load_creature_from_state(state):
     _load_creature_storage_supply(creature, state)
     _load_creature_housing(creature, state)
     _load_creature_elder_care(creature, state)
+    _load_creature_roads(creature, state)
     return creature
 
 # =========================================================================

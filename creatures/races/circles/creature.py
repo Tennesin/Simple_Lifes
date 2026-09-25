@@ -36,6 +36,7 @@ from .state.feeding_state import FeedingState
 from .state.storage_supply_state import StorageSupplyState
 from .state.housing_state import HousingState
 from .state.elder_care_state import ElderCareState
+from .state.road_state import RoadState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -206,16 +207,9 @@ class Creature(LivingEntity):
         self.play_cooldown = random.uniform(2.0, 4.0)
 
         # =====================================================================
-        # Дороги игрока
+        # Дороги игрока (не детские)
         # =====================================================================
-        self.known_roads = {}
-        self.known_road_links = {}
-        self.following_road = None
-        self.following_road_active = False
-        self.road_progress = 0
-        self.road_direction = 1
-        self.road_entry_reached = False
-        self.road_follow_check_timer = random.uniform(*ci_settings.ROAD_FOLLOW_REROLL_INTERVAL)
+        self.roads = RoadState.rolled()
 
         # =====================================================================
         # Детские дороги: игра + физическая проверка взрослым
@@ -368,9 +362,6 @@ class Creature(LivingEntity):
         self.fear_timer = 0.0
         self.player_fear_timer = 0.0
         self.fear_source = None
-        self.following_road = None
-        self.following_road_active = False
-        self.road_entry_reached = False
         self.play_target_id = None
         self.play_role = None
         self.is_grabbed = False
@@ -393,6 +384,7 @@ class Creature(LivingEntity):
         self.housing.reset()
         self.family.reset()
         self.elder_care.reset()
+        self.roads.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -450,11 +442,7 @@ class Creature(LivingEntity):
 
     def on_road_deleted(self, road_obj_type, road):
         if road_obj_type == "road":
-            if self.following_road is road:
-                self.following_road = None
-                self.following_road_active = False
-                self.road_entry_reached = False
-                self.road_progress = 0
+            if self.roads.on_deleted(road):
                 self.invalidate_plan()
             return
 
@@ -463,13 +451,12 @@ class Creature(LivingEntity):
         play_matched = self.child_road_play.on_deleted(road)
         verify_matched = self.road_verify.on_deleted(road)
         if play_matched or verify_matched:
-            self.following_road_active = False
+            self.roads.following_road_active = False
         self.invalidate_plan()
 
     def on_road_progress_shift(self, obj_type, road, inserted_index):
         if obj_type == "road":
-            if self.following_road is road and self.road_progress >= inserted_index:
-                self.road_progress += 1
+            self.roads.on_progress_shift(road, inserted_index)
         elif obj_type == "child_road":
             self.child_road_play.on_progress_shift(road, inserted_index)
             self.road_verify.on_progress_shift(road, inserted_index)
@@ -573,8 +560,6 @@ class Creature(LivingEntity):
             "knowledge": self.knowledge,
             "player_relationship": self.player_relationship,
             "favorite_bonus_applied": self.favorite_bonus_applied,
-            "known_roads": self.known_roads,
-            "known_road_links": self.known_road_links,
             "relationships": self.relationships,
             "gender": self.gender,
             "age": self.age,
@@ -596,6 +581,7 @@ class Creature(LivingEntity):
             **self.housing.to_persisted_dict(),
             **self.family.to_persisted_dict(),
             **self.elder_care.to_persisted_dict(),
+            **self.roads.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

@@ -49,11 +49,11 @@ class _TimerTickMixin(_BrainMixinBase):
         c = self.c
         c.decision_timer -= dt
         c.stuck_check_timer -= dt
-        c.road_follow_check_timer -= dt
+        c.roads.road_follow_check_timer -= dt
         c.territory.tick_cooldowns(dt)
         c.speed_factor = 1.0
         c.panic_active = False
-        c.following_road_active = False
+        c.roads.following_road_active = False
 
         if c.calm_timer > 0:
             c.calm_timer -= dt
@@ -182,7 +182,6 @@ class _PerceptionMixin(_BrainMixinBase):
             visible_graveyards=visible_graveyards,
         )
 
-
 # =========================================================================
 # Домен: рефлексы, которые перекрывают любое взвешенное решение (сон/паника)
 # =========================================================================
@@ -239,7 +238,7 @@ class _ReflexMixin(_BrainMixinBase):
         if play.road is None:
             return
         play.stop_playing()
-        c.following_road_active = False
+        c.roads.following_road_active = False
         play.play_cooldown = max(play.play_cooldown, 1.0)
 
 # =========================================================================
@@ -384,7 +383,7 @@ class CreatureBrain(WeakOwnerMixin, _TimerTickMixin, _PerceptionMixin, _ReflexMi
         can_handle_corpses = c.can_handle_corpses()
         threat_corpses = [] if can_handle_corpses else perception.visible_corpses
 
-        if c.calm_timer > 0 or c.following_road or in_house:
+        if c.calm_timer > 0 or c.roads.following_road or in_house:
             nearby_corpse_threats = []
         else:
             nearby_corpse_threats = [t for t in threat_corpses if c.distance_to(t) < perception.reaction_distance]
