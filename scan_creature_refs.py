@@ -313,6 +313,20 @@ STAGE_EXTRA_TARGETS = {
     17: ("playmate",),
 }
 
+NEVER_MIGRATE = {
+    # Категория A — контракт creatures/all_needed/
+    "nav_path", "nav_path_index", "nav_goal", "nav_recalc_timer", "nav_search_failed",
+    "speed_factor", "spike_invuln_timer",
+    # Категория B — контракт LivingEntity/CreatureBase
+    "is_dead", "hp", "hunger", "thirst", "energy",
+    # Категория C — общая шина ИИ, не домен
+    "target", "decision_timer", "state", "goal_text", "panic_active",
+    # Категория D — идентичность/диспетчерский ключ
+    "age", "life_stage", "temperament",
+    # Категория E — мягче, но рекомендую держать с витальностью
+    "consciousness", "sanity_decay_timer",
+}
+
 def base_expr(node):
     """Возвращает строковый 'путь' выражения слева от точки: для `c` -> 'c',
     для `self.c` -> 'self.c', для чего-то незнакомого (вызов функции,
