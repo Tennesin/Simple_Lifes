@@ -200,7 +200,7 @@ class Feeding(GoalComponent):
             candidate = lookup_creature(other_creatures, feeding.urgent_child_id, other_by_id)
             if (candidate is not None and not candidate.is_dead
                     and candidate.life_stage == ci_settings.LIFE_STAGE_CHILD
-                    and candidate.parent_ids and c.id in candidate.parent_ids):
+                    and candidate.family.parent_ids and c.id in candidate.family.parent_ids):
                 urgent_child = candidate
 
         already_committed = feeding.feed_target_id is not None or feeding.carried_fruit or feeding.carried_water

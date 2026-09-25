@@ -67,7 +67,7 @@ class _ChildSharedUtilsMixin:
         return next(
             (o for o in other_creatures
              if not o.is_dead and o.life_stage == ci_settings.LIFE_STAGE_OLD
-             and getattr(o, "elder_ward_id", None) == child_id),
+             and o.elder_care.elder_ward_id == child_id),
             None
         )
 
@@ -201,7 +201,7 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
         guardian = next(
             (o for o in visible_companions
-             if o.life_stage == ci_settings.LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id),
+             if o.life_stage == ci_settings.LIFE_STAGE_OLD and o.elder_care.elder_ward_id == c.id),
             None
         )
         if guardian is not None:
@@ -613,7 +613,7 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
         near_caretaker = False
         if not near_fire and not near_parent:
             near_caretaker = any(
-                o.life_stage == ci_settings.LIFE_STAGE_OLD and getattr(o, "elder_ward_id", None) == c.id
+                o.life_stage == ci_settings.LIFE_STAGE_OLD and o.elder_care.elder_ward_id == c.id
                 for o in visible_companions
             )
 

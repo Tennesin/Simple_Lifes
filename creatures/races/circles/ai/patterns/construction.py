@@ -507,7 +507,7 @@ class Construction(GoalComponent):
             new_object.add_owner(primary_owner_id)
 
             primary_owner = lookup_creature(ctx.other_creatures, primary_owner_id, ctx.other_by_id)
-            partner_id = primary_owner.partner_id if primary_owner is not None else None
+            partner_id = primary_owner.family.partner_id if primary_owner is not None else None
             if partner_id is not None and partner_id in site.contributor_ids:
                 new_object.add_owner(partner_id)
 

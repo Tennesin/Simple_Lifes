@@ -8,6 +8,7 @@ from .base import StateBlock
 from .burial_state import BurialState
 from .child_road_play_state import ChildRoadPlayState
 from .construction_state import ConstructionState
+from .elder_care_state import ElderCareState
 from .feeding_state import FeedingState
 from .puberty_state import PubertyState
 from .road_verify_state import RoadVerifyState
@@ -16,5 +17,5 @@ from .housing_state import HousingState
 
 __all__ = [
     "StateBlock", "BurialState", "ChildRoadPlayState", "ConstructionState",
-    "FeedingState", "PubertyState", "RoadVerifyState",
+    "ElderCareState", "FeedingState", "PubertyState", "RoadVerifyState",
 ]

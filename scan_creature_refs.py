@@ -298,17 +298,17 @@ PLAN_STAGES = {
     # НЕ вынесена отдельным этапом: это не поведенческое состояние, а
     # перманентные идентификаторы/геометрия - план не предполагает её миграцию.
 }
-ACTIVE_STAGE = 8
+ACTIVE_STAGE = 9
 
 # ---------- Доработка 2: алиасы переменных-существ, характерные для конкретных этапов ----------
 # Пополняется по ходу расследования: нашёл новый alias руками - впиши сюда,
 # чтобы при повторном прогоне того же этапа он попал в отчёт автоматически.
 STAGE_EXTRA_TARGETS = {
     2: ("corpse", "carrier", "target_corpse"),
-    4: ("road",),   # ChildRoad как объект - НЕ существо, но встречается в тех же
-                    # строках, что и c.following_child_road - полезно держать под рукой
+    4: ("road",),
+    7: ("mother", "father", "child", "female", "male", "parent", "guardian"),
+    8: ("mother", "father", "child", "partner", "other", "target", "o", "mourner", "deceased"),
     9: ("ward", "guardian"),
-    8: ("mother", "father", "child", "partner"),
     17: ("playmate",),
 }
 

@@ -65,7 +65,7 @@ class CreatureNeeds(WeakOwnerMixin):
         mult = ci_settings.METABOLISM_LIFE_STAGE_MULTIPLIER.get(c.life_stage, 1.0)
         mult *= ci_settings.METABOLISM_TEMPERAMENT_MULTIPLIER.get(c.temperament, 1.0)
         mult *= ci_settings.METABOLISM_STATE_MULTIPLIER.get(c.state, 1.0)
-        if c.gender == ci_settings.GENDER_FEMALE and c.is_pregnant:
+        if c.gender == ci_settings.GENDER_FEMALE and c.family.is_pregnant:
             mult *= ci_settings.PREGNANCY_METABOLISM_MULTIPLIER
         return mult
 
@@ -115,7 +115,7 @@ class CreatureNeeds(WeakOwnerMixin):
                                 if c.life_stage == ci_settings.LIFE_STAGE_OLD else 1.0)
             drain_multiplier *= ci_settings.ENERGY_TEMPERAMENT_MULTIPLIER.get(c.temperament, 1.0)
             drain_multiplier *= ci_settings.ENERGY_STATE_MULTIPLIER.get(c.state, 1.0)
-            if c.gender == ci_settings.GENDER_FEMALE and c.is_pregnant:
+            if c.gender == ci_settings.GENDER_FEMALE and c.family.is_pregnant:
                 drain_multiplier *= ci_settings.PREGNANCY_ENERGY_MULTIPLIER
             if biome == settings.BIOME_DESERT:
                 drain_multiplier *= ci_settings.DESERT_ENERGY_DRAIN_MULTIPLIER

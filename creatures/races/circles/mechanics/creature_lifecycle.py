@@ -17,6 +17,7 @@ from ..state.construction_state import ConstructionState
 from ..state.feeding_state import FeedingState
 from ..state.storage_supply_state import StorageSupplyState
 from ..state.housing_state import HousingState
+from ..state.elder_care_state import ElderCareState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -126,7 +127,6 @@ _CREATURE_SIMPLE_FIELDS = (
     ("known_road_links", "known_road_links", dict),
     ("relationships", "relationships", dict),
     ("energy", "energy", ci_settings.ENERGY_MAX),
-    ("elder_ward_id", "elder_ward_id", None),
     ("known_campfire_id", "known_campfire_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
     ("is_sleeping", "is_sleeping", False),
@@ -197,6 +197,9 @@ def _load_creature_storage_supply(creature, state):
 def _load_creature_housing(creature, state):
     creature.housing = HousingState.from_persisted_dict(state)
 
+def _load_creature_elder_care(creature, state):
+    creature.elder_care = ElderCareState.from_persisted_dict(state)
+
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:
         setattr(creature.psyche, attr, state.get(key, 0.0))
@@ -217,6 +220,7 @@ def load_creature_from_state(state):
     _load_creature_feeding(creature, state)
     _load_creature_storage_supply(creature, state)
     _load_creature_housing(creature, state)
+    _load_creature_elder_care(creature, state)
     return creature
 
 # =========================================================================

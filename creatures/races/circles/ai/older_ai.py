@@ -33,7 +33,7 @@ class ElderWardCare(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        committed = c.elder_ward_id is not None
+        committed = c.elder_care.elder_ward_id is not None
         has_candidate = committed or any(
             o.life_stage == ci_settings.LIFE_STAGE_CHILD for o in ctx.visible_companions
         )
@@ -54,8 +54,8 @@ class ElderWardCare(GoalComponent):
         visible_companions, other_creatures, dt, other_by_id = (
             ctx.visible_companions, ctx.other_creatures, ctx.dt, ctx.other_by_id)
 
-        if c.elder_ward_id is not None:
-            ward = lookup_creature(other_creatures, c.elder_ward_id, other_by_id)
+        if c.elder_care.elder_ward_id is not None:
+            ward = lookup_creature(other_creatures, c.elder_care.elder_ward_id, other_by_id)
             if ward is not None and (ward.is_dead or ward.life_stage != ci_settings.LIFE_STAGE_CHILD):
                 ward = None
 
@@ -66,14 +66,14 @@ class ElderWardCare(GoalComponent):
                         return result
                 elif self._child_needs_help(ward, visible_companions, other_creatures):
                     return self._tend_to(ward, ctx.visible_fruits, ctx.visible_water, dt, biome_grid=ctx.biome_grid)
-            c.elder_ward_id = None
+            c.elder_care.elder_ward_id = None
             c.feeding.carried_fruit = False
             c.feeding.carried_water = False
 
-        if c.elder_ward_check_timer > 0:
-            c.elder_ward_check_timer -= dt
+        if c.elder_care.elder_ward_check_timer > 0:
+            c.elder_care.elder_ward_check_timer -= dt
             return None
-        c.elder_ward_check_timer = random.uniform(*ci_settings.ELDER_WARD_CHECK_INTERVAL)
+        c.elder_care.elder_ward_check_timer = random.uniform(*ci_settings.ELDER_WARD_CHECK_INTERVAL)
 
         candidates = [o for o in visible_companions
                      if o.life_stage == ci_settings.LIFE_STAGE_CHILD
@@ -82,7 +82,7 @@ class ElderWardCare(GoalComponent):
             return None
 
         ward = min(candidates, key=c.distance_to)
-        c.elder_ward_id = ward.id
+        c.elder_care.elder_ward_id = ward.id
         c.social.adjust_mutual_relationship(
             ward, ci_settings.RELATIONSHIP_HELP_BONUS_HELPER, ci_settings.RELATIONSHIP_HELP_BONUS_HELPED)
         c.communication.share_information(ward)

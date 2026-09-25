@@ -35,6 +35,7 @@ from .state.construction_state import ConstructionState
 from .state.feeding_state import FeedingState
 from .state.storage_supply_state import StorageSupplyState
 from .state.housing_state import HousingState
+from .state.elder_care_state import ElderCareState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -230,8 +231,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Опека стариков над случайными детьми
         # =====================================================================
-        self.elder_ward_id = None
-        self.elder_ward_check_timer = random.uniform(*ci_settings.ELDER_WARD_CHECK_INTERVAL)
+        self.elder_care = ElderCareState.rolled()
 
         # =====================================================================
         # Труп / кладбище: перенос тела
@@ -379,7 +379,6 @@ class Creature(LivingEntity):
         self.social_request_point = None
         self.state = ci_settings.STATE_CALM
         self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
-        self.elder_ward_id = None
         # ---------- Троттлинг ИИ: мёртвое существо больше не решает ----------
         self.ai_plan_valid = False
         self.ai_last_goal = None
@@ -393,6 +392,7 @@ class Creature(LivingEntity):
         self.storage_supply.reset()
         self.housing.reset()
         self.family.reset()
+        self.elder_care.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -579,7 +579,6 @@ class Creature(LivingEntity):
             "gender": self.gender,
             "age": self.age,
             "player_named": self.player_named,
-            "elder_ward_id": self.elder_ward_id,
             "curiosity": self.curiosity,
             "is_sleeping": self.is_sleeping,
             "sleep_forced": self.sleep_forced,
@@ -596,6 +595,7 @@ class Creature(LivingEntity):
             **self.storage_supply.to_persisted_dict(),
             **self.housing.to_persisted_dict(),
             **self.family.to_persisted_dict(),
+            **self.elder_care.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

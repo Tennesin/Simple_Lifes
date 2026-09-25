@@ -549,7 +549,7 @@ def _grief_kinship_penalty(deceased, mourner):
         return ci_settings.GRIEF_BASE_PENALTY["sibling"]
 
     relationship = mourner.relationships.get(deceased.id, 0.0)
-    is_ward_bond = getattr(mourner, "elder_ward_id", None) == deceased.id
+    is_ward_bond = mourner.elder_care.elder_ward_id == deceased.id
     if is_ward_bond or relationship >= ci_settings.CLOSE_FRIEND_SANITY_RELATIONSHIP:
         return ci_settings.GRIEF_BASE_PENALTY["close_bond"]
     if relationship >= ci_settings.GRIEF_ACQUAINTANCE_MIN_RELATIONSHIP:
