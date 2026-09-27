@@ -419,7 +419,7 @@ class _ExplorationMixin:
 
     def _explore_lazy(self):
         c = self.c
-        cx, cy = c.comfort_point
+        cx, cy = c.landmarks.comfort_point
         dist_from_comfort = math.hypot(c.x - cx, c.y - cy)
         lazy_range = ci_settings.EXPLORE_DISTANCE[ci_settings.TEMPERAMENT_LAZY]
         if dist_from_comfort > ci_settings.LAZY_COMFORT_RADIUS * 1.5:
