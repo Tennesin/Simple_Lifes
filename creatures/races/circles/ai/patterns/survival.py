@@ -212,7 +212,7 @@ class SurvivalNeeds(GoalComponent):
             c.target = (nearest_companion.x, nearest_companion.y)
             return c.target
 
-        intuitive = c.memory.get_campfire_intuitive_target(*c.comfort_point)
+        intuitive = c.memory.get_campfire_intuitive_target(*c.landmarks.comfort_point)
         if intuitive:
             c.goal_text = (ci_info.INFO_CREATURE_GOAL_SANITY_URGENT_NO_FIRE if urgent
                            else ci_info.INFO_CREATURE_GOAL_SANITY_NO_FIRE)

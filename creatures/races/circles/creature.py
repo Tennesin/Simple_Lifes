@@ -37,6 +37,7 @@ from .state.storage_supply_state import StorageSupplyState
 from .state.housing_state import HousingState
 from .state.elder_care_state import ElderCareState
 from .state.road_state import RoadState
+from .state.landmark_state import LandmarkState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -104,13 +105,9 @@ class Creature(LivingEntity):
         self.helping_commit_timer = 0.0
 
         # =====================================================================
-        # Зона комфорта / знакомый костёр / место сна
+        # Ориентиры: зона комфорта / знакомый костёр / место сна
         # =====================================================================
-        self.comfort_point = (self.x, self.y)
-        self.known_campfire = None
-        self.known_campfire_id = None
-        self.sleep_spot = None
-        self.sleep_spot_campfire = None
+        self.landmarks = LandmarkState.rolled(self.x, self.y)
 
         # =====================================================================
         # Цель движения / троттлинг принятия решений (ИИ решает не каждый кадр)
@@ -216,11 +213,6 @@ class Creature(LivingEntity):
         # =====================================================================
         self.child_road_play = ChildRoadPlayState.rolled()
         self.road_verify = RoadVerifyState.rolled()
-
-        # =====================================================================
-        # Ориентиры (см. также CreatureFamily ниже - семья/размножение)
-        # =====================================================================
-        self.landmark_register_timer = random.uniform(0.0, 1.5)
 
         # =====================================================================
         # Опека стариков над случайными детьми
@@ -463,12 +455,13 @@ class Creature(LivingEntity):
 
     def on_landmark_removed(self, landmark_type, landmark_id, position):
         if landmark_type == "campfire":
-            if self.known_campfire_id == landmark_id or self.known_campfire == position:
-                self.known_campfire = None
-                self.known_campfire_id = None
-            if self.sleep_spot_campfire == position:
-                self.sleep_spot_campfire = None
-                self.sleep_spot = None
+            landmarks = self.landmarks
+            if landmarks.known_campfire_id == landmark_id or landmarks.known_campfire == position:
+                landmarks.known_campfire = None
+                landmarks.known_campfire_id = None
+            if landmarks.sleep_spot_campfire == position:
+                landmarks.sleep_spot_campfire = None
+                landmarks.sleep_spot = None
             self.memory.forget_memory("campfire", position[0], position[1])
             self.invalidate_plan()
         elif landmark_type == "graveyard":
@@ -550,9 +543,6 @@ class Creature(LivingEntity):
             "x": self.x,
             "y": self.y,
             "temperament": self.temperament,
-            "comfort_point": list(self.comfort_point),
-            "known_campfire": list(self.known_campfire) if self.known_campfire else None,
-            "known_campfire_id": self.known_campfire_id,
             "player_memory": self.player_memory,
             "is_dead": self.is_dead,
             "death_timer": self.death_timer,
@@ -582,6 +572,7 @@ class Creature(LivingEntity):
             **self.family.to_persisted_dict(),
             **self.elder_care.to_persisted_dict(),
             **self.roads.to_persisted_dict(),
+            **self.landmarks.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

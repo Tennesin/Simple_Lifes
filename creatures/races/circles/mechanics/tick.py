@@ -91,13 +91,14 @@ class CircleTickProcessor:
         occupancy = {fire.id: 0 for fire in campfires}
         fires_by_id = {fire.id: fire for fire in campfires}
         for creature in race_creatures:
-            if creature.is_dead or creature.known_campfire is None:
+            landmarks = creature.landmarks
+            if creature.is_dead or landmarks.known_campfire is None:
                 continue
-            if creature.known_campfire_id is not None:
-                if creature.known_campfire_id in occupancy:
-                    occupancy[creature.known_campfire_id] += 1
+            if landmarks.known_campfire_id is not None:
+                if landmarks.known_campfire_id in occupancy:
+                    occupancy[landmarks.known_campfire_id] += 1
                 continue
-            kx, ky = creature.known_campfire
+            kx, ky = landmarks.known_campfire
             for fire in campfires:
                 if math.hypot(kx - fire.x, ky - fire.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
                     occupancy[fire.id] = occupancy.get(fire.id, 0) + 1

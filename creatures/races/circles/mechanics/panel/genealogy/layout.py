@@ -148,8 +148,8 @@ class GenealogyLayoutBuilder:
 
     def _display_partner_id(self, registry, creature_id, live_creatures):
         live = next((c for c in live_creatures if c.id == creature_id and not c.is_dead), None)
-        if live is not None and live.partner_id is not None:
-            return live.partner_id
+        if live is not None and live.family.partner_id is not None:
+            return live.family.partner_id
         partners = registry.partners_of(creature_id)
         return partners[-1] if partners else None
 

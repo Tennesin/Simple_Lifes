@@ -106,6 +106,7 @@ class _SleepInstinctMixin:
 
     def seek_sleep_spot(self, biome_grid=None, houses=None):
         c = self.c
+        landmarks = c.landmarks
 
         house = self._resolve_home_house(houses)
         if house is not None:
@@ -124,35 +125,35 @@ class _SleepInstinctMixin:
         campfire_memories = c.memory.get_campfire_memories()
         if campfire_memories:
             campfire_pos = min(campfire_memories, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
-        elif c.known_campfire:
-            campfire_pos = c.known_campfire
+        elif landmarks.known_campfire:
+            campfire_pos = landmarks.known_campfire
 
         if campfire_pos:
             # ---------- Конкретная точка рядом с костром, а не любое место в его широкой зоне действия ----------
             needs_new_spot = (
-                    c.sleep_spot is None or c.sleep_spot_campfire is None or
-                    math.hypot(c.sleep_spot_campfire[0] - campfire_pos[0],
-                               c.sleep_spot_campfire[1] - campfire_pos[1]) > 5
+                    landmarks.sleep_spot is None or landmarks.sleep_spot_campfire is None or
+                    math.hypot(landmarks.sleep_spot_campfire[0] - campfire_pos[0],
+                               landmarks.sleep_spot_campfire[1] - campfire_pos[1]) > 5
             )
             if needs_new_spot:
                 angle = random.uniform(0, 2 * math.pi)
                 dist = random.uniform(ci_settings.SLEEP_SPOT_MIN_DISTANCE,
                                       ci_settings.CAMPFIRE_RADIUS * ci_settings.SLEEP_SPOT_MAX_RADIUS_FACTOR)
-                c.sleep_spot = geometry.clamped_point(campfire_pos[0], campfire_pos[1], angle, dist)
-                c.sleep_spot_campfire = campfire_pos
+                landmarks.sleep_spot = geometry.clamped_point(campfire_pos[0], campfire_pos[1], angle, dist)
+                landmarks.sleep_spot_campfire = campfire_pos
 
-            dist_to_spot = math.hypot(c.x - c.sleep_spot[0], c.y - c.sleep_spot[1])
+            dist_to_spot = math.hypot(c.x - landmarks.sleep_spot[0], c.y - landmarks.sleep_spot[1])
             if dist_to_spot > ci_settings.SLEEP_SPOT_ARRIVAL_DISTANCE:
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_GO_FIRE
-                c.target = c.sleep_spot
-                return c.sleep_spot
+                c.target = landmarks.sleep_spot
+                return landmarks.sleep_spot
             c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_AT_FIRE
             c.target = (c.x, c.y)
             c.is_sleeping = True
             c.sleep_forced = False
             return c.target
 
-        intuitive = c.memory.get_campfire_intuitive_target(*c.comfort_point)
+        intuitive = c.memory.get_campfire_intuitive_target(*landmarks.comfort_point)
         if intuitive:
             c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_INTUITIVE
             c.target = intuitive
@@ -181,8 +182,8 @@ class _LandmarkLookupMixin:
 
     def nearest_known_campfire(self):
         c = self.c
-        if c.known_campfire:
-            return c.known_campfire
+        if c.landmarks.known_campfire:
+            return c.landmarks.known_campfire
         campfire_memories = c.memory.get_campfire_memories()
         if campfire_memories:
             return geometry.nearest_point(c.x, c.y, campfire_memories)
@@ -221,30 +222,31 @@ class _LandmarkLookupMixin:
     def register_landmarks(self, visible_water, visible_bushes, visible_campfires, dt,
                             visible_graveyards=None, campfire_occupancy=None):
         c = self.c
-        if c.landmark_register_timer > 0:
-            c.landmark_register_timer -= dt
+        landmarks = c.landmarks
+        if landmarks.landmark_register_timer > 0:
+            landmarks.landmark_register_timer -= dt
             return
-        c.landmark_register_timer = random.uniform(*ci_settings.LANDMARK_REGISTER_INTERVAL)
+        landmarks.landmark_register_timer = random.uniform(*ci_settings.LANDMARK_REGISTER_INTERVAL)
 
         for water in visible_water:
-            c.memory.add_intuitive_memory("water", *c.comfort_point, water.x, water.y, importance=1.0)
+            c.memory.add_intuitive_memory("water", *landmarks.comfort_point, water.x, water.y, importance=1.0)
         for bush in visible_bushes:
-            c.memory.add_intuitive_memory("bush", *c.comfort_point, bush.x, bush.y, importance=1.0)
+            c.memory.add_intuitive_memory("bush", *landmarks.comfort_point, bush.x, bush.y, importance=1.0)
         for fire in visible_campfires:
-            c.memory.add_intuitive_memory("campfire", *c.comfort_point, fire.x, fire.y, importance=1.5)
+            c.memory.add_intuitive_memory("campfire", *landmarks.comfort_point, fire.x, fire.y, importance=1.5)
             c.memory.add_memory("campfire", fire.x, fire.y, importance=2.0)
-            if c.known_campfire is None:
+            if landmarks.known_campfire is None:
                 occupancy = campfire_occupancy.get(fire.id, 0) if campfire_occupancy else 0
                 if occupancy < ci_settings.CAMPFIRE_MAX_OCCUPANTS:
-                    c.known_campfire = (fire.x, fire.y)
-                    c.known_campfire_id = fire.id
-                    c.comfort_point = c.known_campfire
-            elif c.known_campfire_id is None and math.hypot(
-                        c.known_campfire[0] - fire.x,
-                        c.known_campfire[1] - fire.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
-                c.known_campfire_id = fire.id
+                    landmarks.known_campfire = (fire.x, fire.y)
+                    landmarks.known_campfire_id = fire.id
+                    landmarks.comfort_point = landmarks.known_campfire
+            elif landmarks.known_campfire_id is None and math.hypot(
+                        landmarks.known_campfire[0] - fire.x,
+                        landmarks.known_campfire[1] - fire.y) < ci_settings.LANDMARK_POSITION_MATCH_TOLERANCE:
+                landmarks.known_campfire_id = fire.id
         for gy in (visible_graveyards or []):
-            c.memory.add_intuitive_memory("graveyard", *c.comfort_point, gy.x, gy.y, importance=1.2)
+            c.memory.add_intuitive_memory("graveyard", *landmarks.comfort_point, gy.x, gy.y, importance=1.2)
             c.memory.add_memory("graveyard", gy.x, gy.y, importance=1.5)
             if c.burial.known_graveyard is None:
                 c.burial.known_graveyard = (gy.x, gy.y)
@@ -339,7 +341,7 @@ class _ResourceMemoryMixin:
         target = self._nearest_known_target(visible_fruits, c.memory.get_food_memories(), "food_memory_target")
         if target is not None:
             return target
-        return c.memory.get_bush_intuitive_target(*c.comfort_point)
+        return c.memory.get_bush_intuitive_target(*c.landmarks.comfort_point)
 
     def nearest_water_target(self, visible_water, biome_grid=None):
         c = self.c
@@ -354,7 +356,7 @@ class _ResourceMemoryMixin:
                                             "water_memory_target", extra_visible_positions=extra)
         if target is not None:
             return target
-        return c.memory.get_water_intuitive_target(*c.comfort_point)
+        return c.memory.get_water_intuitive_target(*c.landmarks.comfort_point)
 
     def _check_stale_memory_target(self, mem_type, target_attr, visible_objs, presence_check):
         c = self.c

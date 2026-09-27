@@ -81,7 +81,7 @@ class Construction(GoalComponent):
             return None
         c.construction.construction_check_timer = random.uniform(*ci_settings.CONSTRUCTION_CHECK_INTERVAL)
 
-        campfire_pos = c.known_campfire
+        campfire_pos = c.landmarks.known_campfire
         build_type = self._determine_need(campfire_pos, ctx)
         if build_type is None:
             return None
@@ -635,7 +635,7 @@ class Construction(GoalComponent):
             return None
         c.construction.build_help_check_timer = random.uniform(*ci_settings.BUILD_HELP_CHECK_INTERVAL)
 
-        own_need = self._determine_need(c.known_campfire, ctx)
+        own_need = self._determine_need(c.landmarks.known_campfire, ctx)
         if own_need in ("house", "storage"):
             return None
 

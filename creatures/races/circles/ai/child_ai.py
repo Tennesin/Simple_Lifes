@@ -105,8 +105,8 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
         campfire_memories = c.memory.get_campfire_memories()
         if campfire_memories:
             campfire_pos = min(campfire_memories, key=lambda pos: math.hypot(c.x - pos[0], c.y - pos[1]))
-        elif c.known_campfire:
-            campfire_pos = c.known_campfire
+        elif c.landmarks.known_campfire:
+            campfire_pos = c.landmarks.known_campfire
 
         if campfire_pos:
             c.target = campfire_pos

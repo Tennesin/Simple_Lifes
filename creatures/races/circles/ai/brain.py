@@ -196,13 +196,13 @@ class _ReflexMixin(_BrainMixinBase):
         if nearby_corpse_threats or c.fear_timer > 0:
             c.is_sleeping = False
             c.sleep_forced = False
-            c.sleep_spot = None
+            c.landmarks.sleep_spot = None
             return False
 
         if c.energy >= c.wake_threshold:
             c.is_sleeping = False
             c.seeking_sleep = False
-            c.sleep_spot = None
+            c.landmarks.sleep_spot = None
             return False
 
         c.state = ci_settings.STATE_SLEEP

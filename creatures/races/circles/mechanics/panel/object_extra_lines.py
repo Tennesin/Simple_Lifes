@@ -24,8 +24,8 @@ def circle_object_panel_extra_lines(obj, creatures):
     if isinstance(obj, Campfire):
         residents = [
             c for c in creatures
-            if not c.is_dead and c.known_campfire is not None
-            and math.hypot(c.known_campfire[0] - obj.x, c.known_campfire[1] - obj.y) < 5
+            if not c.is_dead and c.landmarks.known_campfire is not None
+            and math.hypot(c.landmarks.known_campfire[0] - obj.x, c.landmarks.known_campfire[1] - obj.y) < 5
         ]
         max_occupants = ci_settings.CAMPFIRE_MAX_OCCUPANTS
         occupancy_color = (255, 120, 90) if len(residents) >= max_occupants else (190, 190, 190)

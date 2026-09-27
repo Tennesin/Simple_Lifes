@@ -19,6 +19,7 @@ from ..state.storage_supply_state import StorageSupplyState
 from ..state.housing_state import HousingState
 from ..state.elder_care_state import ElderCareState
 from ..state.road_state import RoadState
+from ..state.landmark_state import LandmarkState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -41,7 +42,7 @@ class CircleSpawnManager:
         creature = Creature(new_creature_id, gender=gender, name_pools=pools)
         creature.x = wx
         creature.y = wy
-        creature.comfort_point = (wx, wy)
+        creature.landmarks.comfort_point = (wx, wy)
         game.world.creatures.append(creature)
         creature.age = ci_settings.AGE_CHILD_END
         creature.life_stage = ci_settings.LIFE_STAGE_ADULT
@@ -63,15 +64,15 @@ class CircleSpawnManager:
         cx, cy = self._pick_child_spawn_point(mother)
         child.x = cx
         child.y = cy
-        child.comfort_point = (child.x, child.y)
+        child.landmarks.comfort_point = (child.x, child.y)
 
         child.age = 0.0
         child.life_stage = ci_settings.LIFE_STAGE_CHILD
         child.family.parent_ids = (mother.id, father.id if father is not None else None)
 
-        if mother.known_campfire is not None:
-            child.known_campfire = mother.known_campfire
-            child.known_campfire_id = mother.known_campfire_id
+        if mother.landmarks.known_campfire is not None:
+            child.landmarks.known_campfire = mother.landmarks.known_campfire
+            child.landmarks.known_campfire_id = mother.landmarks.known_campfire_id
 
         child.relationships[mother.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
         mother.relationships[child.id] = ci_settings.FAMILY_PARENT_START_RELATIONSHIP
@@ -126,14 +127,9 @@ _CREATURE_SIMPLE_FIELDS = (
     ("player_named", "player_named", False),
     ("relationships", "relationships", dict),
     ("energy", "energy", ci_settings.ENERGY_MAX),
-    ("known_campfire_id", "known_campfire_id", None),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
     ("is_sleeping", "is_sleeping", False),
     ("sleep_forced", "sleep_forced", False),
-)
-
-_CREATURE_TUPLE_FIELDS = (
-    ("known_campfire", "known_campfire"),
 )
 
 _CREATURE_PSYCHE_FIELDS = (
@@ -151,12 +147,9 @@ def _load_creature_simple_fields(creature, state):
         elif default is not _KEEP_CONSTRUCTOR_DEFAULT:
             setattr(creature, attr, default() if callable(default) else default)
 
-def _load_creature_tuple_fields(creature, state):
-    if "comfort_point" in state:
-        creature.comfort_point = tuple(state["comfort_point"])
-    for key, attr in _CREATURE_TUPLE_FIELDS:
-        value = state.get(key)
-        setattr(creature, attr, tuple(value) if value else None)
+def _load_creature_landmarks(creature, state):
+    creature.landmarks = LandmarkState.from_persisted_dict(
+        state, fallback_point=(creature.x, creature.y))
 
 def _load_creature_knowledge(creature, state):
     default_knowledge = {"fruit": False, "spike": False, "water": False,
@@ -211,7 +204,7 @@ def load_creature_from_state(state):
                         temperament=state.get("temperament"),
                         gender=state.get("gender"))
     _load_creature_simple_fields(creature, state)
-    _load_creature_tuple_fields(creature, state)
+    _load_creature_landmarks(creature, state)
     _load_creature_knowledge(creature, state)
     _load_creature_age_and_stage(creature, state)
     _load_creature_puberty(creature, state)
