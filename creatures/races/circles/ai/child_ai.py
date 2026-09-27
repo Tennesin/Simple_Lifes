@@ -127,8 +127,8 @@ class _ChildFeedInterruptMixin(_ChildAIMixinBase):
     def _find_incoming_feeder(visible_companions, child_id):
         return next(
             (o for o in visible_companions
-             if getattr(o.feeding, "feed_target_id", None) == child_id
-             and (o.feeding.carried_fruit or o.feeding.carried_water)),
+             if getattr(o.resources, "feed_target_id", None) == child_id
+             and (o.resources.carried_fruit or o.resources.carried_water)),
             None
         )
 
@@ -163,7 +163,7 @@ class _ChildSleepMixin(_ChildAIMixinBase):
 
     def _consider_child_sleep(self, biome_grid=None, houses=None):
         c = self.c
-        if not c.seeking_sleep:
+        if not c.sleep.seeking_sleep:
             return None
         deficit = scale(ci_settings.ENERGY_LOW_THRESHOLD - c.energy, 0, ci_settings.ENERGY_LOW_THRESHOLD)
         score = SCORE_CHILD_SLEEP_BASE + deficit * SCORE_CHILD_SLEEP_MAX_BONUS
@@ -195,8 +195,8 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             return
         parent = self._find_visible_parent(c.family.parent_ids, visible_companions)
         if parent is not None:
-            parent.feeding.urgent_child_id = c.id
-            parent.feeding.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
+            parent.resources.urgent_child_id = c.id
+            parent.resources.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
             return
 
         guardian = next(
@@ -205,8 +205,8 @@ class _ChildHungerMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
             None
         )
         if guardian is not None:
-            guardian.feeding.urgent_child_id = c.id
-            guardian.feeding.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
+            guardian.resources.urgent_child_id = c.id
+            guardian.resources.urgent_child_timer = ci_settings.CHILD_URGENT_SIGNAL_HOLD_TIME
 
     def _consider_hunger_signal(self, visible_companions, other_creatures, storage_fields, houses,
                                  biome_grid=None):
@@ -623,7 +623,7 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
             c.child_distress_timer += dt
 
         if c.energy < ci_settings.ENERGY_LOW_THRESHOLD:
-            c.seeking_sleep = True
+            c.sleep.seeking_sleep = True
 
         considerations = [
             self._consider_distress(visible_companions, biome_grid=biome_grid),

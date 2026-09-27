@@ -131,9 +131,9 @@ class Roads(GoalComponent):
 
     def _active_seeking_resource(self):
         c = self.c
-        if c.seeking_food:
+        if c.needs_seeking.seeking_food:
             return "food"
-        if c.seeking_water:
+        if c.needs_seeking.seeking_water:
             return "water"
         return None
 

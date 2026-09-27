@@ -48,7 +48,7 @@ class _TimerTickMixin(_BrainMixinBase):
     def _tick_timers(self, dt):
         c = self.c
         c.decision_timer -= dt
-        c.stuck.stuck_check_timer -= dt
+        c.ai_state.stuck_check_timer -= dt
         c.roads.road_follow_check_timer -= dt
         c.territory.tick_cooldowns(dt)
         c.speed_factor = 1.0
@@ -65,8 +65,8 @@ class _TimerTickMixin(_BrainMixinBase):
             c.player_fear_timer -= dt
         if c.social_request_timer > 0:
             c.social_request_timer -= dt
-        if c.feeding.urgent_child_timer > 0:
-            c.feeding.urgent_child_timer -= dt
+        if c.resources.urgent_child_timer > 0:
+            c.resources.urgent_child_timer -= dt
         if c.family.reunite_commit_timer > 0:
             c.family.reunite_commit_timer -= dt
         if c.family.partner_reunite_cooldown > 0:
@@ -190,23 +190,23 @@ class _ReflexMixin(_BrainMixinBase):
 
     def _resolve_sleep_state(self, nearby_corpse_threats, in_house=False):
         c = self.c
-        if not c.is_sleeping:
+        if not c.sleep.is_sleeping:
             return False
 
         if nearby_corpse_threats or c.fear_timer > 0:
-            c.is_sleeping = False
-            c.sleep_forced = False
+            c.sleep.is_sleeping = False
+            c.sleep.sleep_forced = False
             c.landmarks.sleep_spot = None
             return False
 
-        if c.energy >= c.wake_threshold:
-            c.is_sleeping = False
-            c.seeking_sleep = False
+        if c.energy >= c.sleep.wake_threshold:
+            c.sleep.is_sleeping = False
+            c.sleep.seeking_sleep = False
             c.landmarks.sleep_spot = None
             return False
 
         c.state = ci_settings.STATE_SLEEP
-        if c.sleep_forced:
+        if c.sleep.sleep_forced:
             c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_FORCED
         elif in_house:
             c.goal_text = ci_info.INFO_CREATURE_GOAL_SLEEP_AT_HOME
@@ -262,8 +262,8 @@ class _DispatchMixin(_LifeStageDispatchBase):
             c.target = (c.x, c.y)
             return c.target
 
-        if c.freeze_timer > 0:
-            c.freeze_timer -= dt
+        if c.ai_state.freeze_timer > 0:
+            c.ai_state.freeze_timer -= dt
             c.goal_text = ci_info.INFO_CREATURE_GOAL_FROZEN
             return None
 
@@ -271,7 +271,7 @@ class _DispatchMixin(_LifeStageDispatchBase):
                    math.hypot(c.x - c.target[0], c.y - c.target[1]) < 12)
         if reached or c.decision_timer <= 0:
             if random.random() < ci_settings.FREEZE_CHANCE.get(c.temperament, 0.2) * c.psyche.freeze_modifier():
-                c.freeze_timer = random.uniform(*ci_settings.FREEZE_DURATION[c.temperament])
+                c.ai_state.freeze_timer = random.uniform(*ci_settings.FREEZE_DURATION[c.temperament])
                 c.target = None
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_FROZEN
                 return None

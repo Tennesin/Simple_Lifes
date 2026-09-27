@@ -33,7 +33,7 @@ class Construction(GoalComponent):
         c = self.c
         if c.gender != ci_settings.GENDER_MALE or c.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return [None]
-        if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
+        if c.panic_active or c.fear_timer > 0 or c.sleep.is_sleeping:
             return [None]
 
         committed = c.construction.construction_target_id is not None or c.construction.gather_target_id is not None
@@ -610,7 +610,7 @@ class Construction(GoalComponent):
         c = self.c
         if c.gender != ci_settings.GENDER_MALE or c.life_stage != ci_settings.LIFE_STAGE_ADULT:
             return None
-        if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
+        if c.panic_active or c.fear_timer > 0 or c.sleep.is_sleeping:
             return None
         if not ctx.construction_sites:
             return None

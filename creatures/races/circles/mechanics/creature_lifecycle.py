@@ -14,12 +14,12 @@ from ..life_cycle import CreatureAging
 from ..state.puberty_state import PubertyState
 from ..state.burial_state import BurialState
 from ..state.construction_state import ConstructionState
-from ..state.feeding_state import FeedingState
-from ..state.storage_supply_state import StorageSupplyState
+from ..state.resource_carry_state import ResourceCarryState
 from ..state.housing_state import HousingState
 from ..state.elder_care_state import ElderCareState
 from ..state.road_state import RoadState
 from ..state.landmark_state import LandmarkState
+from ..state.sleep_state import SleepState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -128,8 +128,6 @@ _CREATURE_SIMPLE_FIELDS = (
     ("relationships", "relationships", dict),
     ("energy", "energy", ci_settings.ENERGY_MAX),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
-    ("is_sleeping", "is_sleeping", False),
-    ("sleep_forced", "sleep_forced", False),
 )
 
 _CREATURE_PSYCHE_FIELDS = (
@@ -180,11 +178,8 @@ def _load_creature_family(creature, state):
 def _load_creature_construction(creature, state):
     creature.construction = ConstructionState.from_persisted_dict(state)
 
-def _load_creature_feeding(creature, state):
-    creature.feeding = FeedingState.from_persisted_dict(state)
-
-def _load_creature_storage_supply(creature, state):
-    creature.storage_supply = StorageSupplyState.from_persisted_dict(state)
+def _load_creature_resources(creature, state):
+    creature.resources = ResourceCarryState.from_persisted_dict(state)
 
 def _load_creature_housing(creature, state):
     creature.housing = HousingState.from_persisted_dict(state)
@@ -194,6 +189,9 @@ def _load_creature_elder_care(creature, state):
 
 def _load_creature_roads(creature, state):
     creature.roads = RoadState.from_persisted_dict(state)
+
+def _load_creature_sleep(creature, state):
+    creature.sleep = SleepState.from_persisted_dict(state, temperament=creature.temperament)
 
 def _load_creature_psyche(creature, state):
     for key, attr in _CREATURE_PSYCHE_FIELDS:
@@ -212,11 +210,11 @@ def load_creature_from_state(state):
     _load_creature_family(creature, state)
     _load_creature_psyche(creature, state)
     _load_creature_construction(creature, state)
-    _load_creature_feeding(creature, state)
-    _load_creature_storage_supply(creature, state)
+    _load_creature_resources(creature, state)
     _load_creature_housing(creature, state)
     _load_creature_elder_care(creature, state)
     _load_creature_roads(creature, state)
+    _load_creature_sleep(creature, state)
     return creature
 
 # =========================================================================

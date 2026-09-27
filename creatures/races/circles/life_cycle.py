@@ -261,7 +261,7 @@ class CreatureFamily(WeakOwnerMixin):
             return
         if self.partner_id is None or self.birth_cooldown > 0:
             return
-        if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
+        if c.panic_active or c.fear_timer > 0 or c.sleep.is_sleeping:
             return
         if c.needs.wellbeing_score() < ci_settings.FAMILY_MIN_WELLBEING:
             return
@@ -272,7 +272,7 @@ class CreatureFamily(WeakOwnerMixin):
             return
         if c.distance_to(partner) > ci_settings.TALK_DISTANCE:
             return
-        if partner.panic_active or partner.fear_timer > 0 or partner.is_sleeping:
+        if partner.panic_active or partner.fear_timer > 0 or partner.sleep.is_sleeping:
             return
 
         if not self._family_house_has_space(c, partner, houses):
@@ -300,7 +300,7 @@ class CreatureFamily(WeakOwnerMixin):
 
     def _try_form_pair(self, other_creatures, storage_fields=None, houses=None, nearby_creatures_grid=None):
         c = self.c
-        if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
+        if c.panic_active or c.fear_timer > 0 or c.sleep.is_sleeping:
             return
         if c.needs.wellbeing_score() < ci_settings.FAMILY_MIN_WELLBEING:
             return
@@ -328,7 +328,7 @@ class CreatureFamily(WeakOwnerMixin):
                 continue
             if c.distance_to(other) > ci_settings.FAMILY_BOND_DISTANCE:
                 continue
-            if other.panic_active or other.fear_timer > 0 or other.is_sleeping:
+            if other.panic_active or other.fear_timer > 0 or other.sleep.is_sleeping:
                 continue
             if other.needs.wellbeing_score() < ci_settings.FAMILY_MIN_WELLBEING:
                 continue

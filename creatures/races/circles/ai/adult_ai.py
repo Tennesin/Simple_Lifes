@@ -131,7 +131,7 @@ class PubertyCourtship(GoalComponent):
             self._reset_courtship()
             puberty.fail_streak = 0
             return [None]
-        if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
+        if c.panic_active or c.fear_timer > 0 or c.sleep.is_sleeping:
             return [None]
         wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT
         if c.needs.wellbeing_score() < wellbeing_threshold:
@@ -161,7 +161,7 @@ class PubertyCourtship(GoalComponent):
             return None
         target = next((o for o in visible_companions if o.id == target_id), None)
         if (target is None or target.is_dead or target.family.partner_id is not None
-                or target.is_sleeping or target.panic_active or target.fear_timer > 0):
+                or target.sleep.is_sleeping or target.panic_active or target.fear_timer > 0):
             self._reset_courtship()
             return None
         return target
@@ -178,7 +178,7 @@ class PubertyCourtship(GoalComponent):
             if o.gender != c.gender
                and o.life_stage == ci_settings.LIFE_STAGE_ADULT
                and o.family.partner_id is None
-               and not o.is_dead and not o.is_sleeping
+               and not o.is_dead and not o.sleep.is_sleeping
                and not o.panic_active and o.fear_timer <= 0
                and o.id not in avoid
                and not is_blood_relative(c, o)
@@ -211,7 +211,7 @@ class PubertyCourtship(GoalComponent):
         if not puberty.active or c.family.partner_id is not None:
             self._reset_courtship()
             return None
-        if c.panic_active or c.fear_timer > 0 or c.is_sleeping:
+        if c.panic_active or c.fear_timer > 0 or c.sleep.is_sleeping:
             return None
 
         wellbeing_threshold = ci_settings.FAMILY_MIN_WELLBEING - ci_settings.PUBERTY_WELLBEING_DISCOUNT

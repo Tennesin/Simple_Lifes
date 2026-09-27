@@ -32,14 +32,14 @@ from .state.burial_state import BurialState
 from .state.child_road_play_state import ChildRoadPlayState
 from .state.road_verify_state import RoadVerifyState
 from .state.construction_state import ConstructionState
-from .state.feeding_state import FeedingState
-from .state.storage_supply_state import StorageSupplyState
+from .state.resource_carry_state import ResourceCarryState
 from .state.housing_state import HousingState
 from .state.elder_care_state import ElderCareState
 from .state.road_state import RoadState
 from .state.landmark_state import LandmarkState
-from .state.ai_throttle_state import AIThrottleState
-from .state.stuck_state import StuckState
+from .state.ai_state import AIState
+from .state.needs_seeking_state import NeedsSeekingState
+from .state.sleep_state import SleepState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -112,29 +112,22 @@ class Creature(LivingEntity):
         self.landmarks = LandmarkState.rolled(self.x, self.y)
 
         # =====================================================================
-        # Цель движения / троттлинг принятия решений (ИИ решает не каждый кадр)
+        # Цель движения / инфраструктура ИИ (троттлинг решений, застревание,
+        # заморозка - объединены в AIState, см. state/ai_state.py)
         # =====================================================================
         self.target = None
         self.decision_timer = 0.0
-        self.ai_throttle = AIThrottleState.rolled()
-
-        # =====================================================================
-        # Движение / застревание
-        # =====================================================================
         self.speed_factor = 1.0
-        self.stuck = StuckState.rolled(self.x, self.y)
+        self.ai_state = AIState.rolled(self.x, self.y)
 
         # =====================================================================
-        # Флаги активного поиска ресурсов
+        # Флаги активного поиска базовых нужд (голод/жажда/рассудок)
         # =====================================================================
-        self.seeking_food = False
-        self.seeking_water = False
-        self.seeking_sanity = False
+        self.needs_seeking = NeedsSeekingState()
 
         # =====================================================================
-        # Неуязвимость / заморозка
+        # Неуязвимость
         # =====================================================================
-        self.freeze_timer = 0.0
         self.spike_invuln_timer = 0.0
 
         # =====================================================================
@@ -162,11 +155,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Сон
         # =====================================================================
-        self.wake_threshold = random.uniform(
-            *ci_settings.WAKE_ENERGY_THRESHOLD.get(self.temperament, (85, 90)))
-        self.seeking_sleep = False
-        self.is_sleeping = False
-        self.sleep_forced = False
+        self.sleep = SleepState.rolled(self.temperament)
 
         # =====================================================================
         # Отношение к игроку / реакции на прикосновения
@@ -222,14 +211,9 @@ class Creature(LivingEntity):
         self.burial = BurialState()
 
         # =====================================================================
-        # Донашивание еды/воды детям и сородичам
+        # Донашивание ресурсов: кому несём еду/воду + снабжение склада
         # =====================================================================
-        self.feeding = FeedingState.rolled()
-
-        # =====================================================================
-        # Семейный склад запасов
-        # =====================================================================
-        self.storage_supply = StorageSupplyState.rolled()
+        self.resources = ResourceCarryState.rolled()
 
         # =====================================================================
         # Жильё
@@ -342,10 +326,6 @@ class Creature(LivingEntity):
         self.target = None
         self.decision_timer = 0.0
         self.panic_active = False
-        self.seeking_food = False
-        self.seeking_water = False
-        self.seeking_sanity = False
-        self.freeze_timer = 0.0
         self.spike_invuln_timer = 0.0
         self.calm_timer = 0.0
         self.fear_timer = 0.0
@@ -363,15 +343,15 @@ class Creature(LivingEntity):
         self.burial.reset()
         self.construction.reset()
         self.puberty.reset()
-        self.feeding.reset()
+        self.resources.reset()
         self.child_road_play.reset()
         self.road_verify.reset()
-        self.storage_supply.reset()
         self.housing.reset()
         self.family.reset()
         self.elder_care.reset()
         self.roads.reset()
-        self.ai_throttle.reset()
+        self.needs_seeking.reset()
+        self.ai_state.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -391,7 +371,7 @@ class Creature(LivingEntity):
         if interval <= 0:
             return self.brain.decide(ctx)
 
-        throttle = self.ai_throttle
+        throttle = self.ai_state
         throttle.ai_dt_debt += ctx.dt
         if throttle.ai_plan_valid and throttle.ai_dt_debt < interval:
             return throttle.ai_last_goal
@@ -410,7 +390,7 @@ class Creature(LivingEntity):
 
     def invalidate_plan(self):
         """Заставить мозг пересчитать решение на ближайшем кадре."""
-        self.ai_throttle.ai_plan_valid = False
+        self.ai_state.ai_plan_valid = False
 
     def interact(self, fruits, spikes, water_puddles, bushes, campfires, other_creatures,
                 storage_fields, dt, walls=None, biome_grid=None):
@@ -551,8 +531,6 @@ class Creature(LivingEntity):
             "age": self.age,
             "player_named": self.player_named,
             "curiosity": self.curiosity,
-            "is_sleeping": self.is_sleeping,
-            "sleep_forced": self.sleep_forced,
             "fear_timer": self.fear_timer,
             "psyche_joy": self.psyche.joy,
             "psyche_satisfaction": self.psyche.satisfaction,
@@ -561,14 +539,14 @@ class Creature(LivingEntity):
             "psyche_attachment": self.psyche.attachment,
             **self.puberty.to_persisted_dict(),
             **self.burial.to_persisted_dict(),
-            **self.feeding.to_persisted_dict(),
+            **self.resources.to_persisted_dict(),
             **self.construction.to_persisted_dict(),
-            **self.storage_supply.to_persisted_dict(),
             **self.housing.to_persisted_dict(),
             **self.family.to_persisted_dict(),
             **self.elder_care.to_persisted_dict(),
             **self.roads.to_persisted_dict(),
             **self.landmarks.to_persisted_dict(),
+            **self.sleep.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

@@ -105,8 +105,8 @@ class CreatureNeeds(WeakOwnerMixin):
 
     def _update_energy(self, dt, biome=settings.BIOME_PLAINS):
         c = self.c
-        if c.is_sleeping:
-            restore_rate = (ci_settings.ENERGY_FORCED_SLEEP_RESTORE_RATE if c.sleep_forced
+        if c.sleep.is_sleeping:
+            restore_rate = (ci_settings.ENERGY_FORCED_SLEEP_RESTORE_RATE if c.sleep.sleep_forced
                             else ci_settings.ENERGY_SLEEP_RESTORE_RATE)
             restore_rate *= ci_settings.ENERGY_STATE_MULTIPLIER.get(ci_settings.STATE_SLEEP, 1.0)
             c.energy = min(c.energy + restore_rate * dt, ci_settings.ENERGY_MAX)
@@ -124,8 +124,8 @@ class CreatureNeeds(WeakOwnerMixin):
             c.energy -= (dt / ci_settings.ENERGY_DRAIN_INTERVAL) * drain_multiplier
             if c.energy <= 0:
                 c.energy = 0
-                c.is_sleeping = True
-                c.sleep_forced = True
+                c.sleep.is_sleeping = True
+                c.sleep.sleep_forced = True
 
     def wellbeing_score(self):
         c = self.c

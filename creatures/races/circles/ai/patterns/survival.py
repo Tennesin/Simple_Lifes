@@ -40,19 +40,19 @@ class SurvivalNeeds(GoalComponent):
     def _tick_seeking_flags(self):
         c = self.c
         if c.energy < ci_settings.ENERGY_LOW_THRESHOLD:
-            c.seeking_sleep = True
+            c.sleep.seeking_sleep = True
         if c.consciousness < ci_settings.SANITY_LOW_THRESHOLD:
-            c.seeking_sanity = True
-        if c.seeking_sanity and c.consciousness >= ci_settings.SANITY_SATISFY_THRESHOLD:
-            c.seeking_sanity = False
+            c.needs_seeking.seeking_sanity = True
+        if c.needs_seeking.seeking_sanity and c.consciousness >= ci_settings.SANITY_SATISFY_THRESHOLD:
+            c.needs_seeking.seeking_sanity = False
         if c.hunger < 10:
-            c.seeking_food = True
-        if c.seeking_food and c.hunger >= ci_settings.HUNGER_SATISFY_THRESHOLD:
-            c.seeking_food = False
+            c.needs_seeking.seeking_food = True
+        if c.needs_seeking.seeking_food and c.hunger >= ci_settings.HUNGER_SATISFY_THRESHOLD:
+            c.needs_seeking.seeking_food = False
         if c.thirst < 10:
-            c.seeking_water = True
-        if c.seeking_water and c.thirst >= ci_settings.THIRST_SATISFY_THRESHOLD:
-            c.seeking_water = False
+            c.needs_seeking.seeking_water = True
+        if c.needs_seeking.seeking_water and c.thirst >= ci_settings.THIRST_SATISFY_THRESHOLD:
+            c.needs_seeking.seeking_water = False
 
     def _consider_urgent_survival(self, ctx):
         c = self.c
@@ -79,7 +79,7 @@ class SurvivalNeeds(GoalComponent):
 
     def _consider_urgent_sanity(self, ctx):
         c = self.c
-        if not (c.seeking_sanity and c.consciousness < ci_settings.SANITY_PANIC_THRESHOLD):
+        if not (c.needs_seeking.seeking_sanity and c.consciousness < ci_settings.SANITY_PANIC_THRESHOLD):
             return None
         urgency = scale(ci_settings.SANITY_PANIC_THRESHOLD - c.consciousness,
                         0, ci_settings.SANITY_PANIC_THRESHOLD)
@@ -92,7 +92,7 @@ class SurvivalNeeds(GoalComponent):
 
     def _consider_sleep(self, ctx):
         c = self.c
-        if not c.seeking_sleep:
+        if not c.sleep.seeking_sleep:
             return None
         deficit = scale(ci_settings.ENERGY_LOW_THRESHOLD - c.energy, 0, ci_settings.ENERGY_LOW_THRESHOLD)
         score = self.SCORE_SLEEP_BASE + deficit * self.SCORE_SLEEP_MAX_BONUS
@@ -104,7 +104,7 @@ class SurvivalNeeds(GoalComponent):
 
     def _consider_food(self, ctx):
         c = self.c
-        if not c.seeking_food:
+        if not c.needs_seeking.seeking_food:
             return None
         score = self.SCORE_FOOD_BASE + self.SCORE_FOOD_MAX_BONUS
 
@@ -125,7 +125,7 @@ class SurvivalNeeds(GoalComponent):
 
     def _consider_water(self, ctx):
         c = self.c
-        if not c.seeking_water:
+        if not c.needs_seeking.seeking_water:
             return None
         score = self.SCORE_WATER_BASE + self.SCORE_WATER_MAX_BONUS
 
@@ -146,7 +146,7 @@ class SurvivalNeeds(GoalComponent):
 
     def _consider_sanity(self, ctx):
         c = self.c
-        if not c.seeking_sanity:
+        if not c.needs_seeking.seeking_sanity:
             return None
         deficit = scale(ci_settings.SANITY_LOW_THRESHOLD - c.consciousness, 0, ci_settings.SANITY_LOW_THRESHOLD)
         score = self.SCORE_SANITY_BASE + deficit * self.SCORE_SANITY_MAX_BONUS
