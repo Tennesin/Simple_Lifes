@@ -264,35 +264,36 @@ class _NavigationInstinctMixin:
 
     def check_if_stuck(self, goal, biome_grid=None):
         c = self.c
-        if c.stuck_check_timer > 0 or goal is None:
+        stuck = c.stuck
+        if stuck.stuck_check_timer > 0 or goal is None:
             return
-        c.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
-        moved = math.hypot(c.x - c.position_at_last_check[0], c.y - c.position_at_last_check[1])
-        c.position_at_last_check = (c.x, c.y)
+        stuck.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
+        moved = math.hypot(c.x - stuck.position_at_last_check[0], c.y - stuck.position_at_last_check[1])
+        stuck.position_at_last_check = (c.x, c.y)
 
         nav_index = getattr(c, "nav_path_index", 0)
-        path_advanced = nav_index > c.stuck_last_nav_index
-        c.stuck_last_nav_index = nav_index
+        path_advanced = nav_index > stuck.stuck_last_nav_index
+        stuck.stuck_last_nav_index = nav_index
 
         goal_dist = math.hypot(c.x - goal[0], c.y - goal[1])
         if (not path_advanced and moved < ci_settings.STUCK_DISTANCE_THRESHOLD
                 and goal_dist > ci_settings.STUCK_DISTANCE_THRESHOLD):
-            c.stuck_level += 1
+            stuck.stuck_level += 1
             c.pathfinder.reset_navigation()
             c.roads.following_road_active = False
 
-            if c.stuck_level >= ci_settings.STUCK_ESCALATION_THRESHOLD:
+            if stuck.stuck_level >= ci_settings.STUCK_ESCALATION_THRESHOLD:
                 angle = random.uniform(0, 2 * math.pi)
                 dist = random.uniform(*ci_settings.STUCK_ESCAPE_DISTANCE)
                 point = geometry.clamped_point(c.x, c.y, angle, dist)
                 c.target = self._avoid_sea(point, biome_grid)
-                c.stuck_level = 0
+                stuck.stuck_level = 0
             else:
                 c.target = self.explore(biome_grid=biome_grid)
 
             c.decision_timer = random.uniform(*ci_settings.EXPLORE_TIMER[c.temperament])
         else:
-            c.stuck_level = max(0, c.stuck_level - 1)
+            stuck.stuck_level = max(0, stuck.stuck_level - 1)
 
     def pursue_search_target(self, visible_companions=None, biome_grid=None):
         c = self.c

@@ -38,6 +38,8 @@ from .state.housing_state import HousingState
 from .state.elder_care_state import ElderCareState
 from .state.road_state import RoadState
 from .state.landmark_state import LandmarkState
+from .state.ai_throttle_state import AIThrottleState
+from .state.stuck_state import StuckState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -114,18 +116,13 @@ class Creature(LivingEntity):
         # =====================================================================
         self.target = None
         self.decision_timer = 0.0
-        self.ai_dt_debt = random.uniform(0.0, ci_settings.AI_DECISION_INTERVAL)
-        self.ai_last_goal = None
-        self.ai_plan_valid = False
+        self.ai_throttle = AIThrottleState.rolled()
 
         # =====================================================================
         # Движение / застревание
         # =====================================================================
         self.speed_factor = 1.0
-        self.stuck_check_timer = ci_settings.STUCK_CHECK_INTERVAL
-        self.position_at_last_check = (self.x, self.y)
-        self.stuck_level = 0
-        self.stuck_last_nav_index = 0
+        self.stuck = StuckState.rolled(self.x, self.y)
 
         # =====================================================================
         # Флаги активного поиска ресурсов
@@ -362,9 +359,6 @@ class Creature(LivingEntity):
         self.social_request_point = None
         self.state = ci_settings.STATE_CALM
         self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
-        # ---------- Троттлинг ИИ: мёртвое существо больше не решает ----------
-        self.ai_plan_valid = False
-        self.ai_last_goal = None
 
         self.burial.reset()
         self.construction.reset()
@@ -377,6 +371,7 @@ class Creature(LivingEntity):
         self.family.reset()
         self.elder_care.reset()
         self.roads.reset()
+        self.ai_throttle.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -396,25 +391,26 @@ class Creature(LivingEntity):
         if interval <= 0:
             return self.brain.decide(ctx)
 
-        self.ai_dt_debt += ctx.dt
-        if self.ai_plan_valid and self.ai_dt_debt < interval:
-            return self.ai_last_goal
+        throttle = self.ai_throttle
+        throttle.ai_dt_debt += ctx.dt
+        if throttle.ai_plan_valid and throttle.ai_dt_debt < interval:
+            return throttle.ai_last_goal
 
         frame_dt = ctx.dt
-        ctx.dt = self.ai_dt_debt
+        ctx.dt = throttle.ai_dt_debt
         try:
             goal = self.brain.decide(ctx)
         finally:
             ctx.dt = frame_dt
 
-        self.ai_dt_debt = 0.0
-        self.ai_last_goal = goal
-        self.ai_plan_valid = True
+        throttle.ai_dt_debt = 0.0
+        throttle.ai_last_goal = goal
+        throttle.ai_plan_valid = True
         return goal
 
     def invalidate_plan(self):
         """Заставить мозг пересчитать решение на ближайшем кадре."""
-        self.ai_plan_valid = False
+        self.ai_throttle.ai_plan_valid = False
 
     def interact(self, fruits, spikes, water_puddles, bushes, campfires, other_creatures,
                 storage_fields, dt, walls=None, biome_grid=None):

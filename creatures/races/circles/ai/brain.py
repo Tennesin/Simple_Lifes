@@ -48,7 +48,7 @@ class _TimerTickMixin(_BrainMixinBase):
     def _tick_timers(self, dt):
         c = self.c
         c.decision_timer -= dt
-        c.stuck_check_timer -= dt
+        c.stuck.stuck_check_timer -= dt
         c.roads.road_follow_check_timer -= dt
         c.territory.tick_cooldowns(dt)
         c.speed_factor = 1.0

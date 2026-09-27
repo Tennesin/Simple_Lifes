@@ -5,6 +5,7 @@ from_dict(), владеющий одним доменом (пубертат, т�
 дороги, стройка/добыча ресурсов, кормление и т.д.)."""
 
 from .base import StateBlock
+from .ai_throttle_state import AIThrottleState
 from .burial_state import BurialState
 from .child_road_play_state import ChildRoadPlayState
 from .construction_state import ConstructionState
@@ -16,9 +17,10 @@ from .road_state import RoadState
 from .road_verify_state import RoadVerifyState
 from .storage_supply_state import StorageSupplyState
 from .housing_state import HousingState
+from .stuck_state import StuckState
 
 __all__ = [
-    "StateBlock", "BurialState", "ChildRoadPlayState", "ConstructionState",
-    "ElderCareState", "FeedingState", "LandmarkState", "PubertyState", "RoadState",
-    "RoadVerifyState",
+    "StateBlock", "AIThrottleState", "BurialState", "ChildRoadPlayState", "ConstructionState",
+    "ElderCareState", "FeedingState", "HousingState", "LandmarkState", "PubertyState", "RoadState",
+    "RoadVerifyState", "StorageSupplyState", "StuckState",
 ]
