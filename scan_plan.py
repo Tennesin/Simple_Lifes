@@ -1,7 +1,7 @@
 """Данные плана миграции Creature для scan_creature_refs.py. Обновлять здесь -
 код сканера при этом трогать не нужно."""
 
-ACTIVE_STAGE = 15   # обновляй по мере продвижения
+ACTIVE_STAGE = 16   # обновляй по мере продвижения
 
 PLAN_STAGES = {
     0: (
@@ -232,9 +232,7 @@ PLAN_STAGES = {
 # Поля, которые сознательно не мигрируют (контракт CreatureBase / all_needed / общая шина ИИ)
 NEVER_MIGRATE = {
     "nav_path", "nav_path_index", "nav_goal", "nav_recalc_timer", "nav_search_failed",
-    "speed_factor", "spike_invuln_timer",
-    "is_dead", "hp", "hunger", "thirst", "energy",
-    "target", "decision_timer", "state", "goal_text", "panic_active",
-    "age", "life_stage", "temperament",
-    "consciousness", "sanity_decay_timer",
+    "speed_factor", "spike_invuln_timer", "fear_timer", "fear_source", "is_dead", "hp",
+    "hunger", "thirst", "energy", "target", "decision_timer", "state", "goal_text",
+    "panic_active", "age", "life_stage", "temperament", "consciousness", "sanity_decay_timer",
 }
