@@ -50,6 +50,9 @@ class LivingEntity(BaseEntity):
     def effective_vision_radius(self):
         return settings.DEFAULT_VISION_RADIUS
 
+    def is_hidden(self) -> bool:
+        return False
+
     def on_landmark_removed(self, landmark_type, landmark_id, position):
         pass
 

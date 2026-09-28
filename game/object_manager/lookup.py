@@ -30,9 +30,7 @@ class ObjectLookup:
 
     @staticmethod
     def _is_hidden(creature):
-        # Живое существо внутри своего дома на поле не рисуется и выбраться кликом не должно
-        # (at_home - признак расы "Круг"; убрать его из ядра можно свойством в LivingEntity)
-        return not creature.is_dead and getattr(creature, "at_home", False)
+        return creature.is_hidden()
 
     def creature_at(self, wx, wy):
         best, best_dist = None, cfg.CREATURE_PICK_RADIUS

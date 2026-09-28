@@ -171,7 +171,7 @@ class Simulation:
 
         if self._tick_dynamic_grid_frame():
             self._creature_grid.build(
-                c for c in world.creatures if not c.is_dead and not getattr(c, "at_home", False))
+                c for c in world.creatures if not c.is_dead and not c.is_hidden())
             self._corpse_grid.build(c for c in world.creatures if c.is_dead)
 
         spatial_grids = {

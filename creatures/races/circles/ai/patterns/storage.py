@@ -78,7 +78,7 @@ class Storage(GoalComponent):
                 candidate = lookup_creature(other_creatures, c.resources.urgent_child_id, other_by_id)
                 if (candidate is not None and not candidate.is_dead
                         and candidate.life_stage == ci_settings.LIFE_STAGE_CHILD
-                        and candidate.parent_ids and c.id in candidate.parent_ids):
+                        and candidate.family.parent_ids and c.id in candidate.family.parent_ids):
                     urgent_child = candidate
             needy = urgent_child if urgent_child is not None else self.actions.find_needy_friend(ctx.visible_companions)
             if needy:

@@ -265,6 +265,9 @@ class Creature(LivingEntity):
         half_w, half_h = house.width / 2, house.height / 2
         return abs(self.x - house.x) <= half_w and abs(self.y - house.y) <= half_h
 
+    def is_hidden(self):
+        return not self.is_dead and self.housing.at_home
+
     def get_type_name(self):
         return ci_info.INFO_CREATURE_KIND
 
