@@ -330,9 +330,9 @@ class _ResourceMemoryMixin:
         candidates = visible_positions + memory_positions
         target = geometry.nearest_point(c.x, c.y, candidates)
         if target is not None:
-            setattr(c, target_attr, target if target not in visible_positions else None)
+            setattr(c.awareness, target_attr, target if target not in visible_positions else None)
             return target
-        setattr(c, target_attr, None)
+        setattr(c.awareness, target_attr, None)
         return None
 
     def nearest_food_target(self, visible_fruits):
@@ -361,7 +361,7 @@ class _ResourceMemoryMixin:
 
     def _check_stale_memory_target(self, mem_type, target_attr, visible_objs, presence_check):
         c = self.c
-        target = getattr(c, target_attr)
+        target = getattr(c.awareness, target_attr)
         if target is None:
             return
         tx, ty = target
@@ -370,7 +370,7 @@ class _ResourceMemoryMixin:
         still_there = any(presence_check(o, tx, ty) for o in visible_objs)
         if not still_there:
             c.memory.forget_memory(mem_type, tx, ty)
-        setattr(c, target_attr, None)
+        setattr(c.awareness, target_attr, None)
 
     def check_stale_food_memory(self, visible_fruits):
         self._check_stale_memory_target(

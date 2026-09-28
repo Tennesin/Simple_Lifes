@@ -55,14 +55,15 @@ class _TimerTickMixin(_BrainMixinBase):
         c.panic_active = False
         c.roads.following_road_active = False
 
-        if c.calm_timer > 0:
-            c.calm_timer -= dt
+        state = c.player_state
+        if state.calm_timer > 0:
+            state.calm_timer -= dt
         if c.fear_timer > 0:
             c.fear_timer -= dt
         if c.spike_invuln_timer > 0:
             c.spike_invuln_timer -= dt
-        if c.player_fear_timer > 0:
-            c.player_fear_timer -= dt
+        if state.player_fear_timer > 0:
+            state.player_fear_timer -= dt
         if c.social_request_timer > 0:
             c.social_request_timer -= dt
         if c.resources.urgent_child_timer > 0:
@@ -383,7 +384,7 @@ class CreatureBrain(WeakOwnerMixin, _TimerTickMixin, _PerceptionMixin, _ReflexMi
         can_handle_corpses = c.can_handle_corpses()
         threat_corpses = [] if can_handle_corpses else perception.visible_corpses
 
-        if c.calm_timer > 0 or c.roads.following_road or in_house:
+        if c.player_state.calm_timer > 0 or c.roads.following_road or in_house:
             nearby_corpse_threats = []
         else:
             nearby_corpse_threats = [t for t in threat_corpses if c.distance_to(t) < perception.reaction_distance]

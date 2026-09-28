@@ -133,7 +133,7 @@ class ElderCuriosityStrategy(CuriosityStrategy):
         if unknown_hazards:
             for spike in unknown_hazards:
                 c.memory.add_memory("spike", spike.x, spike.y, importance=-1.5)
-            c.knowledge["spike"] = True
+            c.awareness.known["spike"] = True
             c.state = ci_settings.STATE_CALM
             c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN
 

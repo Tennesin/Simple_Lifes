@@ -211,7 +211,7 @@ class CreatureFamily(WeakOwnerMixin):
     def update(self, dt, other_creatures, creatures_by_id=None, storage_fields=None, houses=None,
                nearby_creatures_grid=None):
         c = self.c
-        if c.is_dead or c.is_grabbed:
+        if c.is_dead or c.player_state.is_grabbed:
             return None
 
         if self.birth_cooldown > 0:
@@ -316,7 +316,7 @@ class CreatureFamily(WeakOwnerMixin):
 
         candidates = []
         for other in candidate_pool:
-            if other is c or other.is_dead or other.is_grabbed:
+            if other is c or other.is_dead or other.player_state.is_grabbed:
                 continue
             if not same_race(c, other):
                 continue

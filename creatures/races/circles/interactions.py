@@ -45,7 +45,7 @@ class CreatureInteractions(WeakOwnerMixin):
                 c.hp = min(c.hp + ci_settings.FRUIT_HP_BONUS, ci_settings.HP_MAX)
                 c.hunger = min(c.hunger + ci_settings.FRUIT_HUNGER_BONUS, ci_settings.HUNGER_MAX)
                 c.memory.add_memory("fruit", fruit.x, fruit.y, importance=2.0)
-                c.knowledge["fruit"] = True
+                c.awareness.known["fruit"] = True
 
     def _register_resource_rivals(self, obj, other_creatures, need_attr):
         c = self.c
@@ -77,7 +77,7 @@ class CreatureInteractions(WeakOwnerMixin):
                 actual_gain = water.consume(wanted)
                 c.thirst = min(c.thirst + actual_gain, ci_settings.THIRST_MAX)
                 c.memory.add_memory("water", water.x, water.y, importance=1.5)
-                c.knowledge["water"] = True
+                c.awareness.known["water"] = True
                 c.territory.register_use(water, "water", dt, campfires=campfires)
 
         if biome_grid is not None and biome_grid.get_at(c.x, c.y) == settings.BIOME_RIVER:
@@ -85,7 +85,7 @@ class CreatureInteractions(WeakOwnerMixin):
                                 (ci_settings.THIRST_MAX - c.thirst) / ci_settings.THIRST_MAX)
             c.thirst = min(c.thirst + ci_settings.WATER_DRINK_RATE * deficit_ratio * dt,
                            ci_settings.THIRST_MAX)
-            c.knowledge["water"] = True
+            c.awareness.known["water"] = True
 
     def _check_jealousy(self, other_creatures, dt):
         c = self.c
@@ -132,7 +132,7 @@ class CreatureInteractions(WeakOwnerMixin):
                 c.x = max(15, min(c.x, settings.WORLD_WIDTH - 15))
                 c.y = max(15, min(c.y, settings.WORLD_HEIGHT - 15))
                 c.memory.add_memory("spike", spike.x, spike.y, importance=-2.0)
-                c.knowledge["spike"] = True
+                c.awareness.known["spike"] = True
                 c.psyche.on_hazard_encountered()
                 c.pathfinder.reset_navigation()
 
@@ -174,7 +174,7 @@ class CreatureInteractions(WeakOwnerMixin):
         for bush in bushes:
             min_dist = bush.radius + 12
             if c.distance_to(bush) < min_dist:
-                c.knowledge["bush"] = True
+                c.awareness.known["bush"] = True
                 dx = c.x - bush.x
                 dy = c.y - bush.y
                 dist = math.hypot(dx, dy)
@@ -210,7 +210,7 @@ class CreatureInteractions(WeakOwnerMixin):
                     ci_settings.SANITY_CAMPFIRE_RESTORE_RATE_NEAR
                     - ci_settings.SANITY_CAMPFIRE_RESTORE_RATE_FAR) * best_ratio
             c.consciousness = min(c.consciousness + rate * dt, ci_settings.SANITY_MAX)
-            c.knowledge["campfire"] = True
+            c.awareness.known["campfire"] = True
 
     def _talk_to_companions(self, other_creatures, dt):
         c = self.c

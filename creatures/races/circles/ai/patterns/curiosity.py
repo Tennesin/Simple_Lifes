@@ -32,7 +32,7 @@ class Curiosity(GoalComponent):
     def _pursue(self, ctx):
         c = self.c
         unknown_harmless = self._collect_unknown_harmless(ctx)
-        unknown_hazards = [s for s in ctx.visible_spikes if not c.knowledge["spike"]]
+        unknown_hazards = [s for s in ctx.visible_spikes if not c.awareness.known["spike"]]
 
         visible_types_now = {t for t, _ in unknown_harmless}
         if unknown_hazards:
@@ -44,13 +44,13 @@ class Curiosity(GoalComponent):
     def _collect_unknown_harmless(self, ctx):
         c = self.c
         unknown_harmless = []
-        if c.eats_food_type("fruit") and not c.knowledge["fruit"] and ctx.visible_fruits:
+        if c.eats_food_type("fruit") and not c.awareness.known["fruit"] and ctx.visible_fruits:
             unknown_harmless.append(("fruit", min(ctx.visible_fruits, key=c.distance_to)))
-        if not c.knowledge["water"] and ctx.visible_water:
+        if not c.awareness.known["water"] and ctx.visible_water:
             unknown_harmless.append(("water", min(ctx.visible_water, key=c.distance_to)))
-        if not c.knowledge["bush"] and ctx.visible_bushes:
+        if not c.awareness.known["bush"] and ctx.visible_bushes:
             unknown_harmless.append(("bush", min(ctx.visible_bushes, key=c.distance_to)))
-        if not c.knowledge["campfire"] and ctx.visible_campfires:
+        if not c.awareness.known["campfire"] and ctx.visible_campfires:
             unknown_harmless.append(("campfire", min(ctx.visible_campfires, key=c.distance_to)))
         return unknown_harmless
 

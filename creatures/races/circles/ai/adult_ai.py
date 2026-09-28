@@ -270,7 +270,7 @@ class AdultCuriosityStrategy(CuriosityStrategy):
             d = math.hypot(dx, dy)
             if d <= ci_settings.CURIOSITY_HAZARD_STUDY_DISTANCE:
                 c.memory.add_memory("spike", target_obj.x, target_obj.y, importance=-1.5)
-                c.knowledge["spike"] = True
+                c.awareness.known["spike"] = True
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_CURIOSITY_HAZARD_KNOWN
                 c.target = (c.x, c.y)
                 return c.target

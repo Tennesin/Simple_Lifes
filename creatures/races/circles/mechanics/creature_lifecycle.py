@@ -20,6 +20,8 @@ from ..state.elder_care_state import ElderCareState
 from ..state.road_state import RoadState
 from ..state.landmark_state import LandmarkState
 from ..state.sleep_state import SleepState
+from ..state.awareness_state import AwarenessState
+from ..state.player_reaction_state import PlayerReactionState
 
 # =========================================================================
 # Домен: спавн существ — новое существо "с нуля" и рождение ребёнка
@@ -118,13 +120,9 @@ _CREATURE_SIMPLE_FIELDS = (
     ("consciousness", "consciousness", ci_settings.SANITY_MAX),
     ("x", "x", 0.0),
     ("y", "y", 0.0),
-    ("player_memory", "player_memory", list),
     ("is_dead", "is_dead", False),
     ("death_timer", "death_timer", 0.0),
     ("death_cause", "death_cause", None),
-    ("player_relationship", "player_relationship", 0.0),
-    ("favorite_bonus_applied", "favorite_bonus_applied", False),
-    ("player_named", "player_named", False),
     ("relationships", "relationships", dict),
     ("energy", "energy", ci_settings.ENERGY_MAX),
     ("curiosity", "curiosity", _KEEP_CONSTRUCTOR_DEFAULT),
@@ -149,10 +147,11 @@ def _load_creature_landmarks(creature, state):
     creature.landmarks = LandmarkState.from_persisted_dict(
         state, fallback_point=(creature.x, creature.y))
 
-def _load_creature_knowledge(creature, state):
-    default_knowledge = {"fruit": False, "spike": False, "water": False,
-                         "bush": False, "campfire": False}
-    creature.knowledge = {**default_knowledge, **state.get("knowledge", {})}
+def _load_creature_awareness(creature, state):
+    creature.awareness = AwarenessState.from_persisted_dict(state)
+
+def _load_creature_player_state(creature, state):
+    creature.player_state = PlayerReactionState.from_persisted_dict(state)
 
 def _load_creature_age_and_stage(creature, state):
     creature.age = state.get("age", ci_settings.AGE_CHILD_END)
@@ -203,7 +202,8 @@ def load_creature_from_state(state):
                         gender=state.get("gender"))
     _load_creature_simple_fields(creature, state)
     _load_creature_landmarks(creature, state)
-    _load_creature_knowledge(creature, state)
+    _load_creature_awareness(creature, state)
+    _load_creature_player_state(creature, state)
     _load_creature_age_and_stage(creature, state)
     _load_creature_puberty(creature, state)
     _load_creature_burial(creature, state)

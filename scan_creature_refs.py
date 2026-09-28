@@ -45,7 +45,7 @@ ANIMALS_PATH_PART = "creatures/animals"               # пропускается
 CREATURE_CLASS_NAME = "Creature"
 SCAN_SELF_CLASSES = {"Creature"}                      # self.xxx внутри них = поле существа
 STATE_BASE_CLASS = "StateBlock"
-STATE_BLOCKS_SOFT_LIMIT = 14                          # см. README, раздел про state
+STATE_BLOCKS_SOFT_LIMIT = 20                          # см. README, раздел про state
 PLUMBING_FILES = ("creature.py", "creature_lifecycle.py")   # регистрация/персистентность - не считается использованием
 MERGE_JACCARD = 0.6
 

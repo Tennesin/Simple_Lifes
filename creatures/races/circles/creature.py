@@ -40,6 +40,8 @@ from .state.landmark_state import LandmarkState
 from .state.ai_state import AIState
 from .state.needs_seeking_state import NeedsSeekingState
 from .state.sleep_state import SleepState
+from .state.awareness_state import AwarenessState
+from .state.player_reaction_state import PlayerReactionState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -131,17 +133,9 @@ class Creature(LivingEntity):
         self.spike_invuln_timer = 0.0
 
         # =====================================================================
-        # Память об игроке / базовое знакомство с типами объектов
+        # Осведомлённость: знакомство с типами объектов и цели-воспоминания о еде/воде
         # =====================================================================
-        self.player_memory = []
-        self.knowledge = {"fruit": False, "spike": False, "water": False,
-                          "bush": False, "campfire": False}
-
-        # =====================================================================
-        # Память о еде/воде (точные цели поиска)
-        # =====================================================================
-        self.food_memory_target = None
-        self.water_memory_target = None
+        self.awareness = AwarenessState()
 
         # =====================================================================
         # Глобальная навигация (A* по клеточной карте, creatures/navigation.py)
@@ -160,14 +154,9 @@ class Creature(LivingEntity):
         # =====================================================================
         # Отношение к игроку / реакции на прикосновения
         # =====================================================================
-        self.player_relationship = 0.0
-        self.calm_timer = 0.0
+        self.player_state = PlayerReactionState()
         self.fear_timer = 0.0
-        self.player_fear_timer = 0.0
         self.fear_source = None
-        self.favorite_bonus_applied = False
-        self.is_grabbed = False
-        self.grab_before_state = None
 
         # =====================================================================
         # Возраст / стадия жизни
@@ -327,14 +316,10 @@ class Creature(LivingEntity):
         self.decision_timer = 0.0
         self.panic_active = False
         self.spike_invuln_timer = 0.0
-        self.calm_timer = 0.0
         self.fear_timer = 0.0
-        self.player_fear_timer = 0.0
         self.fear_source = None
         self.play_target_id = None
         self.play_role = None
-        self.is_grabbed = False
-        self.grab_before_state = None
         self.social_request_timer = 0.0
         self.social_request_point = None
         self.state = ci_settings.STATE_CALM
@@ -352,6 +337,7 @@ class Creature(LivingEntity):
         self.roads.reset()
         self.needs_seeking.reset()
         self.ai_state.reset()
+        self.player_state.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
@@ -451,10 +437,10 @@ class Creature(LivingEntity):
                 self.burial.graveyard_alert_timer = 0.0
             self.memory.forget_memory("graveyard", position[0], position[1])
         elif landmark_type == "water":
-            if self.water_memory_target is not None:
-                wx, wy = self.water_memory_target
+            if self.awareness.water_memory_target is not None:
+                wx, wy = self.awareness.water_memory_target
                 if abs(wx - position[0]) < 8 and abs(wy - position[1]) < 8:
-                    self.water_memory_target = None
+                    self.awareness.water_memory_target = None
             self.memory.forget_memory("water", position[0], position[1])
             self.invalidate_plan()
 
@@ -489,10 +475,10 @@ class Creature(LivingEntity):
             pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), inner_radius, 2)
 
         # ---------- Хват игрока - индикатор взаимодействия, настройка "кольца" на него не влияет ----------
-        if self.is_grabbed:
+        if self.player_state.is_grabbed:
             pygame.draw.circle(screen, (255, 255, 255), (int(sx), int(sy)), draw_radius + 4, 2)
         elif show_status_rings:
-            if self.calm_timer > 0:
+            if self.player_state.calm_timer > 0:
                 pygame.draw.circle(screen, (255, 210, 120), (int(sx), int(sy)), draw_radius + 3, 1)
             elif self.fear_timer > 0:
                 pygame.draw.circle(screen, (255, 90, 90), (int(sx), int(sy)), draw_radius + 3, 1)
@@ -519,17 +505,12 @@ class Creature(LivingEntity):
             "x": self.x,
             "y": self.y,
             "temperament": self.temperament,
-            "player_memory": self.player_memory,
             "is_dead": self.is_dead,
             "death_timer": self.death_timer,
             "death_cause": self.death_cause,
-            "knowledge": self.knowledge,
-            "player_relationship": self.player_relationship,
-            "favorite_bonus_applied": self.favorite_bonus_applied,
             "relationships": self.relationships,
             "gender": self.gender,
             "age": self.age,
-            "player_named": self.player_named,
             "curiosity": self.curiosity,
             "fear_timer": self.fear_timer,
             "psyche_joy": self.psyche.joy,
@@ -547,6 +528,8 @@ class Creature(LivingEntity):
             **self.roads.to_persisted_dict(),
             **self.landmarks.to_persisted_dict(),
             **self.sleep.to_persisted_dict(),
+            **self.awareness.to_persisted_dict(),
+            **self.player_state.to_persisted_dict(),
         }
         write_json_atomic(os.path.join(folder_path, "state.json"), state, indent=2)
         self.memory.save(os.path.join(folder_path, "memory.json"))

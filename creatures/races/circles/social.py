@@ -90,8 +90,8 @@ class CreatureCommunication(WeakOwnerMixin):
         shared_importance = importance * ci_settings.SHARE_IMPORTANCE_FACTOR
         c.memory.add_memory(mem_type, x, y, importance=shared_importance)
         c.memory.add_intuitive_memory(mem_type, *c.landmarks.comfort_point, x, y, importance=shared_importance)
-        if mem_type in c.knowledge:
-            c.knowledge[mem_type] = True
+        if mem_type in c.awareness.known:
+            c.awareness.known[mem_type] = True
         if mem_type == "campfire" and c.landmarks.known_campfire is None:
             c.landmarks.known_campfire = (x, y)
 
@@ -104,7 +104,7 @@ class CreatureCommunication(WeakOwnerMixin):
             return
         ox, oy = other.landmarks.comfort_point
         c.memory.add_intuitive_memory("bush", ox, oy, target[0], target[1], importance=1.0)
-        c.knowledge["bush"] = True
+        c.awareness.known["bush"] = True
 
     # ---------- Соединения: маршруты до ресурсов через дорожную сеть ----------
 
@@ -123,7 +123,7 @@ class CreatureCommunication(WeakOwnerMixin):
             return
         x, y, importance = best
         c.memory.add_memory("spike", x, y, importance=importance * ci_settings.SHARE_IMPORTANCE_FACTOR)
-        c.knowledge["spike"] = True
+        c.awareness.known["spike"] = True
 
     # ---------- Дороги ----------
 

@@ -685,11 +685,11 @@ class Construction(GoalComponent):
                     target = owner
 
         bonus = ci_settings.PLAYER_CONSTRUCTION_HELP_RELATIONSHIP_MAX * share
-        target.player_relationship = geometry.clamp(
-            target.player_relationship + bonus, -100.0, 100.0)
+        state = target.player_state
+        state.relationship = geometry.clamp(state.relationship + bonus, -100.0, 100.0)
         target.psyche.on_player_construction_help(share)
         target.player_reactions.add_memory(
-            "construction_help", share=round(share, 2), relationship_after=target.player_relationship)
+            "construction_help", share=round(share, 2), relationship_after=state.relationship)
 
 # =========================================================================
 # Приватный вариант: домохозяйство не путает свою и чужую стройку

@@ -354,7 +354,7 @@ class CircleTickProcessor:
                 genealogy.register_pair(creature.id, creature.family.partner_id)
 
             if (ctx.active_ids is not None and creature.id not in ctx.active_ids
-                    and not creature.is_grabbed):
+                    and not creature.player_state.is_grabbed):
                 continue
 
             creature.housing.at_home = creature.is_in_own_house(world.houses)
@@ -394,7 +394,7 @@ class CircleTickProcessor:
             if birth_request is not None:
                 game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
 
-            if creature.is_grabbed:
+            if creature.player_state.is_grabbed:
                 ready_for_interact.append(creature)
                 continue
 

@@ -66,11 +66,12 @@ def handle_corpse_release(corpse, game):
 
 def apply_name_edit(creature, new_name):
     creature.name = new_name
-    if not creature.player_named:
-        creature.player_named = True
-        creature.player_relationship = max(-100.0, min(100.0,
-            creature.player_relationship + ci_settings.NAME_ASSIGN_RELATIONSHIP_BONUS))
-        creature.player_reactions.add_memory("named", relationship_after=creature.player_relationship)
+    state = creature.player_state
+    if not state.named:
+        state.named = True
+        state.relationship = max(-100.0, min(100.0,
+            state.relationship + ci_settings.NAME_ASSIGN_RELATIONSHIP_BONUS))
+        creature.player_reactions.add_memory("named", relationship_after=state.relationship)
         creature.goal_text = ci_info.INFO_CREATURE_GOAL_NAMED
 
 # =========================================================================
@@ -108,8 +109,9 @@ def on_delete_house(game, house):
         creature.housing.home_id = None
         creature.fear_timer = max(creature.fear_timer, ci_settings.HOUSE_DESTRUCTION_PANIC_DURATION)
         creature.fear_source = (house.x, house.y)
-        creature.player_relationship = geometry.clamp(
-            creature.player_relationship + ci_settings.HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY, -100.0, 100.0)
+        creature.player_state.relationship = geometry.clamp(
+            creature.player_state.relationship + ci_settings.HOUSE_DESTRUCTION_RELATIONSHIP_PENALTY,
+            -100.0, 100.0)
         creature.psyche.on_hazard_encountered()
         if creature.life_stage == ci_settings.LIFE_STAGE_CHILD:
             # ---------- Ребёнок инстинктивно кинется искать видимого родителя (см. ChildAI._consider_distress) ----------

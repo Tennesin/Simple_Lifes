@@ -392,12 +392,13 @@ class CreaturePanel:
 
     def _relationship_label(self, creature):
         gender = creature.gender
-        if creature.player_fear_timer > 0:
+        state = creature.player_state
+        if state.player_fear_timer > 0:
             return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_FEAR, gender), (230, 70, 70)
-        if creature.calm_timer > 0:
+        if state.calm_timer > 0:
             return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_CALMED, gender), (255, 210, 120)
 
-        r = creature.player_relationship
+        r = state.relationship
         if r <= -70:
             return ci_info.gendered_text(ci_info.INFO_RELATIONSHIP_DESPISE, gender), (210, 40, 40)
         elif r <= -30:
@@ -426,7 +427,7 @@ class CreaturePanel:
         mid_x = x + width // 2
         pygame.draw.line(screen, (110, 110, 110), (mid_x, bar_y), (mid_x, bar_y + bar_height), 1)
 
-        ratio = max(-1.0, min(1.0, creature.player_relationship / 100.0))
+        ratio = max(-1.0, min(1.0, creature.player_state.relationship / 100.0))
         marker_x = mid_x + ratio * (width // 2)
 
         if ratio >= 0:
@@ -601,7 +602,7 @@ class CreaturePanel:
 
         label, _color = self._relationship_label(creature)
         inner_y = self._draw_axis_bar(
-            screen, f"{ci_info.INFO_PSYCHE_PLAYER_REL}: {label}", creature.player_relationship,
+            screen, f"{ci_info.INFO_PSYCHE_PLAYER_REL}: {label}", creature.player_state.relationship,
             ci_info.INFO_RELATIONSHIP_DESPISE, ci_info.INFO_RELATIONSHIP_DEVOTED,
             inner_x, inner_y, inner_width)
 
