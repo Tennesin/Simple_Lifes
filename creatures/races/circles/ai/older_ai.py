@@ -137,12 +137,12 @@ class ElderCuriosityStrategy(CuriosityStrategy):
             c.state = ci_settings.STATE_CALM
             c.goal_text = ci_info.INFO_CREATURE_GOAL_ELDER_HAZARD_KNOWN
 
-        interested_harmless = [(t, obj) for t, obj in unknown_harmless if t in c.curiosity_interested]
+        interested_harmless = [(t, obj) for t, obj in unknown_harmless if t in c.awareness.curiosity_interested]
         if not interested_harmless:
-            c.curiosity_active = False
+            c.awareness.curiosity_active = False
             return None
 
-        c.curiosity_active = True
+        c.awareness.curiosity_active = True
         c.state = ci_settings.STATE_SEEKING
         target_type, target_obj = min(interested_harmless, key=lambda p: c.distance_to(p[1]))
         c.goal_text = ci_info.INFO_CREATURE_GOAL_CURIOSITY_UNKNOWN

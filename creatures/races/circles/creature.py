@@ -96,9 +96,6 @@ class Creature(LivingEntity):
                             else random.choice(ci_settings.TEMPERAMENT_LIST))
         self.base_speed_multiplier = ci_settings.SPEED_MULTIPLIER[self.temperament]
         self.curiosity = random.uniform(*ci_settings.CURIOSITY_RANGE.get(self.temperament, (0.3, 0.6)))
-        self.curiosity_active = False
-        self.curiosity_rolled = set()
-        self.curiosity_interested = set()
 
         # =====================================================================
         # Социальные запросы / помощь сородичам

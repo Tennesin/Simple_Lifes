@@ -253,14 +253,15 @@ class AdultCuriosityStrategy(CuriosityStrategy):
 
     def pursue(self, unknown_harmless, unknown_hazards):
         c = self.c
-        interested_harmless = [(t, obj) for t, obj in unknown_harmless if t in c.curiosity_interested]
-        interested_hazards = unknown_hazards if "spike" in c.curiosity_interested else []
+        awareness = c.awareness
+        interested_harmless = [(t, obj) for t, obj in unknown_harmless if t in awareness.curiosity_interested]
+        interested_hazards = unknown_hazards if "spike" in awareness.curiosity_interested else []
 
         if not interested_harmless and not interested_hazards:
-            c.curiosity_active = False
+            awareness.curiosity_active = False
             return None
 
-        c.curiosity_active = True
+        awareness.curiosity_active = True
         c.state = ci_settings.STATE_SEEKING
 
         if interested_hazards:

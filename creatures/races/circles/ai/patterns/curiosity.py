@@ -56,14 +56,15 @@ class Curiosity(GoalComponent):
 
     def _roll_curiosity_interest(self, visible_types_now):
         c = self.c
-        for t in list(c.curiosity_rolled):
+        awareness = c.awareness
+        for t in list(awareness.curiosity_rolled):
             if t not in visible_types_now:
-                c.curiosity_rolled.discard(t)
-                c.curiosity_interested.discard(t)
+                awareness.curiosity_rolled.discard(t)
+                awareness.curiosity_interested.discard(t)
 
         chance = ci_settings.CURIOSITY_DISCOVERY_CHANCE.get(c.temperament, 0.3) * c.psyche.curiosity_modifier()
         for t in visible_types_now:
-            if t not in c.curiosity_rolled:
-                c.curiosity_rolled.add(t)
+            if t not in awareness.curiosity_rolled:
+                awareness.curiosity_rolled.add(t)
                 if random.random() < chance:
-                    c.curiosity_interested.add(t)
+                    awareness.curiosity_interested.add(t)
