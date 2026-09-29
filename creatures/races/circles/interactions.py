@@ -215,7 +215,7 @@ class CreatureInteractions(WeakOwnerMixin):
     def _talk_to_companions(self, other_creatures, dt):
         c = self.c
         c.is_talking = False
-        c.share_info_timer -= dt
+        c.social_state.share_info_timer -= dt
         for other in other_creatures:
             if other is c or other.is_dead:
                 continue
@@ -241,9 +241,9 @@ class CreatureInteractions(WeakOwnerMixin):
                         c.psyche.on_quarrel()
                         other.psyche.on_quarrel()
 
-                if c.share_info_timer <= 0:
+                if c.social_state.share_info_timer <= 0:
                     c.communication.share_information(other)
-                    c.share_info_timer = random.uniform(*ci_settings.SHARE_INFO_INTERVAL)
+                    c.social_state.share_info_timer = random.uniform(*ci_settings.SHARE_INFO_INTERVAL)
 
     def _receive_elder_support(self, other_creatures, dt):
         c = self.c

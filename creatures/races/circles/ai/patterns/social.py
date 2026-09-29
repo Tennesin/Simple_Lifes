@@ -23,7 +23,7 @@ class EmpathyHelp(GoalComponent):
 
     def consider(self, ctx):
         c = self.c
-        committed = c._helping_target_id is not None
+        committed = c.social_state.helping_target_id is not None
         threshold = ci_settings.EMPATHY_MIN_RELATIONSHIP - c.psyche.empathy_threshold_discount()
         has_needy = committed or any(
             o.consciousness < ci_settings.SANITY_LOW_THRESHOLD
@@ -41,21 +41,22 @@ class EmpathyHelp(GoalComponent):
 
     def _try_help(self, ctx):
         c = self.c
+        state = c.social_state
         other_creatures, other_by_id = ctx.other_creatures, ctx.other_by_id
 
-        if c.helping_commit_timer > 0:
-            c.helping_commit_timer -= ctx.dt
+        if state.helping_commit_timer > 0:
+            state.helping_commit_timer -= ctx.dt
 
-        if c._helping_target_id is not None:
-            current = lookup_creature(other_creatures, c._helping_target_id, other_by_id, alive_only=True)
+        if state.helping_target_id is not None:
+            current = lookup_creature(other_creatures, state.helping_target_id, other_by_id, alive_only=True)
             if current is not None:
                 still_needy = (
                         current.consciousness < ci_settings.SANITY_SATISFY_THRESHOLD and
                         c.social.get_relationship(current) >= ci_settings.EMPATHY_MIN_RELATIONSHIP
                 )
-                if still_needy or c.helping_commit_timer > 0:
+                if still_needy or state.helping_commit_timer > 0:
                     return self._go_help(current)
-            c._helping_target_id = None
+            state.helping_target_id = None
 
         threshold = ci_settings.EMPATHY_MIN_RELATIONSHIP - c.psyche.empathy_threshold_discount()
         needy = [o for o in ctx.visible_companions
@@ -65,8 +66,8 @@ class EmpathyHelp(GoalComponent):
             return None
 
         target_companion = c.social.best_companion(needy)
-        c._helping_target_id = target_companion.id
-        c.helping_commit_timer = ci_settings.HELP_COMMIT_MIN_DURATION
+        state.helping_target_id = target_companion.id
+        state.helping_commit_timer = ci_settings.HELP_COMMIT_MIN_DURATION
         c.social.adjust_mutual_relationship(target_companion,
                                             ci_settings.RELATIONSHIP_HELP_BONUS_HELPER,
                                             ci_settings.RELATIONSHIP_HELP_BONUS_HELPED)
@@ -106,8 +107,8 @@ class SocialResponse(GoalComponent):
         self.c = creature
 
     def consider(self, ctx):
-        c = self.c
-        if c.social_request_timer <= 0 or c.social_request_point is None:
+        state = c.social_state
+        if state.request_timer <= 0 or state.request_point is None:
             return [None]
 
         def execute():
@@ -117,7 +118,7 @@ class SocialResponse(GoalComponent):
 
     def _respond(self):
         c = self.c
-        target_pos = c.social_request_point
+        target_pos = c.social_state.request_point
         if target_pos is None:
             return None
         c.state = ci_settings.STATE_SEEKING

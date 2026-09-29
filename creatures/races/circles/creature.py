@@ -43,6 +43,7 @@ from .state.sleep_state import SleepState
 from .state.awareness_state import AwarenessState
 from .state.player_reaction_state import PlayerReactionState
 from .state.child_behavior_state import ChildBehaviorState
+from .state.social_state import SocialState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -102,12 +103,8 @@ class Creature(LivingEntity):
         # =====================================================================
         # Социальные запросы / помощь сородичам
         # =====================================================================
-        self.social_request_timer = 0.0
-        self.share_info_timer = 0.0
-        self.social_request_point = None
+        self.social_state = SocialState()
         self.relationships = {}
-        self._helping_target_id = None
-        self.helping_commit_timer = 0.0
 
         # =====================================================================
         # Ориентиры: зона комфорта / знакомый костёр / место сна
@@ -318,8 +315,6 @@ class Creature(LivingEntity):
         self.spike_invuln_timer = 0.0
         self.fear_timer = 0.0
         self.fear_source = None
-        self.social_request_timer = 0.0
-        self.social_request_point = None
         self.state = ci_settings.STATE_CALM
         self.goal_text = ci_info.INFO_CREATURE_STATE_DEAD
 
@@ -337,6 +332,7 @@ class Creature(LivingEntity):
         self.ai_state.reset()
         self.player_state.reset()
         self.child_behavior.reset()
+        self.social_state.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)

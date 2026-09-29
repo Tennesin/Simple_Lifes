@@ -57,8 +57,7 @@ class CreatureSocial(WeakOwnerMixin):
         # ---------- Бросок один раз, на момент запроса, а не каждый кадр в consider() ----------
         if random.random() > c.psyche.social_response_chance():
             return
-        c.social_request_timer = ci_settings.SOCIAL_REQUEST_HOLD_TIME
-        c.social_request_point = point
+        c.social_state.set_request(point)
 
 class CreatureCommunication(WeakOwnerMixin):
     def __init__(self, creature):
