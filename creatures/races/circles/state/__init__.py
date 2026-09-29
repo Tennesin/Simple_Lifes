@@ -21,10 +21,11 @@ from .resource_carry_state import ResourceCarryState
 from .road_state import RoadState
 from .road_verify_state import RoadVerifyState
 from .sleep_state import SleepState
+from .child_behavior_state import ChildBehaviorState
 
 __all__ = [
     "StateBlock", "AIState", "AwarenessState", "BurialState", "ChildRoadPlayState",
     "ConstructionState", "ElderCareState", "HousingState", "LandmarkState",
     "NeedsSeekingState", "PlayerReactionState", "PubertyState", "ResourceCarryState",
-    "RoadState", "RoadVerifyState", "SleepState",
+    "RoadState", "RoadVerifyState", "SleepState", "ChildBehaviorState",
 ]

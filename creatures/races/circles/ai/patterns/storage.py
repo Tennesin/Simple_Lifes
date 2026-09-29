@@ -133,11 +133,3 @@ class PrivateStorage(Storage):
         if self._owned_field(ctx) is None:
             return [None]
         return [Consideration("storage", self.SCORE, lambda: self._pursue(ctx))]
-
-    def _pursue(self, ctx):
-        c = self.c
-        field = self._owned_field(ctx)
-        if field is None:
-            c.storage_supply.mode = False
-            return None
-        return self._pursue_supply(field, ctx)

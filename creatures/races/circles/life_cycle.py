@@ -81,10 +81,7 @@ class CreatureAging(WeakOwnerMixin):
             if c.puberty.active:
                 self._end_puberty()
         elif old_stage == ci_settings.LIFE_STAGE_CHILD and new_stage == ci_settings.LIFE_STAGE_ADULT:
-            c.child_distress_timer = 0.0
-            c.play_target_id = None
-            c.play_role = None
-            c.play_timer = 0.0
+            c.child_behavior.on_grown_up()
             # ---------- Сыновья получают отсрочку перед выселением из родного дома ----------
             if c.gender == ci_settings.GENDER_MALE and c.housing.home_id is not None:
                 c.housing.home_eviction_timer = ci_settings.HOUSE_SON_GRACE_PERIOD

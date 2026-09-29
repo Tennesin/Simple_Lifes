@@ -42,6 +42,7 @@ from .state.needs_seeking_state import NeedsSeekingState
 from .state.sleep_state import SleepState
 from .state.awareness_state import AwarenessState
 from .state.player_reaction_state import PlayerReactionState
+from .state.child_behavior_state import ChildBehaviorState
 
 class Creature(LivingEntity):
     race_name = ci_settings.RACE_NAME
@@ -172,11 +173,7 @@ class Creature(LivingEntity):
         # =====================================================================
         # Поведение ребёнка: испуг, игры-догонялки
         # =====================================================================
-        self.child_distress_timer = 0.0
-        self.play_target_id = None
-        self.play_role = None
-        self.play_timer = 0.0
-        self.play_cooldown = random.uniform(2.0, 4.0)
+        self.child_behavior = ChildBehaviorState.rolled()
 
         # =====================================================================
         # Дороги игрока (не детские)
@@ -321,8 +318,6 @@ class Creature(LivingEntity):
         self.spike_invuln_timer = 0.0
         self.fear_timer = 0.0
         self.fear_source = None
-        self.play_target_id = None
-        self.play_role = None
         self.social_request_timer = 0.0
         self.social_request_point = None
         self.state = ci_settings.STATE_CALM
@@ -341,6 +336,7 @@ class Creature(LivingEntity):
         self.needs_seeking.reset()
         self.ai_state.reset()
         self.player_state.reset()
+        self.child_behavior.reset()
 
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)

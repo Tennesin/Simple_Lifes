@@ -176,7 +176,7 @@ PLAN_STAGES = {
         "life_stage",
     ),
     17: (
-        # Шаг 17 - Поведение ребёнка (испуг, догонялки).
+        # Шаг 17 - Поведение ребёнка (ChildBehaviorState). РЕАЛИЗОВАНО.
         "child_distress_timer",
         "play_target_id",
         "play_role",
@@ -184,8 +184,9 @@ PLAN_STAGES = {
         "play_cooldown",
     ),
     18: (
-        # Шаг 18 - Социальное (отношения, запросы компании, эмпатия).
-        "relationships",
+        # Шаг 18 - Социальные запросы и помощь (SocialState). relationships
+        # сознательно НЕ мигрирует: накопленные данные, читаются панелью,
+        # скорбью и спавном напрямую.
         "social_request_timer",
         "social_request_point",
         "share_info_timer",
@@ -193,40 +194,13 @@ PLAN_STAGES = {
         "helping_commit_timer",
     ),
     19: (
-        # Шаг 19 - Характер / скорость / любопытство.
-        "temperament",
-        "base_speed_multiplier",
-        "curiosity",
+        # Шаг 19 - Рабочая память любопытства -> в существующий AwarenessState.
         "curiosity_active",
         "curiosity_rolled",
         "curiosity_interested",
     ),
-    20: (
-        # Шаг 20 - Смерть.
-        "is_dead",
-        "death_timer",
-        "death_cause",
-        "_pending_grief",
-    ),
-    21: (
-        # Шаг 21 - Текущее состояние / отображаемая цель.
-        "state",
-        "goal_text",
-        "panic_active",
-        "is_talking",
-    ),
-    22: (
-        # Шаг 22 (ПОСЛЕДНИЙ, самый рискованный) - Витальность.
-        "hp",
-        "hunger",
-        "thirst",
-        "consciousness",
-        "sanity_decay_timer",
-        "energy",
-    ),
-    # Идентичность (id, gender, name, player_named, x, y, radius) сознательно
-    # НЕ вынесена отдельным этапом: это не поведенческое состояние, а
-    # перманентные идентификаторы/геометрия - план не предполагает её миграцию.
+    # Шаги 20-22 (смерть / состояние / витальность) УДАЛЕНЫ: все их поля
+    # либо в NEVER_MIGRATE, либо составляют блок из 1 поля.
 }
 
 # Поля, которые сознательно не мигрируют (контракт CreatureBase / all_needed / общая шина ИИ)
@@ -235,4 +209,7 @@ NEVER_MIGRATE = {
     "speed_factor", "spike_invuln_timer", "fear_timer", "fear_source", "is_dead", "hp",
     "hunger", "thirst", "energy", "target", "decision_timer", "state", "goal_text",
     "panic_active", "age", "life_stage", "temperament", "consciousness", "sanity_decay_timer",
+    # ---------- добавлено при пересмотре шагов 16-22 ----------
+    "relationships", "curiosity", "base_speed_multiplier",
+    "death_timer", "death_cause", "_pending_grief", "is_talking",
 }

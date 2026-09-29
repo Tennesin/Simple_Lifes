@@ -79,9 +79,10 @@ class _ChildDistressMixin(_ChildAIMixinBase, _ChildSharedUtilsMixin):
 
     def _consider_distress(self, visible_companions, biome_grid=None):
         c = self.c
-        if c.child_distress_timer <= ci_settings.CHILD_DISTRESS_THRESHOLD:
+        distress = c.child_behavior.distress_timer
+        if distress <= ci_settings.CHILD_DISTRESS_THRESHOLD:
             return None
-        urgency = scale(c.child_distress_timer - ci_settings.CHILD_DISTRESS_THRESHOLD,
+        urgency = scale(distress - ci_settings.CHILD_DISTRESS_THRESHOLD,
                         0, ci_settings.CHILD_DISTRESS_THRESHOLD)
         score = SCORE_CHILD_DISTRESS_BASE + urgency * SCORE_CHILD_DISTRESS_MAX_BONUS
 
@@ -145,7 +146,7 @@ class _ChildFeedInterruptMixin(_ChildAIMixinBase):
 
     def _await_feeding(self):
         c = self.c
-        if c.play_target_id is not None:
+        if c.child_behavior.play_target_id is not None:
             self._end_child_tag_game()
         if c.child_road_play.road is not None:
             self._end_child_road_play()
@@ -383,25 +384,26 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
 
     def _consider_free_time(self, visible_companions, visible_roads, dt, biome_grid=None):
         c = self.c
-        active_game = c.play_target_id is not None and c.play_role is not None
+        play = c.child_behavior
 
-        if active_game:
+        if play.is_playing:
             def execute():
                 return self._pursue_child_tag_game(visible_companions, dt, biome_grid=biome_grid)
 
             return Consideration("child_play_continue", SCORE_CHILD_PLAY_CONTINUE, execute)
 
-        if c.play_cooldown > 0:
-            c.play_cooldown -= dt
+        if play.play_cooldown > 0:
+            play.play_cooldown -= dt
             return None
 
         def execute():
-            c.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
+            play.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
             started_tag = False
 
             if c.temperament != ci_settings.TEMPERAMENT_LAZY:
                 other_children = [o for o in visible_companions
-                                  if o.life_stage == ci_settings.LIFE_STAGE_CHILD and o.play_target_id is None
+                                  if o.life_stage == ci_settings.LIFE_STAGE_CHILD
+                                  and o.child_behavior.play_target_id is None
                                   and o.temperament != ci_settings.TEMPERAMENT_LAZY]
                 if other_children and random.random() < ci_settings.CHILD_PLAY_CHANCE:
                     playmate = min(other_children, key=c.distance_to)
@@ -424,20 +426,18 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
         return Consideration("child_free_time", SCORE_CHILD_FREE_TIME, execute)
 
     def _start_child_tag_game(self, playmate):
-        c = self.c
-        c.play_target_id = playmate.id
-        c.play_role = "chaser"
-        c.play_timer = 0.0
+        self.c.child_behavior.start_tag(playmate.id)
 
     def _pursue_child_tag_game(self, visible_companions, dt, biome_grid=None):
         c = self.c
-        partner = next((o for o in visible_companions if o.id == c.play_target_id), None)
+        play = c.child_behavior
+        partner = next((o for o in visible_companions if o.id == play.play_target_id), None)
         if partner is None or partner.is_dead or partner.life_stage != ci_settings.LIFE_STAGE_CHILD:
             self._end_child_tag_game()
             return None
 
-        c.play_timer += dt
-        if c.play_timer >= ci_settings.CHILD_PLAY_MAX_DURATION:
+        play.play_timer += dt
+        if play.play_timer >= ci_settings.CHILD_PLAY_MAX_DURATION:
             self._end_child_tag_game(partner)
             return None
 
@@ -450,13 +450,11 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
 
         anchor = self.instincts.nearest_known_campfire()
 
-        if c.play_role == "chaser":
+        if play.play_role == "chaser":
             dist = c.distance_to(partner)
             if dist < ci_settings.CHILD_TAG_DISTANCE:
-                partner.play_target_id = c.id
-                partner.play_role = "chaser"
-                partner.play_timer = c.play_timer
-                c.play_role = "runner"
+                partner.child_behavior.become_chaser(c.id, play.play_timer)
+                play.play_role = "runner"
                 raw_target = c.flee_point((partner.x, partner.y), ci_settings.CHILD_FLEE_DISTANCE)
                 c.target = self._confine_play_point(raw_target, anchor, biome_grid)
                 return c.target
@@ -482,16 +480,9 @@ class _ChildTagGameMixin(_ChildAIMixinBase):
         return self.instincts.avoid_sea(point, biome_grid)
 
     def _end_child_tag_game(self, partner=None):
-        c = self.c
-        c.play_target_id = None
-        c.play_role = None
-        c.play_timer = 0.0
-        c.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
+        self.c.child_behavior.stop_game()
         if partner is not None:
-            partner.play_target_id = None
-            partner.play_role = None
-            partner.play_timer = 0.0
-            partner.play_cooldown = random.uniform(*ci_settings.CHILD_PLAY_CHECK_INTERVAL)
+            partner.child_behavior.stop_game()
 
 # =========================================================================
 # Домен: игра на детской дороге (пройти туда-обратно + скука от повторов)
@@ -618,9 +609,9 @@ class ChildAI(_ChildDistressMixin, _ChildFeedInterruptMixin, _ChildSleepMixin, _
             )
 
         if near_fire or near_parent or near_caretaker:
-            c.child_distress_timer = 0.0
+            c.child_behavior.distress_timer = 0.0
         else:
-            c.child_distress_timer += dt
+            c.child_behavior.distress_timer += dt
 
         if c.energy < ci_settings.ENERGY_LOW_THRESHOLD:
             c.sleep.seeking_sleep = True

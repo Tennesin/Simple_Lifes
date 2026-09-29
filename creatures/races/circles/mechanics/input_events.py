@@ -115,7 +115,7 @@ def on_delete_house(game, house):
         creature.psyche.on_hazard_encountered()
         if creature.life_stage == ci_settings.LIFE_STAGE_CHILD:
             # ---------- Ребёнок инстинктивно кинется искать видимого родителя (см. ChildAI._consider_distress) ----------
-            creature.child_distress_timer = ci_settings.CHILD_DISTRESS_THRESHOLD + 1.0
+            creature.child_behavior.distress_timer = ci_settings.CHILD_DISTRESS_THRESHOLD + 1.0
 
 def on_delete_construction_site(game, site):
     for creature in game.world.creatures:
