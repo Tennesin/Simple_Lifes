@@ -42,11 +42,11 @@ class InstructionScreen:
     def __init__(self, categories):
         self.categories = categories
         self.active_key = categories[0].key if categories else None
-        self.scrolls = {c.key: ScrollArea() for c in categories}
-        self.accordions = {c.key: AccordionList() for c in categories if c.is_list}
+        self.scrolls = {cat.key: ScrollArea() for cat in categories}
+        self.accordions = {cat.key: AccordionList() for cat in categories if cat.is_list}
 
     def active_category(self):
-        return next((c for c in self.categories if c.key == self.active_key), None)
+        return next((cat for cat in self.categories if cat.key == self.active_key), None)
 
     def active_scroll(self):
         return self.scrolls.get(self.active_key)

@@ -41,7 +41,7 @@ class ResourceActions:
         if target_fruit is not None:
             if c.distance_to(target_fruit) < ci_settings.EAT_DISTANCE:
                 target_fruit.active = False
-                c.feeding.carried_fruit = True
+                c.resources.carried_fruit = True
                 c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
@@ -82,7 +82,7 @@ class ResourceActions:
         if target_water is not None:
             if c.distance_to(target_water) < ci_settings.EAT_DISTANCE + target_water.radius:
                 if target_water.take_charge():
-                    c.feeding.carried_water = True
+                    c.resources.carried_water = True
                     c.goal_text = carry_text
                     c.target = (c.x, c.y)
                     return c.target
@@ -103,7 +103,7 @@ class ResourceActions:
 
         if biome_grid is not None:
             if biome_grid.get_at(c.x, c.y) == settings.BIOME_RIVER:
-                c.feeding.carried_water = True
+                c.resources.carried_water = True
                 c.goal_text = carry_text
                 c.target = (c.x, c.y)
                 return c.target
@@ -119,11 +119,11 @@ class ResourceActions:
 
     def deliver_resource_to(self, target):
         c = self.c
-        still_needs_food = c.feeding.carried_fruit and target.hunger < ci_settings.HUNGER_SATISFY_THRESHOLD
-        still_needs_water = c.feeding.carried_water and target.thirst < ci_settings.THIRST_SATISFY_THRESHOLD
+        still_needs_food = c.resources.carried_fruit and target.hunger < ci_settings.HUNGER_SATISFY_THRESHOLD
+        still_needs_water = c.resources.carried_water and target.thirst < ci_settings.THIRST_SATISFY_THRESHOLD
 
         if not still_needs_food and not still_needs_water:
-            c.feeding.feed_target_id = None
+            c.resources.feed_target_id = None
             return None
 
         is_adult_recipient = target.life_stage != ci_settings.LIFE_STAGE_CHILD
@@ -141,17 +141,17 @@ class ResourceActions:
         if still_needs_food:
             target.hunger = min(target.hunger + ci_settings.FRUIT_HUNGER_BONUS, ci_settings.HUNGER_MAX)
             target.hp = min(target.hp + ci_settings.FRUIT_HP_BONUS, ci_settings.HP_MAX)
-            c.feeding.carried_fruit = False
+            c.resources.carried_fruit = False
         if still_needs_water:
             target.thirst = min(target.thirst + ci_settings.PARENT_CARRY_WATER_HYDRATION, ci_settings.THIRST_MAX)
-            c.feeding.carried_water = False
+            c.resources.carried_water = False
 
         bonus = (ci_settings.FAMILY_FEED_RELATIONSHIP_BONUS if target.life_stage == ci_settings.LIFE_STAGE_CHILD
                  else ci_settings.FAMILY_FEED_RELATIONSHIP_BONUS_ADULT)
         c.social.adjust_mutual_relationship(target, bonus)
         c.psyche.on_help_given()
         target.psyche.on_help_received()
-        c.feeding.feed_target_id = None
+        c.resources.feed_target_id = None
         c.goal_text = done_text
         c.target = (c.x, c.y)
         return c.target

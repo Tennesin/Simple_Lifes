@@ -29,7 +29,7 @@ class Storage(GoalComponent):
 
     def _pursue(self, ctx):
         c = self.c
-        field = self.instincts.find_storage_field(ctx.storage_fields, houses=ctx.houses)
+        field = self._owned_field(ctx)
         if field is None:
             if c.resources.storage_supply_mode and (c.resources.carried_fruit or c.resources.carried_water):
                 c.resources.storage_supply_mode = False

@@ -8,10 +8,10 @@ class Consideration:
         self.execute = execute
 
 def pick_best(considerations, min_score=0.0001):
-    valid = [c for c in considerations if c is not None and c.score > min_score]
-    valid.sort(key=lambda c: c.score, reverse=True)
-    for c in valid:
-        goal = c.execute()
+    valid = [cons for cons in considerations if cons is not None and cons.score > min_score]
+    valid.sort(key=lambda cons: cons.score, reverse=True)
+    for cons in valid:
+        goal = cons.execute()
         if goal is not None:
             return goal
     return None

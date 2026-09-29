@@ -543,6 +543,8 @@ def run_check(sources, index, out):
     problems = []
 
     def check_attr(src, node, owner, name, dynamic):
+        if name in ("setter", "getter", "deleter"):    # декораторы property, а не поля существа
+            return
         attrs, _types, closed = index.resolve(owner)
         if not closed or name in attrs or name.startswith("__"):
             return
