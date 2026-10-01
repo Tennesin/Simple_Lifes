@@ -107,6 +107,7 @@ class SocialResponse(GoalComponent):
         self.c = creature
 
     def consider(self, ctx):
+        c = self.c
         state = c.social_state
         if state.request_timer <= 0 or state.request_point is None:
             return [None]

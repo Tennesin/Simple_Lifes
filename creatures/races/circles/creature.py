@@ -51,13 +51,9 @@ class Creature(LivingEntity):
     food_category_map = ci_settings.RACE_FOOD_CATEGORY_MAP
 
     def __init__(self, creature_id, name=None, temperament=None, gender=None, name_pools=None):
-        # =====================================================================
-        # Идентификация
-        # =====================================================================
         self.id = creature_id
         self.gender = gender if gender in ci_settings.GENDER_LIST else random.choice(ci_settings.GENDER_LIST)
         self.name = name if name else random_name(self.gender, pools=name_pools)
-        self.player_named = False
 
         # =====================================================================
         # Базовые потребности / физическое тело
@@ -331,6 +327,8 @@ class Creature(LivingEntity):
         self.child_behavior.reset()
         self.social_state.reset()
 
+        self.pathfinder.reset_navigation()
+
     def tick_corpse(self, dt):
         return self.needs.tick_corpse(dt)
 
@@ -504,7 +502,6 @@ class Creature(LivingEntity):
             "gender": self.gender,
             "age": self.age,
             "curiosity": self.curiosity,
-            "fear_timer": self.fear_timer,
             "psyche_joy": self.psyche.joy,
             "psyche_satisfaction": self.psyche.satisfaction,
             "psyche_calmness": self.psyche.calmness,

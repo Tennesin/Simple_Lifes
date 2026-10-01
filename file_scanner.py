@@ -1,24 +1,31 @@
 """
-scan_creature_refs.py - статический сканер обращений к существу (Creature)
-и проверка существования атрибутов. Кладётся в корень проекта.
+file_scanner.py - статический сканер проекта Simple_Lifes. Лежит в корне проекта.
+Самодостаточен: ничего не импортирует из проекта и не читает внешних файлов-планов.
 
-РЕЖИМЫ:
-  python scan_creature_refs.py                      # поля активного этапа из scan_plan.py
-  python scan_creature_refs.py --stages 13 14       # поля указанных этапов
-  python scan_creature_refs.py --fields is_sleeping home_id   # точечный поиск
-  python scan_creature_refs.py --all                # инвентаризация всех полей
-  python scan_creature_refs.py --check              # несуществующие атрибуты (getattr/hasattr тоже)
-  python scan_creature_refs.py --state-audit        # оценка state-блоков, кандидаты на слияние
+РЕЖИМЫ (без аргументов запускается --check):
+  python file_scanner.py                      # то же, что --check
+  python file_scanner.py --check              # несуществующие атрибуты (getattr/hasattr тоже)
+  python file_scanner.py --state-audit        # оценка state-блоков, кандидаты на слияние
+  python file_scanner.py --fields is_sleeping home_id    # где используются указанные поля
+  python file_scanner.py --all                # инвентаризация всех полей
+
+ДОПОЛНИТЕЛЬНО:
+  --roots PATH [PATH ...]   что сканировать (по умолчанию весь проект)
+  --with-animals            включить creatures/animals
+  --include-unknown         показать и уровень U (много шума)
+  --target-class NAME       какой класс считать "существом" (по умолчанию Creature)
+  --out NAME_OR_PATH        имя/путь файла отчёта
+  --out-dir DIR             папка отчётов (по умолчанию <папка рядом с проектом>/temporary/1_scan_results)
 
 УРОВНИ УВЕРЕННОСТИ в отчётах:
-  C - база точно существо (c / creature / self.c / self внутри Creature)
+  C - база точно существо (c / creature / self.c / self внутри целевого класса)
   A - база выведена как существо (цикл по other_creatures, lookup_creature(...) и т.п.)
   H - имя похоже на существо (other, partner, ward...), вывод не подтвердил
   U - неизвестно (только с --include-unknown)
 
-Ограничение: это эвристика, а не type-checker. Алиасы через словари и
-параметры без аннотаций ловятся только на уровне H. --check не заменяет
-пробный запуск игры.
+Ограничение: это эвристика, а не type-checker. Алиасы через словари и параметры без
+аннотаций ловятся только на уровне H. Не ловит необъявленные имена (NameError) -
+для этого есть pyflakes/ruff. Не заменяет пробный запуск игры.
 """
 
 import argparse
@@ -27,26 +34,24 @@ import os
 import sys
 from collections import defaultdict, namedtuple
 
-try:
-    from scan_plan import ACTIVE_STAGE, NEVER_MIGRATE, PLAN_STAGES
-except ImportError:
-    PLAN_STAGES, NEVER_MIGRATE, ACTIVE_STAGE = {}, set(), None
-
 # =========================================================================
 # Настройки
 # =========================================================================
 
-DEFAULT_OUT_DIR = r"d:\Akmal\Personal\AI developed Mini-games\Simple Lifes\temporary\1_scan_results"
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Папка отчётов - рядом с проектом, как у text_maker.py ("...\Simple Lifes\temporary")
+DEFAULT_OUT_DIR = os.path.join(os.path.dirname(PROJECT_DIR), "temporary", "1_scan_results")
+
 IGNORED_DIR_NAMES = {"__pycache__", ".git", ".idea", "err", "temporary"}
-IGNORED_FILES = {"text_maker.py", "scan_creature_refs.py", "scan_plan.py"}
-ALLOWED_TOP_DIRS = {"creatures", "game", "ui"}        # при --roots . (корень проекта)
+IGNORED_FILES = {"text_maker.py", "file_scanner.py"}
+ALLOWED_TOP_DIRS = {"creatures", "game", "ui"}        # при сканировании корня проекта
 ANIMALS_PATH_PART = "creatures/animals"               # пропускается без --with-animals
 
-CREATURE_CLASS_NAME = "Creature"
+CREATURE_CLASS_NAME = "Creature"                      # меняется через --target-class
 SCAN_SELF_CLASSES = {"Creature"}                      # self.xxx внутри них = поле существа
 STATE_BASE_CLASS = "StateBlock"
-STATE_BLOCKS_SOFT_LIMIT = 20                          # см. README, раздел про state
-PLUMBING_FILES = ("creature.py", "creature_lifecycle.py")   # регистрация/персистентность - не считается использованием
+STATE_BLOCKS_SOFT_LIMIT = 20                          # синхронно с README, раздел 3
+PLUMBING_FILES = ("creature.py", "creature_lifecycle.py")   # регистрация/персистентность - не использование
 MERGE_JACCARD = 0.6
 
 SURE_NAMES = {"c", "creature"}
@@ -79,7 +84,10 @@ Record = namedtuple("Record", "tier field path kind rel lineno ctx text base")
 # =========================================================================
 
 def rel(path):
-    return os.path.relpath(path).replace(os.sep, "/")
+    try:
+        return os.path.relpath(path, PROJECT_DIR).replace(os.sep, "/")
+    except ValueError:          # другой диск (Windows)
+        return path.replace(os.sep, "/")
 
 def add_parents(tree):
     for node in ast.walk(tree):
@@ -108,10 +116,11 @@ class SourceFile:
 def iter_python_files(roots, with_animals):
     seen = set()
     for root in roots:
-        is_project_root = os.path.normpath(root) == "."
-        for dirpath, dirnames, filenames in os.walk(root):
+        root_abs = os.path.abspath(root)
+        is_project_root = root_abs == PROJECT_DIR
+        for dirpath, dirnames, filenames in os.walk(root_abs):
             dirnames[:] = [d for d in dirnames if d not in IGNORED_DIR_NAMES]
-            if is_project_root and os.path.normpath(dirpath) == ".":
+            if is_project_root and os.path.abspath(dirpath) == PROJECT_DIR:
                 dirnames[:] = [d for d in dirnames if d in ALLOWED_TOP_DIRS]
             if not with_animals and ANIMALS_PATH_PART in rel(dirpath):
                 dirnames[:] = []
@@ -484,7 +493,7 @@ def fmt(r):
     return f"[{r.rel}] {r.lineno} [{r.kind}/{r.tier}] {r.ctx} | {r.base}.{r.path}: {r.text}"
 
 # =========================================================================
-# Режим поиска (--fields / --stages / --all)
+# Режимы поиска (--fields / --all)
 # =========================================================================
 
 def write_field_report(out, records, groups, tiers):
@@ -497,10 +506,9 @@ def write_field_report(out, records, groups, tiers):
         names = fields if fields is not None else sorted(by_field, key=lambda f: (-len(by_field[f]), f))
         for field in names:
             entries = sorted(by_field.get(field, []), key=lambda r: (r.rel, r.lineno))
-            mark = "  [NEVER_MIGRATE]" if field in NEVER_MIGRATE else ""
-            out.write(f"=== {field}  ({len(entries)} обращений){mark} ===\n")
+            out.write(f"=== {field}  ({len(entries)} обращений) ===\n")
             if not entries:
-                out.write("  (обращений не найдено - уже мигрировано или опечатка в плане)\n")
+                out.write("  (обращений не найдено - поле не используется или опечатка в имени)\n")
                 if fields is not None:
                     print(f"[внимание] '{field}': обращений не найдено", file=sys.stderr)
             for r in entries:
@@ -524,7 +532,7 @@ def static_class(node, env, self_c, index, creature_info):
     return None
 
 def build_moved_hints(index, creature_info):
-    """поле -> ['housing.at_home', ...]: подсказка "возможно, поле переехало"."""
+    """поле -> ['housing.at_home', ...]: подсказка "возможно, поле переехало в state-блок"."""
     hints = defaultdict(list)
     _attrs, types, _closed = index.resolve(creature_info)
     for attr, type_name in types.items():
@@ -537,7 +545,8 @@ def build_moved_hints(index, creature_info):
 def run_check(sources, index, out):
     creature_info = index.get(CREATURE_CLASS_NAME)
     if creature_info is None:
-        out.write(f"Класс {CREATURE_CLASS_NAME} не найден в просканированных файлах.\n")
+        out.write(f"Класс {CREATURE_CLASS_NAME} не найден в просканированных файлах "
+                  f"(или имя неоднозначно).\n")
         return 1
     hints = build_moved_hints(index, creature_info)
     problems = []
@@ -631,47 +640,51 @@ def run_state_audit(records, index, out):
 # main
 # =========================================================================
 
-def resolve_out_path(out_arg, default_name):
-    path = out_arg if out_arg and os.path.isabs(out_arg) else os.path.join(DEFAULT_OUT_DIR, out_arg or default_name)
+def resolve_out_path(out_arg, default_name, out_dir):
+    if out_arg and os.path.isabs(out_arg):
+        path = out_arg
+    else:
+        path = os.path.join(out_dir or DEFAULT_OUT_DIR, out_arg or default_name)
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     return path
 
 def main():
+    global CREATURE_CLASS_NAME, SCAN_SELF_CLASSES
+
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--roots", nargs="+", default=["."],
+    parser.add_argument("--roots", nargs="+", default=None,
                         help="что сканировать (по умолчанию весь проект: creatures/game/ui + корневые файлы)")
     parser.add_argument("--with-animals", action="store_true", help="включить creatures/animals")
     parser.add_argument("--include-unknown", action="store_true", help="показать и уровень U (много шума)")
-    parser.add_argument("--fields", nargs="+", help="точечный поиск указанных полей")
-    parser.add_argument("--stages", nargs="+", type=int, help="этапы из scan_plan.py")
-    parser.add_argument("--all", action="store_true", help="инвентаризация всех полей")
-    parser.add_argument("--check", action="store_true", help="поиск обращений к несуществующим атрибутам")
+    parser.add_argument("--target-class", default="Creature", help="какой класс считать существом")
+    parser.add_argument("--check", action="store_true", help="поиск обращений к несуществующим атрибутам (по умолчанию)")
     parser.add_argument("--state-audit", action="store_true", help="оценка state-блоков")
+    parser.add_argument("--fields", nargs="+", help="точечный поиск указанных полей")
+    parser.add_argument("--all", action="store_true", help="инвентаризация всех полей")
     parser.add_argument("--out", default=None, help="имя/путь файла отчёта")
+    parser.add_argument("--out-dir", default=None, help="папка отчётов")
     args = parser.parse_args()
 
-    sources, broken = load_sources(args.roots, args.with_animals)
+    CREATURE_CLASS_NAME = args.target_class
+    SCAN_SELF_CLASSES = {args.target_class}
+
+    roots = args.roots or [PROJECT_DIR]
+    sources, broken = load_sources(roots, args.with_animals)
     for src in broken:
         print(f"[ПРОПУЩЕН] {src.rel}: {src.error}", file=sys.stderr)
     index = ProjectIndex(sources)
     tiers = {"C", "A", "H"} | ({"U"} if args.include_unknown else set())
 
-    if args.check:
-        mode, default_name = "check", "creature_refs_check.txt"
-    elif args.state_audit:
+    if args.state_audit:
         mode, default_name = "audit", "state_audit.txt"
     elif args.fields:
-        mode, default_name = "fields", "creature_refs_search.txt"
+        mode, default_name = "fields", "refs_search.txt"
     elif args.all:
-        mode, default_name = "all", "creature_refs_full.txt"
+        mode, default_name = "all", "refs_full.txt"
     else:
-        stages = args.stages or ([ACTIVE_STAGE] if ACTIVE_STAGE is not None else [])
-        if not stages or not PLAN_STAGES:
-            parser.error("нет этапов: заполни scan_plan.py или используй --fields/--check/--state-audit")
-        mode = "stages"
-        default_name = "creature_refs_stage" + "_".join(map(str, sorted(set(stages)))) + ".txt"
+        mode, default_name = "check", "refs_check.txt"
 
-    out_path = resolve_out_path(args.out, default_name)
+    out_path = resolve_out_path(args.out, default_name, args.out_dir)
     exit_code = 0
     with open(out_path, "w", encoding="utf-8") as out:
         out.write(f"Файлов разобрано: {len(sources)}; пропущено из-за ошибок: {len(broken)}\n")
@@ -687,13 +700,8 @@ def main():
             run_state_audit(records, index, out)
         else:
             records = [r for src in sources for r in collect_records(src)]
-            if mode == "fields":
-                groups = [("Поля: " + ", ".join(args.fields), args.fields)]
-            elif mode == "all":
-                groups = [("Все поля", None)]
-            else:
-                groups = [(f"ЭТАП {s} ({len(PLAN_STAGES.get(s, ()))} полей)", list(PLAN_STAGES.get(s, ())))
-                          for s in sorted(set(stages))]
+            groups = ([("Поля: " + ", ".join(args.fields), args.fields)]
+                      if mode == "fields" else [("Все поля", None)])
             write_field_report(out, records, groups, tiers)
 
     print(f"Готово: {out_path}")

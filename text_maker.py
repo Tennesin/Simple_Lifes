@@ -53,7 +53,7 @@ def main():
     main_dir = os.path.dirname(os.path.abspath(__file__))
     script_name = os.path.basename(__file__)
 
-    ignored_files = {script_name, "scan_creature_refs.py", "scan_plan.py"}
+    ignored_files = {script_name, "file_scanner.py"}
     base_target_dir = r"d:\Akmal\Personal\AI developed Mini-games\Simple Lifes\temporary"
     os.makedirs(base_target_dir, exist_ok=True)
 
