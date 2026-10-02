@@ -380,6 +380,8 @@ SLEEP_SPOT_ARRIVAL_DISTANCE = 14
 # ---------- Паника ----------
 PANIC_SPEED_MULTIPLIER = 1.35
 PANIC_SCAN_DISTANCE = 90
+CORPSE_FLEE_BLIND_DISTANCE = 130     # куда бежать от трупа, если костёр неизвестен
+URGENT_SURVIVAL_DANGER_RADIUS = 150   # при hp < 30 бежим только от опасности, которая реально рядом
 
 # ---------- Активный поиск ----------
 ACTIVE_SEARCH_DISTANCE = (150, 350)

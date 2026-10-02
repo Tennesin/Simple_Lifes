@@ -54,8 +54,8 @@ class CircleTickProcessor:
         ctx.campfire_occupancy = self._get_campfire_occupancy(ctx.campfires, race_creatures)
         self._resync_territory_claims(ctx, race_creatures)
 
-        self._reconcile_storage_ownership(ctx)
         self._reconcile_house_ownership(ctx)
+        self._reconcile_storage_ownership(ctx)
         self._reconcile_construction_ownership(ctx)
         self._process_player_construction_boost(ctx)
         corpses_to_remove = self._process_corpses(ctx.dt, race_creatures, genealogy)
@@ -388,11 +388,12 @@ class CircleTickProcessor:
                     game.player.grabbed_creature = None
                 continue
 
-            birth_request = creature.family.update(
+            birth = creature.family.update(
                 ctx.dt, race_creatures, ctx.creatures_by_id, world.storage_fields, world.houses,
                 nearby_creatures_grid=(ctx.spatial_grids or {}).get("creatures"))
-            if birth_request is not None:
-                game.object_manager.spawn_managers[self.race_name].create_child_creature(creature, birth_request)
+            if birth is not None:
+                game.object_manager.spawn_managers[self.race_name].create_child_creature(
+                    creature, birth.father_id)
 
             if creature.player_state.is_grabbed:
                 ready_for_interact.append(creature)

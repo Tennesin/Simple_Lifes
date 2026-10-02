@@ -352,7 +352,7 @@ class WorldManager:
             return
         entry = screen.entries[screen.selected_index]
         shutil.rmtree(entry.folder_path, ignore_errors=True)
-        shutil.rmtree(entry.folder_path + ".bak", ignore_errors=True)
+        shutil.rmtree(entry.folder_path + ".bak_prev", ignore_errors=True)
         screen.entries = self._scan_worlds()
         screen.selected_index = None
         screen.confirm_delete = False
@@ -572,10 +572,14 @@ class WorldManager:
         game.show_game_menu = False
 
     def _make_session_backup(self, world_path):
-        """Копия мира в том виде, в каком его открыли."""
+        """Копия мира в том виде, в каком его открыли. Прошлая копия не
+        уничтожается, а уходит в .bak_prev - всегда есть две точки отката."""
         backup_path = world_path + ".bak"
+        prev_path = world_path + ".bak_prev"
         try:
-            shutil.rmtree(backup_path, ignore_errors=True)
+            if os.path.isdir(backup_path):
+                shutil.rmtree(prev_path, ignore_errors=True)
+                os.replace(backup_path, prev_path)
             shutil.copytree(world_path, backup_path, ignore=shutil.ignore_patterns("*.tmp"))
         except OSError:
             pass

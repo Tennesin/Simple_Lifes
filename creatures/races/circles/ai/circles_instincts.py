@@ -189,6 +189,22 @@ class _LandmarkLookupMixin:
             return geometry.nearest_point(c.x, c.y, campfire_memories)
         return None
 
+    def flee_to_campfire(self, danger_pos):
+        """Бегство от трупа: к знакомому костру, а без него - просто прочь."""
+        c = self.c
+        c.state = ci_settings.STATE_PANIC
+        c.panic_active = True
+
+        campfire_pos = self.nearest_known_campfire()
+        if campfire_pos is not None:
+            c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_FLEE_FIRE
+            c.target = campfire_pos
+            return campfire_pos
+
+        c.goal_text = ci_info.INFO_CREATURE_GOAL_CORPSE_FLEE_BLIND
+        c.target = c.flee_point(danger_pos, ci_settings.CORPSE_FLEE_BLIND_DISTANCE)
+        return c.target
+
     def is_near_known_campfire(self):
         c = self.c
         pos = self.nearest_known_campfire()

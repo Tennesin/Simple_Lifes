@@ -68,7 +68,9 @@ class SurvivalNeeds(GoalComponent):
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_URGENT_FOOD
                 return goal
             danger_pos = self.instincts.nearest_danger_position(ctx.all_threats)
-            if danger_pos:
+            if (danger_pos
+                    and math.hypot(c.x - danger_pos[0], c.y - danger_pos[1])
+                    < ci_settings.URGENT_SURVIVAL_DANGER_RADIUS):
                 c.state = ci_settings.STATE_PANIC
                 c.panic_active = True
                 c.goal_text = ci_info.INFO_CREATURE_GOAL_SEEK_SAFETY

@@ -170,6 +170,7 @@ def _load_creature_burial(creature, state):
 def _load_creature_family(creature, state):
     creature.family.partner_id = state.get("partner_id")
     creature.family.is_pregnant = state.get("is_pregnant", False)
+    creature.family.child_father_id = state.get("child_father_id")
     creature.family.pregnancy_timer = state.get("pregnancy_timer", 0.0)
     parent_ids = state.get("parent_ids")
     creature.family.parent_ids = tuple(parent_ids) if parent_ids else None

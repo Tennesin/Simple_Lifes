@@ -41,6 +41,7 @@ class CreaturePanel:
         self.psyche_header_rect = None
         self.psyche_panel_rect = None
 
+        self._creatures_by_id = {}
         self.rebuild_layout(settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT)
 
     def rebuild_layout(self, window_w, window_h):
@@ -167,6 +168,7 @@ class CreaturePanel:
             self.relationships_scrollbar_rect = None
             return
         self._check_creature_changed(creature)
+        self._creatures_by_id = {c.id: c for c in game.world.creatures}
         panel = self.info_panel_rect
         pygame.draw.rect(screen, settings.INFO_PANEL_COLOR, panel)
         pygame.draw.rect(screen, settings.INFO_PANEL_BORDER, panel, 2)
@@ -325,7 +327,7 @@ class CreaturePanel:
         game = self.game
         if parent_id is None:
             return None
-        found = next((c for c in game.world.creatures if c.id == parent_id), None)
+        found = self._creatures_by_id.get(parent_id)
         if found is not None:
             return found.name if found.name else found.id
         for gy in game.world.graveyards:
@@ -351,10 +353,9 @@ class CreaturePanel:
         y = self._draw_parent_line(screen, creature, ci_info.INFO_INFO_MOTHER, 0, x, y)
         y = self._draw_parent_line(screen, creature, ci_info.INFO_INFO_FATHER, 1, x, y)
 
-        partner = None
-        if creature.family.partner_id:
-            partner = next((c for c in game.world.creatures
-                            if c.id == creature.family.partner_id and not c.is_dead), None)
+        partner = self._creatures_by_id.get(creature.family.partner_id)
+        if partner is not None and partner.is_dead:
+            partner = None
         partner_label = (partner.name if partner and partner.name
                          else (partner.id if partner else ci_info.INFO_INFO_PARTNER_NONE))
         partner_txt = self.font.render(
@@ -362,12 +363,10 @@ class CreaturePanel:
         screen.blit(partner_txt, (x, y))
         y += 24
 
-        sons = [c for c in game.world.creatures
-                if c.family.parent_ids and creature.id in c.family.parent_ids and not c.is_dead
-                and c.gender == ci_settings.GENDER_MALE]
-        daughters = [c for c in game.world.creatures
-                     if c.family.parent_ids and creature.id in c.family.parent_ids and not c.is_dead
-                     and c.gender == ci_settings.GENDER_FEMALE]
+        children = [c for c in game.world.creatures
+                    if c.family.parent_ids and creature.id in c.family.parent_ids and not c.is_dead]
+        sons = [c for c in children if c.gender == ci_settings.GENDER_MALE]
+        daughters = [c for c in children if c.gender == ci_settings.GENDER_FEMALE]
 
         if not sons and not daughters:
             children_txt = self.font.render(
@@ -480,7 +479,7 @@ class CreaturePanel:
         game = self.game
         males, females = [], []
         for other_id, value in creature.relationships.items():
-            other = next((o for o in game.world.creatures if o.id == other_id), None)
+            other = self._creatures_by_id.get(other_id)
             if other is None or other is creature:
                 continue
             is_close = (

@@ -1,10 +1,14 @@
 import math
 import random
+from collections import namedtuple
 
 from ...all_needed import lookup_creature
 from ...all_needed.base_entity import same_race
 from ...all_needed.weak_owner import WeakOwnerMixin
 from . import ci_settings
+
+# ---------- Событие "ребёнок родился": отец может быть неизвестен (None) ----------
+BirthEvent = namedtuple("BirthEvent", "father_id")
 
 def _shares_parent(ids_a, ids_b):
     if not ids_a or not ids_b:
@@ -174,9 +178,11 @@ class CreatureAging(WeakOwnerMixin):
 
 class CreatureFamily(WeakOwnerMixin):
     def __init__(self, creature, parent_ids=None):
+
         super().__init__(creature)
         self.pair_check_timer = random.uniform(*ci_settings.FAMILY_PAIR_CHECK_INTERVAL)
         self.birth_cooldown = 0.0
+        self.child_father_id = None
 
         # ---------- Партнёрство / потомство (этап 8) ----------
         self.partner_id = None
@@ -192,6 +198,7 @@ class CreatureFamily(WeakOwnerMixin):
         parent_ids НЕ трогаем - родословная не стирается смертью."""
         self.partner_id = None
         self.is_pregnant = False
+        self.child_father_id = None
         self.pregnancy_timer = 0.0
         self.reuniting_with_partner = False
         self.reunite_commit_timer = 0.0
@@ -201,6 +208,7 @@ class CreatureFamily(WeakOwnerMixin):
         return {
             "partner_id": self.partner_id,
             "is_pregnant": self.is_pregnant,
+            "child_father_id": self.child_father_id,
             "pregnancy_timer": self.pregnancy_timer,
             "parent_ids": list(self.parent_ids) if self.parent_ids else None,
         }
@@ -242,8 +250,6 @@ class CreatureFamily(WeakOwnerMixin):
             return
         if partner is None or partner.is_dead:
             self.partner_id = None
-            self.is_pregnant = False
-            self.pregnancy_timer = 0.0
             self.reuniting_with_partner = False
             self.reunite_commit_timer = 0.0
             c.psyche.on_partner_lost()
@@ -282,6 +288,7 @@ class CreatureFamily(WeakOwnerMixin):
         if random.random() < chance * dt:
             self.is_pregnant = True
             self.pregnancy_timer = random.uniform(*ci_settings.PREGNANCY_DURATION)
+            self.child_father_id = partner.id
 
     @staticmethod
     def _family_house_has_space(c, partner, houses):
@@ -380,16 +387,19 @@ class CreatureFamily(WeakOwnerMixin):
         if c.needs.wellbeing_score() < ci_settings.PREGNANCY_MIN_WELLBEING_TO_CARRY:
             self.is_pregnant = False
             self.pregnancy_timer = 0.0
+            self.child_father_id = None
             self.birth_cooldown = ci_settings.FAMILY_COOLDOWN_AFTER_BIRTH * 0.5
             return None
 
         self.pregnancy_timer -= dt
         if self.pregnancy_timer <= 0:
+            father_id = self.child_father_id if self.child_father_id is not None else self.partner_id
             self.is_pregnant = False
             self.pregnancy_timer = 0.0
+            self.child_father_id = None
             self.birth_cooldown = ci_settings.FAMILY_COOLDOWN_AFTER_BIRTH
             c.psyche.on_birth()
-            return self.partner_id
+            return BirthEvent(father_id)
         return None
 
     def has_living_parent(self, other_creatures):

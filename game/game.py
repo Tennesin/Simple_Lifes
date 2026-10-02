@@ -420,7 +420,7 @@ class Game:
 
         try:
             if self.world_loaded and self.world_path:
-                self.world_manager.close_world(save=True)
+                self.world_manager.close_world(save=False)
             elif self.world_path:
                 self.world_manager.close_world(save=False)
             else:
